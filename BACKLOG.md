@@ -26,7 +26,8 @@ Implemented now: accelerated hunger/hydration/energy, finite insect feeding, mis
 - [x] Animals choose among resting, seeking food, bathing and sheltering; sleep follows a sped-up day/night cycle.
 - [x] Tree frogs climb glass and connected plant stems and perch on foliage; dart and mossy frogs use appropriate surfaces.
 - [x] Species-specific hops, climbs, crawls, and leaf leaps come from the simulation, without a separate renderer movement fallback.
-- [ ] Detailed collision meshes and articulated pose transitions remain.
+- [x] Rigged frog animation: breathing, crouch and landing, turning on the spot, feet planted while crawling and climbing.
+- [ ] Detailed collision meshes remain.
 - [x] The user can see why an animal is struggling and has a clear way to help.
 - [x] Behavior state and decisions live outside React and Three.js. Inject a clock/random source for tests without requiring repeatable gameplay.
 

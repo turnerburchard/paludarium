@@ -56,6 +56,7 @@ export function buildAsset(kind: AssetKind, seed = 1): THREE.Group {
 export function disposeAsset(root: THREE.Object3D) {
   const materials = new Set<THREE.Material>();
   root.traverse((object) => {
+    if (object instanceof THREE.SkinnedMesh) object.skeleton.dispose();
     if (object instanceof THREE.Mesh) {
       object.geometry.dispose();
       (Array.isArray(object.material)

@@ -54,7 +54,9 @@ export interface AnimalState {
   reason: string;
   moving: boolean;
   surface: Surface;
-  motion: { progress: number; lift: number; tilt: number };
+  /** How the current edge is travelled. `hop` is true for the whole edge,
+   * including the crouch before takeoff and the landing. */
+  motion: { progress: number; lift: number; tilt: number; hop: boolean };
 }
 /** Insects at one spot. A colony (capacity above zero) breeds back toward its
  * capacity; insects scattered by hand (capacity zero) are simply eaten. */
