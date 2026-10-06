@@ -1,0 +1,53 @@
+import { X } from "lucide-react";
+import { IconButton } from "./IconButton";
+import { Modal } from "./Modal";
+
+export function HelpDialog({ onClose }: { onClose: () => void }) {
+  return (
+    <Modal label="How to build" onClose={onClose}>
+      <div className="modal-heading">
+        <h2>Make yourself at home</h2>
+        <IconButton label="Close dialog" onClick={onClose}>
+          <X size={20} />
+        </IconButton>
+      </div>
+      <p>
+        Choose an object, then click or tap the tank to place it. Keep placing
+        to make a cluster. Done or Escape returns to selection.
+      </p>
+      <dl>
+        <dt>Move the camera</dt>
+        <dd>
+          WASD moves across the tank. Hold Shift to move faster. Reset Camera
+          returns to the starting view.
+        </dd>
+        <dt>Look around</dt>
+        <dd>Drag with one finger or the mouse. Pinch or scroll to zoom.</dd>
+        <dt>Rearrange</dt>
+        <dd>Select an object, choose Move, then tap its new home.</dd>
+        <dt>Turn</dt>
+        <dd>R rotates; Shift R rotates the other way.</dd>
+        <dt>Undo / redo</dt>
+        <dd>⌘ or Ctrl Z / Shift Z. Each slider gesture is one step.</dd>
+        <dt>Pause</dt>
+        <dd>Space pauses the inhabitants. The eye button hides the tools.</dd>
+        <dt>Care for the frogs</dt>
+        <dd>
+          Scatter insects for food, or mist a dry habitat. Frogs forage, soak,
+          explore and sleep on a sped-up day/night cycle. Select one to see its
+          needs. Life pauses while the tab is hidden; activity restarts on
+          reload.
+        </dd>
+        <dt>Keep your world</dt>
+        <dd>
+          Autosaves stay in this browser. Export a file to back up or move
+          between devices.
+        </dd>
+      </dl>
+      <p className="panel-note">
+        This is a creative habitat sandbox, not a guide to keeping real animals
+        together.
+      </p>
+    </Modal>
+  );
+}
