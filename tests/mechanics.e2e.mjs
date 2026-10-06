@@ -53,8 +53,9 @@ const world = {
     {
       id: "rock",
       kind: "rock",
-      x: -2,
-      z: -1,
+      // Clear of the monstera's leaves, which would take the click.
+      x: -2.7,
+      z: -0.6,
       rotation: 0,
       scale: 1,
       seed: 173,
