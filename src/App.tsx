@@ -91,18 +91,35 @@ export default function App() {
       {!view && world.objects.length === 0 && tool.type === "select" && (
         <EmptyInvitation onPreset={startPreset} />
       )}
-      {!view && guiding && world.objects.length > 0 && !selected && (
-        <FirstSteps
-          world={world}
-          watched={watchedOnce}
-          onFinish={(completed) => {
-            setGuiding(false);
-            if (completed)
-              editor.notify(
-                "Your habitat is alive. The life panel shows how everyone is doing.",
-              );
-          }}
-        />
+      {!view && (
+        <div className="scene-notices">
+          {misplaced.length > 0 && (
+            <button
+              className="habitat-warning"
+              onClick={() => {
+                editor.select(misplaced[0].id);
+                editor.setTool({ type: "select" });
+              }}
+            >
+              {misplaced.length}{" "}
+              {misplaced.length === 1 ? "object needs" : "objects need"} a
+              better spot
+            </button>
+          )}
+          {guiding && world.objects.length > 0 && !selected && (
+            <FirstSteps
+              world={world}
+              watched={watchedOnce}
+              onFinish={(completed) => {
+                setGuiding(false);
+                if (completed)
+                  editor.notify(
+                    "Your habitat is alive. The life panel shows how everyone is doing.",
+                  );
+              }}
+            />
+          )}
+        </div>
       )}
       {!view && selected && tool.type === "select" && !watchingId && (
         <Inspector
@@ -131,19 +148,6 @@ export default function App() {
         </button>
       )}
       {!view && <BottomHud editor={editor} />}
-      {!view && misplaced.length > 0 && (
-        <button
-          className="habitat-warning"
-          onClick={() => {
-            editor.select(misplaced[0].id);
-            editor.setTool({ type: "select" });
-          }}
-        >
-          {misplaced.length}{" "}
-          {misplaced.length === 1 ? "object needs" : "objects need"} a better
-          spot
-        </button>
-      )}
       {dialog === "new-world" && (
         <NewWorldDialog
           onPreset={startPreset}
