@@ -70,6 +70,25 @@ export function makePreset(preset: Preset): World {
     ] as const)
       for (let i = 0; i < 6; i++)
         add(kind, x + (i % 3) * 0.3, z + Math.floor(i / 3) * 0.3, 1, heading);
+    // Bigger fish: angelfish and gouramis in the open water, a rainbow shark
+    // and a group of corydoras along the bottom.
+    for (const [kind, x, z, heading] of [
+      ["angelfish", -1.2, -0.4, 0.6],
+      ["angelfish", -0.8, -0.7, 0.8],
+      ["angelfish", -1.5, -0.9, 0.5],
+      ["pearl-gourami", 1.6, 0.2, 3.6],
+      ["pearl-gourami", 0.4, 1.1, 2.4],
+      ["rainbow-shark", 0.8, 0.3, 1.8],
+    ] as const)
+      add(kind, x, z, 1, heading);
+    for (let i = 0; i < 6; i++)
+      add(
+        "corydoras",
+        -0.2 + (i % 3) * 0.2,
+        0.3 + Math.floor(i / 3) * 0.2,
+        1,
+        2,
+      );
     return {
       version: 1,
       name: "Aquarium",
