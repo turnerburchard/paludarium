@@ -6,8 +6,6 @@ import { randomFromSeed } from "../model/random";
 import { terrainSamples } from "../model/terrainData";
 import { groundHeight, MAX_GROUND_HEIGHT } from "../model/terrain";
 import { makeWaterMaterial } from "./waterMaterial";
-import { disposeAsset } from "../assets";
-import { buildBackdrop } from "../assets/landscape/backdrop";
 import { MOSS_COLORS, mossMaterial } from "../assets/landscape/mosses";
 import { mossCarpet } from "../assets/landscape/mossCover";
 import { TERRAIN_POINTS, terrainPoint } from "../model/terrainData";
@@ -220,19 +218,6 @@ export function Water({
       </mesh>
     </group>
   );
-}
-
-/** The wall over the back glass, when the habitat has one. */
-export function Backdrop({ environment: env }: { environment: Environment }) {
-  const { width, depth, backdrop } = env;
-  const model = useMemo(
-    () => backdrop && buildBackdrop(width, TANK_HEIGHT, backdrop),
-    [width, backdrop],
-  );
-  useEffect(() => () => model && disposeAsset(model), [model]);
-  return model ? (
-    <primitive object={model} position={[0, 0, -depth / 2]} />
-  ) : null;
 }
 
 export function Tank({ environment: env }: { environment: Environment }) {

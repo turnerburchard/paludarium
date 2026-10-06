@@ -128,7 +128,21 @@ describe("safe files and valid habitat", () => {
   });
 });
 
-describe("lighting compatibility", () => {
+describe("saved world compatibility", () => {
+  it.each(["stone", "cork"])(
+    "loads a saved %s backdrop world with its layout intact and clear glass",
+    (material) => {
+      const world = parseWorld(JSON.stringify(makePreset("tropical")));
+      const legacy = {
+        ...world,
+        environment: {
+          ...world.environment,
+          backdrop: { material, moss: "sheet" },
+        },
+      };
+      expect(parseWorld(JSON.stringify(legacy))).toEqual(world);
+    },
+  );
   it("loads older worlds with neutral lighting defaults", () => {
     const legacy = JSON.parse(JSON.stringify(emptyWorld()));
     delete legacy.environment.warmth;

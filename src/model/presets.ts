@@ -178,10 +178,6 @@ export function makePreset(preset: Preset): World {
     environment: {
       ...defaultEnvironment,
       light: preset === "tropical" ? "day" : "golden",
-      backdrop:
-        preset === "tropical"
-          ? { material: "cork", moss: "sheet" }
-          : { material: "stone", moss: "cushion" },
     },
     objects,
   };

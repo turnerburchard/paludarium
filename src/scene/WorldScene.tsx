@@ -21,7 +21,7 @@ import { useCameraNavigation } from "./useCameraNavigation";
 import { useFollowCamera } from "./useFollowCamera";
 import { useCameraLayout } from "./useCameraLayout";
 import { Inhabitant } from "./Inhabitant";
-import { Backdrop, Tank, Terrain, Water } from "./Terrain";
+import { Tank, Terrain, Water } from "./Terrain";
 import { TerrainBrushCursor } from "./TerrainBrushCursor";
 
 const lighting = {
@@ -248,7 +248,6 @@ function Scene({
         paused={editor.paused || tool.type === "terrain"}
       />
       <Tank environment={env} />
-      <Backdrop environment={env} />
       {point && kind && (
         <Inhabitant
           object={
