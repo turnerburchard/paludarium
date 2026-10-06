@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { FishSchool, type Fish } from "../src/simulation/fish";
 import { randomFromSeed } from "../src/model/random";
+import { makePreset } from "../src/model/presets";
+import { placementProblem } from "../src/model/terrain";
+import { createFishSchool } from "../src/simulation/worldHabitat";
 
 /** A round pond of radius 1 centered on the origin. */
 const pond = (x: number, z: number) => Math.hypot(x, z) < 1;
@@ -18,12 +21,19 @@ const five = (): Fish[] =>
   }));
 
 describe("fish school", () => {
-  it("never leaves the water", () => {
+  it("turns away from the shore instead of bumping into it", () => {
     const s = school(five());
-    for (let second = 0; second < 300; second++) {
-      run(s, 1);
-      for (const f of s.all()) expect(pond(f.x, f.z)).toBe(true);
+    let frames = 0,
+      blocked = 0;
+    for (let i = 0; i < 120 * 30; i++) {
+      const before = s.all();
+      s.advance(1 / 30);
+      s.all().forEach((f, n) => {
+        frames++;
+        if (f.x === before[n].x && f.z === before[n].z) blocked++;
+      });
     }
+    expect(blocked / frames).toBeLessThan(0.05);
   });
 
   it("keeps swimming instead of getting stuck at the shore", () => {
@@ -68,5 +78,32 @@ describe("fish school", () => {
     const stepped = school(five());
     stepped.advance(0.1);
     expect(capped.all()).toEqual(stepped.all());
+  });
+});
+
+describe("fish in a real tank", () => {
+  it("stay in the pond and inside the glass", () => {
+    const world = makePreset("tropical");
+    const env = world.environment;
+    const school = createFishSchool(world);
+    for (let second = 0; second < 300; second++) {
+      run(school, 1);
+      for (const f of school.all()) {
+        expect(Math.abs(f.x)).toBeLessThan(env.width / 2);
+        expect(Math.abs(f.z)).toBeLessThan(env.depth / 2);
+        expect(placementProblem("fish", f.x, f.z, env)).toBeNull();
+      }
+    }
+  });
+
+  it("keep their place through an unrelated edit", () => {
+    const world = makePreset("tropical");
+    const school = createFishSchool(world);
+    run(school, 10);
+    const edited = structuredClone(world);
+    edited.environment.warmth = 0.2;
+    expect(createFishSchool(edited, { world, fish: school }).all()).toEqual(
+      school.all(),
+    );
   });
 });

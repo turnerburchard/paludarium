@@ -66,15 +66,11 @@ export class FishSchool {
   }
 
   /** Long frames are capped, like the frog engine, so a hidden tab can't jump. */
-  advance(
-    realSeconds: number,
-    paused = false,
-    heldIds: ReadonlySet<string> = new Set(),
-  ) {
+  advance(realSeconds: number, paused = false, heldIds?: ReadonlySet<string>) {
     if (paused) return;
     const dt = Math.min(realSeconds, 0.1);
     for (const f of this.fish.values())
-      if (!heldIds.has(f.id)) this.swim(f, dt);
+      if (!heldIds?.has(f.id)) this.swim(f, dt);
   }
 
   private swim(f: Swimmer, dt: number) {
