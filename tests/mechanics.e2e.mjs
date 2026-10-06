@@ -266,6 +266,11 @@ try {
     false,
     "keyboard change plus blur is exactly one undo step",
   );
+  assert.equal(
+    await brightness.inputValue(),
+    "1",
+    "Undo restores the visible brightness, not just the saved value",
+  );
   await page.getByRole("button", { name: "Close panel", exact: true }).click();
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.getByRole("button", { name: "Reset view", exact: true }).click();
@@ -297,7 +302,10 @@ try {
     await page.mouse.click(point.x, point.y);
   }
   await clickObject("frog");
-  await page.getByRole("complementary", { name: "Selected object" }).waitFor();
+  await page
+    .getByRole("complementary", { name: "Selected object" })
+    .getByRole("heading", { name: "Red-eyed tree frog", exact: true })
+    .waitFor();
   assert.equal(
     await page.getByRole("slider", { name: "Size", exact: true }).count(),
     0,
@@ -307,6 +315,10 @@ try {
     .getByRole("button", { name: "Deselect object", exact: true })
     .click();
   await clickObject("rock");
+  await page
+    .getByRole("complementary", { name: "Selected object" })
+    .getByRole("heading", { name: "River stone", exact: true })
+    .waitFor();
   await page.locator("summary", { hasText: "Adjust size" }).waitFor();
   assert.equal(
     await page.getByRole("slider", { name: "Size", exact: true }).count(),
@@ -355,11 +367,26 @@ try {
     false,
     "outside release and blur commit only once",
   );
+  assert.equal(await size.inputValue(), "1", "Undo resets the size control");
+  await page.waitForFunction(async (url) => {
+    const { _roots } = await import(url);
+    let rock;
+    _roots
+      .get(document.querySelector("canvas"))
+      .store.getState()
+      .scene.traverse((part) => {
+        if (part.userData.objectId === "rock") rock = part;
+      });
+    return rock?.scale.x === 1;
+  }, fiberUrl);
   await page
     .getByRole("button", { name: "Deselect object", exact: true })
     .click();
   await clickObject("plant");
-  await page.getByRole("complementary", { name: "Selected object" }).waitFor();
+  await page
+    .getByRole("complementary", { name: "Selected object" })
+    .getByRole("heading", { name: "Monstera", exact: true })
+    .waitFor();
   assert.equal(
     await page.getByRole("slider", { name: "Size", exact: true }).count(),
     0,
