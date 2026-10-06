@@ -12,11 +12,14 @@ npm run dev            # http://localhost:5173
 npm test               # Vitest unit tests
 npm run build          # typecheck (tsc -b) + production build
 npm run format         # Prettier
-npm run test:e2e       # Playwright browser flow (run `npx playwright install chromium` once)
+npm run test:e2e        # quick Playwright smoke against dist/ (build first)
+npm run test:e2e:full   # deeper desktop, terrain, touch and sharing regression flows
 npm run screenshot     # renders presets at desktop and phone sizes into screenshots/
 ```
 
 Before every push run `npm run format:check && npm test && npm run build && npm run test:e2e`. CI runs the same checks and only deploys when they pass.
+
+Run `npm run test:e2e:full` when changing editing gestures, camera behavior, terrain or sharing, or run the relevant individual flow during development. The longer suite is also available through CI's manual **full_browser_checks** option. Install Playwright Chromium once with `npx playwright install chromium`; `CHROMIUM_PATH` can select a system Chromium locally.
 
 ## Code quality
 

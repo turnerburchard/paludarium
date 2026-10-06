@@ -9,6 +9,8 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 - [x] Desktop WASD camera movement, Shift for faster movement, typing/modal guards.
 - [x] Dark studio background, overhead illumination, saved warmth and brightness controls.
 - [x] Separate glass from soil faces; match sidewall and surface subdivisions.
+- [x] Fully submerged Aquarium preset with driftwood, river stones, Java moss, cardinal and ember tetra schools; deep water fills below the rim and species swim at different depths.
+- [x] Fast production-build browser smoke on routine pushes; longer gesture regression suite remains available on demand.
 - [x] Published at turnerburchard.com/paludarium/ (GitHub Pages from this repo, deployed by CI on every push to `main`).
 - [x] Clean phone layout: full-screen scene, bottom dock, panels as a sheet; first visit opens on the Cloud forest.
 - [x] Separate View/Build modes: viewing opens without editing menus, and frog taps start a close-up.
@@ -92,3 +94,5 @@ The title is **Paludarium**. Keep the saved-world storage key (`little-worlds:v1
 - [x] Share the current committed world as a compressed snapshot link; explore without replacing a recipient’s save, explicitly build a copy, and keep export/Undo available.
 - [x] Replace feed/mist buttons with a field notebook of actual behavior, a quick follow action, and tucked-away inhabitants and habitat guidance.
 - [ ] Consider richer interactions and ecological discoveries after watching how people use the notebook; avoid routine care chores.
+
+- [x] Keep View minimal: remove the title, tagline and large watch button; move the introduction and creature list behind a small info control.
