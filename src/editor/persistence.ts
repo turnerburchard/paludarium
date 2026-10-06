@@ -2,8 +2,9 @@ import { makePreset } from "../model/presets";
 import { emptyWorld, worldSchema, type World } from "../model/schema";
 import { fitObject } from "../model/terrain";
 export const STORAGE_KEY = "little-worlds:v1";
+export const MAX_WORLD_SIZE = 250_000;
 export function parseWorld(text: string): World {
-  if (text.length > 250_000)
+  if (text.length > MAX_WORLD_SIZE)
     throw new Error("This file is too large for a terrarium.");
   let data: unknown;
   try {

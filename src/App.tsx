@@ -20,10 +20,18 @@ import { WatchCard } from "./ui/WatchCard";
 import { ViewControls } from "./ui/ViewControls";
 import { ViewIntro } from "./ui/ViewIntro";
 import { AboutDialog } from "./ui/AboutDialog";
+import type { World } from "./model/schema";
+import { SharedWorldDialog, WorldLinkError } from "./ui/SharedWorldDialog";
 
-export default function App() {
+export default function App({
+  sharedWorld,
+  shareError = false,
+}: {
+  sharedWorld?: World;
+  shareError?: boolean;
+}) {
   const [view, setView] = useState(true);
-  const editor = useEditor(view);
+  const editor = useEditor(view, sharedWorld);
   const { world, selected, tool } = editor;
   // Life follows committed edits, not intermediate brush or slider previews.
   const ecosystem = useEcosystem(editor.savedWorld);
@@ -33,9 +41,9 @@ export default function App() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [hasBuilt, setHasBuilt] = useState(false);
   const [resetCamera, setResetCamera] = useState(0);
-  const [dialog, setDialog] = useState<"new-world" | "help" | "about" | null>(
-    null,
-  );
+  const [dialog, setDialog] = useState<
+    "new-world" | "help" | "about" | "shared-copy" | "share-error" | null
+  >(shareError ? "share-error" : null);
   const [watchRequest, setWatchRequest] = useState<string | null>(null);
   // Deselecting (Escape, clicking away) also stops watching.
   const watchingId =
@@ -78,12 +86,24 @@ export default function App() {
     setResetCamera((n) => n + 1);
   }
 
-  function changeMode(next: boolean) {
+  function setMode(next: boolean) {
     if (next === view) return;
     editor.finish();
     setSheetOpen(false);
     if (!next) setHasBuilt(true);
     setView(next);
+  }
+
+  function changeMode(next: boolean) {
+    if (!next && editor.isShared) {
+      setDialog("shared-copy");
+      return;
+    }
+    setMode(next);
+  }
+
+  function clearWorldLink() {
+    history.replaceState(null, "", location.pathname + location.search);
   }
 
   function activateObject(id: string) {
@@ -192,7 +212,10 @@ export default function App() {
       />
       {view && !watchingId && (
         <>
-          <ViewIntro onAbout={() => setDialog("about")} />
+          <ViewIntro
+            sharedName={editor.isShared ? world.name : undefined}
+            onAbout={() => setDialog("about")}
+          />
           <ViewControls world={world} ecosystem={ecosystem} onWatch={watch} />
         </>
       )}
@@ -201,6 +224,29 @@ export default function App() {
         <NewWorldDialog
           onPreset={startPreset}
           onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === "shared-copy" && (
+        <SharedWorldDialog
+          onClose={() => setDialog(null)}
+          onCopy={() => {
+            const saved = editor.adoptSharedWorld();
+            if (saved) clearWorldLink();
+            setDialog(null);
+            setMode(false);
+            if (!saved)
+              editor.notify(
+                "Saving is unavailable. Export a backup of your copy.",
+              );
+          }}
+        />
+      )}
+      {dialog === "share-error" && (
+        <WorldLinkError
+          onClose={() => {
+            clearWorldLink();
+            setDialog(null);
+          }}
         />
       )}
       {dialog === "help" && <HelpDialog onClose={() => setDialog(null)} />}

@@ -1,6 +1,10 @@
 import { useRef } from "react";
 import type { Editor } from "../editor/useEditor";
-import { downloadWorld, parseWorld } from "../editor/persistence";
+import {
+  downloadWorld,
+  MAX_WORLD_SIZE,
+  parseWorld,
+} from "../editor/persistence";
 
 /** Export and import of world files, shared by every place that offers them.
  * Render `fileInput` once; `importWorld` opens its file picker. */
@@ -10,7 +14,7 @@ export function useWorldFiles(editor: Editor) {
   async function importFile(file: File | undefined) {
     if (!file) return;
     try {
-      if (file.size > 250_000)
+      if (file.size > MAX_WORLD_SIZE)
         throw new Error("This file is too large for a terrarium.");
       editor.replaceWorld(parseWorld(await file.text()));
       editor.notify("Your world is ready.");

@@ -65,7 +65,7 @@ try {
   await crawler.close();
 
   const page = await browser.newPage({
-    viewport: { width: 1440, height: 960 },
+    viewport: { width: 960, height: 640 },
     hasTouch: true,
   });
   const errors = [];
@@ -133,31 +133,48 @@ try {
     [1200, 630],
     "the advertised preview image is served at its declared size",
   );
-  await page.getByRole("button", { name: "Share Paludarium" }).click();
-  await page.getByText("Link copied", { exact: true }).waitFor();
-  assert.equal(await page.evaluate(() => window.copiedLink), projectUrl);
+  await page.getByRole("button", { name: "Share this world" }).click();
+  await page.getByText("World link copied", { exact: true }).waitFor();
+  const sharedLink = await page.evaluate(() => window.copiedLink);
+  assert.ok(sharedLink.startsWith(`${projectUrl}#world=1.`));
+  const sharedWorld = await page.evaluate(async (link) => {
+    const { readWorldLink } = await import("/src/editor/worldLinks.ts");
+    return readWorldLink(new URL(link).hash);
+  }, sharedLink);
+  assert.deepEqual(
+    sharedWorld,
+    JSON.parse(
+      await page.evaluate(() => localStorage.getItem("little-worlds:v1")),
+    ),
+  );
   await page.evaluate(() => {
     window.copiedLink = null;
     Object.defineProperty(navigator, "share", {
       configurable: true,
       value: async (data) => {
         window.sharedProject = data;
+        window.sharedWithActivation = navigator.userActivation.isActive;
         if (window.shareError)
           throw new DOMException("Share dismissed", window.shareError);
       },
     });
   });
-  await page.getByRole("button", { name: "Share Paludarium" }).click();
+  await page.getByRole("button", { name: "Share this world" }).click();
   assert.equal(
     (await page.evaluate(() => window.sharedProject)).url,
-    projectUrl,
+    sharedLink,
+  );
+  assert.equal(await page.evaluate(() => window.sharedWithActivation), true);
+  assert.equal(
+    (await page.evaluate(() => window.sharedProject)).title,
+    "Cleanup check · Paludarium",
   );
   await page.evaluate(() => {
     window.shareError = "AbortError";
   });
-  await page.getByRole("button", { name: "Share Paludarium" }).click();
+  await page.getByRole("button", { name: "Share this world" }).click();
   assert.equal(
-    await page.getByRole("textbox", { name: "Project link" }).count(),
+    await page.getByRole("textbox", { name: "World link" }).count(),
     0,
     "canceling native share leaves the scene clean",
   );
@@ -169,16 +186,45 @@ try {
   await page.evaluate(() => {
     window.shareError = "NotAllowedError";
   });
-  await page.getByRole("button", { name: "Share Paludarium" }).click();
-  const link = page.getByRole("textbox", { name: "Project link" });
+  await page.getByRole("button", { name: "Share this world" }).click();
+  const link = page.getByRole("textbox", { name: "World link" });
   await link.waitFor();
-  assert.equal(await link.inputValue(), projectUrl);
+  assert.equal(await link.inputValue(), sharedLink);
   await link.focus();
   assert.equal(
     await link.evaluate((input) => input.selectionEnd - input.selectionStart),
-    projectUrl.length,
+    sharedLink.length,
   );
   await page.getByRole("button", { name: "Close share link" }).click();
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: undefined,
+    });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async () => {
+          throw new DOMException("Denied", "NotAllowedError");
+        },
+      },
+    });
+  });
+  await page.getByRole("button", { name: "Share this world" }).click();
+  assert.equal(
+    await page.getByRole("textbox", { name: "World link" }).inputValue(),
+    sharedLink,
+  );
+  await page.getByRole("button", { name: "Close share link" }).click();
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: async (data) => {
+        window.sharedProject = data;
+      },
+    });
+  });
   await page.getByRole("button", { name: "What can I do here?" }).click();
   await page.getByRole("dialog", { name: "About Paludarium" }).waitFor();
   await page
@@ -208,6 +254,20 @@ try {
     (await status.boundingBox()).y,
     before.y,
     "saving the new name preserves the header layout",
+  );
+
+  await page.evaluate(() => {
+    window.shareError = null;
+  });
+  await page.getByRole("button", { name: "Share this world" }).click();
+  const renamedShared = await page.evaluate(async () => {
+    const { readWorldLink } = await import("/src/editor/worldLinks.ts");
+    return readWorldLink(new URL(window.sharedProject.url).hash);
+  });
+  assert.equal(renamedShared.name, "My quiet forest");
+  assert.notEqual(
+    (await page.evaluate(() => window.sharedProject)).url,
+    sharedLink,
   );
 
   await page
@@ -378,6 +438,146 @@ try {
   await page.getByRole("button", { name: "Done", exact: true }).click();
   await page.getByRole("button", { name: "View", exact: true }).click();
   await page.screenshot({ path: "/tmp/paludarium-view-phone.png" });
+  await page.close();
+  // A shared layout is a preview, not an import over the recipient's work.
+  const receiver = await browser.newPage({
+    viewport: { width: 390, height: 844 },
+  });
+  receiver.on("pageerror", (error) => errors.push(error.message));
+  const ownWorld = {
+    ...sharedWorld,
+    name: "My original habitat",
+    objects: [{ ...sharedWorld.objects[0], id: "my-rock", x: -1 }],
+  };
+  await receiver.addInitScript((world) => {
+    if (!sessionStorage.getItem("receiver-initialized")) {
+      localStorage.setItem("little-worlds:v1", JSON.stringify(world));
+      sessionStorage.setItem("receiver-initialized", "true");
+    }
+  }, ownWorld);
+  const receivedURL = `${url}/${new URL(sharedLink).hash}`;
+  await receiver.goto(receivedURL);
+  await receiver
+    .getByRole("heading", { name: "Cleanup check", exact: true })
+    .waitFor();
+  await receiver.waitForTimeout(500);
+  const receiverSaved = () =>
+    receiver.evaluate(() =>
+      JSON.parse(localStorage.getItem("little-worlds:v1")),
+    );
+  assert.deepEqual(await receiverSaved(), ownWorld);
+  assert.equal(
+    await receiver
+      .getByRole("textbox", { name: "World name", includeHidden: true })
+      .count(),
+    0,
+  );
+  await receiver.getByRole("button", { name: "Build", exact: true }).click();
+  await receiver
+    .getByRole("dialog", { name: "Build a copy", exact: true })
+    .waitFor();
+  await receiver.screenshot({ path: "/tmp/paludarium-shared-copy-phone.png" });
+  await receiver
+    .getByRole("button", { name: "Keep watching", exact: true })
+    .click();
+  assert.deepEqual(await receiverSaved(), ownWorld);
+  await receiver.reload();
+  await receiver
+    .getByRole("heading", { name: "Cleanup check", exact: true })
+    .waitFor();
+  assert.deepEqual(await receiverSaved(), ownWorld);
+  await receiver.getByRole("button", { name: "Build", exact: true }).click();
+  await receiver
+    .getByRole("button", { name: "Keep watching", exact: true })
+    .click();
+  await receiver
+    .getByRole("link", { name: "Back to my world", exact: true })
+    .click();
+  await receiver
+    .getByRole("heading", { name: "Paludarium", exact: true })
+    .waitFor();
+  await receiver.getByRole("button", { name: "Build", exact: true }).click();
+  assert.equal(
+    await receiver
+      .getByRole("textbox", { name: "World name", includeHidden: true })
+      .inputValue(),
+    "My original habitat",
+  );
+  await receiver.goto(receivedURL);
+  await receiver
+    .getByRole("heading", { name: "Cleanup check", exact: true })
+    .waitFor();
+  await receiver.getByRole("button", { name: "Build", exact: true }).click();
+  const backupPromise = receiver.waitForEvent("download");
+  await receiver
+    .getByRole("button", { name: "Export my world", exact: true })
+    .click();
+  const backup = await backupPromise;
+  assert.equal(backup.suggestedFilename(), "my-original-habitat.json");
+  const backupStream = await backup.createReadStream();
+  const chunks = [];
+  for await (const chunk of backupStream) chunks.push(chunk);
+  assert.deepEqual(JSON.parse(Buffer.concat(chunks).toString()), ownWorld);
+  await receiver
+    .getByRole("button", { name: "Build a copy", exact: true })
+    .click();
+  await receiver.locator(".topbar").waitFor();
+  assert.deepEqual(await receiverSaved(), sharedWorld);
+  assert.equal(new URL(receiver.url()).hash, "");
+  await receiver.getByRole("button", { name: /Undo/ }).click();
+  await receiver.waitForFunction(
+    () =>
+      JSON.parse(localStorage.getItem("little-worlds:v1")).name ===
+      "My original habitat",
+  );
+  assert.deepEqual(await receiverSaved(), ownWorld);
+  await receiver.goto(`${url}/#world=1.broken`);
+  await receiver
+    .getByRole("dialog", { name: "Couldn’t open this world", exact: true })
+    .waitFor();
+  assert.deepEqual(await receiverSaved(), ownWorld);
+  await receiver
+    .getByRole("button", { name: "Return to my world", exact: true })
+    .click();
+  assert.equal(new URL(receiver.url()).hash, "");
+  await receiver.close();
+
+  const newcomer = await browser.newPage({
+    viewport: { width: 960, height: 640 },
+  });
+  newcomer.on("pageerror", (error) => errors.push(error.message));
+  await newcomer.goto(receivedURL);
+  await newcomer
+    .getByRole("heading", { name: "Cleanup check", exact: true })
+    .waitFor();
+  await newcomer.waitForTimeout(500);
+  assert.equal(
+    await newcomer.evaluate(() => localStorage.getItem("little-worlds:v1")),
+    null,
+  );
+  await newcomer.getByRole("button", { name: "Build", exact: true }).click();
+  assert.equal(
+    await newcomer
+      .getByRole("button", { name: "Export my world", exact: true })
+      .count(),
+    0,
+  );
+  await newcomer
+    .getByRole("button", { name: "Build a copy", exact: true })
+    .click();
+  assert.deepEqual(
+    await newcomer.evaluate(() =>
+      JSON.parse(localStorage.getItem("little-worlds:v1")),
+    ),
+    sharedWorld,
+  );
+  await newcomer.reload();
+  await newcomer.getByRole("button", { name: "Build", exact: true }).click();
+  assert.equal(
+    await newcomer.getByRole("textbox", { name: "World name" }).inputValue(),
+    "Cleanup check",
+  );
+  await newcomer.close();
   assert.deepEqual(errors, [], "no browser runtime errors");
   console.log(
     "PASS: crawler previews, clipboard/native/canceled sharing, introduction, stable rename and mode transitions, terrain labels and touch/hold/keyboard rotation",

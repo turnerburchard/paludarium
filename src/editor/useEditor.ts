@@ -18,14 +18,15 @@ export type Tool =
   | { type: "move"; id: string }
   | { type: "copy"; id: string }
   | ({ type: "terrain" } & TerrainBrush);
-export function useEditor(readOnly = false) {
+export function useEditor(readOnly = false, sharedWorld?: World) {
   const [initial] = useState(loadWorld);
   const [history, dispatch] = useReducer(historyReducer, {
     past: [],
     present: initial.world,
     future: [],
   });
-  const world = history.present;
+  const [isShared, setIsShared] = useState(!!sharedWorld);
+  const world = isShared && sharedWorld ? sharedWorld : history.present;
   // A gesture previews only its original world; committing retires it.
   const [preview, setPreview] = useState<{ base: World; world: World } | null>(
     null,
@@ -47,13 +48,14 @@ export function useEditor(readOnly = false) {
     dispatch({ type: "commit", world: next });
   }, []);
   useEffect(() => {
+    if (isShared) return;
     setSaving(true);
     const timer = setTimeout(() => {
       setSaved(saveWorld(history.present));
       setSaving(false);
     }, 250);
     return () => clearTimeout(timer);
-  }, [history.present]);
+  }, [history.present, isShared]);
   useEffect(() => {
     stroke.current = null;
     setPreview(null);
@@ -248,7 +250,15 @@ export function useEditor(readOnly = false) {
   }
   return {
     world: shown,
-
+    isShared,
+    adoptSharedWorld: () => {
+      if (!isShared || !sharedWorld) return false;
+      const saved = saveWorld(sharedWorld);
+      commit(sharedWorld);
+      setIsShared(false);
+      setSaved(saved);
+      return saved;
+    },
     savedWorld: world,
     previewEnvironment: (patch: Partial<Environment>) =>
       setPreview({ base: world, world: withEnvironment(world, patch) }),

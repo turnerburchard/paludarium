@@ -31,7 +31,7 @@ Drag to orbit and scroll or pinch to zoom. On desktop, WASD pans the camera (Shi
 
 ## Sharing and first visits
 
-The opening view includes a small introduction explaining watching, building and the habitat’s food web. **Share Paludarium** opens the native share sheet where available, or copies the project link; a selectable link appears if sharing or clipboard access is unavailable. It shares the project, not a personal saved world. Use JSON export/import to move layouts between devices.
+The opening view includes a small introduction explaining watching, building and the habitat’s food web. **Share this world** sends a compressed snapshot of your committed layout in a link: name, plants, creatures, terrain, and settings. It opens the native share sheet or copies the link; a selectable link appears if sharing or clipboard access is unavailable. Recipients explore in View without overwriting their own saved habitat. **Build a copy** asks before replacing it, offers a backup export, and can be undone. Later edits don’t change links already sent. No account or server storage is needed. Text-message previews use the project image; live activity and field notes restart on opening. JSON export/import remains available for backups and worlds too large to share as links.
 
 The static HTML provides a canonical URL, description, Open Graph and Twitter card metadata before JavaScript runs. `public/share.jpg` is a 1200 × 630 screenshot of the real demo. Regenerate it with `npm run share-image` after changing the starter habitat. Preview services may cache the old card.
 
