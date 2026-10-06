@@ -1,4 +1,4 @@
-import { Binoculars, Leaf, Moon } from "lucide-react";
+import { Binoculars, Eye, Leaf, Moon } from "lucide-react";
 import { assets } from "../assets";
 import type { AssetKind, World } from "../model/schema";
 import type { EcosystemController } from "../simulation/useEcosystem";
@@ -19,27 +19,31 @@ export function LifePanel({
 }) {
   const { snapshot } = ecosystem;
   const animals = snapshot.animals;
-  const fish = new Map<AssetKind, number>();
+  // Fish by species, each with the ids of the fish of that kind.
+  const fish = new Map<AssetKind, string[]>();
   for (const object of world.objects)
     if (assets[object.kind].swims)
-      fish.set(object.kind, (fish.get(object.kind) ?? 0) + 1);
-  const fishCount = [...fish.values()].reduce((sum, n) => sum + n, 0);
+      fish.set(object.kind, [...(fish.get(object.kind) ?? []), object.id]);
+  const fishIds = [...fish.values()].flat();
+  const fishCount = fishIds.length;
 
   function surpriseMe() {
-    const others = animals.filter((animal) => animal.id !== selectedId);
-    const active = others.filter(
-      (animal) =>
-        animal.moving ||
-        animal.activity === "eating" ||
-        animal.activity === "bathing",
-    );
-    const candidates = active.length
-      ? active
-      : others.length
-        ? others
-        : animals;
-    const animal = candidates[Math.floor(Math.random() * candidates.length)];
-    if (animal) onWatch(animal.id);
+    // Busy land animals make the best viewing; fish are always on the move.
+    const active = animals
+      .filter(
+        (animal) =>
+          animal.moving ||
+          animal.activity === "eating" ||
+          animal.activity === "bathing",
+      )
+      .map((animal) => animal.id);
+    const everyone = [...animals.map((animal) => animal.id), ...fishIds];
+    const pool = [...active, ...fishIds].filter((id) => id !== selectedId);
+    const candidates = pool.length
+      ? pool
+      : everyone.filter((id) => id !== selectedId);
+    const id = candidates[Math.floor(Math.random() * candidates.length)];
+    if (id) onWatch(id);
   }
 
   return (
@@ -58,12 +62,14 @@ export function LifePanel({
       {animals.length + fishCount === 0 && (
         <p>Nothing lives here yet. Add an animal or some fish.</p>
       )}
+      {animals.length + fishCount > 0 && (
+        <button className="life-follow" onClick={surpriseMe}>
+          <Binoculars size={19} />
+          Follow someone
+        </button>
+      )}
       {animals.length > 0 && (
         <>
-          <button className="life-follow" onClick={surpriseMe}>
-            <Binoculars size={19} />
-            Follow someone
-          </button>
           <h3 className="life-group">Animals</h3>
           <CreatureList
             world={world}
@@ -76,11 +82,20 @@ export function LifePanel({
       {fishCount > 0 && (
         <>
           <h3 className="life-group">Fish</h3>
-          <ul className="fish-list">
-            {[...fish].map(([kind, count]) => (
+          <ul className="frog-list fish-list">
+            {[...fish].map(([kind, ids]) => (
               <li key={kind}>
-                <span>{assets[kind].name}</span>
-                <small>×{count}</small>
+                {/* Following a species picks one of its fish. */}
+                <button
+                  onClick={() =>
+                    onWatch(ids[Math.floor(Math.random() * ids.length)])
+                  }
+                  aria-pressed={ids.includes(selectedId ?? "")}
+                >
+                  <span>{assets[kind].name}</span>
+                  <small>×{ids.length}</small>
+                  <Eye size={15} />
+                </button>
               </li>
             ))}
           </ul>

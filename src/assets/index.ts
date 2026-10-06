@@ -90,6 +90,10 @@ export const catalog: readonly AssetDefinition[] = Object.values(assets);
 
 /** Animals living on the habitat's surfaces, simulated by the ecosystem.
  * Fish swim separately. */
+/** Anything alive that can be watched: land animals and fish. */
+export function isAnimal(kind: AssetKind): boolean {
+  return assets[kind].category === "Animals";
+}
 export function isLandAnimal(kind: AssetKind): boolean {
   return assets[kind].behavior !== undefined;
 }

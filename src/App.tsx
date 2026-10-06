@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Info } from "lucide-react";
 import { IconButton } from "./ui/IconButton";
-import { isLandAnimal } from "./assets";
+import { isAnimal } from "./assets";
 import { useEditor } from "./editor/useEditor";
 import { makePreset, type Preset } from "./model/presets";
 import { WorldScene } from "./scene/WorldScene";
@@ -105,7 +105,7 @@ export default function App({
   function activateObject(id: string) {
     const object = world.objects.find((o) => o.id === id);
     if (view) {
-      if (object && isLandAnimal(object.kind)) watch(id);
+      if (object && isAnimal(object.kind)) watch(id);
     } else editor.select(id);
   }
 

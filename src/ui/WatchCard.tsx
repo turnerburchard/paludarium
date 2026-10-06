@@ -30,6 +30,8 @@ export function WatchCard({
       </div>
       {animal ? (
         <AnimalStatus animal={animal} compact />
+      ) : asset.swims ? (
+        <p>{asset.description}</p>
       ) : (
         <p>This creature can’t reach any ground right now.</p>
       )}

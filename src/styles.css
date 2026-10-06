@@ -1495,26 +1495,6 @@ button:hover:not(:disabled) {
 .life-panel li small {
   margin-top: 0;
 }
-.fish-list {
-  list-style: none;
-  margin: 0 0 12px;
-  padding: 0;
-  display: grid;
-  gap: 4px;
-}
-.fish-list li {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 10px;
-  border-radius: 7px;
-  background: #1d3428;
-  color: #deedc0;
-  font-size: 12px;
-}
-.fish-list small {
-  color: #a6b999;
-  font-size: 11px;
-}
 
 .view-info {
   position: absolute;
