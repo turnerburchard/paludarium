@@ -167,6 +167,26 @@ describe("live ecosystem behavior", () => {
       .animals.reduce((sum, a) => sum + (0.8 + 0.002 * 10 - a.needs.hunger), 0);
     expect(fullnessGain).toBeCloseTo(0.2, 6);
   });
+  it("never sends two frogs to the same spot", () => {
+    const graph = new HabitatGraph([
+      node("a", 0, ["b"]),
+      node("b", 0.3, ["a", "c"], { shelter: 1 }),
+      node("c", 0.6, ["b"]),
+    ]);
+    const sleepy = { ...species, nocturnal: true };
+    const engine = new Ecosystem(
+      graph,
+      [
+        { ...seed("one"), species: sleepy, nodeId: "a" },
+        { ...seed("two"), species: sleepy, nodeId: "c" },
+      ],
+      { speed: 1, elapsed: 900 },
+    );
+    run(engine, 20);
+    const spots = engine.snapshot().animals.map((animal) => animal.nodeId);
+    expect(spots).toContain("b");
+    expect(new Set(spots).size).toBe(2);
+  });
   it("pauses completely and caps background-sized deltas", () => {
     const graph = new HabitatGraph([node("a", 0, [])]);
     const engine = new Ecosystem(graph, [seed()], {
