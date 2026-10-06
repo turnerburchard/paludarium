@@ -66,7 +66,7 @@ Priority: medium. Food resources, plant growth, crowding and reproduction; event
 ## Habitat building and inspiration
 
 - Existing: rotate any selected plant/object with Turn or R; resize tank in Habitat settings.
-- Places to go: anthurium and climbing philodendron perches, a leaning branch and a hollow log with bark routes, and dens in the log and under rock shelters. Leaf litter gives insects cover.
+- Places to go: anthurium and climbing philodendron perches, a leaning branch and a hollow log with bark routes, and dens in the log and under rock shelters. Leaf litter and four mosses (cushion, sheet and fern moss on land, Java moss in the pool) give insects cover.
 - Terrain tools: sculpt, smooth, paint soil/sand/stone, and carve pools and streams with undoable gestures. Heights and surface paint survive save/export/import and tank resizing.
 - Presets should span blank landscaping (dirt/rock/sand/water), small planted starter habitats and complex waterfalls with mature communities.
 - Inspiration: Tanks for Nothin-style terrarium videos; a pleasant habitat to tend during breaks.
