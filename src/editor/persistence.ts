@@ -1,3 +1,4 @@
+import { makePreset } from "../model/presets";
 import { emptyWorld, worldSchema, type World } from "../model/schema";
 import { fitObject } from "../model/terrain";
 export const STORAGE_KEY = "little-worlds:v1";
@@ -17,7 +18,11 @@ export function parseWorld(text: string): World {
 export function loadWorld(): { world: World; warning: string | null } {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return { world: saved ? parseWorld(saved) : emptyWorld(), warning: null };
+    // First visit opens on a finished habitat rather than an empty tank.
+    return {
+      world: saved ? parseWorld(saved) : makePreset("tropical"),
+      warning: null,
+    };
   } catch {
     return {
       world: emptyWorld(),

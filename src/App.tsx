@@ -8,7 +8,6 @@ import { WorldScene } from "./scene/WorldScene";
 import { useEcosystem } from "./simulation/useEcosystem";
 import { BottomHud } from "./ui/BottomHud";
 import { EmptyInvitation } from "./ui/EmptyInvitation";
-import { FirstSteps, isFirstVisit } from "./ui/FirstSteps";
 import { HelpDialog } from "./ui/HelpDialog";
 import { Inspector } from "./ui/Inspector";
 import { NewWorldDialog } from "./ui/NewWorldDialog";
@@ -30,12 +29,6 @@ export default function App() {
   // Deselecting (Escape, clicking away) also stops watching.
   const watchingId =
     watchRequest && watchRequest === selected?.id ? watchRequest : null;
-  const [guiding, setGuiding] = useState(isFirstVisit);
-  const [watchedOnce, setWatchedOnce] = useState(false);
-
-  useEffect(() => {
-    if (watchingId) setWatchedOnce(true);
-  }, [watchingId]);
 
   useEffect(() => {
     if (selected && isFrog(selected.kind)) setPanel("life");
@@ -105,19 +98,6 @@ export default function App() {
               {misplaced.length === 1 ? "object needs" : "objects need"} a
               better spot
             </button>
-          )}
-          {guiding && world.objects.length > 0 && !selected && (
-            <FirstSteps
-              world={world}
-              watched={watchedOnce}
-              onFinish={(completed) => {
-                setGuiding(false);
-                if (completed)
-                  editor.notify(
-                    "Your habitat is alive. The life panel shows how everyone is doing.",
-                  );
-              }}
-            />
           )}
         </div>
       )}
