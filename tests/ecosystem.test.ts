@@ -392,6 +392,7 @@ describe("plant perches and species movement", () => {
     "fern",
     "anthurium",
     "philodendron",
+    "nest-fern",
   ] as const)(
     "connects %s foliage to ground and seats perches on the transformed plant",
     (kind) => {

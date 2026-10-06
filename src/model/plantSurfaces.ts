@@ -334,3 +334,57 @@ export function philodendronPerches(random: () => number): PlantPerch[] {
       };
     });
 }
+
+export interface NestFrond extends PlantPerch {
+  base: PlantPoint;
+  direction: PlantPoint;
+  normal: PlantPoint;
+  length: number;
+  width: number;
+  droop: number;
+}
+
+/** Broad fronds rising from a central nest and arching outward, sturdy enough
+ * for a frog part way along. */
+export function nestFernFronds(random: () => number): NestFrond[] {
+  return Array.from({ length: 11 }, (_, index) => {
+    const angle = index * 2.399 + random() * 0.3;
+    const rise = 1.1 + random() * 0.6;
+    const direction = normalized({
+      x: Math.cos(angle),
+      y: rise,
+      z: Math.sin(angle),
+    });
+    const normal = normalized({
+      x: -direction.x * direction.y,
+      y: 1 - direction.y * direction.y,
+      z: -direction.z * direction.y,
+    });
+    const length = 0.6 + random() * 0.25;
+    const droop = 0.3 + random() * 0.12;
+    const base = { x: direction.x * 0.04, y: 0.05, z: direction.z * 0.04 };
+    const t = 0.4;
+    const sag = -droop * t * t * length + 0.005;
+    const slope = -2 * droop * t;
+    const perch = {
+      x: base.x + direction.x * length * t + normal.x * sag,
+      y: base.y + direction.y * length * t + normal.y * sag,
+      z: base.z + direction.z * length * t + normal.z * sag,
+    };
+    return {
+      base,
+      direction,
+      normal,
+      length,
+      width: 0.24 + random() * 0.06,
+      droop,
+      stem: [{ x: 0, y: 0, z: 0 }, base],
+      perch,
+      perchNormal: normalized({
+        x: normal.x - direction.x * slope,
+        y: normal.y - direction.y * slope,
+        z: normal.z - direction.z * slope,
+      }),
+    };
+  });
+}
