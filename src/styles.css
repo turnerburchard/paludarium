@@ -839,15 +839,17 @@ button:hover:not(:disabled) {
     margin-left: auto;
     gap: 0;
   }
+  /* Comfortable tap targets on phones. */
   .header-actions .icon-button {
-    width: 31px;
+    width: 40px;
+    height: 40px;
   }
   .new-world {
     margin-left: 4px;
-    width: 31px;
+    width: 40px;
     justify-content: center;
     padding: 0;
-    height: 31px;
+    height: 40px;
   }
   .scene-shell {
     inset: 56px 0 0 0;
@@ -857,7 +859,7 @@ button:hover:not(:disabled) {
     top: auto;
     bottom: 0;
     height: auto;
-    max-height: min(70vh, 520px);
+    max-height: min(60vh, 520px);
     width: 100%;
     border-top: 1px solid #43533c;
     border-right: 0;
@@ -920,7 +922,8 @@ button:hover:not(:disabled) {
     gap: 10px;
   }
   .panel-tabs button {
-    padding: 7px 9px;
+    min-height: 40px;
+    padding: 7px 11px;
     font-size: 12px;
   }
   .panel-tabs button:first-child {
@@ -935,6 +938,7 @@ button:hover:not(:disabled) {
     margin: 0 12px;
   }
   .category-tabs button {
+    min-height: 44px;
     padding: 7px;
     border-radius: 6px;
   }
@@ -961,12 +965,12 @@ button:hover:not(:disabled) {
     font-size: 11px;
   }
   .sidebar-footer {
-    height: 27px;
-    padding: 0 15px;
+    height: 48px;
+    padding: 0 10px 0 15px;
     font-size: 10px;
   }
   .sidebar-footer button {
-    padding: 3px;
+    padding: 10px;
   }
   .scene-tools {
     display: none;
