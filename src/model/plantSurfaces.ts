@@ -44,9 +44,10 @@ export function monsteraLeaves(random: () => number): MonsteraLeaf[] {
       y: height,
       z: Math.sin(angle) * reach,
     };
+    // Leaves hang out from the tops of their stalks, some tipping downward.
     const direction = normalized({
       x: Math.cos(angle) * 0.85,
-      y: 0.15 + random() * 0.35,
+      y: -0.2 + random() * 0.4,
       z: Math.sin(angle) * 0.85,
     });
     // Rotation from local +Y to the leaf direction, applied to its local +Z.
