@@ -23,11 +23,11 @@ npm run test:e2e
 
 The app opens in **View**, with a full-screen habitat. Tap a frog or choose **Watch a frog** to follow it up close. Foliage in front of the watched animal fades; its supporting leaf stays visible. Stopping restores the foliage and eases the camera back. Animal needs are available in the compact watch card.
 
-Switch to **Build** to add and rearrange objects. On phones a bottom dock opens Add, Habitat and Life as sheets. Selecting animals or plants never opens a size slider; only rocks and driftwood offer **Adjust size**. Sliders preview changes while dragging and create one undo step on release, including releases outside the control.
+Switch to **Build** to add and rearrange objects. Switching modes preserves the camera, selection, and open settings; desktop tools gently move the framing without rebuilding the scene. While placing, moving or copying, tap **Left** or **Right** to turn 15°, or hold to spin. R turns 30° and Shift+R turns back. On phones a bottom dock opens Add, Habitat and Life as sheets. Selecting animals or plants never opens a size slider; only rocks and driftwood offer **Adjust size**. Sliders preview changes while dragging and create one undo step on release, including releases outside the control.
 
 Habitat settings lead with lighting and water choices. Open **Shape landscape** to sculpt, smooth, paint soil/sand/stone, or carve pools and streams. **Fine-tune habitat** contains precise water, lighting, enclosure and soil sliders. Each brush stroke is one undoable edit; Escape cancels an unfinished stroke. Terrain is included in saved and exported worlds.
 
-Drag to orbit and scroll or pinch to zoom. On desktop, WASD pans the camera (Shift to move faster); **Reset Camera** restores the default view. Escape stops watching, and Space pauses life. View disables editing shortcuts. Keyboard shortcuts are ignored while typing in fields or dialogs. A first visit opens on the Cloud forest preset.
+Drag to orbit and scroll or pinch to zoom. On desktop, WASD pans the camera (Shift to move faster); **Reset view** (home icon) restores the default view. Escape stops watching, and Space pauses life. View disables editing shortcuts. Keyboard shortcuts are ignored while typing in fields or dialogs. A first visit opens on the Cloud forest preset.
 
 ## Sharing and first visits
 

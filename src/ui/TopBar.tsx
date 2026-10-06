@@ -30,10 +30,7 @@ export function TopBar({
           <Leaf size={23} />
         </span>
         <div>
-          <h1>
-            Paludarium<span> / </span>
-          </h1>
-          <span className="brand-caption">TERRARIUM STUDIO</span>
+          <h1>Paludarium</h1>
         </div>
       </div>
       <div className="world-title">

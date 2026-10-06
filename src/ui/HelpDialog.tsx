@@ -18,7 +18,7 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
       <dl>
         <dt>Move the camera</dt>
         <dd>
-          WASD moves across the tank. Hold Shift to move faster. Reset Camera
+          WASD moves across the tank. Hold Shift to move faster. The Home button
           returns to the starting view.
         </dd>
         <dt>Look around</dt>
@@ -31,7 +31,10 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
           it, and foliage fades out of the way. Escape stops watching.
         </dd>
         <dt>Turn</dt>
-        <dd>R rotates; Shift R rotates the other way.</dd>
+        <dd>
+          Use Left and Right while placing. Tap to turn, hold to spin. R also
+          turns; Shift R turns the other way.
+        </dd>
         <dt>Undo / redo</dt>
         <dd>⌘ or Ctrl Z / Shift Z. Each slider gesture is one step.</dd>
         <dt>Pause</dt>

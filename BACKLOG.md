@@ -16,6 +16,9 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 - [x] Compact watch cards and habitat settings; precise sliders and terrain tools sit behind disclosures.
 - [x] Size controls only for rocks and driftwood; slider release and blur form one undoable gesture.
 - [x] Static link-preview metadata and an actual-demo image; native sharing and copy-link fallbacks.
+- [x] Camera and open settings persist across View/Build; closer default framing and a clear home/reset control.
+- [x] Touch-friendly placement rotation: tap left/right or hold to spin. Terrain bars name the active brush.
+- [x] Clean branding and a stable rename field.
 - [x] Saved terrain sculpting, soil/sand/stone painting, and pool/stream carving, with one undo step per gesture.
 
 ## Live animal behavior — first slice implemented
@@ -53,7 +56,8 @@ Priority: medium. Food resources, plant growth, crowding and reproduction; event
 
 ## Product polish
 
-- Contextual onboarding: one satisfying small habitat before advanced controls.
+- [x] Optional first-visit introduction to watching, building, local saves and the food web.
+- Contextual onboarding: guide one satisfying small habitat before advanced controls.
 - Better animal selection and close-up inspection.
 - Optional gamification only after building and watching are enjoyable.
 - GitHub issues: one actionable task per issue, with acceptance criteria; link larger design decisions back to this file. Use personal repositories only.

@@ -1,19 +1,8 @@
 import { useState } from "react";
 import type { Editor } from "../editor/useEditor";
-import type { TerrainMode } from "../model/terrainBrush";
+import { terrainTools } from "./terrainTools";
 import { RangeControl } from "./RangeControl";
 import "./TerrainControls.css";
-
-const tools: { mode: TerrainMode; label: string }[] = [
-  { mode: "raise", label: "Raise ground" },
-  { mode: "lower", label: "Lower ground" },
-  { mode: "smooth", label: "Smooth ground" },
-  { mode: "soil", label: "Paint soil" },
-  { mode: "sand", label: "Paint sand" },
-  { mode: "stone", label: "Paint stone" },
-  { mode: "pool", label: "Carve pool" },
-  { mode: "stream", label: "Carve stream" },
-];
 
 export function TerrainControls({ editor }: { editor: Editor }) {
   const [radius, setRadius] = useState(0.65);
@@ -22,7 +11,7 @@ export function TerrainControls({ editor }: { editor: Editor }) {
     <section className="terrain-controls" aria-label="Landscape brushes">
       <div className="section-label">SHAPE YOUR LANDSCAPE</div>
       <div className="terrain-tools">
-        {tools.map(({ mode, label }) => (
+        {terrainTools.map(({ mode, label }) => (
           <button
             key={mode}
             className={brush?.mode === mode ? "active" : ""}
