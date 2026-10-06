@@ -45,7 +45,12 @@ try {
     viewport: { width: 1440, height: 960 },
   });
   const errors = [];
+  let fiberUrl;
   page.on("pageerror", (error) => errors.push(error.message));
+  page.on("response", (response) => {
+    if (response.url().includes("@react-three_fiber.js"))
+      fiberUrl = response.url();
+  });
   await page.goto("http://127.0.0.1:5191");
   await page.locator(".asset-picture img").first().waitFor();
   // A first visit opens on the cloud forest; start from an empty tank.
@@ -204,14 +209,38 @@ try {
     invalidBefore,
     "invalid import preserves existing world",
   );
-  // With life paused, a changed canvas verifies keyboard camera movement.
+  // Wait for actual movement rather than a fixed hold time: a slow software
+  // renderer can go longer than that without drawing a frame.
   await page.locator("canvas").click({ position: { x: 20, y: 20 } });
-  const beforeMove = await page.locator("canvas").screenshot();
+  assert.ok(fiberUrl, "the running scene loaded React Three Fiber");
+  const beforeMove = await page.evaluate(async (url) => {
+    const { _roots } = await import(url);
+    return _roots
+      .get(document.querySelector("canvas"))
+      .store.getState()
+      .camera.position.toArray();
+  }, fiberUrl);
   await page.keyboard.down("w");
-  await page.waitForTimeout(700);
-  await page.keyboard.up("w");
-  const afterMove = await page.locator("canvas").screenshot();
-  assert.notDeepEqual(afterMove, beforeMove, "W moves the camera");
+  try {
+    await page.waitForFunction(
+      async ({ url, before }) => {
+        const { _roots } = await import(url);
+        const position = _roots
+          .get(document.querySelector("canvas"))
+          .store.getState().camera.position;
+        return (
+          Math.hypot(
+            position.x - before[0],
+            position.y - before[1],
+            position.z - before[2],
+          ) > 0.05
+        );
+      },
+      { url: fiberUrl, before: beforeMove },
+    );
+  } finally {
+    await page.keyboard.up("w");
+  }
   await page.getByRole("button", { name: "Reset camera", exact: true }).click();
   await page.screenshot({
     path: process.env.SCREENSHOT_DIR
