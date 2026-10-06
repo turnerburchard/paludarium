@@ -127,7 +127,12 @@ export class Ecosystem {
     const state = this.agents.get(id)?.state;
     return state ? structuredClone(state) : undefined;
   }
+  /** Read-only live view for the renderer; use getAnimal/snapshot for owned copies. */
+  observeAnimal(id: string): Readonly<AnimalState> | undefined {
+    return this.agents.get(id)?.state;
+  }
   snapshot(): SimulationSnapshot {
+    // HUD snapshots own their data; frame rendering uses observeAnimal instead.
     return {
       elapsed: this.elapsed,
       phase: this.phase,

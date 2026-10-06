@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { AssetKind } from "../model/schema";
 import { randomFromSeed } from "../model/random";
 import type { AssetDefinition } from "./types";
+import { batchStaticAsset } from "./batch";
 import {
   bluePoisonDartFrog,
   mossyFrog,
@@ -44,7 +45,9 @@ export function isFrog(kind: AssetKind): boolean {
 }
 
 export function buildAsset(kind: AssetKind, seed = 1): THREE.Group {
-  return assets[kind].build(randomFromSeed(seed));
+  const asset = assets[kind];
+  const model = asset.build(randomFromSeed(seed));
+  return asset.category === "Animals" ? model : batchStaticAsset(model);
 }
 
 export function disposeAsset(root: THREE.Object3D) {
