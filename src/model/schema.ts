@@ -3,6 +3,7 @@ import { TERRAIN_POINTS, groundMaterials } from "./terrainData";
 
 export const assetKinds = [
   "monstera",
+  "swiss-cheese-plant",
   "fern",
   "strawberry",
   "bromeliad",

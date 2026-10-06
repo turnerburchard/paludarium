@@ -18,22 +18,6 @@ export const monstera: AssetDefinition = {
 };
 
 const UP = new THREE.Vector3(0, 1, 0);
-/** Half a heart from the pointed tip back around the basal lobe to the
- * notch, as fractions of the blade's length and width. */
-const OUTLINE: readonly (readonly [number, number])[] = [
-  [1, 0],
-  [0.9, 0.12],
-  [0.76, 0.26],
-  [0.58, 0.38],
-  [0.38, 0.45],
-  [0.18, 0.46],
-  [0.02, 0.41],
-  [-0.14, 0.3],
-  [-0.2, 0.16],
-  [-0.12, 0.05],
-  [0.03, 0],
-];
-
 function build(random: () => number) {
   const root = new THREE.Group(),
     stem = material("#507139");
@@ -80,90 +64,60 @@ function build(random: () => number) {
 }
 
 /** A heart-shaped blade along +Y, cupped like the other leaves so its midrib
- * matches the perch the frogs use. Facets fan out from a point on the
- * midrib, and slits are wedges cut in from the edge, more on older leaves. */
+ * matches the perch the frogs use. Each half is a grid running from the
+ * midrib (s = 0) to the edge (s = 1); leaving out narrow bands of cells cuts
+ * slits that stop short of the midrib, and older leaves lose a few cells
+ * beside the midrib as enclosed holes. */
 function monsteraBlade(length: number, width: number, age: number) {
-  const loop = [
-    ...OUTLINE,
-    ...OUTLINE.slice(1, -1)
-      .reverse()
-      .map(([u, v]) => [u, -v] as const),
-  ];
-  const outline = resample(loop, 56);
-  const center = [0.36, 0] as const;
-  // Slits stop short of the midrib, at the first ring.
-  const rings = [0.35, 0.7, 1];
-  const splits = Math.round(age * 5);
-  const slitAt = Array.from({ length: splits }, (_, k) => 0.24 + k * 0.12);
-  // Sectors are the wedges between neighbouring outline points.
-  const middle = (i: number) => {
-    const [u0, v0] = outline[i],
-      [u1, v1] = outline[(i + 1) % outline.length];
-    return [(u0 + u1) / 2, (v0 + v1) / 2] as const;
-  };
-  const nearest = (u: number, side: number) =>
-    outline
-      .map((_, i) => i)
-      .filter((i) => Math.sign(middle(i)[1]) === side)
-      .reduce((best, i) =>
-        Math.abs(middle(i)[0] - u) < Math.abs(middle(best)[0] - u) ? i : best,
-      );
-  const slits = new Set(
-    [-1, 1].flatMap((side) => slitAt.map((u) => nearest(u, side))),
-  );
-
-  const lift = (u: number, v: number): THREE.Vector3 => {
-    const x = v * width,
-      y = u * length;
+  const along = 28,
+    across = 6;
+  const start = -0.16;
+  const t = (i: number) => start + (i / along) * (1 - start);
+  const s = (j: number) => j / across;
+  // Broadest a third of the way out, narrowing to the tip, with lobes
+  // either side of the notch at the base.
+  const halfWidth = (at: number) =>
+    (width / 2) * Math.max(0, 1 - ((at - 0.33) / 0.67) ** 2) ** 0.55;
+  // Veins sweep back at the base and forward toward the tip.
+  const sweep = (at: number) => 0.2 * (at - 0.22);
+  const point = (i: number, j: number, side: number) => {
+    const u = t(i),
+      v = s(j);
+    const x = side * v * halfWidth(u),
+      y = (u + sweep(u) * v) * length;
     return new THREE.Vector3(
       x,
       y,
       0.16 * Math.sin((y / length) * Math.PI) * length - Math.abs(x) * 0.18,
     );
   };
-  const ring = (i: number, scale: number) => {
-    const [u, v] = outline[i % outline.length];
-    return lift(
-      center[0] + (u - center[0]) * scale,
-      center[1] + (v - center[1]) * scale,
-    );
-  };
+  const splits = Math.round(age * 7);
+  // Slits run between the lobes, evenly from the base lobe to near the tip.
+  const slitAt = new Set(
+    Array.from({ length: splits }, (_, k) =>
+      Math.round(along * (0.22 + (k / Math.max(1, splits - 1)) * 0.62)),
+    ),
+  );
+  // Holes sit beside the midrib just past each slit, touching it only at a
+  // corner so the leaf stays in one piece.
+  const holeAt = new Set(
+    age > 0.6 ? [...slitAt].slice(0, -1).map((i) => i + 1) : [],
+  );
   const corners: THREE.Vector3[] = [];
-  const middleOfLeaf = lift(...center);
-  for (let i = 0; i < outline.length; i++) {
-    corners.push(middleOfLeaf, ring(i + 1, rings[0]), ring(i, rings[0]));
-    for (let r = 0; r < rings.length - 1; r++) {
-      if (slits.has(i)) continue;
-      const [a, b] = [rings[r], rings[r + 1]];
-      corners.push(ring(i, a), ring(i + 1, a), ring(i + 1, b));
-      corners.push(ring(i, a), ring(i + 1, b), ring(i, b));
-    }
-  }
+  for (const side of [-1, 1])
+    for (let i = 0; i < along; i++)
+      for (let j = 0; j < across; j++) {
+        // The notch where the stalk meets the blade.
+        if (t(i + 1) <= 0.02 && j < 2) continue;
+        if (slitAt.has(i) && j >= 2) continue;
+        if (holeAt.has(i) && j === 1) continue;
+        const a = point(i, j, side),
+          b = point(i + 1, j, side),
+          c = point(i + 1, j + 1, side),
+          d = point(i, j + 1, side);
+        corners.push(a, b, c, a, c, d);
+      }
   const geometry = new THREE.BufferGeometry().setFromPoints(corners);
   geometry.computeVertexNormals();
   return geometry;
-}
-
-/** Evenly spaced points around a closed outline. */
-function resample(
-  loop: readonly (readonly [number, number])[],
-  count: number,
-): (readonly [number, number])[] {
-  const lengths = loop.map((p, i) => {
-    const q = loop[(i + 1) % loop.length];
-    return Math.hypot(q[0] - p[0], q[1] - p[1]);
-  });
-  const total = lengths.reduce((sum, l) => sum + l, 0);
-  const points: (readonly [number, number])[] = [];
-  let segment = 0,
-    start = 0;
-  for (let k = 0; k < count; k++) {
-    const at = (k / count) * total;
-    while (start + lengths[segment] < at) start += lengths[segment++];
-    const t = (at - start) / lengths[segment];
-    const p = loop[segment],
-      q = loop[(segment + 1) % loop.length];
-    points.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]);
-  }
-  return points;
 }
