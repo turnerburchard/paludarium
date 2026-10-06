@@ -61,6 +61,7 @@ export default function App({
   }, [tool.type]);
 
   function watch(id: string) {
+    if (!view) setMode(true);
     editor.select(id);
     setWatchRequest(id);
     setSheetOpen(false);

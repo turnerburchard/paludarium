@@ -166,10 +166,18 @@ try {
   await clickWorld(frog.x, 0.95, frog.z);
   await page.getByRole("button", { name: "Watch up close" }).click();
   await page.getByRole("complementary", { name: "Watching" }).waitFor();
+  assert.equal(
+    await page
+      .getByRole("button", { name: "View", exact: true })
+      .getAttribute("aria-pressed"),
+    "true",
+    "following enters View directly",
+  );
   await page.keyboard.press("Escape");
   await page
     .getByRole("complementary", { name: "Watching" })
     .waitFor({ state: "detached" });
+  await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.getByRole("button", { name: "New world", exact: true }).click();
   await page.getByRole("button", { name: /Cloud forest.*Monstera/ }).click();
   world = await saved();
@@ -188,17 +196,49 @@ try {
     .click();
   await page.getByRole("button", { name: "Habitat life", exact: true }).click();
   const life = page.getByRole("region", { name: "Habitat life", exact: true });
-  const beforeFood = Number(
-    (await life.locator(".insect-summary").textContent()).match(/\d+/)[0],
+  await life
+    .getByRole("heading", { name: "A little world, unfolding" })
+    .waitFor();
+  assert.equal(
+    await life
+      .getByRole("button", { name: "Scatter insects", exact: true })
+      .count(),
+    0,
   );
+  assert.equal(
+    await life
+      .getByRole("button", { name: "Mist habitat", exact: true })
+      .count(),
+    0,
+  );
+  assert.equal(await life.locator(".frog-list").isVisible(), false);
+  await life.getByRole("button", { name: /Follow someone/ }).click();
   await page
-    .getByRole("button", { name: "Scatter insects", exact: true })
+    .getByRole("complementary", { name: "Watching", exact: true })
+    .waitFor();
+  await page
+    .getByRole("button", { name: "Stop watching", exact: true })
     .click();
-  await page.waitForFunction((before) => {
-    const text = document.querySelector(".insect-summary")?.textContent ?? "";
-    return Number(text.match(/\d+/)?.[0]) > before;
-  }, beforeFood);
-  await page.getByRole("button", { name: "Mist habitat", exact: true }).click();
+  await page.getByRole("button", { name: "Build", exact: true }).click();
+  await life.locator("summary", { hasText: "Meet the inhabitants" }).click();
+  assert.equal(
+    await life.locator(".frog-list button").count(),
+    (await saved()).objects.filter((object) =>
+      [
+        "tree-frog",
+        "dart-frog",
+        "blue-dart-frog",
+        "mossy-frog",
+        "gecko",
+        "snail",
+        "turtle",
+      ].includes(object.kind),
+    ).length,
+  );
+  await life
+    .locator("summary", { hasText: "What makes this world work?" })
+    .click();
+  await life.locator(".insect-summary").waitFor();
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export world", exact: true }).click();
   const download = await downloadPromise;

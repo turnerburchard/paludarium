@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { isLandAnimal } from "../assets";
 import type { World } from "../model/schema";
-import {
-  createFishSchool,
-  createWorldEcosystem,
-  feedingStations,
-} from "./worldHabitat";
+import { createFishSchool, createWorldEcosystem } from "./worldHabitat";
 import type { Ecosystem } from "./engine";
 import type { FishSchool } from "./fish";
 
@@ -28,8 +25,10 @@ export function useEcosystem(world: World) {
     const previous = live.current!;
     if (previous.world === world) return;
     // Brand new preset/import IDs mean a fresh habitat. Normal edits retain live needs.
-    const sharesAnimals = world.objects.some((o) =>
-      previous.world.objects.some((p) => p.id === o.id),
+    const sharesAnimals = world.objects.some(
+      (o) =>
+        isLandAnimal(o.kind) &&
+        previous.world.objects.some((p) => p.id === o.id && p.kind === o.kind),
     );
     live.current = {
       world,
@@ -45,20 +44,6 @@ export function useEcosystem(world: World) {
     );
     return () => clearInterval(timer);
   }, []);
-  const refresh = () => setSnapshot(live.current!.engine.snapshot());
-  return {
-    live,
-    snapshot,
-    feed: () => {
-      const engine = live.current!.engine;
-      for (const node of feedingStations(engine.graph))
-        engine.addFood(node.id, 3);
-      refresh();
-    },
-    mist: () => {
-      live.current!.engine.mist();
-      refresh();
-    },
-  };
+  return { live, snapshot };
 }
 export type EcosystemController = ReturnType<typeof useEcosystem>;

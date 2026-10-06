@@ -25,10 +25,10 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
         <dd>Drag with one finger or the mouse. Pinch or scroll to zoom.</dd>
         <dt>Rearrange</dt>
         <dd>Select an object, choose Move, then tap its new home.</dd>
-        <dt>Watch a frog</dt>
+        <dt>Watch a creature</dt>
         <dd>
-          In View mode, tap a frog or choose Watch a frog. The camera follows
-          it, and foliage fades out of the way. Escape stops watching.
+          In View mode, tap a creature or choose Watch a creature. The camera
+          follows it, and foliage fades out of the way. Escape stops watching.
         </dd>
         <dt>Turn</dt>
         <dd>
@@ -42,18 +42,19 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
           Space pauses the inhabitants. View hides editing tools; Build reveals
           them.
         </dd>
-        <dt>Care for the frogs</dt>
+        <dt>See what unfolds</dt>
         <dd>
-          Insects breed in the cover of plants and moss, so more planting feeds
-          more frogs. Scatter insects to help out, or mist a dry habitat. Frogs
-          forage, soak, explore and sleep on a sped-up day/night cycle. Select
-          one to see its needs. Life pauses while the tab is hidden; activity
-          restarts on reload.
+          Plants shelter insects; shallow shorelines offer moisture. Creatures
+          forage, soak, climb and sleep on a sped-up day/night cycle. Life
+          records field notes when you see a new behavior. Follow someone to
+          take a closer look, or change the habitat to give them new places to
+          go. Life pauses while the tab is hidden; activity and notes restart on
+          reload.
         </dd>
         <dt>Keep your world</dt>
         <dd>
-          Autosaves stay in this browser. Export a file to back up or move
-          between devices.
+          Autosaves stay in this browser. Share sends your current layout as a
+          link others can explore and copy. Export keeps a file backup.
         </dd>
       </dl>
       <p className="panel-note">

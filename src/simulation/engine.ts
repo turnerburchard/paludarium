@@ -1,3 +1,4 @@
+import { discoveryFor, type Discovery } from "./discoveries";
 import { HabitatGraph, copyVector, distance } from "./navigation";
 import type {
   Activity,
@@ -38,11 +39,12 @@ export interface SimulationOptions {
   speed?: number;
   elapsed?: number;
   food?: FoodPatch[];
+  discoveries?: Discovery[];
 }
 
-/** Roughly how many frogs the colonies can feed indefinitely. A logistic colony
+/** Roughly how many insect eaters the colonies can feed indefinitely. A logistic colony
  * yields the most, a quarter of growth rate times capacity, when half full. */
-export function frogsSupported(food: readonly FoodPatch[]): number {
+export function insectEatersSupported(food: readonly FoodPatch[]): number {
   const insectsPerSecond = food.reduce(
     (sum, patch) => sum + (INSECT_GROWTH * patch.capacity) / 4,
     0,
@@ -54,6 +56,7 @@ export function frogsSupported(food: readonly FoodPatch[]): number {
 export class Ecosystem {
   private readonly agents = new Map<string, Agent>();
   private readonly food = new Map<string, FoodPatch>();
+  private readonly discoveries: Discovery[];
   private remainder = 0;
   private elapsed: number;
   private readonly random: () => number;
@@ -63,6 +66,14 @@ export class Ecosystem {
     animals: readonly AnimalSeed[],
     options: SimulationOptions = {},
   ) {
+    this.discoveries = (options.discoveries ?? [])
+      .filter((note) =>
+        animals.some(
+          (animal) =>
+            animal.id === note.animalId && animal.species.id === note.speciesId,
+        ),
+      )
+      .map((note) => ({ ...note }));
     this.random = options.random ?? Math.random;
     this.speed = options.speed ?? 6;
     this.elapsed = options.elapsed ?? DAY_LENGTH * 0.42;
@@ -147,6 +158,7 @@ export class Ecosystem {
       phase: this.phase,
       animals: [...this.agents.values()].map((a) => structuredClone(a.state)),
       food: [...this.food.values()].map((patch) => ({ ...patch })),
+      discoveries: this.discoveries.map((note) => ({ ...note })),
     };
   }
   addFood(nodeId: string, amount: number) {
@@ -173,7 +185,17 @@ export class Ecosystem {
         Math.floor(this.elapsed / STEP) % Math.max(1, agents.length);
       for (let i = 0; i < agents.length; i++) {
         const agent = agents[(i + offset) % agents.length];
-        if (!heldIds?.has(agent.state.id)) this.update(agent);
+        if (!heldIds?.has(agent.state.id)) {
+          this.update(agent);
+          const kind = discoveryFor(agent.state);
+          if (kind && !this.discoveries.some((note) => note.kind === kind))
+            this.discoveries.push({
+              kind,
+              animalId: agent.state.id,
+              speciesId: agent.state.speciesId,
+              elapsed: this.elapsed,
+            });
+        }
       }
       this.breedInsects();
     }
@@ -273,7 +295,7 @@ export class Ecosystem {
     }
     const unmet =
       needs.hydration < 0.4 && !water
-        ? "No reachable damp shoreline. Raise the water slightly or mist the habitat."
+        ? "No reachable damp shoreline. Shape a shallow pool or raise the water slightly."
         : needs.hunger > 0.5 && !food
           ? "No insects within reach. Plants and moss give insects cover to breed."
           : "";
@@ -437,12 +459,6 @@ export class Ecosystem {
     };
     state.motion = { progress: 0, lift: 0, tilt: 0, hop: false };
     return true;
-  }
-  mist() {
-    for (const agent of this.agents.values()) {
-      agent.state.needs.hydration = clamp(agent.state.needs.hydration + 0.45);
-      agent.reconsiderAt = 0;
-    }
   }
 }
 

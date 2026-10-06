@@ -16,9 +16,9 @@ The engine exposes interpolated position, normal, hop lift, and tilt. Once an ed
 
 Insects live in colonies on sheltered, dry ground. `insectColonies` in `worldHabitat.ts` picks the most sheltered spots (shelter comes from nearby plants and moss), up to eight, at least a scene unit apart; a colony's capacity is five portions times its shelter. Bare ground has no colonies.
 
-Each simulation step a colony below capacity grows logistically: `growth × (insects + arrivals) × (1 − insects / capacity)`. Growth is fastest at half capacity, so a colony that frogs keep about half eaten feeds them best. The small `arrivals` term means an eaten-out colony slowly recovers instead of going extinct. Insects scattered by hand have zero capacity and don't breed.
+Each simulation step a colony below capacity grows logistically: `growth × (insects + arrivals) × (1 − insects / capacity)`. Growth is fastest at half capacity, so a colony that frogs keep about half eaten feeds them best. The small `arrivals` term means an eaten-out colony slowly recovers instead of going extinct. Food outside a colony has zero capacity and doesn't breed.
 
-`frogsSupported` turns total colony capacity into an approximate number of frogs fed indefinitely, using the same constants as the engine. The Life panel shows it, and hungry frogs in an overcrowded tank get a hint to add cover. Edits keep insects: a patch whose spot is still a colony joins it; otherwise it stays as scattered food.
+`insectEatersSupported` turns total colony capacity into an approximate number of frogs fed indefinitely, using the same constants as the engine. The Life panel uses it for tucked-away advice to add cover, counting insect eaters rather than grazers. There are no feed or mist buttons: lasting habitat changes are the interaction. Edits keep insects: a patch whose spot is still a colony joins it; otherwise it stays as scattered food.
 
 ## Fish
 
@@ -34,7 +34,8 @@ Each simulation step a colony below capacity grows logistically: `growth × (ins
 - `simulation/useEcosystem.ts`: React lifecycle and low-frequency HUD snapshots.
 - `scene/EcosystemLife.tsx`: advances the engine once per frame, renders feeding patches.
 - `scene/Inhabitant.tsx`: reads positions/activities and poses the existing animal mesh.
-- `ui/LifePanel.tsx`: care controls and readable needs.
+- `simulation/discoveries.ts`: recognizes observed arrivals and behaviors, rather than planned routes. The engine keeps one note per behavior and carries those notes across ordinary edits.
+- `ui/LifePanel.tsx`: field notebook, quick follow action, and optional habitat guidance. Needs remain available inside the watch card.
 
 The renderer does not decide where food is, when an animal sleeps, or how needs change. The engine does not know about mesh shape. This separation lets the art thread replace frog geometry without changing behavior.
 
@@ -42,7 +43,7 @@ The renderer does not decide where food is, when an animal sleeps, or how needs 
 
 No wall-clock catch-up or equilibrium jump exists. Hidden tabs and Pause freeze simulation; editing placement also pauses it. Frame gaps above 250 ms are discarded rather than replayed. Selecting a frog holds its position/needs while inspecting it.
 
-Layout JSON remains version 1. Live activity, food and needs currently restart on reload; the UI explicitly says so. Normal edits retain needs and available food, remapping animals to the new surface graph. New presets/imports with new object IDs start a new session. Runtime state persistence can be added separately, without introducing elapsed offline time.
+Layout JSON remains version 1. Live activity, food, needs and field notes currently restart on reload; the UI explicitly says so. Normal edits retain needs and available food, remapping animals to the new surface graph. New presets/imports with new object IDs start a new session. Runtime state persistence can be added separately, without introducing elapsed offline time.
 
 ## Natural-history basis
 
