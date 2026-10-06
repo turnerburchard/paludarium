@@ -53,13 +53,17 @@ try {
   });
   for (const viewport of viewports) {
     const page = await browser.newPage({ viewport });
+    page.on("pageerror", (error) => console.error(error.message));
     await page.goto(`http://127.0.0.1:${port}`);
+    await page
+      .getByRole("button", { name: "Pause life (Space)", exact: true })
+      .click();
     await page.getByRole("button", { name: "Build", exact: true }).click();
     // Thumbnails finish after the scene has started drawing.
     await page
       .locator(".asset-picture img")
       .first()
-      .waitFor({ state: "attached" });
+      .waitFor({ state: "attached", timeout: 90000 });
     for (const preset of presets) {
       await page
         .getByRole("button", { name: "New world", exact: true })
@@ -69,6 +73,12 @@ try {
       const path = `${outDir}/${preset.name}-${viewport.name}.png`;
       await page.screenshot({ path });
       console.log(path);
+      await page.getByRole("button", { name: "View", exact: true }).click();
+      await page.waitForTimeout(700);
+      const viewPath = `${outDir}/${preset.name}-${viewport.name}-view.png`;
+      await page.screenshot({ path: viewPath });
+      console.log(viewPath);
+      await page.getByRole("button", { name: "Build", exact: true }).click();
     }
     await page.close();
   }

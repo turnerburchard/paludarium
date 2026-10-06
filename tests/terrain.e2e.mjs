@@ -3,7 +3,6 @@ import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
-import { PerspectiveCamera, Vector3 } from "three";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const url = "http://127.0.0.1:5192";
@@ -49,6 +48,11 @@ try {
   });
   page.setDefaultTimeout(30000);
   const errors = [];
+  let fiberUrl;
+  page.on("response", (response) => {
+    if (response.url().includes("@react-three_fiber.js"))
+      fiberUrl = response.url();
+  });
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(url);
   await page.getByRole("button", { name: "Build", exact: true }).click();
@@ -94,19 +98,23 @@ try {
       },
       { x, z },
     );
-    const box = await page.locator("canvas").boundingBox();
-    const aspect = box.width / box.height,
-      fit = Math.max(1, 1.12 / aspect);
-    const camera = new PerspectiveCamera(36, aspect, 0.1, 100);
-    camera.position.set(9 * fit, 7.5 * fit, 11 * fit);
-    camera.lookAt(0, 0.8, 0);
-    camera.updateMatrixWorld();
-    const p = new Vector3(x, y, z).project(camera);
-    return {
-      x: box.x + ((p.x + 1) / 2) * box.width,
-      y: box.y + ((1 - p.y) / 2) * box.height,
-    };
+    return page.evaluate(
+      async ({ url, x, y, z }) => {
+        const { _roots } = await import(url);
+        const { camera } = _roots
+          .get(document.querySelector("canvas"))
+          .store.getState();
+        const point = camera.position.clone().set(x, y, z).project(camera);
+        const box = document.querySelector("canvas").getBoundingClientRect();
+        return {
+          x: box.x + ((point.x + 1) * box.width) / 2,
+          y: box.y + ((1 - point.y) * box.height) / 2,
+        };
+      },
+      { url: fiberUrl, x, y, z },
+    );
   }
+
   const original = await saved();
   await page.getByRole("button", { name: "Raise ground", exact: true }).click();
   const from = await point(-1.75, 0),

@@ -31,6 +31,7 @@ export default function App() {
   const [panel, setPanel] = useState<Panel>("objects");
   // On phones the sidebar is a sheet, closed until a dock button opens it.
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [hasBuilt, setHasBuilt] = useState(false);
   const [resetCamera, setResetCamera] = useState(0);
   const [dialog, setDialog] = useState<"new-world" | "help" | "about" | null>(
     null,
@@ -80,9 +81,8 @@ export default function App() {
   function changeMode(next: boolean) {
     if (next === view) return;
     editor.finish();
-    editor.select(null);
-    setWatchRequest(null);
     setSheetOpen(false);
+    if (!next) setHasBuilt(true);
     setView(next);
   }
 
@@ -121,8 +121,9 @@ export default function App() {
         />
       )}
       {files.fileInput}
-      {!view && (
+      {hasBuilt && (
         <Sidebar
+          hidden={view}
           editor={editor}
           ecosystem={ecosystem}
           panel={panel}
