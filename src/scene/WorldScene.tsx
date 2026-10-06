@@ -67,15 +67,14 @@ function Scene({
   const kind = tool.type === "place" ? tool.kind : moving?.kind;
   // Frame the tank on Reset and when the view's shape really changes (like
   // rotating a phone), but not for small resizes such as a phone's URL bar.
-  const framedAspect = useRef(0);
-  useEffect(() => {
-    framedAspect.current = 0;
-  }, [resetCamera]);
+  const framed = useRef({ reset: -1, aspect: 0 });
   useEffect(() => {
     const aspect = size.width / size.height;
     if (!controls.current || !aspect) return;
-    if (Math.abs(aspect / framedAspect.current - 1) < 0.15) return;
-    framedAspect.current = aspect;
+    const last = framed.current;
+    const sameShape = Math.abs(aspect / last.aspect - 1) < 0.15;
+    if (last.reset === resetCamera && sameShape) return;
+    framed.current = { reset: resetCamera, aspect };
     const fit = Math.max(1, 1.12 / aspect);
     controls.current.object.position.set(9 * fit, 7.5 * fit, 11 * fit);
     controls.current.target.set(0, 0.8, 0);
@@ -222,7 +221,7 @@ function Scene({
         ref={controls}
         makeDefault
         target={[0, 0.8, 0]}
-        minDistance={watchingId ? 1 : 4}
+        minDistance={4}
         maxDistance={30}
         maxPolarAngle={Math.PI / 2.05}
         minPolarAngle={0.16}
