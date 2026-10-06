@@ -14,6 +14,9 @@ import { gecko } from "./animals/gecko";
 import { cardinalTetra, emberTetra } from "./animals/tetras";
 import { anthurium } from "./plants/anthurium";
 import { philodendron } from "./plants/philodendron";
+import { nestFern } from "./plants/nestFern";
+import { calathea } from "./plants/calathea";
+import { fittonia } from "./plants/fittonia";
 import { bromeliad } from "./plants/bromeliad";
 import { fern } from "./plants/fern";
 import { grass } from "./plants/grass";
@@ -44,6 +47,9 @@ export const assets = {
   bromeliad,
   anthurium,
   philodendron,
+  "nest-fern": nestFern,
+  calathea,
+  fittonia,
   grass,
   moss,
   rock,
