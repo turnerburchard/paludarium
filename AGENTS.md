@@ -13,6 +13,7 @@ npm test               # Vitest unit tests
 npm run build          # typecheck (tsc -b) + production build
 npm run format         # Prettier
 npm run test:e2e       # Playwright browser flow (run `npx playwright install chromium` once)
+npm run screenshot     # renders presets at desktop and phone sizes into screenshots/
 ```
 
 Before every push run `npm run format:check && npm test && npm run build && npm run test:e2e`. CI runs the same checks and only deploys when they pass.
@@ -51,4 +52,5 @@ Rules that keep this working:
 - Work is tracked in GitHub issues. Take issues labeled for you (`agent:claude` or `agent:codex`); leave the others alone unless asked. Close issues with a short note when done.
 - Art direction (how frogs, plants, and terrain *look*) is decided with the owner. Agents can make art easier to work on, but don't change the look of existing assets on your own. Issues labeled `art` need the owner.
 - Write real tests in `tests/` for logic you add or change.
+- For visual or layout changes, run `npm run screenshot` and look at the images before committing.
 - Keep `README.md` and `BACKLOG.md` accurate when behavior or plans change.

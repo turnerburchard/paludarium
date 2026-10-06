@@ -99,7 +99,12 @@ export function TopBar({
         >
           <Upload size={18} />
         </IconButton>
-        <button className="new-world" onClick={onNewWorld}>
+        <button
+          className="new-world"
+          onClick={onNewWorld}
+          aria-label="New world"
+          title="New world"
+        >
           <Plus size={16} />
           <span>New world</span>
         </button>
