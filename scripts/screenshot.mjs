@@ -43,7 +43,13 @@ try {
     }
   }
   browser = await chromium.launch({
-    args: ["--use-gl=angle", "--use-angle=swiftshader"],
+    executablePath: process.env.CHROMIUM_PATH || undefined,
+    args: [
+      "--no-sandbox",
+      "--use-gl=angle",
+      "--use-angle=swiftshader",
+      "--enable-unsafe-swiftshader",
+    ],
   });
   for (const viewport of viewports) {
     const page = await browser.newPage({ viewport });

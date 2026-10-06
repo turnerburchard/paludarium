@@ -25,6 +25,8 @@ Drag to orbit and scroll or pinch to zoom. To follow a frog with the camera, pic
 
 A first visit opens on the Cloud forest preset. On phones the scene fills the screen and a dock at the bottom opens the Add, Habitat and Life panels as a bottom sheet. Sliders show their effect live while dragging and become one undo step on release.
 
+Open **Habitat settings** to raise, lower, or smooth terrain; paint soil, sand, or stone; and carve pools or streams. Choose a brush size and drag across the ground. Each drag is one undoable edit. Escape cancels an unfinished stroke. Pools and streams set a minimum water level when needed; the Water level control adjusts it afterward. Terrain is included in saved and exported worlds.
+
 ## Architecture
 
 - `src/model/`: versioned Zod save schema, deterministic terrain, and presets. No React or rendering code.
@@ -52,7 +54,7 @@ Conventions:
 - Undo covers the last 60 edits, including replacing a world.
 - Up to 120 objects. Dense plantings can be heavy on mobile GPUs.
 - Plants and frogs need dry ground and fish need water depth. Raising the water can invalidate existing placements, which get flagged.
-- Frogs seek food, water, rest, and sleep, and move along connected ground and glass. Fish swim as a loose school in open water and turn back from the shore; they don't eat or get hungry yet.
+- Frogs seek food, water, rest, and sleep. Tree frogs climb connected glass and plant stems, rest on monstera, fern, and bromeliad foliage, and leap between nearby leaves. Dart frogs make short ground hops; mossy frogs crawl and use low perches. Movement is stylized rather than animated with a skeletal rig. Fish swim as a loose school in open water and turn back from the shore; they don't eat or get hungry yet.
 - Insects breed in colonies under plant and moss cover, growing back toward a capacity set by that cover. A well-planted tank feeds its frogs without help; the Life panel shows how many frogs the insects can support.
 - Each plant likes a soil (water's edge, damp, or well drained up the bank), measured by height above the waterline. A plant outside its band struggles and gives less cover; the inspector says why.
 - The simulation runs only while the tab is visible. Only the layout is saved, and nothing advances while the app is closed.
@@ -66,6 +68,7 @@ More detail:
 
 - [BACKLOG.md](BACKLOG.md): priorities and planned work
 - [docs/ECOSYSTEM.md](docs/ECOSYSTEM.md): simulation design, tuning, and natural-history sources
+- [docs/PERFORMANCE.md](docs/PERFORMANCE.md): crowded-scene measurements and how to reproduce them
 - [docs/PROJECT-BRIEF.md](docs/PROJECT-BRIEF.md): project brief
 - [docs/inspiration/](docs/inspiration/): art direction references
 
