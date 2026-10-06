@@ -33,7 +33,7 @@ describe("asset registry", () => {
 });
 
 describe("frog assets", () => {
-  it.each(catalog.filter((a) => a.frog).map((a) => a.kind))(
+  it.each(catalog.filter((a) => a.behavior).map((a) => a.kind))(
     "builds a finite, grounded %s within its placement footprint",
     (kind) => {
       const model = buildAsset(kind, 42);

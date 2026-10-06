@@ -1,5 +1,5 @@
 import type { World } from "../model/schema";
-import { assets, isFrog, objectDens, plantPerches } from "../assets";
+import { assets, isLandAnimal, objectDens, plantPerches } from "../assets";
 import { plantCondition } from "../model/plants";
 import { groundHeight, placementProblem } from "../model/terrain";
 import { transformPlantPoint } from "../model/plantSurfaces";
@@ -33,7 +33,7 @@ export function buildHabitat(world: World): HabitatGraph {
   const clearance = Math.max(
     0.16,
     ...world.objects
-      .filter((o) => isFrog(o.kind))
+      .filter((o) => isLandAnimal(o.kind))
       .map((o) => assets[o.kind].radius * o.scale),
   );
   const margin = clearance + 0.08,
@@ -317,7 +317,7 @@ export function createWorldEcosystem(
     snapshot = previous?.engine.snapshot();
   const animals: AnimalSeed[] = [];
   for (const object of world.objects) {
-    const behavior = assets[object.kind].frog;
+    const behavior = assets[object.kind].behavior;
     if (!behavior) continue;
     const species: SpeciesProfile = { id: object.kind, ...behavior };
     const oldObject = previous?.world.objects.find((o) => o.id === object.id);

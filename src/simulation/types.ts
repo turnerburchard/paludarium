@@ -1,4 +1,4 @@
-import type { FrogBehavior } from "../assets/types";
+import type { AnimalBehavior } from "../assets/types";
 
 /** Engine units are scene units and simulated seconds. Needs are normalized to 0–1. */
 export interface Vec3 {
@@ -18,7 +18,7 @@ export interface HabitatNode {
   perchHeight?: number;
   plantId?: string;
 }
-export interface SpeciesProfile extends FrogBehavior {
+export interface SpeciesProfile extends AnimalBehavior {
   id: string;
 }
 export interface Needs {
