@@ -387,6 +387,7 @@ describe("plant perches and species movement", () => {
   };
   it.each([
     "monstera",
+    "swiss-cheese-plant",
     "bromeliad",
     "fern",
     "anthurium",
