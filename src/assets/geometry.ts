@@ -78,8 +78,14 @@ export function curvedStem(
     parent,
   );
 }
-/** Leaf blades have actual curvature rather than lying flat. */
-function leafGeometry(length: number, width: number, serrated = false) {
+/** Leaf blades have actual curvature; holes, as in a Swiss cheese plant,
+ * are geometry rather than a texture. */
+function leafGeometry(
+  length: number,
+  width: number,
+  serrated = false,
+  holes = false,
+) {
   const shape = new THREE.Shape();
   shape.moveTo(0, 0);
   if (serrated) {
@@ -115,6 +121,22 @@ function leafGeometry(length: number, width: number, serrated = false) {
       0,
     );
   }
+  if (holes)
+    for (const sign of [-1, 1])
+      for (let i = 0; i < 3; i++) {
+        const hole = new THREE.Path();
+        hole.absellipse(
+          sign * width * (0.16 - i * 0.023),
+          length * (0.3 + i * 0.17),
+          width * (0.058 - i * 0.008),
+          length * 0.067,
+          0,
+          Math.PI * 2,
+          true,
+          sign * -0.5,
+        );
+        shape.holes.push(hole);
+      }
   const geo = new THREE.ShapeGeometry(shape, 3);
   const p = geo.getAttribute("position");
   for (let i = 0; i < p.count; i++) {
@@ -136,9 +158,10 @@ export function blade(
   width: number,
   mat: THREE.Material,
   serrated = false,
+  holes = false,
 ) {
   const object = mesh(
-    leafGeometry(length, width, serrated),
+    leafGeometry(length, width, serrated, holes),
     mat,
     parent,
     origin,

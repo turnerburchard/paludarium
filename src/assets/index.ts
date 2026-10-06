@@ -18,6 +18,7 @@ import { bromeliad } from "./plants/bromeliad";
 import { fern } from "./plants/fern";
 import { grass } from "./plants/grass";
 import { monstera } from "./plants/monstera";
+import { swissCheesePlant } from "./plants/swissCheese";
 import { strawberry } from "./plants/strawberry";
 import { moss } from "./landscape/moss";
 import { rock } from "./landscape/rock";
@@ -37,6 +38,7 @@ export const assets = {
   "mossy-frog": mossyFrog,
   gecko,
   monstera,
+  "swiss-cheese-plant": swissCheesePlant,
   fern,
   strawberry,
   bromeliad,
