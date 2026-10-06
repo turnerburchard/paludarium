@@ -25,9 +25,7 @@ export function useEditor() {
   const world = history.present;
   const [tool, setTool] = useState<Tool>({ type: "select" });
   const [selectedId, select] = useState<string | null>(null);
-  const [message, notify] = useState(
-    initial.warning || "A little world, made by you.",
-  );
+  const [message, notify] = useState(initial.warning ?? "");
   const [saved, setSaved] = useState(true);
   const [saving, setSaving] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -114,7 +112,7 @@ export function useEditor() {
     setTool({ type: "place", kind });
     select(null);
     setPlacementRotation(0);
-    notify(`Place ${assets[kind].name.toLowerCase()} · Escape to finish`);
+    notify("");
   }
   function placeAt(x: number, z: number) {
     const moving =

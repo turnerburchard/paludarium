@@ -10,18 +10,23 @@ import { BottomHud } from "./ui/BottomHud";
 import { EmptyInvitation } from "./ui/EmptyInvitation";
 import { HelpDialog } from "./ui/HelpDialog";
 import { Inspector } from "./ui/Inspector";
+import { MobileDock } from "./ui/MobileDock";
 import { NewWorldDialog } from "./ui/NewWorldDialog";
 import { SceneBoundary } from "./ui/SceneBoundary";
 import { SceneTools } from "./ui/SceneTools";
 import { Sidebar, type Panel } from "./ui/Sidebar";
 import { TopBar } from "./ui/TopBar";
+import { useWorldFiles } from "./ui/useWorldFiles";
 import { WatchCard } from "./ui/WatchCard";
 
 export default function App() {
   const editor = useEditor();
   const { world, selected, tool } = editor;
   const ecosystem = useEcosystem(world);
+  const files = useWorldFiles(editor);
   const [panel, setPanel] = useState<Panel>("objects");
+  // On phones the sidebar is a sheet, closed until a dock button opens it.
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [view, setView] = useState(false);
   const [resetCamera, setResetCamera] = useState(0);
   const [dialog, setDialog] = useState<"new-world" | "help" | null>(null);
@@ -33,6 +38,16 @@ export default function App() {
   useEffect(() => {
     if (selected && isFrog(selected.kind)) setPanel("life");
   }, [selected?.id]);
+
+  // Placing or moving needs the tank, so the sheet gets out of the way.
+  useEffect(() => {
+    if (tool.type !== "select") setSheetOpen(false);
+  }, [tool.type]);
+
+  function openPanel(next: Panel) {
+    setPanel(next);
+    setSheetOpen(true);
+  }
 
   const misplaced = world.objects.filter((o) =>
     placementProblem(o.kind, o.x, o.z, world.environment),
@@ -56,7 +71,9 @@ export default function App() {
   }
 
   return (
-    <main className={`app ${view ? "view-mode" : ""}`}>
+    <main
+      className={`app ${view ? "view-mode" : ""} ${sheetOpen ? "sheet-open" : ""}`}
+    >
       <div
         className="scene-shell"
         aria-label="Interactive terrarium. Drag to orbit, scroll or pinch to zoom."
@@ -71,7 +88,13 @@ export default function App() {
           />
         </SceneBoundary>
       </div>
-      <TopBar editor={editor} onNewWorld={() => setDialog("new-world")} />
+      <TopBar
+        editor={editor}
+        onNewWorld={() => setDialog("new-world")}
+        onExport={files.exportWorld}
+        onImport={files.importWorld}
+      />
+      {files.fileInput}
       {!view && (
         <Sidebar
           editor={editor}
@@ -79,6 +102,16 @@ export default function App() {
           panel={panel}
           onPanel={setPanel}
           onHelp={() => setDialog("help")}
+          onClose={() => setSheetOpen(false)}
+          onExport={files.exportWorld}
+          onImport={files.importWorld}
+        />
+      )}
+      {!view && !sheetOpen && !selected && tool.type === "select" && (
+        <MobileDock
+          editor={editor}
+          onOpen={openPanel}
+          onWatchWorld={toggleView}
         />
       )}
       {!view && world.objects.length === 0 && tool.type === "select" && (
