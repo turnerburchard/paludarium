@@ -42,16 +42,6 @@ export interface SimulationOptions {
   discoveries?: Discovery[];
 }
 
-/** Roughly how many insect eaters the colonies can feed indefinitely. A logistic colony
- * yields the most, a quarter of growth rate times capacity, when half full. */
-export function insectEatersSupported(food: readonly FoodPatch[]): number {
-  const insectsPerSecond = food.reduce(
-    (sum, patch) => sum + (INSECT_GROWTH * patch.capacity) / 4,
-    0,
-  );
-  return insectsPerSecond / (HUNGER_RATE / HUNGER_PER_PORTION);
-}
-
 /** Owns live needs and choices. No React, Three.js, wall-clock reads or offline catch-up. */
 export class Ecosystem {
   private readonly agents = new Map<string, Agent>();

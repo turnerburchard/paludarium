@@ -43,29 +43,39 @@ export function Sidebar({
   return (
     <aside hidden={hidden} className="sidebar" aria-label="Terrarium tools">
       <div className="panel-tabs">
-        <button
-          className={panel === "objects" ? "active" : ""}
-          onClick={() => onPanel("objects")}
-        >
-          <Sprout size={17} />
-          Add to your world
-        </button>
-        <button
-          className={panel === "habitat" ? "active" : ""}
-          onClick={() => onPanel("habitat")}
-          title="Habitat settings"
-          aria-label="Habitat settings"
-        >
-          <SlidersHorizontal size={17} />
-        </button>
-        <button
-          className={panel === "life" ? "active" : ""}
-          onClick={() => onPanel("life")}
-          title="Habitat life"
-          aria-label="Habitat life"
-        >
-          <HeartPulse size={17} />
-        </button>
+        {(
+          [
+            {
+              key: "objects",
+              label: "Add",
+              name: "Add to your world",
+              Icon: Sprout,
+            },
+            {
+              key: "habitat",
+              label: "Habitat",
+              name: "Habitat settings",
+              Icon: SlidersHorizontal,
+            },
+            {
+              key: "life",
+              label: "Life",
+              name: "Habitat life",
+              Icon: HeartPulse,
+            },
+          ] as const
+        ).map(({ key, label, name, Icon }) => (
+          <button
+            key={key}
+            className={panel === key ? "active" : ""}
+            aria-pressed={panel === key}
+            aria-label={name}
+            onClick={() => onPanel(key)}
+          >
+            <Icon size={17} />
+            {label}
+          </button>
+        ))}
         <span className="sheet-only sheet-close">
           <IconButton label="Close panel" onClick={onClose}>
             <ChevronDown size={18} />
