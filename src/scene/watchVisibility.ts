@@ -6,6 +6,8 @@ interface OriginalMaterial {
   depthWrite: boolean;
 }
 
+const RESTORE_DELAY = 2.5;
+
 /** Fade intersecting foliage batches, keeping the supporting leaf and
  * everything behind the frog intact. Materials belong to each instance. */
 export class WatchVisibility {
@@ -16,6 +18,7 @@ export class WatchVisibility {
   private readonly materials = new Map<THREE.Material, OriginalMaterial>();
   private readonly shadows = new Map<THREE.Mesh, boolean>();
   private readonly blocked = new Set<THREE.Mesh>();
+  private readonly clearFor = new Map<THREE.Mesh, number>();
   private sampleIn = 0;
 
   update(
@@ -52,15 +55,21 @@ export class WatchVisibility {
         }
       }
     }
-    const ease = 1 - Math.exp(-Math.min(dt, 0.1) * 15);
     for (const mesh of foliage) {
       const blocked = this.blocked.has(mesh);
+      if (blocked) this.clearFor.set(mesh, 0);
+      else if (this.clearFor.has(mesh))
+        this.clearFor.set(mesh, this.clearFor.get(mesh)! + dt);
+      // Small gaps between leaves or a hopping frog must not reverse a fade.
+      const hidden =
+        blocked || (this.clearFor.get(mesh) ?? Infinity) < RESTORE_DELAY;
+      const ease = 1 - Math.exp(-Math.min(dt, 0.1) * (hidden ? 15 : 3.5));
       const materials = Array.isArray(mesh.material)
         ? mesh.material
         : [mesh.material];
       for (const material of materials) {
         let original = this.materials.get(material);
-        if (blocked && !original) {
+        if (hidden && !original) {
           original = {
             opacity: material.opacity,
             transparent: material.transparent,
@@ -72,21 +81,22 @@ export class WatchVisibility {
           material.needsUpdate = true;
         }
         if (!original) continue;
-        const target = blocked ? original.opacity * 0.08 : original.opacity;
+        const target = hidden ? original.opacity * 0.08 : original.opacity;
         material.opacity = THREE.MathUtils.lerp(material.opacity, target, ease);
-        if (!blocked && Math.abs(material.opacity - original.opacity) < 0.005) {
+        if (!hidden && Math.abs(material.opacity - original.opacity) < 0.005) {
           Object.assign(material, original);
           material.needsUpdate = true;
           this.materials.delete(material);
         }
       }
-      if (blocked && !this.shadows.has(mesh))
+      if (hidden && !this.shadows.has(mesh))
         this.shadows.set(mesh, mesh.castShadow);
       if (this.shadows.has(mesh)) {
         mesh.castShadow = false;
         if (!materials.some((material) => this.materials.has(material))) {
           mesh.castShadow = this.shadows.get(mesh)!;
           this.shadows.delete(mesh);
+          this.clearFor.delete(mesh);
         }
       }
     }
@@ -101,6 +111,7 @@ export class WatchVisibility {
     this.materials.clear();
     this.shadows.clear();
     this.blocked.clear();
+    this.clearFor.clear();
     this.sampleIn = 0;
   }
 }
