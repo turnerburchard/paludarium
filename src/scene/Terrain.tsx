@@ -196,7 +196,6 @@ export function Water({
     </group>
   );
 }
-const TANK_HEIGHT = 2.9;
 
 /** The wall over the back glass, when the habitat has one. */
 export function Backdrop({ environment: env }: { environment: Environment }) {
