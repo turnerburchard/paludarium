@@ -151,10 +151,11 @@ export function fernFronds(random: () => number) {
     const angle = (index * Math.PI * 2) / 9 + random() * 0.2;
     const length = 0.7 + random() * 0.5;
     const direction = { x: Math.cos(angle), y: 0, z: Math.sin(angle) };
+    // Each frond rises from the crown and arches out and down to its tip.
     const points = Array.from({ length: 9 }, (_, j) => ({
-      x: ((direction.x * j) / 8) * length * 0.73,
-      y: Math.sin((j / 8) * Math.PI * 0.86) * length * 0.7 + (j / 8) * 0.06,
-      z: ((direction.z * j) / 8) * length * 0.73,
+      x: ((direction.x * j) / 8) * length * 0.85,
+      y: Math.sin((j / 8) * Math.PI * 0.92) * length * 0.48 + (j / 8) * 0.04,
+      z: ((direction.z * j) / 8) * length * 0.85,
     }));
     return { angle, direction, points };
   });

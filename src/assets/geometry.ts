@@ -78,13 +78,8 @@ export function curvedStem(
     parent,
   );
 }
-/** Leaf blades have actual curvature; holes in monstera leaves are geometry, not a texture. */
-function leafGeometry(
-  length: number,
-  width: number,
-  holes = false,
-  serrated = false,
-) {
+/** Leaf blades have actual curvature rather than lying flat. */
+function leafGeometry(length: number, width: number, serrated = false) {
   const shape = new THREE.Shape();
   shape.moveTo(0, 0);
   if (serrated) {
@@ -120,22 +115,6 @@ function leafGeometry(
       0,
     );
   }
-  if (holes)
-    for (const sign of [-1, 1])
-      for (let i = 0; i < 3; i++) {
-        const hole = new THREE.Path();
-        hole.absellipse(
-          sign * width * (0.16 - i * 0.023),
-          length * (0.3 + i * 0.17),
-          width * (0.058 - i * 0.008),
-          length * 0.067,
-          0,
-          Math.PI * 2,
-          true,
-          sign * -0.5,
-        );
-        shape.holes.push(hole);
-      }
   const geo = new THREE.ShapeGeometry(shape, 3);
   const p = geo.getAttribute("position");
   for (let i = 0; i < p.count; i++) {
@@ -156,11 +135,10 @@ export function blade(
   length: number,
   width: number,
   mat: THREE.Material,
-  holes = false,
   serrated = false,
 ) {
   const object = mesh(
-    leafGeometry(length, width, holes, serrated),
+    leafGeometry(length, width, serrated),
     mat,
     parent,
     origin,

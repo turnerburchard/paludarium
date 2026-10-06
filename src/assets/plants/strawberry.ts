@@ -44,7 +44,6 @@ function build(random: () => number) {
         0.27,
         0.23,
         green,
-        false,
         true,
       );
     if (i % 2 === 0) {
