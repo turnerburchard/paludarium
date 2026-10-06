@@ -121,7 +121,7 @@ gltf.scene.traverse((object) => {
   simplified.dispose();
   flat.dispose();
 });
-writeFileSync("src/scene/assets/data/frog.json", JSON.stringify(parts));
+writeFileSync("src/assets/animals/frog.json", JSON.stringify(parts));
 console.log(
   `Prepared ${parts.reduce((n, p) => n + p.positions.length / 9, 0)} triangles.`,
 );
