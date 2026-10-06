@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { frogClips } from "../assets/animals/frogs";
 import type { AnimalState } from "../simulation/types";
+import { PlantedLegs, type LegSpec } from "./legs";
 
 /** Jump clip times (seconds) for the simulation's hop phases. The engine
  * crouches for the first 20% of a hop edge, flies until 90%, then lands. */
@@ -8,7 +9,7 @@ const TAKEOFF = 0.33;
 const TOUCHDOWN = 0.62;
 /** Each chain runs shoulder or thigh first, ending at the bone holding the
  * tip. Diagonal pairs step together, as frogs walk. */
-const LEGS = [
+const LEGS: LegSpec[] = [
   {
     foot: "FrontFootL",
     chain: ["FrontLegL", "FrontUpLegL", "FrontLowLegL"],
@@ -34,20 +35,6 @@ const LEGS = [
     pair: 1,
   },
 ];
-/** Model-space distances, before species scaling. The frog is 0.62 wide. */
-const STRIDE = 0.05;
-const STEP_HEIGHT = 0.035;
-const STEP_SECONDS = 0.14;
-
-interface Leg {
-  foot: THREE.Bone;
-  tip: THREE.Bone;
-  chain: THREE.Bone[];
-  pair: number;
-  planted: THREE.Vector3;
-  step?: { from: THREE.Vector3; progress: number };
-}
-
 /** The pose a frog should hold this frame, read from its simulation state. */
 export type FrogActivity = Pick<AnimalState, "activity" | "moving" | "motion">;
 
@@ -63,7 +50,7 @@ export class FrogRig {
       scale: THREE.Vector3;
     }
   >();
-  private readonly legs: Leg[];
+  private readonly legs: PlantedLegs;
   private readonly body: THREE.Bone;
   private readonly torso: THREE.Bone;
   private readonly head: THREE.Bone;
@@ -74,7 +61,6 @@ export class FrogRig {
   private attackWeight = 0;
   private sleepWeight = 0;
   private breath = 0;
-  private grounded = false;
 
   constructor(private readonly model: THREE.Object3D) {
     const bone = (name: string) => {
@@ -94,13 +80,12 @@ export class FrogRig {
     this.body = bone("Body");
     this.torso = bone("Torso");
     this.head = bone("Head");
-    this.legs = LEGS.map((leg) => ({
-      foot: bone(leg.foot),
-      tip: bone(leg.tip),
-      chain: leg.chain.map(bone),
-      pair: leg.pair,
-      planted: new THREE.Vector3(),
-    }));
+    // Model-space distances, before species scaling. The frog is 0.62 wide.
+    this.legs = new PlantedLegs(model, LEGS, {
+      stride: 0.05,
+      stepHeight: 0.035,
+      stepSeconds: 0.14,
+    });
     const clips = [frogClips.idle, frogClips.jump, frogClips.attack];
     const channels = new Map<string, Channel>();
     clips.forEach((clip, layer) => {
@@ -164,11 +149,8 @@ export class FrogRig {
     this.model.updateWorldMatrix(true, true);
     // Feet follow the clip in the air and while snapping at prey, and stay put
     // on the surface otherwise.
-    if (hopping || eating || !state) {
-      this.grounded = false;
-      for (const leg of this.legs)
-        reach(this.model, leg, leg.foot.getWorldPosition(new THREE.Vector3()));
-    } else this.plantFeet(dt);
+    if (hopping || eating || !state) this.legs.follow();
+    else this.legs.plant(dt);
   }
 
   /** Deepens the clip's shallow crouch before takeoff and squashes on landing. */
@@ -198,47 +180,6 @@ export class FrogRig {
     if (sleep < 0.001) return;
     this.body.position.y -= 0.003 * sleep;
     this.head.rotateX(0.18 * sleep);
-  }
-
-  private plantFeet(dt: number) {
-    const stepping = new Set<number>();
-    for (const leg of this.legs) if (leg.step) stepping.add(leg.pair);
-    for (const leg of this.legs) {
-      // Where the clip puts the foot this frame, in world space.
-      const home = leg.foot.getWorldPosition(new THREE.Vector3());
-      if (!this.grounded) {
-        leg.planted.copy(home);
-        leg.step = undefined;
-        continue;
-      }
-      const offset = this.model
-        .worldToLocal(leg.planted.clone())
-        .distanceTo(this.model.worldToLocal(home.clone()));
-      if (!leg.step && offset > STRIDE * 2.5) leg.planted.copy(home);
-      else if (!leg.step && offset > STRIDE && !stepping.has(1 - leg.pair)) {
-        leg.step = { from: leg.planted.clone(), progress: 0 };
-        stepping.add(leg.pair);
-      }
-      let foot = leg.planted;
-      if (leg.step) {
-        leg.step.progress = Math.min(1, leg.step.progress + dt / STEP_SECONDS);
-        const t = leg.step.progress;
-        // The step lands where the clip wants the foot now, as the body moves on.
-        foot = this.model.worldToLocal(
-          leg.step.from.clone().lerp(home, t * t * (3 - 2 * t)),
-        );
-        foot.y += Math.sin(t * Math.PI) * STEP_HEIGHT;
-        this.model.localToWorld(foot);
-        if (t >= 1) {
-          leg.planted.copy(home);
-          leg.step = undefined;
-        }
-      }
-      leg.foot.position.copy(leg.foot.parent!.worldToLocal(foot.clone()));
-      leg.foot.updateMatrixWorld(true);
-      reach(this.model, leg, foot);
-    }
-    this.grounded = true;
   }
 }
 
@@ -289,50 +230,4 @@ function jumpTime(progress: number) {
   if (progress < 0.9)
     return TAKEOFF + ((progress - 0.2) / 0.7) * (TOUCHDOWN - TAKEOFF);
   return TOUCHDOWN + ((progress - 0.9) / 0.1) * (clip - TOUCHDOWN);
-}
-
-const tip = new THREE.Vector3();
-const joint = new THREE.Vector3();
-const goal = new THREE.Vector3();
-const toTip = new THREE.Vector3();
-const toGoal = new THREE.Vector3();
-const turn = new THREE.Quaternion();
-const linkRotation = new THREE.Quaternion();
-const parentRotation = new THREE.Quaternion();
-
-/** Cyclic coordinate descent: bends each joint, tip first, so the leg's tip
- * meets the planted foot. Feet move a stride at most, so a few passes from
- * the clip's pose converge without flipping knees. Works in model space,
- * because species proportions scale the model unevenly and world-space
- * rotations would shear. */
-function reach(model: THREE.Object3D, leg: Leg, target: THREE.Vector3) {
-  model.worldToLocal(goal.copy(target));
-  for (let pass = 0; pass < 6; pass++) {
-    for (let i = leg.chain.length - 1; i >= 0; i--) {
-      const link = leg.chain[i];
-      model.worldToLocal(leg.tip.getWorldPosition(tip));
-      model.worldToLocal(link.getWorldPosition(joint));
-      toTip.subVectors(tip, joint).normalize();
-      toGoal.subVectors(goal, joint).normalize();
-      turn.setFromUnitVectors(toTip, toGoal);
-      rotationInModel(model, link, linkRotation);
-      rotationInModel(model, link.parent!, parentRotation);
-      link.quaternion
-        .copy(parentRotation.invert())
-        .multiply(turn)
-        .multiply(linkRotation);
-      link.updateMatrixWorld(true);
-    }
-  }
-}
-
-function rotationInModel(
-  model: THREE.Object3D,
-  object: THREE.Object3D,
-  out: THREE.Quaternion,
-) {
-  out.identity();
-  for (let node = object; node !== model; node = node.parent!)
-    out.premultiply(node.quaternion);
-  return out;
 }
