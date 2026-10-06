@@ -13,3 +13,11 @@ Selected and imported after owner feedback: [Quaternius Frog 9Z2V8fpazF](https:/
 Use the asset factory boundary to integrate GLB models without changing ecosystem decisions. Preserve saved asset IDs and species metadata. Add animation clips as a visual interface for the behavior owner rather than implementing hunger, hydration or movement decisions here.
 
 Every imported model needs a retained source, license, attribution if required, normalized scale/orientation, a grounded pose, and verified resource disposal. Avoid mixing assets with sharply different visual styles just because they are free.
+
+# Other imported models
+
+| Model | Source and license | Use |
+| --- | --- | --- |
+| Gecko (`models/gecko-poly-google.glb`) | ["Salamander" by Poly by Google](https://poly.pizza/m/eqjMAgmr-pM), CC BY 3.0; its texture is named Tex_Gecko | Baked by `scripts/prepare-gecko-model.mjs` into the gold dust day gecko: turned to face -Z, scaled, fitted with the gecko skeleton and skin weights, and recolored from its four-color palette. Credited in THIRD_PARTY_NOTICES.md. |
+
+Owner-preferred look (October 6, 2026): Quaternius-style chunky low poly, as in the Animated Animal Pack and Animated Dinosaur Bundle on Poly Pizza. Candidates the owner suggested for later: snail, turtle, cattail, hummingbird, parrot, black caiman, seahorse (Poly by Google, CC BY 3.0) and fish and spider (Quaternius, CC0).

@@ -21,6 +21,9 @@ const LEGS: LegSpec[] = [
 ];
 /** The body bends in an S from hips to head; the tail swings wider. */
 const BODY = ["pelvis", "spine", "chest", "neck"] as const;
+/** How much each body bone turns with the sway; they sum below zero, so the
+ * shoulders turn against the hips. */
+const S_CURVE = [1, -1.6, 0.2, 0];
 const TAIL = ["tail1", "tail2", "tail3", "tail4"] as const;
 
 export type GeckoActivity = Pick<AnimalState, "activity" | "moving">;
@@ -51,7 +54,7 @@ export class GeckoRig {
     });
     // Model-space distances before the gecko's own scaling.
     this.legs = new PlantedLegs(model, LEGS, {
-      stride: 0.04,
+      stride: 0.05,
       stepHeight: 0.03,
       stepSeconds: 0.06,
     });
@@ -88,11 +91,13 @@ export class GeckoRig {
       1.2,
     );
 
-    // A travelling wave from the hips forward; the head turns against it so
-    // the gaze stays level.
+    // An S through the body: hips and shoulders swing opposite ways while the
+    // middle stays in line, so the legs stay over their planted feet. The
+    // head turns against it so the gaze stays level.
     let turn = 0;
+    const sway = 0.2 * this.swing * Math.sin(this.phase);
     for (const [i, name] of BODY.entries()) {
-      const bend = 0.16 * this.swing * Math.sin(this.phase - i * 0.9);
+      const bend = sway * S_CURVE[i];
       this.bone(name).rotation.y = bend;
       turn += bend;
     }
