@@ -25,7 +25,7 @@ export const treeFrog: AssetDefinition = {
     "A green canopy frog with scarlet eyes, striped flanks, and orange toe pads.",
   radius: 0.24,
   habitat: "land",
-  frog: { nocturnal: true, climbs: true, speed: 0.045, movement: "climb" },
+  behavior: { nocturnal: true, climbs: true, speed: 0.045, movement: "climb" },
   build: (random) =>
     buildFrog(
       {
@@ -50,7 +50,7 @@ export const strawberryPoisonFrog: AssetDefinition = {
     "A small Central American frog, shown in a red and blue-legged color form.",
   radius: 0.2,
   habitat: "land",
-  frog: { nocturnal: false, climbs: false, speed: 0.04, movement: "hop" },
+  behavior: { nocturnal: false, climbs: false, speed: 0.04, movement: "hop" },
   build: (random) =>
     buildFrog(
       {
@@ -76,7 +76,7 @@ export const bluePoisonDartFrog: AssetDefinition = {
     "Cobalt skin with individual dark spots. A striking forest-floor frog.",
   radius: 0.26,
   habitat: "land",
-  frog: { nocturnal: false, climbs: false, speed: 0.035, movement: "hop" },
+  behavior: { nocturnal: false, climbs: false, speed: 0.035, movement: "hop" },
   build: (random) =>
     buildFrog(
       {
@@ -102,7 +102,7 @@ export const mossyFrog: AssetDefinition = {
     "A squat, rough-skinned frog with moss-like green and brown camouflage.",
   radius: 0.28,
   habitat: "land",
-  frog: {
+  behavior: {
     nocturnal: true,
     climbs: true,
     speed: 0.025,

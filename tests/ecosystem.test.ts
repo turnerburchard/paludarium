@@ -19,7 +19,7 @@ import type {
 } from "../src/simulation/types";
 
 function frogProfile(kind: AssetKind): SpeciesProfile {
-  const behavior = assets[kind].frog;
+  const behavior = assets[kind].behavior;
   if (!behavior) throw new Error("Expected a frog species.");
   return { id: kind, ...behavior };
 }

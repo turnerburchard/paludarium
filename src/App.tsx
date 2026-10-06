@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { isFrog } from "./assets";
+import { isLandAnimal } from "./assets";
 import { useEditor } from "./editor/useEditor";
 import { makePreset, type Preset } from "./model/presets";
 import { placementProblem } from "./model/terrain";
@@ -85,7 +85,7 @@ export default function App() {
   function activateObject(id: string) {
     const object = world.objects.find((o) => o.id === id);
     if (view) {
-      if (object && isFrog(object.kind)) watch(id);
+      if (object && isLandAnimal(object.kind)) watch(id);
     } else editor.select(id);
   }
 

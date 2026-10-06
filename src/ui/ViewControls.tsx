@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Eye, X } from "lucide-react";
-import { assets, isFrog } from "../assets";
+import { assets, isLandAnimal } from "../assets";
 import type { World } from "../model/schema";
 import type { EcosystemController } from "../simulation/useEcosystem";
 import { activityLabels } from "./AnimalStatus";
@@ -15,7 +15,7 @@ export function ViewControls({
   onWatch: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const frogs = world.objects.filter((object) => isFrog(object.kind));
+  const frogs = world.objects.filter((object) => isLandAnimal(object.kind));
   return (
     <div className="view-controls">
       {open && (

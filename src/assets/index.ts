@@ -25,7 +25,7 @@ import { log } from "./landscape/log";
 import { rockShelter } from "./landscape/rockShelter";
 import { leafLitter } from "./landscape/leafLitter";
 
-export type { AssetDefinition, Category, FrogBehavior } from "./types";
+export type { AssetDefinition, Category, AnimalBehavior } from "./types";
 
 /** Every placeable thing, in the order the library shows them. */
 export const assets = {
@@ -52,8 +52,10 @@ export const assets = {
 
 export const catalog: readonly AssetDefinition[] = Object.values(assets);
 
-export function isFrog(kind: AssetKind): boolean {
-  return assets[kind].frog !== undefined;
+/** Animals living on the habitat's surfaces, simulated by the ecosystem.
+ * Fish swim separately. */
+export function isLandAnimal(kind: AssetKind): boolean {
+  return assets[kind].behavior !== undefined;
 }
 export function plantPerches(object: HabitatObject) {
   return assets[object.kind].perches?.(randomFromSeed(object.seed)) ?? [];

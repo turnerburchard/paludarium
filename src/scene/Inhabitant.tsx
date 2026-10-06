@@ -2,7 +2,7 @@ import type { EcosystemController } from "../simulation/useEcosystem";
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
-import { assets, buildAsset, disposeAsset, isFrog } from "../assets";
+import { assets, buildAsset, disposeAsset, isLandAnimal } from "../assets";
 import type { Environment, HabitatObject } from "../model/schema";
 import { groundHeight } from "../model/terrain";
 import { FrogRig } from "./frogRig";
@@ -33,7 +33,7 @@ export function Inhabitant({
     () => buildAsset(object.kind, object.seed),
     [object.kind, object.seed],
   );
-  const frog = isFrog(object.kind);
+  const frog = isLandAnimal(object.kind);
   const rig = useMemo(
     () => (frog ? new FrogRig(model) : undefined),
     [frog, model],

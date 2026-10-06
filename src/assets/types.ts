@@ -5,8 +5,8 @@ import type { Den, PlantPerch } from "../model/plantSurfaces";
 
 export type Category = "Plants" | "Landscape" | "Animals";
 
-/** How a frog species behaves in the simulation. */
-export interface FrogBehavior {
+/** How a land animal behaves in the simulation. */
+export interface AnimalBehavior {
   nocturnal: boolean;
   climbs: boolean;
   speed: number;
@@ -30,7 +30,7 @@ export interface AssetDefinition {
   shelter?: boolean;
   /** Plants grow well only in the soil they like. */
   soil?: Soil;
-  frog?: FrogBehavior;
+  behavior?: AnimalBehavior;
   perches?(random: () => number): PlantPerch[];
   /** Sheltered spots inside the object, such as under a rock overhang. */
   dens?(random: () => number): Den[];
