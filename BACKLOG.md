@@ -27,6 +27,10 @@ Implemented now: accelerated hunger/hydration/energy, finite insect feeding, mis
 
 Priority: medium. Food resources, plant growth, crowding and reproduction; eventually mortality. Begin with one small food web. Explain imbalances gently before introducing losses. No money system or large menu stack. Fun and legibility matter more than biological detail.
 
+- [x] Insects breed in colonies under plant and moss cover; capacity follows cover, and the Life panel shows how many frogs they can feed.
+- [ ] Plant growth.
+- [ ] Decomposers and leaf litter feeding the insects.
+
 ## Art direction and scale
 
 - [x] Preserve owner-supplied frog references under `docs/inspiration/`; use them for faceted skin, terrestrial crouch, markings and splayed digits. Full conversational idea brief is in `docs/PROJECT-BRIEF.md`.

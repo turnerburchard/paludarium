@@ -91,9 +91,8 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
       </p>
       <div className="section-label">A LIVING SCENE</div>
       <p className="panel-note">
-        Frogs seek insects and moisture, explore, and sleep. Use the care panel
-        to feed or mist. Fish movement is decorative; food webs and growth are
-        planned for a later version.
+        Insects breed under plants and moss, and frogs hunt them. A well-planted
+        tank feeds its frogs on its own. Fish movement is decorative for now.
       </p>
     </div>
   );

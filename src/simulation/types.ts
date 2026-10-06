@@ -53,9 +53,12 @@ export interface AnimalState {
   reason: string;
   moving: boolean;
 }
+/** Insects at one spot. A colony (capacity above zero) breeds back toward its
+ * capacity; insects scattered by hand (capacity zero) are simply eaten. */
 export interface FoodPatch {
   nodeId: string;
   amount: number;
+  capacity: number;
 }
 export interface SimulationSnapshot {
   elapsed: number;

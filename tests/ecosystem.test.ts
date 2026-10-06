@@ -4,7 +4,9 @@ import { HabitatGraph } from "../src/simulation/navigation";
 import {
   buildHabitat,
   createWorldEcosystem,
+  insectColonies,
 } from "../src/simulation/worldHabitat";
+import { emptyWorld } from "../src/model/schema";
 import { makePreset } from "../src/model/presets";
 import type {
   AnimalSeed,
@@ -56,7 +58,7 @@ describe("live ecosystem behavior", () => {
       speed: 1,
       elapsed: 0,
       random: () => 0.5,
-      food: [{ nodeId: "c", amount: 5 }],
+      food: [{ nodeId: "c", amount: 5, capacity: 0 }],
     });
     run(engine, 1);
     expect(engine.getAnimal("frog")!.activity).toBe("seeking-food");
@@ -78,14 +80,16 @@ describe("live ecosystem behavior", () => {
       elapsed: 0,
       random: () => 0.5,
       food: [
-        { nodeId: "wall", amount: 3 },
-        { nodeId: "island", amount: 4 },
+        { nodeId: "wall", amount: 3, capacity: 0 },
+        { nodeId: "island", amount: 4, capacity: 0 },
       ],
     });
     run(engine, 30);
     expect(engine.snapshot().food.map((f) => f.amount)).toEqual([3, 4]);
     expect(engine.getAnimal("frog")!.nodeId).toBe("a");
-    expect(engine.getAnimal("frog")!.reason).toContain("No reachable insects");
+    expect(engine.getAnimal("frog")!.reason).toContain(
+      "No insects within reach",
+    );
   });
   it("allows a climbing species onto a connected wall", () => {
     const graph = new HabitatGraph([
@@ -100,7 +104,7 @@ describe("live ecosystem behavior", () => {
     const engine = new Ecosystem(graph, [animal], {
       speed: 1,
       elapsed: 0,
-      food: [{ nodeId: "wall", amount: 5 }],
+      food: [{ nodeId: "wall", amount: 5, capacity: 0 }],
     });
     run(engine, 3);
     expect(engine.getAnimal("frog")!.nodeId).toBe("wall");
@@ -115,7 +119,7 @@ describe("live ecosystem behavior", () => {
     const engine = new Ecosystem(
       graph,
       [seed("frog", { hunger: 0.8, hydration: 0.1, energy: 0.8 })],
-      { speed: 1, elapsed: 0, food: [{ nodeId: "a", amount: 5 }] },
+      { speed: 1, elapsed: 0, food: [{ nodeId: "a", amount: 5, capacity: 0 }] },
     );
     run(engine, 12);
     expect(engine.getAnimal("frog")!.activity).toBe("bathing");
@@ -142,7 +146,7 @@ describe("live ecosystem behavior", () => {
       speed: 1,
       elapsed: 0,
       random: () => 0.5,
-      food: [{ nodeId: "a", amount: 1 }],
+      food: [{ nodeId: "a", amount: 1, capacity: 0 }],
     });
     run(engine, 10);
     const remaining = engine.snapshot().food[0].amount;
@@ -212,5 +216,62 @@ describe("live ecosystem behavior", () => {
         true,
       );
     }
+  });
+});
+
+describe("insect colonies", () => {
+  const graph = new HabitatGraph([node("a", 0, [])]);
+  const insects = (engine: Ecosystem) => engine.snapshot().food[0].amount;
+
+  it("breed back toward capacity and stop there", () => {
+    const engine = new Ecosystem(graph, [], {
+      speed: 1,
+      food: [{ nodeId: "a", amount: 1, capacity: 4 }],
+    });
+    run(engine, 60);
+    const grown = insects(engine);
+    expect(grown).toBeGreaterThan(1);
+    run(engine, 3000);
+    expect(insects(engine)).toBeCloseTo(4, 1);
+    expect(insects(engine)).toBeLessThanOrEqual(4);
+  });
+
+  it("recover slowly after being eaten out", () => {
+    const engine = new Ecosystem(graph, [], {
+      speed: 1,
+      food: [{ nodeId: "a", amount: 0, capacity: 4 }],
+    });
+    run(engine, 600);
+    expect(insects(engine)).toBeGreaterThan(0.2);
+  });
+
+  it("leave scattered insects as they are", () => {
+    const engine = new Ecosystem(graph, [], {
+      speed: 1,
+      food: [{ nodeId: "a", amount: 2, capacity: 0 }],
+    });
+    run(engine, 600);
+    expect(insects(engine)).toBe(2);
+  });
+
+  it("follow plant cover: none in a bare tank, several in a planted one", () => {
+    expect(insectColonies(buildHabitat(emptyWorld()))).toEqual([]);
+    const planted = insectColonies(buildHabitat(makePreset("tropical")));
+    expect(planted.length).toBeGreaterThan(1);
+    for (const colony of planted) expect(colony.capacity).toBeGreaterThan(1);
+  });
+
+  it("start full in a new habitat", () => {
+    const food = createWorldEcosystem(makePreset("tropical")).snapshot().food;
+    expect(food.length).toBeGreaterThan(1);
+    for (const patch of food) expect(patch.amount).toBe(patch.capacity);
+  });
+
+  it("can keep a frog fed without help in a planted tank", () => {
+    const engine = createWorldEcosystem(makePreset("mountain"));
+    run(engine, 3600);
+    const frogs = engine.snapshot().animals;
+    expect(frogs).toHaveLength(1);
+    expect(frogs[0].needs.hunger).toBeLessThan(0.8);
   });
 });

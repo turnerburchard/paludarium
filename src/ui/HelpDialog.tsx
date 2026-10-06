@@ -33,10 +33,11 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
         <dd>Space pauses the inhabitants. The eye button hides the tools.</dd>
         <dt>Care for the frogs</dt>
         <dd>
-          Scatter insects for food, or mist a dry habitat. Frogs forage, soak,
-          explore and sleep on a sped-up day/night cycle. Select one to see its
-          needs. Life pauses while the tab is hidden; activity restarts on
-          reload.
+          Insects breed in the cover of plants and moss, so more planting feeds
+          more frogs. Scatter insects to help out, or mist a dry habitat. Frogs
+          forage, soak, explore and sleep on a sped-up day/night cycle. Select
+          one to see its needs. Life pauses while the tab is hidden; activity
+          restarts on reload.
         </dd>
         <dt>Keep your world</dt>
         <dd>

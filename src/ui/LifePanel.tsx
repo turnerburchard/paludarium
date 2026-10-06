@@ -1,5 +1,6 @@
 import type { EcosystemController } from "../simulation/useEcosystem";
-import type { Activity } from "../simulation/types";
+import { frogsSupported } from "../simulation/engine";
+import type { Activity, FoodPatch } from "../simulation/types";
 const labels: Record<Activity, string> = {
   exploring: "Exploring",
   "seeking-food": "Looking for insects",
@@ -31,7 +32,9 @@ export function LifePanel({
   const thirsty = snapshot.animals.filter(
     (a) => a.needs.hydration < 0.35,
   ).length;
-  const food = snapshot.food.reduce((sum, p) => sum + p.amount, 0);
+  const frogs = snapshot.animals.length;
+  const supported = Math.floor(frogsSupported(snapshot.food));
+  const overcrowded = hungry > 0 && frogs > supported;
   return (
     <section className="life-panel" aria-label="Habitat life">
       <div className="life-heading">
@@ -42,7 +45,7 @@ export function LifePanel({
               ? "Day in the habitat"
               : "Night in the habitat"}
         </span>
-        <span>{snapshot.animals.length} frogs</span>
+        <span>{plural(frogs, "frog")}</span>
       </div>
       {animal ? (
         <>
@@ -76,7 +79,11 @@ export function LifePanel({
           {thirsty
             ? `${thirsty} ${thirsty === 1 ? "frog needs" : "frogs need"} moisture.`
             : hungry
-              ? `${hungry} ${hungry === 1 ? "frog is" : "frogs are"} hungry.`
+              ? `${hungry} ${hungry === 1 ? "frog is" : "frogs are"} hungry.${
+                  overcrowded
+                    ? " There are more frogs than the insects here can feed. Add plants or moss so more insects can breed."
+                    : ""
+                }`
               : "Select a frog to see its activity and needs."}
         </p>
       )}
@@ -84,12 +91,22 @@ export function LifePanel({
         <button onClick={ecosystem.feed}>Scatter insects</button>
         <button onClick={ecosystem.mist}>Mist habitat</button>
       </div>
-      <small>
-        {food > 0
-          ? `${Math.ceil(food)} insect portions on the bank`
-          : "Food has run out"}{" "}
-        · live session
-      </small>
+      <small>{insectSummary(snapshot.food, supported)}</small>
     </section>
   );
+}
+
+function plural(n: number, noun: string, nouns = `${noun}s`) {
+  return `${n} ${n === 1 ? noun : nouns}`;
+}
+
+function insectSummary(food: readonly FoodPatch[], supported: number) {
+  const insects = plural(
+    Math.ceil(food.reduce((sum, patch) => sum + patch.amount, 0)),
+    "insect",
+  );
+  const colonies = food.filter((patch) => patch.capacity > 0).length;
+  if (!colonies)
+    return `${insects}. No colonies yet: plants and moss give insects cover to breed.`;
+  return `${insects} in ${plural(colonies, "colony", "colonies")} · enough for about ${plural(supported, "frog")}`;
 }
