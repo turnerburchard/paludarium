@@ -1,0 +1,103 @@
+import type { Environment, HabitatObject } from "./schema";
+import { groundHeight } from "./terrain";
+
+/** Where an object's base sits: on the ground, or on the stone or wood it
+ * was placed on. */
+export function objectBase(object: HabitatObject, env: Environment) {
+  return groundHeight(object.x, object.z, env) + (object.lift ?? 0);
+}
+
+/** A spot the pointer found on a stone or wood piece: which one, and the
+ * height of the spot. */
+export interface Surface {
+  support: string;
+  y: number;
+}
+
+/** How an object placed at x, z rests on a surface. Spots barely above the
+ * ground count as ground. */
+export function restingOn(
+  surface: Surface | undefined,
+  x: number,
+  z: number,
+  env: Environment,
+): Pick<HabitatObject, "support" | "lift"> {
+  const lift = surface ? surface.y - groundHeight(x, z, env) : 0;
+  return surface && lift > 0.02
+    ? { support: surface.support, lift }
+    : { support: undefined, lift: undefined };
+}
+
+/** Replaces one object and carries whatever rests on it along, so plants and
+ * stones stacked on a rock follow it when it moves, turns or grows. Without a
+ * replacement the object is removed and what rested on it settles to the
+ * ground. */
+export function replaceObject(
+  objects: HabitatObject[],
+  env: Environment,
+  id: string,
+  next?: HabitatObject,
+): HabitatObject[] {
+  const updates = new Map<string, HabitatObject | undefined>([[id, next]]);
+  const carry = (before: HabitatObject, after: HabitatObject | undefined) => {
+    for (const child of objects) {
+      if (child.support !== before.id || updates.has(child.id)) continue;
+      const moved = after
+        ? carried(child, before, after, env)
+        : { ...child, lift: undefined, support: undefined };
+      updates.set(child.id, moved);
+      carry(child, moved);
+    }
+  };
+  const before = objects.find((o) => o.id === id);
+  if (before) carry(before, next);
+  return objects.flatMap((o) => {
+    if (!updates.has(o.id)) return [o];
+    const update = updates.get(o.id);
+    return update ? [update] : [];
+  });
+}
+
+/** The same spot on a support after the support moves, turns or rescales. */
+function carried(
+  child: HabitatObject,
+  before: HabitatObject,
+  after: HabitatObject,
+  env: Environment,
+): HabitatObject {
+  const turn = after.rotation - before.rotation,
+    grow = after.scale / before.scale;
+  const dx = child.x - before.x,
+    dz = child.z - before.z;
+  // Matches how Three.js turns a model about its vertical axis.
+  const x = after.x + (dx * Math.cos(turn) + dz * Math.sin(turn)) * grow;
+  const z = after.z + (-dx * Math.sin(turn) + dz * Math.cos(turn)) * grow;
+  const height = objectBase(child, env) - objectBase(before, env);
+  const base = objectBase(after, env) + height * grow;
+  return {
+    ...child,
+    x,
+    z,
+    rotation: child.rotation + turn,
+    lift: Math.max(0, base - groundHeight(x, z, env)),
+  };
+}
+
+/** Whether `lower` holds up `upper`, directly or through things stacked
+ * between them. */
+export function holdsUp(
+  objects: HabitatObject[],
+  lower: string,
+  upper: string,
+) {
+  const seen = new Set<string>();
+  for (
+    let id: string | undefined = upper;
+    id && !seen.has(id);
+    id = objects.find((o) => o.id === id)?.support
+  ) {
+    if (id === lower) return true;
+    seen.add(id);
+  }
+  return false;
+}

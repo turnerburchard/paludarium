@@ -74,7 +74,7 @@ export function Inspector({
           Remove
         </button>
       </div>
-      {asset.mossGrows && (
+      {asset.hardscape && (
         <div className="moss-options" role="group" aria-label="Moss">
           <span className="section-label">MOSS</span>
           <div>

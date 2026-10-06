@@ -45,8 +45,9 @@ export function placementProblem(
   x: number,
   z: number,
   env: Environment,
+  lift = 0,
 ): string | null {
-  const ground = groundHeight(x, z, env);
+  const ground = groundHeight(x, z, env) + lift;
   if (assets[kind].habitat === "land" && ground < env.water + 0.025)
     return "Find a dry spot on the bank.";
   if (assets[kind].habitat === "water" && ground > env.water - 0.12)

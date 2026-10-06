@@ -38,8 +38,8 @@ export interface AssetDefinition {
   shelter?: boolean;
   /** Plants grow well only in the soil they like. */
   soil?: Soil;
-  /** Moss can be grown over it. */
-  mossGrows?: boolean;
+  /** Stone or wood: moss can grow over it and other things can rest on it. */
+  hardscape?: boolean;
   behavior?: AnimalBehavior;
   perches?(random: () => number): PlantPerch[];
   /** How a fish swims: cruising speed, and how far below the surface it keeps. */

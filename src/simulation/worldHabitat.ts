@@ -2,6 +2,7 @@ import type { World } from "../model/schema";
 import { assets, isLandAnimal, objectDens, plantPerches } from "../assets";
 import { plantCondition } from "../model/plants";
 import { groundHeight, placementProblem } from "../model/terrain";
+import { objectBase } from "../model/stacking";
 import { transformPlantPoint } from "../model/plantSurfaces";
 import { FishSchool } from "./fish";
 import { Ecosystem } from "./engine";
@@ -183,7 +184,7 @@ export function buildHabitat(world: World): HabitatGraph {
   };
   const up = { x: 0, y: 1, z: 0 };
   for (const object of world.objects) {
-    const baseY = groundHeight(object.x, object.z, env);
+    const baseY = objectBase(object, env);
     if (baseY < env.water + 0.025) continue;
     // Normals turn with the object but don't move or scale.
     const turn = (v: Vec3) =>
@@ -257,7 +258,14 @@ export function buildHabitat(world: World): HabitatGraph {
     for (const [denIndex, den] of objectDens(object).entries()) {
       const [entrance, inside] = [den.entrance, den.inside].map((point) => {
         const { x, z } = transformPlantPoint(point, object);
-        return { x, y: groundHeight(x, z, env) + point.y * object.scale, z };
+        return {
+          x,
+          y:
+            groundHeight(x, z, env) +
+            (object.lift ?? 0) +
+            point.y * object.scale,
+          z,
+        };
       });
       const anchor = dryAnchor(entrance, 0.6);
       if (!anchor || entrance.y < env.water + 0.025) continue;

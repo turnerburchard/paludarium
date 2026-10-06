@@ -10,7 +10,7 @@ export const rock: AssetDefinition = {
     "Weathered stone. Vary its size and turn for a natural arrangement.",
   radius: 0.42,
   habitat: "either",
-  mossGrows: true,
+  hardscape: true,
   blocksMovement: true,
   build,
 };

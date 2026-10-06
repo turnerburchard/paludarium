@@ -12,7 +12,7 @@ export const branch: AssetDefinition = {
     "A branch rising from the ground. Frogs walk up it to a lookout.",
   radius: 0.55,
   habitat: "either",
-  mossGrows: true,
+  hardscape: true,
   perches: branchPerches,
   build,
 };

@@ -16,6 +16,7 @@ import {
   groundHeight,
   placementProblem,
 } from "../model/terrain";
+import { restingOn, type Surface } from "../model/stacking";
 import { useCameraNavigation } from "./useCameraNavigation";
 import { useFollowCamera } from "./useFollowCamera";
 import { useCameraLayout } from "./useCameraLayout";
@@ -67,7 +68,11 @@ function Scene({
   useWatchVisibility(inhabitants, ecosystem, watchingId);
   useCameraNavigation(controls, true);
   useFollowCamera(controls, ecosystem, watchingId, resetCamera);
-  const [cursor, setCursor] = useState<{ x: number; z: number } | null>(null);
+  const [cursor, setCursor] = useState<{
+    x: number;
+    z: number;
+    surface?: Surface;
+  } | null>(null);
   const moving =
     tool.type === "move" || tool.type === "copy"
       ? world.objects.find((o) => o.id === tool.id)
@@ -84,25 +89,51 @@ function Scene({
           kind ? assets[kind].radius * (moving?.scale ?? 1) : 0,
         )
       : null;
+  const lift = point
+    ? restingOn(cursor?.surface, point.x, point.z, env).lift
+    : undefined;
   const problem =
-    point && kind ? placementProblem(kind, point.x, point.z, env) : null;
+    point && kind ? placementProblem(kind, point.x, point.z, env, lift) : null;
+  /** The ground, or the stone or wood, under the pointer. Plants and animals
+   * in the way are looked past, and animals always go on the ground. */
+  function spotUnder(e: ThreeEvent<PointerEvent | MouseEvent>) {
+    if (!kind || assets[kind].category === "Animals") return { point: e.point };
+    for (const hit of e.intersections) {
+      const object = world.objects.find((o) => o.id === objectIdOf(hit.object));
+      if (!object) return { point: hit.point };
+      if (assets[object.kind].hardscape)
+        return {
+          point: hit.point,
+          surface: { support: object.id, y: hit.point.y },
+        };
+    }
+    return { point: e.point };
+  }
   function track(e: ThreeEvent<PointerEvent>) {
     if (!kind && tool.type !== "terrain") return;
     e.stopPropagation();
-    const point =
-      tool.type === "terrain" && terrain.current
-        ? raycaster.intersectObject(terrain.current, true)[0]?.point
-        : e.point;
-    if (!point) return;
-    setCursor({ x: point.x, z: point.z });
-    if (tool.type === "terrain") editor.continueTerrainStroke(point.x, point.z);
+    if (tool.type === "terrain") {
+      const point =
+        terrain.current &&
+        raycaster.intersectObject(terrain.current, true)[0]?.point;
+      if (!point) return;
+      setCursor({ x: point.x, z: point.z });
+      editor.continueTerrainStroke(point.x, point.z);
+      return;
+    }
+    const { point, surface } = spotUnder(e);
+    setCursor({ x: point.x, z: point.z, surface });
   }
   function place(e: ThreeEvent<MouseEvent>) {
     if (e.delta > 6) return;
     e.stopPropagation();
     if (tool.type === "terrain") return;
-    if (kind) editor.placeAt(e.point.x, e.point.z);
-    else editor.select(null);
+    if (!kind) {
+      editor.select(null);
+      return;
+    }
+    const { point, surface } = spotUnder(e);
+    editor.placeAt(point.x, point.z, surface);
   }
   return (
     <>
@@ -216,11 +247,17 @@ function Scene({
         <Inhabitant
           object={
             moving
-              ? { ...moving, ...point, rotation: editor.placementRotation }
+              ? {
+                  ...moving,
+                  ...point,
+                  lift,
+                  rotation: editor.placementRotation,
+                }
               : {
                   id: "ghost",
                   kind,
                   ...point,
+                  lift,
                   rotation: editor.placementRotation,
                   scale: 1,
                   seed: 42,
@@ -239,7 +276,10 @@ function Scene({
         <mesh
           position={[
             point.x,
-            Math.max(groundHeight(point.x, point.z, env), env.water) + 0.018,
+            Math.max(
+              groundHeight(point.x, point.z, env) + (lift ?? 0),
+              env.water,
+            ) + 0.018,
             point.z,
           ]}
           rotation={[-Math.PI / 2, 0, 0]}
@@ -300,4 +340,12 @@ export function WorldScene(props: SceneProps) {
       </Suspense>
     </Canvas>
   );
+}
+
+/** The world object a rendered part belongs to, if any. */
+function objectIdOf(part: THREE.Object3D | null): string | undefined {
+  for (; part; part = part.parent)
+    if (typeof part.userData.objectId === "string")
+      return part.userData.objectId;
+  return undefined;
 }

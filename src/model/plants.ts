@@ -1,6 +1,6 @@
 import { assets } from "../assets";
 import type { Environment, HabitatObject } from "./schema";
-import { groundHeight } from "./terrain";
+import { objectBase } from "./stacking";
 
 /** How wet a plant likes its roots, as height of its spot above the waterline. */
 export type Soil = "shore" | "damp" | "drained";
@@ -24,7 +24,7 @@ export function plantCondition(
   const soil = assets[object.kind].soil;
   if (!soil) return null;
   const { min, max, likes } = soils[soil];
-  const height = groundHeight(object.x, object.z, env) - env.water;
+  const height = objectBase(object, env) - env.water;
   if (height < min)
     return {
       thriving: false,
