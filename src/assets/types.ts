@@ -2,6 +2,7 @@ import type * as THREE from "three";
 import type { Soil } from "../model/plants";
 import type { AssetKind } from "../model/schema";
 import type { Den, PlantPerch } from "../model/plantSurfaces";
+import type { Surface } from "../simulation/types";
 
 export type Category = "Plants" | "Landscape" | "Animals";
 
@@ -10,8 +11,12 @@ export interface AnimalBehavior {
   nocturnal: boolean;
   climbs: boolean;
   speed: number;
-  movement?: "hop" | "climb" | "crawl";
+  /** Hoppers hop every edge, climbers hop on the ground and leap between
+   * leaves, crawlers and scurriers walk. Scurriers dash and pause. */
+  movement?: "hop" | "climb" | "crawl" | "scurry";
   maxPerchHeight?: number;
+  /** Surfaces it likes to rest on, beyond plain shelter. Frogs favor leaves. */
+  restsOn?: Surface[];
 }
 
 /** Everything the app knows about one kind of placeable thing. */

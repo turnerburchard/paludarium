@@ -20,6 +20,7 @@ export const assetKinds = [
   "dart-frog",
   "blue-dart-frog",
   "mossy-frog",
+  "gecko",
   "fish",
 ] as const;
 export type AssetKind = (typeof assetKinds)[number];

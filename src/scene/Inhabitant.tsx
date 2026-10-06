@@ -3,9 +3,10 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { assets, buildAsset, disposeAsset, isLandAnimal } from "../assets";
-import type { Environment, HabitatObject } from "../model/schema";
+import type { AssetKind, Environment, HabitatObject } from "../model/schema";
 import { groundHeight } from "../model/terrain";
 import { FrogRig } from "./frogRig";
+import { GeckoRig } from "./geckoRig";
 
 interface Props {
   object: HabitatObject;
@@ -33,10 +34,9 @@ export function Inhabitant({
     () => buildAsset(object.kind, object.seed),
     [object.kind, object.seed],
   );
-  const frog = isLandAnimal(object.kind);
   const rig = useMemo(
-    () => (frog ? new FrogRig(model) : undefined),
-    [frog, model],
+    () => createRig(object.kind, model),
+    [object.kind, model],
   );
   useEffect(() => () => disposeAsset(model), [model]);
   useEffect(() => {
@@ -77,7 +77,7 @@ export function Inhabitant({
     const dt = Math.min(frameDelta, 0.05);
     if (!paused && !selected && !ghost) clock.current += dt;
     const t = clock.current;
-    // A watched frog stays selected while it moves, so only pausing stops it.
+    // A watched animal stays selected while it moves, so only pausing stops it.
     const rigDelta = paused ? 0 : dt;
     group.position.set(object.x, baseY, object.z);
     group.rotation.set(0, object.rotation, 0);
@@ -135,7 +135,7 @@ export function Inhabitant({
       }
     }
     if (ghost || selected) return;
-    // A frog without a reachable surface remains idle at its saved placement.
+    // An animal without a reachable surface stays idle where it was placed.
     if (rig) {
       rig.update(undefined, rigDelta);
       return;
@@ -202,4 +202,10 @@ export function Inhabitant({
       )}
     </group>
   );
+}
+
+function createRig(kind: AssetKind, model: THREE.Group) {
+  if (kind === "gecko") return new GeckoRig(model);
+  if (isLandAnimal(kind)) return new FrogRig(model);
+  return undefined;
 }
