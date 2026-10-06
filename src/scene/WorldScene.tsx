@@ -10,6 +10,7 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import type { Editor } from "../editor/useEditor";
 import { assets } from "../assets";
+import { useWatchVisibility } from "./useWatchVisibility";
 import {
   boundedPosition,
   groundHeight,
@@ -41,6 +42,7 @@ interface SceneProps {
   ecosystem: EcosystemController;
   /** An animal the camera follows. It keeps living while watched. */
   watchingId: string | null;
+  onActivateObject: (id: string) => void;
 }
 function Scene({
   editor,
@@ -48,6 +50,7 @@ function Scene({
   view,
   ecosystem,
   watchingId,
+  onActivateObject,
 }: SceneProps) {
   const { world, tool } = editor,
     env = world.environment,
@@ -59,8 +62,10 @@ function Scene({
   const controls = useRef<OrbitControlsImpl>(null);
   const { size, raycaster } = useThree();
   const terrain = useRef<THREE.Group>(null);
+  const inhabitants = useRef<THREE.Group>(null);
+  useWatchVisibility(inhabitants, ecosystem, watchingId);
   useCameraNavigation(controls, true);
-  useFollowCamera(controls, ecosystem, watchingId);
+  useFollowCamera(controls, ecosystem, watchingId, resetCamera);
   const [cursor, setCursor] = useState<{ x: number; z: number } | null>(null);
   const moving =
     tool.type === "move" || tool.type === "copy"
@@ -147,6 +152,7 @@ function Scene({
         </mesh>
       </EnvironmentLight>
       <group
+        ref={inhabitants}
         onPointerMove={track}
         onClick={place}
         onPointerDown={(e) => {
@@ -202,10 +208,9 @@ function Scene({
               paused={editor.paused}
               selected={!view && editor.selectedId === object.id}
               onSelect={(e) => {
-                if (e.delta > 6 || kind || view || tool.type === "terrain")
-                  return;
+                if (e.delta > 6 || kind || tool.type === "terrain") return;
                 e.stopPropagation();
-                editor.select(object.id);
+                onActivateObject(object.id);
               }}
             />
           ))}
@@ -213,7 +218,7 @@ function Scene({
       <EcosystemLife
         ecosystem={ecosystem}
         paused={editor.paused || tool.type !== "select"}
-        heldId={watchingId ? null : editor.selectedId}
+        heldId={view || watchingId ? null : editor.selectedId}
       />
       <Water
         environment={env}

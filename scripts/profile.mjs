@@ -64,6 +64,7 @@ try {
       world,
     );
     await page.goto(url);
+    await page.getByRole("button", { name: "Build", exact: true }).click();
     await page.waitForFunction(
       () => document.querySelectorAll(".asset-picture img").length === 13,
       null,

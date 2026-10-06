@@ -52,6 +52,7 @@ try {
       fiberUrl = response.url();
   });
   await page.goto("http://127.0.0.1:5191");
+  await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.locator(".asset-picture img").first().waitFor();
   // A first visit opens on the cloud forest; start from an empty tank.
   assert.equal(
@@ -172,6 +173,7 @@ try {
   assert.equal(world.name, "Cloud forest");
   assert.ok(world.objects.length > 20);
   await page.reload();
+  await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.locator(".asset-picture img").first().waitFor();
   assert.equal(
     (await saved()).name,
@@ -260,6 +262,7 @@ try {
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Habitat", exact: true })
     .click();
+  await page.locator("summary", { hasText: "Fine-tune habitat" }).click();
   const water = page.getByRole("slider", { name: "Water level", exact: true });
   await water.focus();
   await page.waitForFunction(

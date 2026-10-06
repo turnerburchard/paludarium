@@ -21,11 +21,13 @@ npm run test:e2e
 
 ## Controls
 
-Drag to orbit and scroll or pinch to zoom. To follow a frog with the camera, pick it from the Life panel's frog list, or select it and choose **Watch up close**; stopping eases the camera back. On desktop, WASD pans the camera (Shift to move faster); **Reset Camera** restores the default view. Keyboard shortcuts are ignored while typing in fields or dialogs.
+The app opens in **View**, with a full-screen habitat. Tap a frog or choose **Watch a frog** to follow it up close. Foliage in front of the watched animal fades; its supporting leaf stays visible. Stopping restores the foliage and eases the camera back. Animal needs are available in the compact watch card.
 
-A first visit opens on the Cloud forest preset. On phones the scene fills the screen and a dock at the bottom opens the Add, Habitat and Life panels as a bottom sheet. Sliders show their effect live while dragging and become one undo step on release.
+Switch to **Build** to add and rearrange objects. On phones a bottom dock opens Add, Habitat and Life as sheets. Selecting animals or plants never opens a size slider; only rocks and driftwood offer **Adjust size**. Sliders preview changes while dragging and create one undo step on release, including releases outside the control.
 
-Open **Habitat settings** (**Habitat** on phones) to raise, lower, or smooth terrain; paint soil, sand, or stone; and carve pools or streams. Choose a brush size and drag across the ground. Each drag is one undoable edit. Escape cancels an unfinished stroke. Pools and streams set a minimum water level when needed; the Water level control adjusts it afterward. Terrain is included in saved and exported worlds.
+Habitat settings lead with lighting and water choices. Open **Shape landscape** to sculpt, smooth, paint soil/sand/stone, or carve pools and streams. **Fine-tune habitat** contains precise water, lighting, enclosure and soil sliders. Each brush stroke is one undoable edit; Escape cancels an unfinished stroke. Terrain is included in saved and exported worlds.
+
+Drag to orbit and scroll or pinch to zoom. On desktop, WASD pans the camera (Shift to move faster); **Reset Camera** restores the default view. Escape stops watching, and Space pauses life. View disables editing shortcuts. Keyboard shortcuts are ignored while typing in fields or dialogs. A first visit opens on the Cloud forest preset.
 
 ## Architecture
 

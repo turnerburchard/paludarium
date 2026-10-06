@@ -54,6 +54,7 @@ try {
   for (const viewport of viewports) {
     const page = await browser.newPage({ viewport });
     await page.goto(`http://127.0.0.1:${port}`);
+    await page.getByRole("button", { name: "Build", exact: true }).click();
     // Thumbnails finish after the scene has started drawing.
     await page
       .locator(".asset-picture img")

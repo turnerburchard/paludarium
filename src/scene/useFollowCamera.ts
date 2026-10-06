@@ -18,6 +18,7 @@ export function useFollowCamera(
   controls: RefObject<OrbitControls | null>,
   ecosystem: EcosystemController,
   animalId: string | null,
+  resetCamera: number,
 ) {
   const zooming = useRef(false);
   const returning = useRef(false);
@@ -47,6 +48,14 @@ export function useFollowCamera(
     }
     if (!animalId && home.current) returning.current = true;
   }, [animalId]);
+  useEffect(() => {
+    // Reset supersedes a return to the previous custom camera position.
+    const orbit = controls.current;
+    if (orbit && home.current) orbit.minDistance = home.current.minDistance;
+    zooming.current = false;
+    returning.current = false;
+    home.current = null;
+  }, [resetCamera]);
   useFrame((_, delta) => {
     const orbit = controls.current;
     if (orbit && returning.current && home.current) {

@@ -28,10 +28,15 @@ export function Inspector({
           <X size={17} />
         </IconButton>
       </div>
-      {asset.scientificName && (
-        <p className="species-name">{asset.scientificName}</p>
-      )}
-      <p>{asset.description}</p>
+      <details className="more-options object-about">
+        <summary>
+          About this {asset.category === "Animals" ? "animal" : "object"}
+        </summary>
+        {asset.scientificName && (
+          <p className="species-name">{asset.scientificName}</p>
+        )}
+        <p>{asset.description}</p>
+      </details>
       {condition && (
         <p
           className={
@@ -67,16 +72,21 @@ export function Inspector({
           Remove
         </button>
       </div>
-      <RangeControl
-        label="Size"
-        value={object.scale}
-        min={0.4}
-        max={2}
-        step={0.05}
-        format={(n) => `${Math.round(n * 100)}%`}
-        onPreview={(scale) => editor.previewObject(object.id, { scale })}
-        onCommit={(scale) => editor.patchObject(object.id, { scale })}
-      />
+      {(object.kind === "rock" || object.kind === "wood") && (
+        <details className="more-options">
+          <summary>Adjust size</summary>
+          <RangeControl
+            label="Size"
+            value={object.scale}
+            min={0.4}
+            max={2}
+            step={0.05}
+            format={(n) => `${Math.round(n * 100)}%`}
+            onPreview={(scale) => editor.previewObject(object.id, { scale })}
+            onCommit={(scale) => editor.patchObject(object.id, { scale })}
+          />
+        </details>
+      )}
     </aside>
   );
 }
