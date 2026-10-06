@@ -48,10 +48,10 @@ try {
   await page.addStyleTag({
     content: `
     .mode-switch, .scene-tools, .view-controls, .view-intro { display: none !important; }
-    .preview-caption { position: fixed; left: 44px; bottom: 32px; color: #f0f3e9;
+    .preview-caption { position: fixed; z-index: 10; left: 44px; bottom: 32px; color: #f0f3e9;
       font: 500 20px/1.5 system-ui, sans-serif; text-shadow: 0 2px 20px #08130e; }
     .preview-caption h1 { margin: 0 0 3px; font-size: 46px; letter-spacing: -2px; }
-    .preview-url { position: fixed; right: 40px; bottom: 37px; color: #a1b7a2;
+    .preview-url { position: fixed; z-index: 10; right: 40px; bottom: 37px; color: #a1b7a2;
       font: 14px system-ui, sans-serif; }
   `,
   });
@@ -66,6 +66,12 @@ try {
     url.textContent = "turnerburchard.com/paludarium";
     document.body.append(url);
   });
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+      }),
+  );
   await page.screenshot({
     path: `${root}public/share.jpg`,
     type: "jpeg",
