@@ -162,8 +162,9 @@ export class FrogRig {
     this.breathe(dt, hopping);
     this.settle();
     this.model.updateWorldMatrix(true, true);
-    // Feet follow the clip in the air and stay put on the surface otherwise.
-    if (hopping || !state) {
+    // Feet follow the clip in the air and while snapping at prey, and stay put
+    // on the surface otherwise.
+    if (hopping || eating || !state) {
       this.grounded = false;
       for (const leg of this.legs)
         reach(this.model, leg, leg.foot.getWorldPosition(new THREE.Vector3()));
