@@ -227,7 +227,15 @@ export class Ecosystem {
     const state = agent.state,
       needs = state.needs;
     const paths = this.graph.paths(state.nodeId, agent.profile);
-    const reachable = [...paths.keys()];
+    // Frogs don't move to a spot another frog holds or is heading for.
+    const taken = new Set(
+      [...this.agents.values()]
+        .filter((other) => other !== agent)
+        .map((other) => other.path.at(-1) ?? other.state.nodeId),
+    );
+    const reachable = [...paths.keys()].filter(
+      (id) => id === state.nodeId || !taken.has(id),
+    );
     const nearest = (ids: string[]) =>
       ids.sort((a, b) => paths.get(a)!.length - paths.get(b)!.length)[0];
     const food = nearest(
