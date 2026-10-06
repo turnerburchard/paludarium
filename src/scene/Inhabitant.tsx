@@ -8,6 +8,7 @@ import { groundHeight } from "../model/terrain";
 import { FrogRig } from "./frogRig";
 import { GeckoRig } from "./geckoRig";
 import { SnailRig } from "./snailRig";
+import { TurtleRig } from "./turtleRig";
 import { SwimRig } from "./swimRig";
 import { barbSwim } from "../assets/animals/barb";
 
@@ -219,6 +220,7 @@ export function Inhabitant({
 function createRig(kind: AssetKind, model: THREE.Group) {
   if (kind === "gecko") return new GeckoRig(model);
   if (kind === "snail") return new SnailRig(model);
+  if (kind === "turtle") return new TurtleRig(model);
   if (isLandAnimal(kind)) return new FrogRig(model);
   return undefined;
 }

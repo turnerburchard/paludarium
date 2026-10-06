@@ -12,6 +12,7 @@ import {
 import { fish } from "./animals/fish";
 import { gecko } from "./animals/gecko";
 import { snail } from "./animals/snail";
+import { turtle } from "./animals/turtle";
 import { cardinalTetra, emberTetra } from "./animals/tetras";
 import { tigerBarb } from "./animals/barb";
 import { anthurium } from "./plants/anthurium";
@@ -44,6 +45,7 @@ export const assets = {
   "mossy-frog": mossyFrog,
   gecko,
   snail,
+  turtle,
   monstera,
   "swiss-cheese-plant": swissCheesePlant,
   fern,

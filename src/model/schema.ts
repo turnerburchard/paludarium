@@ -27,6 +27,7 @@ export const assetKinds = [
   "mossy-frog",
   "gecko",
   "snail",
+  "turtle",
   "fish",
   "cardinal-tetra",
   "ember-tetra",
