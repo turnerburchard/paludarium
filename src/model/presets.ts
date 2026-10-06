@@ -47,6 +47,23 @@ export function makePreset(preset: Preset): World {
       [2.55, 0.95, 0.9],
     ])
       add("java-moss", x, z, scale);
+    // Eelgrass along the back, swords and rotala through the middle, and the
+    // slow growers that like to cling beside the stones and driftwood.
+    for (const x of [-2.9, -2.3, -0.9, -0.3, 0.9, 1.5, 2.9])
+      add("vallisneria", x, -1.85, 1 + (x % 0.4));
+    for (const [kind, x, z, scale] of [
+      ["amazon-sword", -0.35, 0.95, 1.1],
+      ["amazon-sword", 2.1, -0.9, 0.9],
+      ["rotala", -2.95, -1.45, 1],
+      ["rotala", 0.2, -1.8, 1.1],
+      ["rotala", 2.35, -1.6, 0.9],
+      ["anubias", -2.05, -0.3, 1],
+      ["anubias", 0.75, -0.85, 0.9],
+      ["anubias", -1.45, 1.25, 1],
+      ["java-fern", -1.0, -0.8, 1.1],
+      ["java-fern", 1.95, 1.35, 1],
+    ] as const)
+      add(kind, x, z, scale);
     for (const [kind, x, z, heading] of [
       ["cardinal-tetra", -0.7, 0.55, 1.2],
       ["ember-tetra", 1.2, -0.6, 4.2],
