@@ -11,6 +11,7 @@ export const monstera: AssetDefinition = {
   radius: 0.48,
   habitat: "land",
   shelter: true,
+  soil: "damp",
   build,
 };
 

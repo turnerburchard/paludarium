@@ -11,6 +11,7 @@ export const bromeliad: AssetDefinition = {
   radius: 0.32,
   habitat: "land",
   shelter: true,
+  soil: "damp",
   build,
 };
 

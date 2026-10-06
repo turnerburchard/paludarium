@@ -10,6 +10,7 @@ export const grass: AssetDefinition = {
   radius: 0.24,
   habitat: "land",
   shelter: true,
+  soil: "shore",
   build,
 };
 

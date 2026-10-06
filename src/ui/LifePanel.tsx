@@ -1,12 +1,16 @@
+import { plantCondition } from "../model/plants";
+import type { World } from "../model/schema";
 import type { EcosystemController } from "../simulation/useEcosystem";
 import { frogsSupported } from "../simulation/engine";
 import type { FoodPatch } from "../simulation/types";
 import { AnimalStatus } from "./AnimalStatus";
 export function LifePanel({
+  world,
   ecosystem,
   selectedId,
   paused,
 }: {
+  world: World;
   ecosystem: EcosystemController;
   selectedId: string | null;
   paused: boolean;
@@ -26,6 +30,9 @@ export function LifePanel({
   const frogs = snapshot.animals.length;
   const supported = Math.floor(frogsSupported(snapshot.food));
   const overcrowded = hungry > 0 && frogs > supported;
+  const struggling = world.objects.filter(
+    (o) => plantCondition(o, world.environment)?.thriving === false,
+  ).length;
   return (
     <section className="life-panel" aria-label="Habitat life">
       <div className="life-heading">
@@ -51,6 +58,13 @@ export function LifePanel({
                     : ""
                 }`
               : "Select a frog to see its activity and needs."}
+        </p>
+      )}
+      {struggling > 0 && (
+        <p>
+          {plural(struggling, "plant")} {struggling === 1 ? "is" : "are"}{" "}
+          struggling where {struggling === 1 ? "it's" : "they're"} planted.
+          Select one to see why.
         </p>
       )}
       <div className="life-actions">

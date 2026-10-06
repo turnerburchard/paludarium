@@ -1,5 +1,6 @@
 import type { World } from "../model/schema";
 import { assets, isFrog } from "../assets";
+import { plantCondition } from "../model/plants";
 import { groundHeight, placementProblem } from "../model/terrain";
 import { FishSchool } from "./fish";
 import { Ecosystem } from "./engine";
@@ -35,7 +36,13 @@ export function buildHabitat(world: World): HabitatGraph {
   const nx = Math.ceil((env.width - 2 * margin) / spacing),
     nz = Math.ceil((env.depth - 2 * margin) / spacing);
   const obstacles = world.objects.filter((o) => assets[o.kind].blocksMovement);
-  const shelters = world.objects.filter((o) => assets[o.kind].shelter);
+  // A struggling plant still gives some cover, just much less.
+  const shelters = world.objects
+    .filter((o) => assets[o.kind].shelter)
+    .map((o) => ({
+      ...o,
+      vigor: plantCondition(o, env)?.thriving === false ? 0.4 : 1,
+    }));
   for (let ix = 0; ix <= nx; ix++)
     for (let iz = 0; iz <= nz; iz++) {
       const x = -env.width / 2 + margin + (ix * (env.width - 2 * margin)) / nx;
@@ -53,9 +60,10 @@ export function buildHabitat(world: World): HabitatGraph {
         (best, o) =>
           Math.max(
             best,
-            1 -
-              Math.hypot(x - o.x, z - o.z) /
-                (assets[o.kind].radius * o.scale + 0.4),
+            o.vigor *
+              (1 -
+                Math.hypot(x - o.x, z - o.z) /
+                  (assets[o.kind].radius * o.scale + 0.4)),
           ),
         0,
       );

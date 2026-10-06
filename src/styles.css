@@ -553,6 +553,13 @@ button:hover:not(:disabled) {
   color: #a9bba1;
   margin: 10px 0 19px;
 }
+.inspector .plant-condition {
+  margin: -10px 0 16px;
+  color: #b9d48f;
+}
+.inspector .plant-condition.struggling {
+  color: #e4cda7;
+}
 .watch-button {
   display: flex;
   align-items: center;
