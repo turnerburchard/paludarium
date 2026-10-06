@@ -1,13 +1,22 @@
 import { X } from "lucide-react";
+import type { World } from "../model/schema";
+import type { EcosystemController } from "../simulation/useEcosystem";
+import { CreatureList } from "./CreatureList";
 import { IconButton } from "./IconButton";
 import { Modal } from "./Modal";
 
 export function AboutDialog({
   onClose,
   onBuild,
+  world,
+  ecosystem,
+  onWatch,
 }: {
   onClose: () => void;
   onBuild: () => void;
+  world: World;
+  ecosystem: EcosystemController;
+  onWatch: (id: string) => void;
 }) {
   return (
     <Modal label="About Paludarium" onClose={onClose}>
@@ -24,8 +33,8 @@ export function AboutDialog({
       <dl>
         <dt>Start by watching</dt>
         <dd>
-          Tap a frog to follow it. Drag to look around; pinch or scroll to get
-          closer.
+          Tap a creature to follow it. Drag to look around; pinch or scroll to
+          get closer.
         </dd>
         <dt>Make it yours</dt>
         <dd>
@@ -39,6 +48,16 @@ export function AboutDialog({
           watch their choices change.
         </dd>
       </dl>
+      {ecosystem.snapshot.animals.length > 0 && (
+        <details className="more-options creature-options">
+          <summary>Follow a creature</summary>
+          <CreatureList
+            world={world}
+            animals={ecosystem.snapshot.animals}
+            onWatch={onWatch}
+          />
+        </details>
+      )}
       <button className="intro-build-button" onClick={onBuild}>
         Make it yours
       </button>

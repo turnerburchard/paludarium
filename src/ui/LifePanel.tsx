@@ -5,7 +5,7 @@ import type { World } from "../model/schema";
 import type { DiscoveryKind } from "../simulation/discoveries";
 import type { EcosystemController } from "../simulation/useEcosystem";
 import { insectEatersSupported } from "../simulation/engine";
-import { activityLabels } from "./AnimalStatus";
+import { CreatureList } from "./CreatureList";
 
 const fieldNotes: Record<DiscoveryKind, { title: string; text: string }> = {
   hunt: {
@@ -49,6 +49,7 @@ export function LifePanel({
   const fishCount = world.objects.filter(
     (object) => assets[object.kind].swims,
   ).length;
+  const fishOnly = fishCount > 0 && animals.length === 0;
   const eaters = animals.filter((animal) => {
     const object = world.objects.find((object) => object.id === animal.id);
     return object && !assets[object.kind].behavior?.grazes;
@@ -99,7 +100,11 @@ export function LifePanel({
         <span>{animals.length + fishCount} inhabitants</span>
       </div>
       <h2>A little world, unfolding</h2>
-      <p>Give them places to go. Then see what they get up to.</p>
+      <p>
+        {fishOnly
+          ? "Two turns, a flash of color, and the school changes direction."
+          : "Give them places to go. Then see what they get up to."}
+      </p>
       {animals.length > 0 ? (
         <button className="life-follow" onClick={surpriseMe}>
           <Binoculars size={19} />
@@ -108,90 +113,86 @@ export function LifePanel({
       ) : (
         <p>
           {fishCount
-            ? "Your fish school through the open water. Add a frog or gecko to explore life on land."
+            ? "Each species keeps its own company, swimming at its own depth and pace. Arrange stones and driftwood, or shape the bottom to change where the schools can swim."
             : "Add a creature, some cover, and a little water to bring this world to life."}
         </p>
       )}
-      <div className="field-notebook">
-        <h3>
-          Field notes <span>Seen in this visit</span>
-        </h3>
-        {notes.length ? (
-          <ul className="field-notes">
-            {notes.map((note) => {
-              const object = world.objects.find(
-                (object) => object.id === note.animalId,
-              )!;
-              const entry = fieldNotes[note.kind];
-              return (
-                <li key={note.kind}>
-                  <span className="field-note-mark">
-                    {note.kind === "soak" ? (
-                      <Waves size={17} />
-                    ) : note.kind === "sleep" ? (
-                      <Moon size={17} />
-                    ) : (
-                      <Leaf size={17} />
-                    )}
-                  </span>
-                  <div>
-                    <strong>{entry.title}</strong>
-                    <p>
-                      {assets[object.kind].name} · {entry.text}
-                    </p>
-                  </div>
-                  <button
-                    aria-label={`Follow ${assets[object.kind].name}: ${entry.title}`}
-                    onClick={() => onWatch(object.id)}
-                  >
-                    <Eye size={17} />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="field-notes-empty">
-            {paused
-              ? "Resume life to see what happens next."
-              : "The first stories are still unfolding. Watch for a hunt, a climb, or a quiet spot to rest."}
-          </p>
-        )}
-      </div>
+      {animals.length > 0 && (
+        <div className="field-notebook">
+          <h3>
+            Field notes <span>Seen in this visit</span>
+          </h3>
+          {notes.length ? (
+            <ul className="field-notes">
+              {notes.map((note) => {
+                const object = world.objects.find(
+                  (object) => object.id === note.animalId,
+                )!;
+                const entry = fieldNotes[note.kind];
+                return (
+                  <li key={note.kind}>
+                    <span className="field-note-mark">
+                      {note.kind === "soak" ? (
+                        <Waves size={17} />
+                      ) : note.kind === "sleep" ? (
+                        <Moon size={17} />
+                      ) : (
+                        <Leaf size={17} />
+                      )}
+                    </span>
+                    <div>
+                      <strong>{entry.title}</strong>
+                      <p>
+                        {assets[object.kind].name} · {entry.text}
+                      </p>
+                    </div>
+                    <button
+                      aria-label={`Follow ${assets[object.kind].name}: ${entry.title}`}
+                      onClick={() => onWatch(object.id)}
+                    >
+                      <Eye size={17} />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="field-notes-empty">
+              {paused
+                ? "Resume life to see what happens next."
+                : "The first stories are still unfolding. Watch for a hunt, a climb, or a quiet spot to rest."}
+            </p>
+          )}
+        </div>
+      )}
       {animals.length > 0 && (
         <details className="life-details">
           <summary>
             Meet the inhabitants <span>{animals.length}</span>
           </summary>
-          <ul className="frog-list">
-            {animals.map((animal) => {
-              const object = world.objects.find(
-                (object) => object.id === animal.id,
-              );
-              if (!object) return null;
-              return (
-                <li key={animal.id}>
-                  <button
-                    onClick={() => onWatch(animal.id)}
-                    aria-pressed={animal.id === selectedId}
-                  >
-                    <span>{assets[object.kind].name}</span>
-                    <small>{activityLabels[animal.activity]}</small>
-                    <Eye size={15} />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          <CreatureList
+            world={world}
+            animals={animals}
+            selectedId={selectedId}
+            onWatch={onWatch}
+          />
         </details>
       )}
       <details className="life-details">
         <summary>What makes this world work?</summary>
-        <p>
-          Plants and moss shelter insects. A shallow shoreline offers moisture.
-          Leaves, logs, and dens give creatures places to climb and rest. Change
-          the habitat and their choices change.
-        </p>
+        {fishOnly ? (
+          <p>
+            Fish turn away from the tank walls and shallow ground. Deep water
+            gives the schools room to explore; rocks and driftwood make the
+            landscape yours. Fish don’t need feeding in this world.
+          </p>
+        ) : (
+          <p>
+            Plants and moss shelter insects. A shallow shoreline offers
+            moisture. Leaves, logs, and dens give creatures places to climb and
+            rest. Change the habitat and their choices change.
+          </p>
+        )}
         {eaters.length > supported ? (
           <p>
             More planted cover would help the insects keep up with your{" "}
@@ -215,13 +216,15 @@ export function LifePanel({
             a better spot. Select a plant to see which soil it prefers.
           </p>
         )}
-        <p className="insect-summary">
-          {Math.ceil(
-            snapshot.food.reduce((sum, patch) => sum + patch.amount, 0),
-          )}{" "}
-          insects · {colonies} colonies · {eaters.length} insect eaters
-        </p>
-        {fishCount > 0 && (
+        {!fishOnly && (
+          <p className="insect-summary">
+            {Math.ceil(
+              snapshot.food.reduce((sum, patch) => sum + patch.amount, 0),
+            )}{" "}
+            insects · {colonies} colonies · {eaters.length} insect eaters
+          </p>
+        )}
+        {fishCount > 0 && !fishOnly && (
           <p>
             {fishCount} fish swim separately. They don’t compete for these
             insects.
