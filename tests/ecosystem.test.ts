@@ -248,6 +248,23 @@ describe("live ecosystem behavior", () => {
       );
     }
   });
+  it.each(["tropical", "mountain"] as const)(
+    "lets every frog in the %s preset reach insects and water",
+    (preset) => {
+      const world = makePreset(preset);
+      const engine = createWorldEcosystem(world);
+      const colonies = new Set(engine.snapshot().food.map((p) => p.nodeId));
+      for (const animal of engine.snapshot().animals) {
+        const paths = engine.graph.paths(
+          animal.nodeId,
+          frogProfile(animal.speciesId as AssetKind),
+        );
+        const reachable = [...paths.keys()];
+        expect(reachable.some((id) => colonies.has(id))).toBe(true);
+        expect(reachable.some((id) => engine.graph.node(id).wet)).toBe(true);
+      }
+    },
+  );
 });
 
 describe("insect colonies", () => {
