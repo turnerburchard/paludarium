@@ -51,6 +51,7 @@ Conventions:
 - Up to 120 objects. Dense plantings can be heavy on mobile GPUs.
 - Plants and frogs need dry ground and fish need water depth. Raising the water can invalidate existing placements, which get flagged.
 - Frogs seek food, water, rest, and sleep, and move along connected ground and glass. Fish are decorative so far.
+- Insects breed in colonies under plant and moss cover, growing back toward a capacity set by that cover. A well-planted tank feeds its frogs without help; the Life panel shows how many frogs the insects can support.
 - The simulation runs only while the tab is visible. Only the layout is saved, and nothing advances while the app is closed.
 - No growth, predation, breeding, or mortality yet.
 

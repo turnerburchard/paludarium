@@ -190,32 +190,65 @@ export function createWorldEcosystem(
               },
       });
   }
-  let food: FoodPatch[];
-  if (snapshot) {
-    food = snapshot.food.flatMap((patch) => {
-      const oldNode = previous!.engine.graph.node(patch.nodeId);
-      const target = graph.nearest(oldNode.position, groundWalker);
-      return target ? [{ nodeId: target.id, amount: patch.amount }] : [];
-    });
-  } else {
-    food = feedingStations(graph).map((node) => ({
-      nodeId: node.id,
-      amount: 3,
-    }));
+  const colonies = insectColonies(graph);
+  const food = new Map(
+    colonies.map((colony) => [
+      colony.nodeId,
+      { ...colony, amount: snapshot ? 0 : colony.capacity },
+    ]),
+  );
+  // Insects survive edits: each old patch joins a colony at the same spot,
+  // or stays where it was as scattered food.
+  for (const patch of snapshot?.food ?? []) {
+    const position = previous!.engine.graph.node(patch.nodeId).position;
+    const colony = colonies.find(
+      (c) => distance(graph.node(c.nodeId).position, position) < 0.3,
+    );
+    const nodeId = colony?.nodeId ?? graph.nearest(position, groundWalker)?.id;
+    if (!nodeId) continue;
+    const target = food.get(nodeId) ?? { nodeId, amount: 0, capacity: 0 };
+    target.amount += patch.amount;
+    food.set(nodeId, target);
   }
-  return new Ecosystem(graph, animals, { elapsed: snapshot?.elapsed, food });
+  return new Ecosystem(graph, animals, {
+    elapsed: snapshot?.elapsed,
+    food: [...food.values()],
+  });
 }
+/** Insects breed under cover: well-sheltered dry ground becomes a colony whose
+ * size follows how much cover it has. Bare ground supports none. */
+export function insectColonies(graph: HabitatGraph): FoodPatch[] {
+  return shelteredSpots(graph, 8, 1, 0.3).map((node) => ({
+    nodeId: node.id,
+    amount: 0,
+    capacity: 5 * node.shelter,
+  }));
+}
+
+/** Where hand-scattered insects land. */
 export function feedingStations(graph: HabitatGraph) {
+  return shelteredSpots(graph, 3, 1.2);
+}
+
+/** The most sheltered dry ground spots, kept a minimum distance apart. */
+function shelteredSpots(
+  graph: HabitatGraph,
+  count: number,
+  spacing: number,
+  minShelter = 0,
+) {
   const ground = [...graph.nodes.values()].filter(
-    (n) => n.surface === "ground" && !n.wet,
+    (n) => n.surface === "ground" && !n.wet && n.shelter >= minShelter,
   );
   const selected: HabitatNode[] = [];
   for (const node of ground.sort((a, b) => b.shelter - a.shelter)) {
     if (
-      selected.every((other) => distance(other.position, node.position) > 1.2)
+      selected.every(
+        (other) => distance(other.position, node.position) > spacing,
+      )
     )
       selected.push(node);
-    if (selected.length === 3) break;
+    if (selected.length === count) break;
   }
   return selected;
 }

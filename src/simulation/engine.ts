@@ -10,6 +10,13 @@ import type {
 
 const STEP = 0.1;
 const DAY_LENGTH = 1800;
+/** Hunger gained per simulated second, and removed by eating one insect portion. */
+const HUNGER_RATE = 0.002;
+const HUNGER_PER_PORTION = 0.2;
+/** Colony growth per simulated second. A full-cover colony feeds about one frog. */
+const INSECT_GROWTH = 0.01;
+/** Newcomers let an emptied colony slowly recover instead of dying out. */
+const INSECT_ARRIVALS = 0.05;
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 interface Agent {
   state: AnimalState;
@@ -25,10 +32,20 @@ export interface SimulationOptions {
   food?: FoodPatch[];
 }
 
+/** Roughly how many frogs the colonies can feed indefinitely. A logistic colony
+ * yields the most, a quarter of growth rate times capacity, when half full. */
+export function frogsSupported(food: readonly FoodPatch[]): number {
+  const insectsPerSecond = food.reduce(
+    (sum, patch) => sum + (INSECT_GROWTH * patch.capacity) / 4,
+    0,
+  );
+  return insectsPerSecond / (HUNGER_RATE / HUNGER_PER_PORTION);
+}
+
 /** Owns live needs and choices. No React, Three.js, wall-clock reads or offline catch-up. */
 export class Ecosystem {
   private readonly agents = new Map<string, Agent>();
-  private readonly food = new Map<string, number>();
+  private readonly food = new Map<string, FoodPatch>();
   private remainder = 0;
   private elapsed: number;
   private readonly random: () => number;
@@ -89,8 +106,16 @@ export class Ecosystem {
         },
       });
     }
-    for (const patch of options.food ?? [])
-      this.addFood(patch.nodeId, patch.amount);
+    for (const patch of options.food ?? []) {
+      this.graph.node(patch.nodeId);
+      if (
+        ![patch.amount, patch.capacity].every(
+          (n) => Number.isFinite(n) && n >= 0,
+        )
+      )
+        throw new Error("Food amounts must be finite and non-negative.");
+      this.food.set(patch.nodeId, { ...patch });
+    }
   }
   private roll() {
     const n = this.random();
@@ -110,14 +135,16 @@ export class Ecosystem {
       elapsed: this.elapsed,
       phase: this.phase,
       animals: [...this.agents.values()].map((a) => structuredClone(a.state)),
-      food: [...this.food].map(([nodeId, amount]) => ({ nodeId, amount })),
+      food: [...this.food.values()].map((patch) => ({ ...patch })),
     };
   }
   addFood(nodeId: string, amount: number) {
     this.graph.node(nodeId);
     if (!Number.isFinite(amount) || amount < 0)
       throw new Error("Food amount must be finite and non-negative.");
-    this.food.set(nodeId, Math.min(30, (this.food.get(nodeId) ?? 0) + amount));
+    const patch = this.food.get(nodeId) ?? { nodeId, amount: 0, capacity: 0 };
+    patch.amount = Math.min(30, patch.amount + amount);
+    this.food.set(nodeId, patch);
     for (const agent of this.agents.values()) agent.reconsiderAt = 0;
   }
   /** Long frames are discarded. A hidden tab never turns into hours of simulation. */
@@ -141,12 +168,24 @@ export class Ecosystem {
         const agent = agents[(i + offset) % agents.length];
         if (!heldIds.has(agent.state.id)) this.update(agent);
       }
+      this.breedInsects();
+    }
+  }
+  /** Logistic growth: fast when a colony is small, leveling off at capacity. */
+  private breedInsects() {
+    for (const patch of this.food.values()) {
+      if (patch.amount >= patch.capacity) continue;
+      const growth =
+        INSECT_GROWTH *
+        (patch.amount + INSECT_ARRIVALS) *
+        (1 - patch.amount / patch.capacity);
+      patch.amount = Math.min(patch.capacity, patch.amount + STEP * growth);
     }
   }
   private update(agent: Agent) {
     const state = agent.state,
       needs = state.needs;
-    needs.hunger = clamp(needs.hunger + STEP * 0.002);
+    needs.hunger = clamp(needs.hunger + STEP * HUNGER_RATE);
     needs.hydration = clamp(needs.hydration - STEP * 0.0014);
     needs.energy = clamp(
       needs.energy - STEP * (state.moving ? 0.0018 : 0.0007),
@@ -158,10 +197,15 @@ export class Ecosystem {
       return;
     }
     if (state.activity === "eating") {
-      const available = this.food.get(state.nodeId) ?? 0;
-      const bite = Math.min(available, STEP * 0.22, needs.hunger / 0.2);
-      this.food.set(state.nodeId, Math.max(0, available - bite));
-      needs.hunger = clamp(needs.hunger - bite * 0.2);
+      const patch = this.food.get(state.nodeId);
+      const available = patch?.amount ?? 0;
+      const bite = Math.min(
+        available,
+        STEP * 0.22,
+        needs.hunger / HUNGER_PER_PORTION,
+      );
+      if (patch) patch.amount = Math.max(0, available - bite);
+      needs.hunger = clamp(needs.hunger - bite * HUNGER_PER_PORTION);
       if (available < 0.001 || needs.hunger < 0.12) agent.reconsiderAt = 0;
     } else if (state.activity === "bathing") {
       needs.hydration = clamp(needs.hydration + STEP * 0.035);
@@ -180,7 +224,7 @@ export class Ecosystem {
     const nearest = (ids: string[]) =>
       ids.sort((a, b) => paths.get(a)!.length - paths.get(b)!.length)[0];
     const food = nearest(
-      reachable.filter((id) => (this.food.get(id) ?? 0) > 0.001),
+      reachable.filter((id) => (this.food.get(id)?.amount ?? 0) > 0.001),
     );
     const water = nearest(reachable.filter((id) => this.graph.node(id).wet));
     const inactive = agent.profile.nocturnal
@@ -212,7 +256,7 @@ export class Ecosystem {
       needs.hydration < 0.4 && !water
         ? "No reachable damp shoreline. Raise the water slightly or mist the habitat."
         : needs.hunger > 0.5 && !food
-          ? "No reachable insects. Scatter food on the bank."
+          ? "No insects within reach. Plants and moss give insects cover to breed."
           : "";
     if (inactive || needs.energy < 0.3) {
       const shelters = reachable
