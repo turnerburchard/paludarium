@@ -350,7 +350,13 @@ describe("plant perches and species movement", () => {
     ];
     return world;
   };
-  it.each(["monstera", "bromeliad", "fern", "anthurium"] as const)(
+  it.each([
+    "monstera",
+    "bromeliad",
+    "fern",
+    "anthurium",
+    "philodendron",
+  ] as const)(
     "connects %s foliage to ground and seats perches on the transformed plant",
     (kind) => {
       const world = plantWorld();

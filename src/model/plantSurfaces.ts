@@ -238,3 +238,98 @@ export function anthuriumLeaves(random: () => number): AnthuriumLeaf[] {
     };
   });
 }
+
+export interface VineLeaf {
+  /** Where the leaf stalk meets the blade, and the blade's frame there. */
+  base: PlantPoint;
+  direction: PlantPoint;
+  normal: PlantPoint;
+  length: number;
+  width: number;
+  droop: number;
+  /** How far up the vine the leaf grows, as an index into its path. */
+  node: number;
+}
+
+/** A heartleaf vine spiralling up a cork pole. Its leaves grow larger as it
+ * climbs, as climbing philodendrons do, and only the big upper leaves hold a
+ * frog; the way up is along the vine itself. */
+export function philodendronVine(random: () => number) {
+  const height = 1.15 + random() * 0.2;
+  const poleRadius = 0.085;
+  const turns = 2.3 + random() * 0.5;
+  const phase = random() * Math.PI * 2;
+  const vine = Array.from({ length: 25 }, (_, i): PlantPoint => {
+    const t = i / 24;
+    const angle = phase + t * turns * Math.PI * 2;
+    return {
+      x: Math.cos(angle) * (poleRadius + 0.014),
+      y: 0.02 + t * (height - 0.08),
+      z: Math.sin(angle) * (poleRadius + 0.014),
+    };
+  });
+  const leaves = Array.from({ length: 16 }, (_, i): VineLeaf => {
+    const node = 1 + Math.round(i * 1.45);
+    const at = vine[node];
+    const t = node / 24;
+    const out = normalized({ x: at.x, y: 0, z: at.z });
+    const direction = normalized({
+      x: out.x,
+      y: -0.15 - random() * 0.2,
+      z: out.z,
+    });
+    const normal = normalized({
+      x: -direction.x * direction.y,
+      y: 1 - direction.y * direction.y,
+      z: -direction.z * direction.y,
+    });
+    const length = 0.12 + t * t * 0.25 + random() * 0.04;
+    return {
+      base: {
+        x: at.x + out.x * 0.04,
+        y: at.y + 0.02,
+        z: at.z + out.z * 0.04,
+      },
+      direction,
+      normal,
+      length,
+      width: length * 0.78,
+      droop: 0.1 + random() * 0.06,
+      node,
+    };
+  });
+  return { height, poleRadius, vine, leaves };
+}
+
+export function philodendronPerches(random: () => number): PlantPerch[] {
+  const { vine, leaves } = philodendronVine(random);
+  return leaves
+    .filter((leaf) => leaf.length > 0.28)
+    .map((leaf) => {
+      const t = 0.35;
+      const sag = -leaf.droop * t * t * leaf.length;
+      const slope = -2 * leaf.droop * t;
+      return {
+        stem: [{ x: 0, y: 0, z: 0 }, ...vine.slice(0, leaf.node + 1)],
+        perch: {
+          x:
+            leaf.base.x +
+            leaf.direction.x * leaf.length * t +
+            leaf.normal.x * (sag + 0.004),
+          y:
+            leaf.base.y +
+            leaf.direction.y * leaf.length * t +
+            leaf.normal.y * (sag + 0.004),
+          z:
+            leaf.base.z +
+            leaf.direction.z * leaf.length * t +
+            leaf.normal.z * (sag + 0.004),
+        },
+        perchNormal: normalized({
+          x: leaf.normal.x - leaf.direction.x * slope,
+          y: leaf.normal.y - leaf.direction.y * slope,
+          z: leaf.normal.z - leaf.direction.z * slope,
+        }),
+      };
+    });
+}
