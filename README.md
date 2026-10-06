@@ -25,7 +25,8 @@ Drag to orbit and scroll to zoom. On desktop, WASD pans the camera (Shift to mov
 
 ## Architecture
 
-- `src/model/`: versioned Zod save schema, asset catalog, deterministic terrain, and presets. No React or Three.js dependency.
+- `src/model/`: versioned Zod save schema, deterministic terrain, and presets. No React or rendering code.
+- `src/assets/`: one definition per placeable thing: catalog info, traits (blocks movement, gives shelter, frog behavior), and the function that builds its 3D model.
 - `src/editor/`: undo/redo history, validated import/export, local storage, and editor commands.
 - `src/simulation/`: animal needs and behavior. Owns state that the renderer only observes.
 - `src/scene/`: geometry factories, terrain and water, lighting, camera, and animal poses. Assets dispose their GPU resources on removal.
@@ -39,9 +40,9 @@ Conventions:
 - Randomness in the simulation goes through an injectable source so behavior is testable.
 - Changes to environment parameters need matching schema validation, plus a save migration if the change is incompatible.
 
-**Adding a plant:** add an asset kind to the schema, a definition to the catalog, and a geometry factory under `src/scene/assets/`, registered in `assetBuilders.ts`.
+**Adding an asset:** add its kind to `assetKinds` in the schema, write a definition file under `src/assets/` (see `plants/fern.ts` for a small one), and register it in `src/assets/index.ts`. TypeScript flags any kind without a definition. To swap a model, change only that asset's `build` function.
 
-**Frog model:** `scripts/prepare-frog-model.mjs` normalizes the original GLB (`docs/inspiration/preferred-frog-original.glb`) into the baked rest pose in `src/scene/assets/data/frog.json`. `frogs.ts` handles per-species proportions and coloring. The GLB's rig and animation clips aren't used yet.
+**Frog model:** `scripts/prepare-frog-model.mjs` normalizes the original GLB (`docs/inspiration/preferred-frog-original.glb`) into the baked rest pose in `src/assets/animals/frog.json`. `src/assets/animals/frogs.ts` defines each species: proportions, coloring, markings and behavior. The GLB's rig and animation clips aren't used yet.
 
 ## Current behavior and limits
 

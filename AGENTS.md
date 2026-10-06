@@ -30,7 +30,7 @@ This matters more than speed. The owner reads the code and wants it to look like
 
 ## Architecture
 
-- `src/model/`: the save format (Zod schema), terrain math, presets. Pure data and functions, no React or Three.js.
+- `src/model/`: the save format (Zod schema), terrain math, presets. Pure data and functions, no React or rendering code.
 - `src/assets/`: one definition per placeable thing (plant, rock, frog, fish): its catalog info, traits, and how to build its 3D model. Adding an asset means adding one file here and registering it.
 - `src/editor/`: editing commands, undo/redo history, persistence.
 - `src/simulation/`: animal needs and behavior. Owns state; the renderer only reads it.

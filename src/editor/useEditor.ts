@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { assets } from "../model/catalog";
+import { assets } from "../assets";
 import {
   MAX_OBJECTS,
   type AssetKind,

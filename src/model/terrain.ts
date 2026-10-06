@@ -1,5 +1,5 @@
 import type { Environment, HabitatObject, AssetKind } from "./schema";
-import { assets } from "./catalog";
+import { assets } from "../assets";
 export function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
@@ -51,13 +51,5 @@ export function fitObject(
       env,
       assets[object.kind].radius * object.scale,
     ),
-  };
-}
-/** Tiny seeded generator: asset silhouettes remain stable across saves and undo. */
-export function randomFromSeed(seed: number) {
-  let value = seed | 0;
-  return () => {
-    value = (Math.imul(value, 1664525) + 1013904223) | 0;
-    return (value >>> 0) / 4294967296;
   };
 }

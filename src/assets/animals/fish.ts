@@ -1,9 +1,20 @@
 import * as THREE from "three";
-import { material, mesh } from "./geometry";
-import { ringVolume, triangles, type Point } from "./faceted";
+import { material, mesh } from "../geometry";
+import { ringVolume, triangles, type Point } from "../faceted";
+import type { AssetDefinition } from "../types";
+
+export const fish: AssetDefinition = {
+  kind: "fish",
+  name: "Pond fish",
+  category: "Animals",
+  description: "A small golden fish. Place it in the open water.",
+  radius: 0.18,
+  habitat: "water",
+  build,
+};
 
 /** Narrow spindle, defined gill plane and a forked tail rather than a round body. */
-export function fish() {
+function build() {
   const root = new THREE.Group();
   const gold = material("#cfa34d", 0.72);
   const fin = material("#b9733d", 0.8);

@@ -2,16 +2,14 @@ import type { EcosystemController } from "../simulation/useEcosystem";
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
-import { isFrogKind } from "../model/species";
-import { assets } from "../model/catalog";
+import { assets, buildAsset, disposeAsset, isFrog } from "../assets";
 import type { Environment, HabitatObject } from "../model/schema";
 import {
   boundedPosition,
   groundHeight,
   placementProblem,
-  randomFromSeed,
 } from "../model/terrain";
-import { buildAsset, disposeAsset } from "./assetBuilders";
+import { randomFromSeed } from "../model/random";
 
 interface Props {
   object: HabitatObject;
@@ -39,7 +37,7 @@ export function Inhabitant({
     () => buildAsset(object.kind, object.seed),
     [object.kind, object.seed],
   );
-  const isFrog = isFrogKind(object.kind);
+  const frog = isFrog(object.kind);
   const animation = useRef({
     cycle: -1,
     from: { x: object.x, z: object.z },
@@ -88,7 +86,7 @@ export function Inhabitant({
     const t = clock.current;
     group.position.set(object.x, baseY, object.z);
     group.rotation.set(0, object.rotation, 0);
-    if (isFrog && !ghost && ecosystem) {
+    if (frog && !ghost && ecosystem) {
       const state = ecosystem.live.current!.engine.getAnimal(object.id);
       if (state) {
         group.position.set(
@@ -125,7 +123,7 @@ export function Inhabitant({
       }
     }
     if (ghost || selected) return;
-    if (isFrog) {
+    if (frog) {
       const period = 6 + (object.seed % 5),
         cycle = Math.floor(t / period),
         phase = t % period;

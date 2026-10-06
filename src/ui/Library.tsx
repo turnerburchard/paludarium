@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
 import { Leaf, Mountain, Bird, Grid2X2, Plus } from "lucide-react";
-import { catalog, type Category } from "../model/catalog";
+import { catalog, type Category } from "../assets";
 import type { AssetKind } from "../model/schema";
 import type { Editor } from "../editor/useEditor";
 import { makeThumbnails } from "../scene/thumbnails";
-const categories: { name: Category; icon: typeof Leaf }[] = [
+type Filter = Category | "All";
+const categories: { name: Filter; icon: typeof Leaf }[] = [
   { name: "All", icon: Grid2X2 },
   { name: "Plants", icon: Leaf },
   { name: "Landscape", icon: Mountain },
   { name: "Animals", icon: Bird },
 ];
 export function Library({ editor }: { editor: Editor }) {
-  const [category, setCategory] = useState<Category>("All");
+  const [category, setCategory] = useState<Filter>("All");
   const [thumbnails, setThumbnails] = useState<
     Partial<Record<AssetKind, string>>
   >({});

@@ -9,7 +9,7 @@ import {
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import type { Editor } from "../editor/useEditor";
-import { assets } from "../model/catalog";
+import { assets } from "../assets";
 import {
   boundedPosition,
   groundHeight,

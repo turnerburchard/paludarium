@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Environment } from "../model/schema";
-import { groundHeight, randomFromSeed } from "../model/terrain";
+import { randomFromSeed } from "../model/random";
+import { groundHeight } from "../model/terrain";
 
 function makeTerrain(env: Environment) {
   const geo = new THREE.PlaneGeometry(env.width, env.depth, 70, 48);

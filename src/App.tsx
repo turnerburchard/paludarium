@@ -30,12 +30,11 @@ import {
   HelpCircle,
   HeartPulse,
 } from "lucide-react";
-import { isFrogKind } from "./model/species";
 import { useEcosystem } from "./simulation/useEcosystem";
 import { LifePanel } from "./ui/LifePanel";
 import { useEditor } from "./editor/useEditor";
 import { downloadWorld, parseWorld } from "./editor/persistence";
-import { assets } from "./model/catalog";
+import { assets, isFrog } from "./assets";
 import { makePreset, type Preset } from "./model/presets";
 import { placementProblem } from "./model/terrain";
 import { WorldScene } from "./scene/WorldScene";
@@ -79,7 +78,7 @@ export default function App() {
     [resetCamera, setResetCamera] = useState(0),
     [menu, setMenu] = useState<"worlds" | "help" | null>(null);
   useEffect(() => {
-    if (selected && isFrogKind(selected.kind)) setPanel("life");
+    if (selected && isFrog(selected.kind)) setPanel("life");
   }, [selected?.id]);
   const importInput = useRef<HTMLInputElement>(null);
   const problems = world.objects.filter((o) =>

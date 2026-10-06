@@ -1,7 +1,6 @@
 import * as THREE from "three";
-import { catalog } from "../model/catalog";
 import type { AssetKind } from "../model/schema";
-import { buildAsset, disposeAsset } from "./assetBuilders";
+import { buildAsset, catalog, disposeAsset } from "../assets";
 /** Reuse the actual object builders and a single offscreen context for the asset tray. */
 export function makeThumbnails(): Partial<Record<AssetKind, string>> {
   const output: Partial<Record<AssetKind, string>> = {};

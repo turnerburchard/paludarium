@@ -13,7 +13,7 @@ The scene still uses stylized movement, not rigged walking/climbing animation. F
 - `simulation/types.ts`: engine contracts; no rendering types.
 - `simulation/navigation.ts`: validated graph and reachable routes.
 - `simulation/engine.ts`: bounded live time, needs, decisions, movement, shared food consumption.
-- `simulation/species.ts`: behavioral profiles; separate from model geometry.
+- Frog behavior profiles (nocturnal, climbs, speed) live on each frog's asset definition in `src/assets/animals/frogs.ts`.
 - `simulation/worldHabitat.ts`: adapter from editor terrain/objects to navigation surfaces. Rocks and wood block ground cells. Plants provide shelter scores. Only shallow shoreline cells admit soaking.
 - `simulation/useEcosystem.ts`: React lifecycle and low-frequency HUD snapshots.
 - `scene/EcosystemLife.tsx`: advances the engine once per frame, renders feeding patches.

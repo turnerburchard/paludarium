@@ -1,11 +1,22 @@
 import type { World } from "../model/schema";
-import { isFrogKind } from "../model/species";
+import { assets, isFrog } from "../assets";
 import { groundHeight } from "../model/terrain";
-import { assets } from "../model/catalog";
 import { Ecosystem } from "./engine";
 import { HabitatGraph, distance } from "./navigation";
-import { frogProfiles } from "./species";
-import type { AnimalSeed, HabitatNode, FoodPatch } from "./types";
+import type {
+  AnimalSeed,
+  HabitatNode,
+  FoodPatch,
+  SpeciesProfile,
+} from "./types";
+
+/** Food sits on ground any frog can reach. */
+const groundWalker: SpeciesProfile = {
+  id: "ground",
+  nocturnal: false,
+  climbs: false,
+  speed: 1,
+};
 
 /** Conservative ground navigation. The graph describes surfaces, not animal mesh anatomy. */
 export function buildHabitat(world: World): HabitatGraph {
@@ -15,16 +26,15 @@ export function buildHabitat(world: World): HabitatGraph {
   const clearance = Math.max(
     0.16,
     ...world.objects
-      .filter((o) => isFrogKind(o.kind))
+      .filter((o) => isFrog(o.kind))
       .map((o) => assets[o.kind].radius * o.scale),
   );
   const margin = clearance + 0.08,
     spacing = 0.32;
   const nx = Math.ceil((env.width - 2 * margin) / spacing),
     nz = Math.ceil((env.depth - 2 * margin) / spacing);
-  const objects = world.objects.filter(
-    (o) => !isFrogKind(o.kind) && o.kind !== "fish",
-  );
+  const obstacles = world.objects.filter((o) => assets[o.kind].blocksMovement);
+  const shelters = world.objects.filter((o) => assets[o.kind].shelter);
   for (let ix = 0; ix <= nx; ix++)
     for (let iz = 0; iz <= nz; iz++) {
       const x = -env.width / 2 + margin + (ix * (env.width - 2 * margin)) / nx;
@@ -32,25 +42,19 @@ export function buildHabitat(world: World): HabitatGraph {
       const y = groundHeight(x, z, env);
       // Shallow shoreline is reachable; open/deep water is not a frog walking surface.
       if (env.water - y > 0.025) continue;
-      const solid = objects.some(
+      const solid = obstacles.some(
         (o) =>
-          (o.kind === "rock" || o.kind === "wood") &&
           Math.hypot(x - o.x, z - o.z) <
-            assets[o.kind].radius * o.scale + clearance,
+          assets[o.kind].radius * o.scale + clearance,
       );
       if (solid) continue;
-      const shelter = objects.reduce(
+      const shelter = shelters.reduce(
         (best, o) =>
           Math.max(
             best,
-            assets[o.kind].category === "Plants" || o.kind === "moss"
-              ? Math.max(
-                  0,
-                  1 -
-                    Math.hypot(x - o.x, z - o.z) /
-                      (assets[o.kind].radius * o.scale + 0.4),
-                )
-              : 0,
+            1 -
+              Math.hypot(x - o.x, z - o.z) /
+                (assets[o.kind].radius * o.scale + 0.4),
           ),
         0,
       );
@@ -152,8 +156,9 @@ export function createWorldEcosystem(
     snapshot = previous?.engine.snapshot();
   const animals: AnimalSeed[] = [];
   for (const object of world.objects) {
-    if (!isFrogKind(object.kind)) continue;
-    const species = frogProfiles[object.kind];
+    const behavior = assets[object.kind].frog;
+    if (!behavior) continue;
+    const species: SpeciesProfile = { id: object.kind, ...behavior };
     const oldObject = previous?.world.objects.find((o) => o.id === object.id);
     const oldState = snapshot?.animals.find(
       (a) => a.id === object.id && a.speciesId === object.kind,
@@ -189,7 +194,7 @@ export function createWorldEcosystem(
   if (snapshot) {
     food = snapshot.food.flatMap((patch) => {
       const oldNode = previous!.engine.graph.node(patch.nodeId);
-      const target = graph.nearest(oldNode.position, frogProfiles["dart-frog"]);
+      const target = graph.nearest(oldNode.position, groundWalker);
       return target ? [{ nodeId: target.id, amount: patch.amount }] : [];
     });
   } else {
