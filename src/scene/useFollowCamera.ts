@@ -1,4 +1,10 @@
-import { useEffect, useRef, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { OrbitControls } from "three-stdlib";
@@ -21,7 +27,7 @@ export function useFollowCamera(
   resetCamera: number,
 ) {
   const zooming = useRef(false);
-  const returning = useRef(false);
+  const [returning, setReturning] = useState(false);
   /** The view before watching started, and the zoom limit to restore. */
   const home = useRef<{
     position: THREE.Vector3;
@@ -38,7 +44,7 @@ export function useFollowCamera(
     const orbit = controls.current;
     zooming.current = animalId !== null;
     if (animalId && orbit) {
-      returning.current = false;
+      setReturning(false);
       home.current ??= {
         position: orbit.object.position.clone(),
         target: orbit.target.clone(),
@@ -46,27 +52,41 @@ export function useFollowCamera(
       };
       orbit.minDistance = WATCH_MIN_DISTANCE;
     }
-    if (!animalId && home.current) returning.current = true;
+    if (!animalId && home.current) setReturning(true);
   }, [animalId]);
   useEffect(() => {
     // Reset supersedes a return to the previous custom camera position.
     const orbit = controls.current;
     if (orbit && home.current) orbit.minDistance = home.current.minDistance;
     zooming.current = false;
-    returning.current = false;
+    setReturning(false);
     home.current = null;
   }, [resetCamera]);
+  const interrupt = useCallback(() => {
+    zooming.current = false;
+    const orbit = controls.current;
+    if (orbit && !animalId && home.current) {
+      orbit.minDistance = home.current.minDistance;
+      home.current = null;
+      setReturning(false);
+    }
+  }, [animalId, controls]);
   useFrame((_, delta) => {
     const orbit = controls.current;
-    if (orbit && returning.current && home.current) {
+    if (orbit && returning && home.current) {
       const ease = 1 - Math.exp(-delta * 5);
       orbit.object.position.lerp(home.current.position, ease);
       orbit.target.lerp(home.current.target, ease);
       orbit.update();
-      if (orbit.object.position.distanceTo(home.current.position) < 0.02) {
+      if (
+        orbit.object.position.distanceTo(home.current.position) < 0.02 &&
+        orbit.target.distanceTo(home.current.target) < 0.02
+      ) {
+        orbit.object.position.copy(home.current.position);
+        orbit.target.copy(home.current.target);
         orbit.minDistance = home.current.minDistance;
-        returning.current = false;
         home.current = null;
+        setReturning(false);
       }
       return;
     }
@@ -98,4 +118,7 @@ export function useFollowCamera(
     }
     orbit.update();
   });
+  // The saved view also covers the render between deselection and its effect.
+  // Auto-orbit must stay off throughout the return or it never settles.
+  return { active: !!animalId || returning || !!home.current, interrupt };
 }

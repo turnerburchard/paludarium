@@ -7,6 +7,7 @@ import type { OrbitControls } from "three-stdlib";
 export function useCameraNavigation(
   controls: RefObject<OrbitControls | null>,
   enabled: boolean,
+  onNavigate: () => void,
 ) {
   const keys = useRef(new Set<string>());
   const vectors = useRef({
@@ -69,6 +70,7 @@ export function useCameraNavigation(
     if (held.has("KeyD")) movement.add(right);
     if (held.has("KeyA")) movement.sub(right);
     if (movement.lengthSq() === 0) return;
+    onNavigate();
     const speed = held.has("ShiftLeft") || held.has("ShiftRight") ? 5 : 2.4;
     movement.normalize().multiplyScalar(speed * Math.min(delta, 0.05));
     // Keep an easy path back to the enclosure; reset remains an explicit one-click action.

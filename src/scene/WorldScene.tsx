@@ -66,8 +66,13 @@ function Scene({
   const terrain = useRef<THREE.Group>(null);
   const inhabitants = useRef<THREE.Group>(null);
   useWatchVisibility(inhabitants, ecosystem, watchingId);
-  useCameraNavigation(controls, true);
-  useFollowCamera(controls, ecosystem, watchingId, resetCamera);
+  const followCamera = useFollowCamera(
+    controls,
+    ecosystem,
+    watchingId,
+    resetCamera,
+  );
+  useCameraNavigation(controls, true, followCamera.interrupt);
   const [cursor, setCursor] = useState<{
     x: number;
     z: number;
@@ -313,8 +318,9 @@ function Scene({
         enableRotate={tool.type !== "terrain"}
         enableDamping
         dampingFactor={0.09}
-        autoRotate={view && !editor.paused}
+        autoRotate={view && !editor.paused && !followCamera.active}
         autoRotateSpeed={0.35}
+        onStart={followCamera.interrupt}
       />
     </>
   );
