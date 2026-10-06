@@ -1,6 +1,6 @@
 # Paludarium
 
-A browser terrarium studio: build a planted habitat, place frogs and fish, and watch it come alive. Built with React, TypeScript, React Three Fiber, and Three.js. Plants and hardscape are procedural; frogs are based on a CC0 Quaternius model. The app makes no external network requests.
+A browser terrarium studio: build a planted habitat, place frogs and fish, and watch it come alive. Live at https://turnerburchard.com/paludarium/, deployed from `main` on every push. Built with React, TypeScript, React Three Fiber, and Three.js. Plants and hardscape are procedural; frogs are based on a CC0 Quaternius model. The app makes no external network requests.
 
 ## Running locally
 
@@ -21,7 +21,9 @@ npm run test:e2e
 
 ## Controls
 
-Drag to orbit and scroll to zoom. Select a frog and choose **Watch up close** to follow it with the camera. On desktop, WASD pans the camera (Shift to move faster); **Reset Camera** restores the default view. Keyboard navigation is ignored while typing in fields or dialogs.
+Drag to orbit and scroll or pinch to zoom. To follow a frog with the camera, pick it from the Life panel's frog list, or select it and choose **Watch up close**; stopping eases the camera back. On desktop, WASD pans the camera (Shift to move faster); **Reset Camera** restores the default view. Keyboard shortcuts are ignored while typing in fields or dialogs.
+
+A first visit opens on the Cloud forest preset. On phones the scene fills the screen and a dock at the bottom opens the Add, Habitat and Life panels as a bottom sheet. Sliders show their effect live while dragging and become one undo step on release.
 
 ## Architecture
 
@@ -52,8 +54,9 @@ Conventions:
 - Plants and frogs need dry ground and fish need water depth. Raising the water can invalidate existing placements, which get flagged.
 - Frogs seek food, water, rest, and sleep, and move along connected ground and glass. Fish swim as a loose school in open water and turn back from the shore; they don't eat or get hungry yet.
 - Insects breed in colonies under plant and moss cover, growing back toward a capacity set by that cover. A well-planted tank feeds its frogs without help; the Life panel shows how many frogs the insects can support.
+- Each plant likes a soil (water's edge, damp, or well drained up the bank), measured by height above the waterline. A plant outside its band struggles and gives less cover; the inspector says why.
 - The simulation runs only while the tab is visible. Only the layout is saved, and nothing advances while the app is closed.
-- No growth, predation, breeding, or mortality yet.
+- No plant growth, predation, breeding, or mortality yet.
 
 ## Direction
 
