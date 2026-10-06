@@ -1,3 +1,4 @@
+import type { Discovery } from "./discoveries";
 import type { AnimalBehavior } from "../assets/types";
 
 /** Engine units are scene units and simulated seconds. Needs are normalized to 0–1. */
@@ -70,4 +71,5 @@ export interface SimulationSnapshot {
   phase: "day" | "night";
   animals: AnimalState[];
   food: FoodPatch[];
+  discoveries: Discovery[];
 }

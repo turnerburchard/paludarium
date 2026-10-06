@@ -375,6 +375,7 @@ export function createWorldEcosystem(
   }
   return new Ecosystem(graph, animals, {
     elapsed: snapshot?.elapsed,
+    discoveries: snapshot?.discoveries,
     food: [...food.values()],
   });
 }
@@ -441,11 +442,6 @@ function nearestWithin(
     }
   }
   return best;
-}
-
-/** Where hand-scattered insects land. */
-export function feedingStations(graph: HabitatGraph) {
-  return shelteredSpots(graph, 3, 1.2);
 }
 
 /** The most sheltered dry ground spots, kept a minimum distance apart. */

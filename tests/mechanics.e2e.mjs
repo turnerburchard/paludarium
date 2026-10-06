@@ -119,9 +119,11 @@ try {
     await page.getByRole("complementary", { name: "Terrarium tools" }).count(),
     0,
   );
-  await page.getByRole("button", { name: "Watch a frog", exact: true }).click();
   await page
-    .getByRole("region", { name: "Choose a frog" })
+    .getByRole("button", { name: "Watch a creature", exact: true })
+    .click();
+  await page
+    .getByRole("region", { name: "Choose a creature" })
     .getByRole("button", { name: /Red-eyed tree frog/ })
     .click();
   await page.getByRole("complementary", { name: "Watching" }).waitFor();

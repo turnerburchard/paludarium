@@ -634,3 +634,85 @@ describe("plant perches and species movement", () => {
     expect(engine.snapshot().animals).toEqual([]);
   });
 });
+
+describe("field notebook", () => {
+  it("records an actual meal after arriving, once, and owns its snapshot data", () => {
+    const graph = new HabitatGraph([
+      node("a", 0, ["b"]),
+      node("b", 0.2, ["a"]),
+    ]);
+    const engine = new Ecosystem(graph, [seed()], {
+      speed: 1,
+      elapsed: 0,
+      random: () => 0.5,
+      food: [{ nodeId: "b", amount: 5, capacity: 5 }],
+    });
+    engine.advance(0.1);
+    expect(engine.getAnimal("frog")!.activity).toBe("seeking-food");
+    expect(engine.snapshot().discoveries).toEqual([]);
+    run(engine, 10);
+    expect(engine.snapshot().discoveries).toEqual([
+      {
+        kind: "hunt",
+        animalId: "frog",
+        speciesId: "test-frog",
+        elapsed: expect.any(Number),
+      },
+    ]);
+    const snapshot = engine.snapshot();
+    snapshot.discoveries[0].animalId = "changed";
+    run(engine, 10);
+    expect(engine.snapshot().discoveries).toHaveLength(1);
+    expect(engine.snapshot().discoveries[0].animalId).toBe("frog");
+  });
+  it("records shoreline soaking, but not while paused or held for editing", () => {
+    const graph = new HabitatGraph([node("a", 0, [], { wet: true })]);
+    const engine = new Ecosystem(
+      graph,
+      [seed("frog", { hunger: 0.2, hydration: 0.2, energy: 0.8 })],
+      { speed: 1, elapsed: 0, random: () => 0.5 },
+    );
+    engine.advance(0.1, true);
+    engine.advance(0.1, false, new Set(["frog"]));
+    expect(engine.snapshot().discoveries).toEqual([]);
+    engine.advance(0.1);
+    expect(engine.snapshot().discoveries[0].kind).toBe("soak");
+  });
+  it("keeps discoveries across habitat edits and drops references to removed inhabitants", () => {
+    const world = makePreset("tropical");
+    const initial = createWorldEcosystem(world);
+    const first = initial.snapshot().animals[0];
+    const engine = new Ecosystem(
+      initial.graph,
+      [
+        {
+          id: first.id,
+          species: frogProfile("tree-frog"),
+          nodeId: first.nodeId,
+          needs: { hunger: 0.8, hydration: 0.8, energy: 0.8 },
+        },
+      ],
+      {
+        speed: 1,
+        elapsed: 0,
+        random: () => 0.5,
+        food: [{ nodeId: first.nodeId, amount: 5, capacity: 5 }],
+      },
+    );
+    engine.advance(0.1);
+    const notes = engine.snapshot().discoveries;
+    expect(notes.length).toBeGreaterThan(0);
+    const edited = { ...world, name: "A new name" };
+    const next = createWorldEcosystem(edited, { world, engine });
+    expect(next.snapshot().discoveries).toEqual(notes);
+    const removed = {
+      ...world,
+      objects: world.objects.filter(
+        (object) => !notes.some((note) => note.animalId === object.id),
+      ),
+    };
+    expect(
+      createWorldEcosystem(removed, { world, engine }).snapshot().discoveries,
+    ).toEqual([]);
+  });
+});

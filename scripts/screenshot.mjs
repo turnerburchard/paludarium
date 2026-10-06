@@ -79,6 +79,31 @@ try {
       await page.screenshot({ path: viewPath });
       console.log(viewPath);
       await page.getByRole("button", { name: "Build", exact: true }).click();
+      if (viewport.name === "phone") {
+        await page
+          .getByRole("navigation", { name: "Tools" })
+          .getByRole("button", { name: "Life", exact: true })
+          .click();
+        await page.waitForFunction(
+          () =>
+            document.querySelector(".sidebar").getBoundingClientRect().bottom <=
+            innerHeight + 1,
+        );
+      } else {
+        await page
+          .getByRole("button", { name: "Habitat life", exact: true })
+          .click();
+      }
+      const lifePath = `${outDir}/${preset.name}-${viewport.name}-life.png`;
+      await page.screenshot({ path: lifePath });
+      console.log(lifePath);
+      await page
+        .getByRole("button", { name: "Add to your world", exact: true })
+        .click();
+      if (viewport.name === "phone")
+        await page
+          .getByRole("button", { name: "Close panel", exact: true })
+          .click();
     }
     await page.close();
   }

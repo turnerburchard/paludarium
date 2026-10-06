@@ -31,7 +31,7 @@ export function WatchCard({
       {animal ? (
         <AnimalStatus animal={animal} compact />
       ) : (
-        <p>This frog can't reach any ground right now.</p>
+        <p>This creature can’t reach any ground right now.</p>
       )}
     </aside>
   );

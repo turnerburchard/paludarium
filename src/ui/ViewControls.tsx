@@ -15,14 +15,14 @@ export function ViewControls({
   onWatch: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const frogs = world.objects.filter((object) => isLandAnimal(object.kind));
+  const animals = world.objects.filter((object) => isLandAnimal(object.kind));
   return (
     <div className="view-controls">
       {open && (
-        <section className="watch-picker" aria-label="Choose a frog">
-          <p>Pick a frog to follow</p>
+        <section className="watch-picker" aria-label="Choose a creature">
+          <p>Pick someone to follow</p>
           <ul className="frog-list">
-            {frogs.map((object) => {
+            {animals.map((object) => {
               const animal = ecosystem.snapshot.animals.find(
                 (animal) => animal.id === object.id,
               );
@@ -39,14 +39,14 @@ export function ViewControls({
           </ul>
         </section>
       )}
-      {frogs.length > 0 ? (
+      {animals.length > 0 ? (
         <button
           className="watch-world-button"
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
         >
           {open ? <X size={17} /> : <Eye size={17} />}
-          {open ? "Close frog list" : "Watch a frog"}
+          {open ? "Close creature list" : "Watch a creature"}
         </button>
       ) : (
         <p className="view-hint">Switch to Build to create your habitat.</p>
