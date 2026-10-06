@@ -16,7 +16,7 @@ export function loadThumbnails(): Promise<Thumbnails> {
 const nextFrame = () =>
   new Promise((resolve) => requestAnimationFrame(resolve));
 
-/** Uses the real asset builders, one asset per frame so the scene keeps drawing. */
+/** Uses the real asset builders, a few assets per frame so the scene keeps drawing. */
 async function renderThumbnails(): Promise<Thumbnails> {
   const output: Thumbnails = {};
   // Let the scene draw its first frames before competing for the GPU.
@@ -37,8 +37,10 @@ async function renderThumbnails(): Promise<Thumbnails> {
     const fill = new THREE.DirectionalLight("#b7d9cc", 2);
     fill.position.set(3, 2, -2);
     scene.add(fill);
-    for (const asset of catalog) {
-      await nextFrame();
+    for (const [i, asset] of catalog.entries()) {
+      // A few per frame: each wait also renders the full scene, which is
+      // slow on software rendering.
+      if (i % 4 === 0) await nextFrame();
       const model = buildAsset(asset.kind, 173),
         box = new THREE.Box3().setFromObject(model),
         center = box.getCenter(new THREE.Vector3()),
