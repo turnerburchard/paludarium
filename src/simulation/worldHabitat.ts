@@ -385,26 +385,33 @@ export function createFishSchool(
   previous?: { world: World; fish: FishSchool },
 ): FishSchool {
   const env = world.environment;
-  const margin = assets.fish.radius;
+  const swimmers = world.objects.flatMap((object) => {
+    const swims = assets[object.kind].swims;
+    return swims ? [{ object, swims }] : [];
+  });
+  const margin = Math.max(
+    0,
+    ...swimmers.map(({ object }) => assets[object.kind].radius),
+  );
+  // Every swimmer shares the open-water placement rule.
   const isWater = (x: number, z: number) =>
     Math.abs(x) < env.width / 2 - margin &&
     Math.abs(z) < env.depth / 2 - margin &&
     !placementProblem("fish", x, z, env);
-  const fish = world.objects
-    .filter((o) => o.kind === "fish")
-    .map((object) => {
-      const old = previous?.world.objects.find((o) => o.id === object.id);
-      const swimming = previous?.fish.get(object.id);
-      const unmoved = old && old.x === object.x && old.z === object.z;
-      if (swimming && unmoved && isWater(swimming.x, swimming.z))
-        return swimming;
-      return {
-        id: object.id,
-        x: object.x,
-        z: object.z,
-        heading: object.rotation,
-      };
-    });
+  const fish = swimmers.map(({ object, swims }) => {
+    const old = previous?.world.objects.find((o) => o.id === object.id);
+    const swimming = previous?.fish.get(object.id);
+    const unmoved = old && old.x === object.x && old.z === object.z;
+    if (swimming && unmoved && isWater(swimming.x, swimming.z)) return swimming;
+    return {
+      id: object.id,
+      species: object.kind,
+      speed: swims.speed,
+      x: object.x,
+      z: object.z,
+      heading: object.rotation,
+    };
+  });
   return new FishSchool(fish, isWater);
 }
 

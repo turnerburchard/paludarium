@@ -11,6 +11,7 @@ import {
 } from "./animals/frogs";
 import { fish } from "./animals/fish";
 import { gecko } from "./animals/gecko";
+import { cardinalTetra, emberTetra } from "./animals/tetras";
 import { anthurium } from "./plants/anthurium";
 import { philodendron } from "./plants/philodendron";
 import { bromeliad } from "./plants/bromeliad";
@@ -50,6 +51,8 @@ export const assets = {
   "rock-shelter": rockShelter,
   "leaf-litter": leafLitter,
   fish,
+  "cardinal-tetra": cardinalTetra,
+  "ember-tetra": emberTetra,
 } satisfies Record<AssetKind, AssetDefinition>;
 
 export const catalog: readonly AssetDefinition[] = Object.values(assets);

@@ -84,6 +84,15 @@ export function makePreset(preset: Preset): World {
     add("anthurium", -1.35, 0.4, 0.85, 1.2);
     add("log", -1.75, 1.75, 0.8, 0.2);
     add("leaf-litter", -1.05, 1.05, 1);
+    for (const [x, z, turn] of [
+      [1.75, 0.95, 1.2],
+      [1.95, 1.15, 1.3],
+      [2.1, 0.85, 1.1],
+      [1.85, 0.7, 1.25],
+      [2.25, 1.05, 1.2],
+      [2.0, 0.55, 1.35],
+    ])
+      add("cardinal-tetra", x, z, 1, turn);
   } else {
     add("log", -1.65, 1.75, 0.8, 0.1);
     add("leaf-litter", -1.85, 0.35, 0.9);

@@ -4,6 +4,10 @@
 
 export interface Fish {
   id: string;
+  /** Fish school only with their own species. */
+  species: string;
+  /** Cruising speed in scene units per second. */
+  speed: number;
   x: number;
   z: number;
   /** Swimming direction in radians; 0 points toward -z. */
@@ -14,7 +18,6 @@ export interface SchoolOptions {
   random?: () => number;
 }
 
-const SPEED = 0.22;
 const TURN_RATE = 2.2;
 const NEIGHBOR_RANGE = 0.9;
 const PERSONAL_SPACE = 0.3;
@@ -58,7 +61,16 @@ export class FishSchool {
 
   get(id: string): Fish | undefined {
     const f = this.fish.get(id);
-    return f && { id: f.id, x: f.x, z: f.z, heading: f.heading };
+    return (
+      f && {
+        id: f.id,
+        species: f.species,
+        speed: f.speed,
+        x: f.x,
+        z: f.z,
+        heading: f.heading,
+      }
+    );
   }
 
   all(): Fish[] {
@@ -84,7 +96,7 @@ export class FishSchool {
       centerX = 0,
       centerZ = 0;
     for (const other of this.fish.values()) {
-      if (other === f) continue;
+      if (other === f || other.species !== f.species) continue;
       const dx = other.x - f.x,
         dz = other.z - f.z,
         d = Math.hypot(dx, dz);
@@ -120,7 +132,7 @@ export class FishSchool {
     f.heading += Math.max(-TURN_RATE * dt, Math.min(TURN_RATE * dt, turn));
 
     const step = direction(f.heading),
-      distance = SPEED * f.pace * dt;
+      distance = f.speed * f.pace * dt;
     const x = f.x + step.x * distance,
       z = f.z + step.z * distance;
     if (this.isWater(x, z)) {
