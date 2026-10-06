@@ -1,24 +1,12 @@
-Paludarium — Proprietary Rights Notice
+Copyright (c) 2026 Turner Burchard. All rights reserved.
 
-Copyright (c) 2026 Turner Burchard. All rights reserved to the extent
-copyright subsists in material owned by Turner Burchard.
+This repository is publicly visible for reference only. It is not open
+source. No permission is granted to use, copy, modify, distribute, or
+deploy this code or its assets, in whole or in part, without prior written
+permission from the copyright holder.
 
-Public availability of this repository does not make it open source.
-Except for rights granted by GitHub's applicable Terms of Service or
-required by applicable law, no permission is granted to use, copy, modify,
-distribute, sublicense, sell, or deploy the covered source code or assets,
-or to create or publish derivative works, without prior written permission
-from Turner Burchard. This applies to commercial and noncommercial uses.
+Third-party components remain under their own licenses; see
+THIRD_PARTY_NOTICES.md.
 
-Viewing and forking through GitHub are subject to GitHub's Terms of
-Service. They do not grant additional permission to publish or deploy the
-covered material outside those rights. This notice does not restrict fair
-use or other rights that cannot lawfully be restricted.
-
-Third-party dependencies and materials remain subject to their respective
-licenses and ownership. This notice does not replace those licenses or
-claim ownership of third-party material, underlying ideas, game mechanics,
-or independently developed works.
-
-THE COVERED MATERIAL IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, TO THE EXTENT PERMITTED BY APPLICABLE LAW.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED.

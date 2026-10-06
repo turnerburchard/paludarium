@@ -1,6 +1,6 @@
 # Paludarium work tracker
 
-This file is the source of truth until the personal GitHub integration can create issues. Keep completed work separate from proposed work; a conversation idea is not automatically part of the next release.
+Keep completed work separate from proposed work; an idea is not automatically part of the next release.
 
 ## Current release
 
@@ -9,7 +9,7 @@ This file is the source of truth until the personal GitHub integration can creat
 - [x] Desktop WASD camera movement, Shift for faster movement, typing/modal guards.
 - [x] Dark studio background, overhead illumination, saved warmth and brightness controls.
 - [x] Separate glass from soil faces; match sidewall and surface subdivisions.
-- [ ] Publish at turnerburchard.com/terrarium. Blocked: GitHub integration returns HTTP 403 on writes to turnerburchard/turnerburchard.github.io.
+- [ ] Publish at turnerburchard.com/paludarium/ by deploying `dist/` into `paludarium/` in turnerburchard/turnerburchard.github.io.
 
 ## Live animal behavior — first slice implemented
 
@@ -68,8 +68,4 @@ Model producers (plants/algae), detritus, microbial decomposition, appropriate s
 
 ## Naming decision
 
-The title is **Paludarium**, selected by the owner. Keep the existing hosting URL and saved-world storage key so bookmarks and saved habitats continue to work. The requested personal-domain destination remains turnerburchard.com/terrarium, deferred while GitHub write access is unavailable. Continue publishing to the existing ChatGPT site for now.
-
-## GitHub export — October 5, 2026
-
-The current requested destination is **https://turnerburchard.com/paludarium/**. The older `/terrarium/` entries above record the previous plan. The export package includes a publishing script and proprietary rights notice; publication remains pending while the owner uses local GitHub authentication.
+The title is **Paludarium**. Keep the saved-world storage key (`little-worlds:v1`) so existing saved habitats continue to work.
