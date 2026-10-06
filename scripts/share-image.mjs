@@ -47,7 +47,7 @@ try {
   await page.waitForTimeout(2500);
   await page.addStyleTag({
     content: `
-    .mode-switch, .scene-tools, .view-controls, .view-intro { display: none !important; }
+    .mode-switch, .scene-tools, .view-info { display: none !important; }
     .preview-caption { position: fixed; z-index: 10; left: 44px; bottom: 32px; color: #f0f3e9;
       font: 500 20px/1.5 system-ui, sans-serif; text-shadow: 0 2px 20px #08130e; }
     .preview-caption h1 { margin: 0 0 3px; font-size: 46px; letter-spacing: -2px; }

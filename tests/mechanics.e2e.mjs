@@ -120,10 +120,11 @@ try {
     0,
   );
   await page
-    .getByRole("button", { name: "Watch a creature", exact: true })
+    .getByRole("button", { name: "About Paludarium", exact: true })
     .click();
+  await page.locator("summary", { hasText: "Follow a creature" }).click();
   await page
-    .getByRole("region", { name: "Choose a creature" })
+    .getByRole("dialog", { name: "About Paludarium" })
     .getByRole("button", { name: /Red-eyed tree frog/ })
     .click();
   await page.getByRole("complementary", { name: "Watching" }).waitFor();

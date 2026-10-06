@@ -1211,47 +1211,6 @@ button:hover:not(:disabled) {
   top: auto;
   bottom: 24px;
 }
-.view-controls {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  max-width: calc(100% - 32px);
-  z-index: 5;
-}
-.watch-world-button {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  border: 1px solid #536b49;
-  border-radius: 30px;
-  padding: 13px 20px;
-  background: #192c24ed;
-  font-size: 13px;
-}
-.watch-picker {
-  width: 300px;
-  max-width: 100%;
-  max-height: 45dvh;
-  overflow: auto;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: #192c24f5;
-}
-.watch-picker p,
-.view-hint {
-  margin: 0;
-  font-size: 13px;
-  color: var(--muted);
-}
-.watch-picker .frog-list {
-  margin-bottom: 0;
-}
 .more-options {
   border-top: 1px solid var(--line);
   margin-top: 16px;
@@ -1348,9 +1307,6 @@ button:hover:not(:disabled) {
   .view-mode .inspector {
     bottom: 12px;
   }
-  .view-controls {
-    bottom: max(16px, env(safe-area-inset-bottom));
-  }
   .environment-panel {
     display: block;
   }
@@ -1369,34 +1325,6 @@ button:hover:not(:disabled) {
 
 [hidden] {
   display: none !important;
-}
-.view-intro {
-  position: absolute;
-  top: 28px;
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-  z-index: 3;
-  width: min(420px, calc(100% - 32px));
-}
-.view-intro h1 {
-  margin: 0 0 5px;
-  font-size: 26px;
-  font-weight: 500;
-  letter-spacing: -0.5px;
-}
-.view-intro p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-}
-.view-intro button {
-  min-height: 44px;
-  padding: 6px 12px;
-  border: 0;
-  background: transparent;
-  color: #b6c99d;
-  font-size: 12px;
 }
 .intro-build-button {
   padding: 12px 18px;
@@ -1485,12 +1413,6 @@ button:hover:not(:disabled) {
   color: var(--muted);
 }
 @media (max-width: 760px) {
-  .view-intro {
-    top: 87px;
-  }
-  .view-intro h1 {
-    font-size: 23px;
-  }
   .view-mode .scene-tools {
     gap: 0;
     padding: 3px;
@@ -1519,23 +1441,6 @@ button:hover:not(:disabled) {
   background: #0e1c16;
   color: #deedc0;
   font-size: 15px;
-}
-.view-intro-actions {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 16px;
-}
-.view-intro-actions a {
-  color: var(--muted);
-  font-size: 12px;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  text-underline-offset: 3px;
-}
-.view-intro h1 {
-  overflow-wrap: anywhere;
 }
 .shared-world-actions {
   display: flex;
@@ -1666,4 +1571,49 @@ button:hover:not(:disabled) {
 }
 .life-details p {
   line-height: 1.7;
+}
+
+.view-info {
+  position: absolute;
+  left: 16px;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 4;
+}
+.view-info .icon-button {
+  width: 44px;
+  height: 44px;
+  color: var(--muted);
+}
+.shared-world-badge {
+  position: absolute;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: 72px;
+  max-width: calc(100% - 88px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted);
+  z-index: 4;
+}
+.shared-world-badge > span {
+  max-width: 140px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.shared-world-badge > a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--muted);
+  text-underline-offset: 3px;
+}
+.creature-options {
+  margin-bottom: 16px;
+}
+.creature-options .frog-list {
+  max-height: 240px;
+  overflow: auto;
 }

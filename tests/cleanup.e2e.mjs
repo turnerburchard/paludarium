@@ -119,6 +119,30 @@ try {
   });
   await page.goto(url);
   await page.waitForFunction(() => document.querySelector("canvas"));
+  assert.equal(
+    await page.getByRole("heading").count(),
+    0,
+    "View has no branding headline",
+  );
+  assert.equal(
+    await page
+      .getByText("A tiny living world. Yours to shape.", { exact: true })
+      .count(),
+    0,
+  );
+  assert.equal(
+    await page
+      .getByRole("button", { name: /Watch a frog|Watch a creature/ })
+      .count(),
+    0,
+  );
+  assert.equal(
+    await page.getByText("What can I do here?", { exact: true }).count(),
+    0,
+  );
+  await page
+    .getByRole("button", { name: "About Paludarium", exact: true })
+    .waitFor();
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
@@ -225,7 +249,7 @@ try {
       },
     });
   });
-  await page.getByRole("button", { name: "What can I do here?" }).click();
+  await page.getByRole("button", { name: "About Paludarium" }).click();
   await page.getByRole("dialog", { name: "About Paludarium" }).waitFor();
   await page
     .getByRole("button", { name: "Make it yours", exact: true })
@@ -458,7 +482,8 @@ try {
   const receivedURL = `${url}/${new URL(sharedLink).hash}`;
   await receiver.goto(receivedURL);
   await receiver
-    .getByRole("heading", { name: "Cleanup check", exact: true })
+    .getByRole("navigation", { name: "Shared world", exact: true })
+    .getByText("Cleanup check", { exact: true })
     .waitFor();
   await receiver.waitForTimeout(500);
   const receiverSaved = () =>
@@ -483,7 +508,8 @@ try {
   assert.deepEqual(await receiverSaved(), ownWorld);
   await receiver.reload();
   await receiver
-    .getByRole("heading", { name: "Cleanup check", exact: true })
+    .getByRole("navigation", { name: "Shared world", exact: true })
+    .getByText("Cleanup check", { exact: true })
     .waitFor();
   assert.deepEqual(await receiverSaved(), ownWorld);
   await receiver.getByRole("button", { name: "Build", exact: true }).click();
@@ -494,7 +520,7 @@ try {
     .getByRole("link", { name: "Back to my world", exact: true })
     .click();
   await receiver
-    .getByRole("heading", { name: "Paludarium", exact: true })
+    .getByRole("button", { name: "About Paludarium", exact: true })
     .waitFor();
   await receiver.getByRole("button", { name: "Build", exact: true }).click();
   assert.equal(
@@ -505,7 +531,8 @@ try {
   );
   await receiver.goto(receivedURL);
   await receiver
-    .getByRole("heading", { name: "Cleanup check", exact: true })
+    .getByRole("navigation", { name: "Shared world", exact: true })
+    .getByText("Cleanup check", { exact: true })
     .waitFor();
   await receiver.getByRole("button", { name: "Build", exact: true }).click();
   const backupPromise = receiver.waitForEvent("download");
@@ -548,7 +575,8 @@ try {
   newcomer.on("pageerror", (error) => errors.push(error.message));
   await newcomer.goto(receivedURL);
   await newcomer
-    .getByRole("heading", { name: "Cleanup check", exact: true })
+    .getByRole("navigation", { name: "Shared world", exact: true })
+    .getByText("Cleanup check", { exact: true })
     .waitFor();
   await newcomer.waitForTimeout(500);
   assert.equal(

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Info } from "lucide-react";
+import { IconButton } from "./ui/IconButton";
 import { isLandAnimal } from "./assets";
 import { useEditor } from "./editor/useEditor";
 import { makePreset, type Preset } from "./model/presets";
@@ -16,8 +18,6 @@ import { Sidebar, type Panel } from "./ui/Sidebar";
 import { TopBar } from "./ui/TopBar";
 import { useWorldFiles } from "./ui/useWorldFiles";
 import { WatchCard } from "./ui/WatchCard";
-import { ViewControls } from "./ui/ViewControls";
-import { ViewIntro } from "./ui/ViewIntro";
 import { AboutDialog } from "./ui/AboutDialog";
 import type { World } from "./model/schema";
 import { SharedWorldDialog, WorldLinkError } from "./ui/SharedWorldDialog";
@@ -187,11 +187,20 @@ export default function App({
       />
       {view && !watchingId && (
         <>
-          <ViewIntro
-            sharedName={editor.isShared ? world.name : undefined}
-            onAbout={() => setDialog("about")}
-          />
-          <ViewControls world={world} ecosystem={ecosystem} onWatch={watch} />
+          <div className="view-info">
+            <IconButton
+              label="About Paludarium"
+              onClick={() => setDialog("about")}
+            >
+              <Info size={19} />
+            </IconButton>
+          </div>
+          {editor.isShared && (
+            <nav className="shared-world-badge" aria-label="Shared world">
+              <span title={world.name}>{world.name}</span>
+              <a href={location.pathname + location.search}>Back to my world</a>
+            </nav>
+          )}
         </>
       )}
       {!view && <BottomHud editor={editor} />}
@@ -227,6 +236,12 @@ export default function App({
       {dialog === "help" && <HelpDialog onClose={() => setDialog(null)} />}
       {dialog === "about" && (
         <AboutDialog
+          world={world}
+          ecosystem={ecosystem}
+          onWatch={(id) => {
+            setDialog(null);
+            watch(id);
+          }}
           onClose={() => setDialog(null)}
           onBuild={() => {
             setDialog(null);
