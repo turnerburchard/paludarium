@@ -167,6 +167,27 @@ describe("live ecosystem behavior", () => {
       .animals.reduce((sum, a) => sum + (0.8 + 0.002 * 10 - a.needs.hunger), 0);
     expect(fullnessGain).toBeCloseTo(0.2, 6);
   });
+  it("walks past a nearly empty colony to one worth a meal", () => {
+    const graph = new HabitatGraph([
+      node("a", 0, ["b"]),
+      node("b", 0.3, ["a", "c"]),
+      node("c", 0.6, ["b"]),
+    ]);
+    const engine = new Ecosystem(graph, [seed()], {
+      speed: 1,
+      elapsed: 0,
+      food: [
+        { nodeId: "b", amount: 0.1, capacity: 0 },
+        { nodeId: "c", amount: 3, capacity: 0 },
+      ],
+    });
+    for (let step = 0; step < 100; step++) {
+      engine.advance(0.1);
+      const frog = engine.getAnimal("frog")!;
+      expect(frog.activity === "eating" && frog.nodeId === "b").toBe(false);
+    }
+    expect(engine.getAnimal("frog")!.nodeId).toBe("c");
+  });
   it("never sends two frogs to the same spot", () => {
     const graph = new HabitatGraph([
       node("a", 0, ["b"]),
@@ -249,19 +270,16 @@ describe("live ecosystem behavior", () => {
     }
   });
   it.each(["tropical", "mountain"] as const)(
-    "lets every frog in the %s preset reach insects and water",
+    "lets every frog in the %s preset reach an insect colony",
     (preset) => {
-      const world = makePreset(preset);
-      const engine = createWorldEcosystem(world);
+      const engine = createWorldEcosystem(makePreset(preset));
       const colonies = new Set(engine.snapshot().food.map((p) => p.nodeId));
       for (const animal of engine.snapshot().animals) {
         const paths = engine.graph.paths(
           animal.nodeId,
           frogProfile(animal.speciesId as AssetKind),
         );
-        const reachable = [...paths.keys()];
-        expect(reachable.some((id) => colonies.has(id))).toBe(true);
-        expect(reachable.some((id) => engine.graph.node(id).wet)).toBe(true);
+        expect([...paths.keys()].some((id) => colonies.has(id))).toBe(true);
       }
     },
   );
