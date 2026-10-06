@@ -1,7 +1,16 @@
-import { Check, MousePointer2, Plus, RotateCw, X } from "lucide-react";
+import {
+  Check,
+  Copy,
+  MousePointer2,
+  Move,
+  Paintbrush,
+  Plus,
+  X,
+} from "lucide-react";
 import { assets } from "../assets";
 import type { Editor } from "../editor/useEditor";
-import { IconButton } from "./IconButton";
+import { PlacementRotation } from "./PlacementRotation";
+import { terrainTools } from "./terrainTools";
 
 /** Placement controls while placing or moving, navigation hints otherwise. */
 export function BottomHud({ editor }: { editor: Editor }) {
@@ -23,12 +32,20 @@ export function BottomHud({ editor }: { editor: Editor }) {
       {tool.type !== "select" ? (
         <div className="placement-bar">
           <span className="placement-icon">
-            <Plus size={20} />
+            {tool.type === "terrain" ? (
+              <Paintbrush size={20} />
+            ) : tool.type === "move" ? (
+              <Move size={20} />
+            ) : tool.type === "copy" ? (
+              <Copy size={20} />
+            ) : (
+              <Plus size={20} />
+            )}
           </span>
           <div>
             <strong>
               {tool.type === "terrain"
-                ? "Shaping your landscape"
+                ? terrainTools.find((brush) => brush.mode === tool.mode)?.label
                 : `${verb} ${kind ? assets[kind].name.toLowerCase() : ""}`}
             </strong>
             <span>
@@ -37,14 +54,7 @@ export function BottomHud({ editor }: { editor: Editor }) {
                 : "Tap a spot in the tank · drag to orbit"}
             </span>
           </div>
-          {tool.type !== "terrain" && (
-            <IconButton
-              label="Rotate placement (R)"
-              onClick={() => editor.rotate()}
-            >
-              <RotateCw size={18} />
-            </IconButton>
-          )}
+          {tool.type !== "terrain" && <PlacementRotation editor={editor} />}
           <button className="finish-button" onClick={editor.finish}>
             {tool.type === "place" || tool.type === "terrain" ? (
               <Check size={16} />
