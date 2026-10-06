@@ -79,6 +79,23 @@ describe("frog rig", () => {
     expect(moved.length).toBeGreaterThanOrEqual(2);
   });
 
+  it("keeps every leg within reach while rounding onto a wall", () => {
+    const { model, holder, rig } = rigged();
+    rig.update(walking(), FRAME);
+    for (let frame = 0; frame < 40; frame++) {
+      // Pitch nose-up onto a vertical surface while creeping forward.
+      holder.rotation.x = Math.min(Math.PI / 2, holder.rotation.x + 0.1);
+      holder.translateZ(-0.3 * FRAME);
+      rig.update(walking(), FRAME);
+      for (const name of FEET) {
+        const tip = name.replace("Foot", "LowLeg") + "_end";
+        expect(world(model, tip).distanceTo(world(model, name))).toBeLessThan(
+          0.01,
+        );
+      }
+    }
+  });
+
   it("crouches before takeoff and rises in flight", () => {
     const { model, rig } = rigged();
     rig.update(hopping(0), FRAME);
