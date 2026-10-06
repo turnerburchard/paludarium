@@ -1,11 +1,13 @@
 import { Sun, Sunset, Moon } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
+import { MossPicker } from "./MossPicker";
 import { RangeControl } from "./RangeControl";
 import { TerrainControls } from "./TerrainControls";
 import { AQUARIUM_WATER } from "../model/schema";
 
 export function EnvironmentPanel({ editor }: { editor: Editor }) {
-  const env = editor.world.environment;
+  const env = editor.world.environment,
+    backdrop = env.backdrop;
   return (
     <div className="environment-panel">
       <div className="section-label">LIGHT & ATMOSPHERE</div>
@@ -50,6 +52,36 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
           </button>
         ))}
       </div>
+      <div className="section-label">BACK WALL</div>
+      <div className="water-options">
+        {(
+          [
+            { name: "Glass", material: undefined },
+            { name: "Stone", material: "stone" },
+            { name: "Cork bark", material: "cork" },
+          ] as const
+        ).map(({ name, material }) => (
+          <button
+            key={name}
+            aria-pressed={backdrop?.material === material}
+            onClick={() =>
+              editor.changeEnvironment({
+                backdrop: material && { ...backdrop, material },
+              })
+            }
+          >
+            {name}
+          </button>
+        ))}
+      </div>
+      {backdrop && (
+        <MossPicker
+          value={backdrop.moss}
+          onChange={(moss) =>
+            editor.changeEnvironment({ backdrop: { ...backdrop, moss } })
+          }
+        />
+      )}
       <details className="more-options landscape-options">
         <summary>Shape landscape</summary>
         <TerrainControls editor={editor} />

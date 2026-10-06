@@ -65,6 +65,13 @@ export const environmentSchema = z.object({
   light: z.enum(["day", "golden", "moon"]),
   warmth: finite.min(0).max(1).default(0.45),
   brightness: finite.min(0.4).max(1.6).default(1),
+  // Additive version-1 data: a wall over the back glass, and its moss.
+  backdrop: z
+    .object({
+      material: z.enum(["stone", "cork"]),
+      moss: z.enum(mossSpecies).optional(),
+    })
+    .optional(),
   // Additive version-1 data: older saves keep their original bank and palette.
   terrain: z
     .object({
@@ -74,6 +81,7 @@ export const environmentSchema = z.object({
     .optional(),
 });
 export type Environment = z.infer<typeof environmentSchema>;
+export type Backdrop = NonNullable<Environment["backdrop"]>;
 export const worldSchema = z
   .object({
     version: z.literal(1),

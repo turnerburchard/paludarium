@@ -6,6 +6,8 @@ import { randomFromSeed } from "../model/random";
 import { terrainSamples } from "../model/terrainData";
 import { groundHeight, MAX_GROUND_HEIGHT } from "../model/terrain";
 import { makeWaterMaterial } from "./waterMaterial";
+import { disposeAsset } from "../assets";
+import { buildBackdrop } from "../assets/landscape/backdrop";
 
 function makeTerrain(env: Environment) {
   const geo = new THREE.PlaneGeometry(env.width, env.depth, 70, 48);
@@ -194,6 +196,21 @@ export function Water({
     </group>
   );
 }
+const TANK_HEIGHT = 2.9;
+
+/** The wall over the back glass, when the habitat has one. */
+export function Backdrop({ environment: env }: { environment: Environment }) {
+  const { width, depth, backdrop } = env;
+  const model = useMemo(
+    () => backdrop && buildBackdrop(width, TANK_HEIGHT, backdrop),
+    [width, backdrop],
+  );
+  useEffect(() => () => model && disposeAsset(model), [model]);
+  return model ? (
+    <primitive object={model} position={[0, 0, -depth / 2]} />
+  ) : null;
+}
+
 export function Tank({ environment: env }: { environment: Environment }) {
   const h = TANK_HEIGHT,
     w = env.width,
