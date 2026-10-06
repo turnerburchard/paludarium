@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TERRAIN_POINTS, groundMaterials } from "./terrainData";
+import { mossSpecies } from "./moss";
 
 export const assetKinds = [
   "monstera",
@@ -47,6 +48,8 @@ export const objectSchema = z.object({
   rotation: finite.min(-100).max(100),
   scale: finite.min(0.4).max(2),
   seed: z.number().int().min(0).max(2147483647),
+  // Additive version-1 data: moss grown over stone or wood.
+  moss: z.enum(mossSpecies).optional(),
 });
 export type HabitatObject = z.infer<typeof objectSchema>;
 export const environmentSchema = z.object({

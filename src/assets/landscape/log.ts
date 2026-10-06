@@ -13,6 +13,7 @@ export const log: AssetDefinition = {
     "A fallen, hollow log. Frogs shelter inside and sun on top, and insects breed beneath it.",
   radius: 0.62,
   habitat: "either",
+  mossGrows: true,
   blocksMovement: true,
   shelter: true,
   perches: logPerches,

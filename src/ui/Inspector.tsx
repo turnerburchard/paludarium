@@ -1,6 +1,8 @@
 import { Copy, Eye, Move, RotateCw, Trash2, X } from "lucide-react";
 import { assets, isLandAnimal } from "../assets";
 import type { Editor } from "../editor/useEditor";
+import { MOSS_COLORS } from "../assets/landscape/mosses";
+import { mossSpecies, type MossSpecies } from "../model/moss";
 import { plantCondition } from "../model/plants";
 import type { HabitatObject } from "../model/schema";
 import { IconButton } from "./IconButton";
@@ -72,6 +74,28 @@ export function Inspector({
           Remove
         </button>
       </div>
+      {asset.mossGrows && (
+        <div className="moss-options" role="group" aria-label="Moss">
+          <span className="section-label">MOSS</span>
+          <div>
+            {[undefined, ...mossSpecies].map((species) => (
+              <button
+                key={species ?? "none"}
+                aria-pressed={object.moss === species}
+                onClick={() => editor.patchObject(object.id, { moss: species })}
+              >
+                <span
+                  className={species ? "moss-swatch" : "moss-swatch bare"}
+                  style={{
+                    background: species ? MOSS_COLORS[species][0] : undefined,
+                  }}
+                />
+                {species ? mossNames[species] : "Bare"}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {(object.kind === "rock" || object.kind === "wood") && (
         <details className="more-options">
           <summary>Adjust size</summary>
@@ -90,3 +114,10 @@ export function Inspector({
     </aside>
   );
 }
+
+const mossNames: Record<MossSpecies, string> = {
+  sheet: "Sheet",
+  cushion: "Cushion",
+  fern: "Fern",
+  java: "Java",
+};

@@ -5,6 +5,7 @@ import {
   type HabitatObject,
   type World,
 } from "./schema";
+import type { MossSpecies } from "./moss";
 export type Preset = "empty" | "tropical" | "mountain";
 export function makePreset(preset: Preset): World {
   if (preset === "empty") return emptyWorld();
@@ -16,6 +17,7 @@ export function makePreset(preset: Preset): World {
     z: number,
     scale = 1,
     rotation = 0,
+    moss?: MossSpecies,
   ) =>
     objects.push({
       id: `preset-${++serial}`,
@@ -25,6 +27,7 @@ export function makePreset(preset: Preset): World {
       scale,
       rotation,
       seed: serial * 173,
+      ...(moss && { moss }),
     });
   if (preset === "tropical") {
     add("monstera", -2.15, -1.15, 1.25, 0.3);
@@ -34,8 +37,8 @@ export function makePreset(preset: Preset): World {
     add("bromeliad", -2.6, -0.1, 0.9);
     add("bromeliad", -0.8, -0.6, 0.75, 2);
     add("wood", -1.45, -0.3, 1.05, -0.4);
-    add("rock-shelter", 0.1, -1.2, 0.95, 0.4);
-    add("rock", 0.2, 0.35, 0.8, 1.6);
+    add("rock-shelter", 0.1, -1.2, 0.95, 0.4, "sheet");
+    add("rock", 0.2, 0.35, 0.8, 1.6, "cushion");
     add("rock", 0.55, 1.25, 0.6, 1);
     add("rock", 1.6, -1.55, 0.65);
     add("moss", -1.9, 0.35, 1.15);
@@ -47,10 +50,10 @@ export function makePreset(preset: Preset): World {
     add("fish", 2.05, 0.25, 1);
     add("fish", 1.6, 0.9, 0.8, 2);
   } else {
-    add("rock", -1.65, -0.65, 1.8, 0.6);
+    add("rock", -1.65, -0.65, 1.8, 0.6, "sheet");
     add("rock", -0.5, -1.4, 1.2, 2);
     add("rock", -2.5, -1.25, 0.85);
-    add("rock", 0.3, 0.65, 1.0, 2);
+    add("rock", 0.3, 0.65, 1.0, 2, "fern");
     add("rock", 0.75, 1.5, 0.55);
     add("wood", -1.3, 0.15, 0.8, 1.2);
     add("fern", -2.6, -0.3, 1.1);
@@ -82,7 +85,7 @@ export function makePreset(preset: Preset): World {
     add("strawberry", -2.3, 1.45, 0.85, 0.3);
     add("philodendron", -3.0, -1.75, 1.1);
     add("anthurium", -1.35, 0.4, 0.85, 1.2);
-    add("log", -1.75, 1.75, 0.8, 0.2);
+    add("log", -1.75, 1.75, 0.8, 0.2, "fern");
     add("leaf-litter", -1.05, 1.05, 1);
     add("nest-fern", -2.75, 1.05, 0.9, 0.4);
     add("swiss-cheese-plant", -1.25, -1.85, 0.75, 1.1);
@@ -105,7 +108,7 @@ export function makePreset(preset: Preset): World {
     ])
       add("cardinal-tetra", x, z, 1, turn);
   } else {
-    add("log", -1.65, 1.75, 0.8, 0.1);
+    add("log", -1.65, 1.75, 0.8, 0.1, "sheet");
     add("leaf-litter", -1.85, 0.35, 0.9);
     add("branch", -0.4, -0.55, 1, 2.6);
     add("cattail", 0.85, -1.35, 1, 0.4);

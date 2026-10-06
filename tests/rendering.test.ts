@@ -48,3 +48,24 @@ describe("static rendering batches", () => {
     disposeAsset(second);
   });
 });
+
+describe("moss cover", () => {
+  it.each(["rock", "log", "rock-shelter"] as const)(
+    "grows a %s's moss over its top, the same way for the same seed",
+    (kind) => {
+      const bare = buildAsset(kind, 173);
+      const mossy = buildAsset(kind, 173, "sheet");
+      const again = buildAsset(kind, 173, "sheet");
+      const moss = mossy.children.at(-1) as THREE.Mesh;
+      const stone = new THREE.Box3().setFromObject(bare);
+      const cover = new THREE.Box3().setFromObject(moss);
+      expect(stats(mossy).meshes).toBe(stats(bare).meshes + 1);
+      expect(stats(again).triangles).toBe(stats(mossy).triangles);
+      expect(cover.max.y).toBeGreaterThan(stone.max.y - 0.05);
+      expect(cover.getCenter(new THREE.Vector3()).y).toBeGreaterThan(
+        stone.getCenter(new THREE.Vector3()).y,
+      );
+      [bare, mossy, again].forEach(disposeAsset);
+    },
+  );
+});

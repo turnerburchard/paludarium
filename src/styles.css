@@ -1296,6 +1296,39 @@ button:hover:not(:disabled) {
   border-color: #73885c;
   background: #3b5038;
 }
+.moss-options {
+  margin-top: 16px;
+}
+.moss-options > div {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+.moss-options button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-height: 44px;
+  padding: 6px 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #25392c;
+  font-size: 10px;
+}
+.moss-options button[aria-pressed="true"] {
+  border-color: #93ac73;
+  background: #354b31;
+}
+.moss-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+.moss-swatch.bare {
+  border: 1px dashed #7d8f72;
+}
 @media (max-width: 760px) {
   .mode-switch {
     top: 68px;
