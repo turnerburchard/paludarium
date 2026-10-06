@@ -24,9 +24,12 @@ export function useEditor() {
   });
   const world = history.present;
   // Shown instead of the saved world while a slider is being dragged, so the
-  // scene follows the gesture but history only records its end.
-  const [preview, setPreview] = useState<World | null>(null);
-  useEffect(() => setPreview(null), [world]);
+  // scene follows the gesture but history only records its end. A preview
+  // only applies to the world it was made from; any commit retires it.
+  const [preview, setPreview] = useState<{ base: World; world: World } | null>(
+    null,
+  );
+  const shown = preview?.base === world ? preview.world : world;
   const [tool, setTool] = useState<Tool>({ type: "select" });
   const [selectedId, select] = useState<string | null>(null);
   const [message, notify] = useState(initial.warning ?? "");
@@ -51,7 +54,6 @@ export function useEditor() {
   }, [world]);
   const patchObject = useCallback(
     (id: string, patch: Partial<HabitatObject>) => {
-      setPreview(null);
       commit(withObjectPatch(worldRef.current, id, patch));
     },
     [commit],
@@ -82,11 +84,8 @@ export function useEditor() {
   );
   useEffect(() => {
     const keydown = (e: KeyboardEvent) => {
-      if (
-        (e.target as HTMLElement)?.closest(
-          "input,textarea,select,[contenteditable=true]",
-        )
-      )
+      const target = e.target instanceof Element ? e.target : null;
+      if (target?.closest("input,textarea,select,[contenteditable=true]"))
         return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
@@ -105,10 +104,7 @@ export function useEditor() {
       )
         rotate(e.shiftKey ? -Math.PI / 6 : Math.PI / 6);
       // Space on a focused button presses it; elsewhere it pauses life.
-      else if (
-        e.code === "Space" &&
-        !(e.target as HTMLElement)?.closest("button,a")
-      ) {
+      else if (e.code === "Space" && !target?.closest("button,a")) {
         e.preventDefault();
         setPaused((p) => !p);
       }
@@ -176,7 +172,6 @@ export function useEditor() {
     notify(`${assets[kind].name} added. Place another, or finish.`);
   }
   function changeEnvironment(patch: Partial<Environment>) {
-    setPreview(null);
     commit(withEnvironment(world, patch));
   }
   function rename(name: string) {
@@ -201,13 +196,13 @@ export function useEditor() {
   }
   return {
     /** What to show: the saved world, or a slider gesture in progress. */
-    world: preview ?? world,
+    world: shown,
     /** The saved world, ignoring any gesture in progress. */
     savedWorld: world,
     previewEnvironment: (patch: Partial<Environment>) =>
-      setPreview(withEnvironment(world, patch)),
+      setPreview({ base: world, world: withEnvironment(world, patch) }),
     previewObject: (id: string, patch: Partial<HabitatObject>) =>
-      setPreview(withObjectPatch(world, id, patch)),
+      setPreview({ base: world, world: withObjectPatch(world, id, patch) }),
     tool,
     setTool,
     selected,

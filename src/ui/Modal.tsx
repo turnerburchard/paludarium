@@ -9,7 +9,7 @@ export function Modal({ label, onClose, children }: Props) {
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
+    const previous = document.activeElement;
     const dialog = ref.current!;
     const focusable = () =>
       Array.from(
@@ -40,7 +40,7 @@ export function Modal({ label, onClose, children }: Props) {
     dialog.addEventListener("keydown", keydown);
     return () => {
       dialog.removeEventListener("keydown", keydown);
-      previous?.focus();
+      if (previous instanceof HTMLElement) previous.focus();
     };
   }, []);
   return (

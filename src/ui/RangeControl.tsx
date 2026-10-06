@@ -46,6 +46,7 @@ export function RangeControl({
           onPreview?.(next);
         }}
         onPointerUp={commit}
+        onPointerCancel={commit}
         onKeyUp={commit}
         onBlur={commit}
       />

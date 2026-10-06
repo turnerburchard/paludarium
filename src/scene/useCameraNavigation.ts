@@ -25,9 +25,8 @@ export function useCameraNavigation(
       )
         return;
       if (
-        (event.target as HTMLElement)?.closest(
-          "input,textarea,select,[contenteditable=true]",
-        )
+        event.target instanceof Element &&
+        event.target.closest("input,textarea,select,[contenteditable=true]")
       )
         return;
       if (
