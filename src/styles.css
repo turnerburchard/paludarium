@@ -67,7 +67,7 @@ button:hover:not(:disabled) {
 }
 .scene-shell {
   position: absolute;
-  inset: 78px 0 0 300px;
+  inset: 0;
   /* Matches the scene background so the area doesn't flash before the first frame. */
   background: #080b0d;
 }
@@ -1507,4 +1507,8 @@ button:hover:not(:disabled) {
     width: 40px;
     height: 44px;
   }
+}
+
+[hidden] {
+  display: none !important;
 }

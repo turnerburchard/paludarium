@@ -264,7 +264,7 @@ try {
   );
   await page.getByRole("button", { name: "Close panel", exact: true }).click();
   await page.setViewportSize({ width: 1440, height: 960 });
-  await page.getByRole("button", { name: "Reset camera", exact: true }).click();
+  await page.getByRole("button", { name: "Reset view", exact: true }).click();
   await page.waitForTimeout(2000);
 
   async function clickObject(id) {
@@ -365,9 +365,13 @@ try {
   assert.equal(
     await page.getByRole("complementary", { name: "Selected object" }).count(),
     0,
-    "entering View clears editing selection",
+    "View hides the editing selection",
   );
   await clickObject("frog");
+  await page.getByRole("complementary", { name: "Watching" }).waitFor();
+  await page.getByRole("button", { name: "Build", exact: true }).click();
+  await page.getByRole("complementary", { name: "Watching" }).waitFor();
+  await page.getByRole("button", { name: "View", exact: true }).click();
   await page.getByRole("complementary", { name: "Watching" }).waitFor();
   assert.deepEqual(errors, [], "no browser runtime errors");
   console.log(

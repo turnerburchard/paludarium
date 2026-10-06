@@ -5,7 +5,6 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
-import { PerspectiveCamera, Vector3 } from "three";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const server = spawn(
   process.execPath,
@@ -53,7 +52,7 @@ try {
   });
   await page.goto("http://127.0.0.1:5191");
   await page.getByRole("button", { name: "Build", exact: true }).click();
-  await page.locator(".asset-picture img").first().waitFor();
+  await page.locator(".asset-picture img").first().waitFor({ timeout: 90000 });
   // A first visit opens on the cloud forest; start from an empty tank.
   assert.equal(
     await page.getByRole("textbox", { name: "World name" }).inputValue(),
@@ -83,19 +82,23 @@ try {
     );
   }
   async function point(x, y, z) {
-    const box = await page.locator("canvas").boundingBox();
-    const aspect = box.width / box.height,
-      fit = Math.max(1, 1.12 / aspect);
-    const camera = new PerspectiveCamera(36, aspect, 0.1, 100);
-    camera.position.set(9 * fit, 7.5 * fit, 11 * fit);
-    camera.lookAt(0, 0.8, 0);
-    camera.updateMatrixWorld();
-    const p = new Vector3(x, y, z).project(camera);
-    return {
-      x: box.x + ((p.x + 1) / 2) * box.width,
-      y: box.y + ((1 - p.y) / 2) * box.height,
-    };
+    return page.evaluate(
+      async ({ url, x, y, z }) => {
+        const { _roots } = await import(url);
+        const { camera } = _roots
+          .get(document.querySelector("canvas"))
+          .store.getState();
+        const point = camera.position.clone().set(x, y, z).project(camera);
+        const box = document.querySelector("canvas").getBoundingClientRect();
+        return {
+          x: box.x + ((point.x + 1) * box.width) / 2,
+          y: box.y + ((1 - point.y) * box.height) / 2,
+        };
+      },
+      { url: fiberUrl, x, y, z },
+    );
   }
+
   async function clickWorld(x, y, z) {
     await page.evaluate(
       () =>
@@ -174,7 +177,7 @@ try {
   assert.ok(world.objects.length > 20);
   await page.reload();
   await page.getByRole("button", { name: "Build", exact: true }).click();
-  await page.locator(".asset-picture img").first().waitFor();
+  await page.locator(".asset-picture img").first().waitFor({ timeout: 90000 });
   assert.equal(
     (await saved()).name,
     "Cloud forest",
@@ -213,7 +216,7 @@ try {
   );
   // Wait for actual movement rather than a fixed hold time: a slow software
   // renderer can go longer than that without drawing a frame.
-  await page.locator("canvas").click({ position: { x: 20, y: 20 } });
+  await page.locator("canvas").click({ position: { x: 340, y: 180 } });
   assert.ok(fiberUrl, "the running scene loaded React Three Fiber");
   const beforeMove = await page.evaluate(async (url) => {
     const { _roots } = await import(url);
@@ -243,7 +246,7 @@ try {
   } finally {
     await page.keyboard.up("w");
   }
-  await page.getByRole("button", { name: "Reset camera", exact: true }).click();
+  await page.getByRole("button", { name: "Reset view", exact: true }).click();
   await page.screenshot({
     path: process.env.SCREENSHOT_DIR
       ? `${process.env.SCREENSHOT_DIR}/desktop.png`

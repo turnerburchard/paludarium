@@ -18,6 +18,7 @@ import {
 } from "../model/terrain";
 import { useCameraNavigation } from "./useCameraNavigation";
 import { useFollowCamera } from "./useFollowCamera";
+import { useCameraLayout } from "./useCameraLayout";
 import { Inhabitant } from "./Inhabitant";
 import { Tank, Terrain, Water } from "./Terrain";
 import { TerrainBrushCursor } from "./TerrainBrushCursor";
@@ -60,7 +61,7 @@ function Scene({
     env.warmth,
   );
   const controls = useRef<OrbitControlsImpl>(null);
-  const { size, raycaster } = useThree();
+  const { raycaster } = useThree();
   const terrain = useRef<THREE.Group>(null);
   const inhabitants = useRef<THREE.Group>(null);
   useWatchVisibility(inhabitants, ecosystem, watchingId);
@@ -72,21 +73,7 @@ function Scene({
       ? world.objects.find((o) => o.id === tool.id)
       : null;
   const kind = tool.type === "place" ? tool.kind : moving?.kind;
-  // Frame the tank on Reset and when the view's shape really changes (like
-  // rotating a phone), but not for small resizes such as a phone's URL bar.
-  const framed = useRef({ reset: -1, aspect: 0 });
-  useEffect(() => {
-    const aspect = size.width / size.height;
-    if (!controls.current || !aspect) return;
-    const last = framed.current;
-    const sameShape = Math.abs(aspect / last.aspect - 1) < 0.15;
-    if (last.reset === resetCamera && sameShape) return;
-    framed.current = { reset: resetCamera, aspect };
-    const fit = Math.max(1, 1.12 / aspect);
-    controls.current.object.position.set(9 * fit, 7.5 * fit, 11 * fit);
-    controls.current.target.set(0, 0.8, 0);
-    controls.current.update();
-  }, [resetCamera, size.width, size.height]);
+  useCameraLayout(controls, resetCamera, view);
   useEffect(() => setCursor(null), [tool]);
   const point =
     cursor && (kind || tool.type === "terrain")
@@ -296,7 +283,7 @@ export function WorldScene(props: SceneProps) {
     <Canvas
       shadows
       dpr={[1, 1.7]}
-      camera={{ position: [9, 7.5, 11], fov: 36, near: 0.1, far: 100 }}
+      camera={{ position: [8, 6.6, 9.8], fov: 36, near: 0.1, far: 100 }}
       gl={{ antialias: true, alpha: false }}
       onPointerMissed={() => {
         if (props.editor.tool.type === "select") props.editor.select(null);

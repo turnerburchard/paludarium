@@ -17,6 +17,7 @@ import { LifePanel } from "./LifePanel";
 export type Panel = "objects" | "habitat" | "life";
 
 export function Sidebar({
+  hidden = false,
   editor,
   ecosystem,
   panel,
@@ -27,6 +28,7 @@ export function Sidebar({
   onExport,
   onImport,
 }: {
+  hidden?: boolean;
   editor: Editor;
   ecosystem: EcosystemController;
   panel: Panel;
@@ -39,7 +41,7 @@ export function Sidebar({
   onImport: () => void;
 }) {
   return (
-    <aside className="sidebar" aria-label="Terrarium tools">
+    <aside hidden={hidden} className="sidebar" aria-label="Terrarium tools">
       <div className="panel-tabs">
         <button
           className={panel === "objects" ? "active" : ""}
