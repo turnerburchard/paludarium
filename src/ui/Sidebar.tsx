@@ -22,6 +22,7 @@ export function Sidebar({
   panel,
   onPanel,
   onHelp,
+  onWatch,
   onClose,
   onExport,
   onImport,
@@ -31,6 +32,7 @@ export function Sidebar({
   panel: Panel;
   onPanel: (panel: Panel) => void;
   onHelp: () => void;
+  onWatch: (id: string) => void;
   /** Phones show the sidebar as a sheet that can be closed. */
   onClose: () => void;
   onExport: () => void;
@@ -79,6 +81,7 @@ export function Sidebar({
             ecosystem={ecosystem}
             selectedId={editor.selectedId}
             paused={editor.paused}
+            onWatch={onWatch}
           />
         )}
       </div>

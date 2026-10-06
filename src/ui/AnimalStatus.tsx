@@ -1,6 +1,6 @@
 import type { Activity, AnimalState } from "../simulation/types";
 
-const activityLabels: Record<Activity, string> = {
+export const activityLabels: Record<Activity, string> = {
   exploring: "Exploring",
   "seeking-food": "Looking for insects",
   eating: "Eating insects",

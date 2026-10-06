@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { isFrog } from "./assets";
 import { useEditor } from "./editor/useEditor";
 import { makePreset, type Preset } from "./model/presets";
 import { placementProblem } from "./model/terrain";
@@ -35,14 +34,16 @@ export default function App() {
   const watchingId =
     watchRequest && watchRequest === selected?.id ? watchRequest : null;
 
-  useEffect(() => {
-    if (selected && isFrog(selected.kind)) setPanel("life");
-  }, [selected?.id]);
-
   // Placing or moving needs the tank, so the sheet gets out of the way.
   useEffect(() => {
     if (tool.type !== "select") setSheetOpen(false);
   }, [tool.type]);
+
+  function watch(id: string) {
+    editor.select(id);
+    setWatchRequest(id);
+    setSheetOpen(false);
+  }
 
   function openPanel(next: Panel) {
     setPanel(next);
@@ -102,6 +103,7 @@ export default function App() {
           panel={panel}
           onPanel={setPanel}
           onHelp={() => setDialog("help")}
+          onWatch={watch}
           onClose={() => setSheetOpen(false)}
           onExport={files.exportWorld}
           onImport={files.importWorld}
@@ -138,7 +140,7 @@ export default function App() {
         <Inspector
           editor={editor}
           object={selected}
-          onWatch={() => setWatchRequest(selected.id)}
+          onWatch={() => watch(selected.id)}
         />
       )}
       {!view && selected && watchingId && (
