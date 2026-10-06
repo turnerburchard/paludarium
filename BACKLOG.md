@@ -43,10 +43,6 @@ Priority: medium. Food resources, plant growth, crowding and reproduction; event
 - Optional gamification only after building and watching are enjoyable.
 - GitHub issues: one actionable task per issue, with acceptance criteria; link larger design decisions back to this file. Use personal repositories only.
 
-## Parked
-
-Ski music switching app: separate project, another day.
-
 ## Habitat building and inspiration
 
 - Existing: rotate any selected plant/object with Turn or R; resize tank in Habitat settings.
