@@ -275,3 +275,21 @@ describe("insect colonies", () => {
     expect(frogs[0].needs.hunger).toBeLessThan(0.8);
   });
 });
+
+describe("insects across edits", () => {
+  it("keep breeding in colonies after an edit moves where colonies sit", () => {
+    const world = makePreset("tropical");
+    const engine = createWorldEcosystem(world);
+    run(engine, 10);
+    const breeding = (food: { amount: number; capacity: number }[]) =>
+      food
+        .filter((patch) => patch.capacity > 0)
+        .reduce((sum, patch) => sum + patch.amount, 0);
+    const before = breeding(engine.snapshot().food);
+    // Widening the tank shifts the habitat grid, and with it every colony spot.
+    const edited = structuredClone(world);
+    edited.environment.width += 0.5;
+    const after = createWorldEcosystem(edited, { world, engine });
+    expect(breeding(after.snapshot().food)).toBeGreaterThan(before * 0.8);
+  });
+});

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { EcosystemController } from "../simulation/useEcosystem";
 
@@ -10,10 +11,10 @@ export function EcosystemLife({
   paused: boolean;
   heldId: string | null;
 }) {
+  const held = useMemo(() => new Set(heldId ? [heldId] : []), [heldId]);
   useFrame((_, dt) => {
     const { engine, fish } = ecosystem.live.current!;
     const stopped = paused || document.hidden;
-    const held = new Set(heldId ? [heldId] : []);
     engine.advance(dt, stopped, held);
     fish.advance(dt, stopped, held);
   }, -1);

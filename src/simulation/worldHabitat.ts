@@ -12,6 +12,9 @@ import type {
   SpeciesProfile,
 } from "./types";
 
+/** Insect colonies are at least this far apart. */
+const COLONY_SPACING = 1;
+
 /** Food sits on ground any frog can reach. */
 const groundWalker: SpeciesProfile = {
   id: "ground",
@@ -206,13 +209,15 @@ export function createWorldEcosystem(
       { ...colony, amount: snapshot ? 0 : colony.capacity },
     ]),
   );
-  // Insects survive edits: each old patch joins a colony at the same spot,
-  // or stays where it was as scattered food.
+  // Insects survive edits. Edits can shift where colonies sit, so an old
+  // colony's insects move to the nearest new colony within the spacing
+  // between colonies; anything else stays where it was as scattered food.
   for (const patch of snapshot?.food ?? []) {
     const position = previous!.engine.graph.node(patch.nodeId).position;
-    const colony = colonies.find(
-      (c) => distance(graph.node(c.nodeId).position, position) < 0.3,
-    );
+    const colony =
+      patch.capacity > 0
+        ? nearestWithin(colonies, graph, position, COLONY_SPACING)
+        : undefined;
     const nodeId = colony?.nodeId ?? graph.nearest(position, groundWalker)?.id;
     if (!nodeId) continue;
     const target = food.get(nodeId) ?? { nodeId, amount: 0, capacity: 0 };
@@ -230,8 +235,12 @@ export function createFishSchool(
   world: World,
   previous?: { world: World; fish: FishSchool },
 ): FishSchool {
+  const env = world.environment;
+  const margin = assets.fish.radius;
   const isWater = (x: number, z: number) =>
-    !placementProblem("fish", x, z, world.environment);
+    Math.abs(x) < env.width / 2 - margin &&
+    Math.abs(z) < env.depth / 2 - margin &&
+    !placementProblem("fish", x, z, env);
   const fish = world.objects
     .filter((o) => o.kind === "fish")
     .map((object) => {
@@ -253,11 +262,29 @@ export function createFishSchool(
 /** Insects breed under cover: well-sheltered dry ground becomes a colony whose
  * size follows how much cover it has. Bare ground supports none. */
 export function insectColonies(graph: HabitatGraph): FoodPatch[] {
-  return shelteredSpots(graph, 8, 1, 0.3).map((node) => ({
+  return shelteredSpots(graph, 8, COLONY_SPACING, 0.3).map((node) => ({
     nodeId: node.id,
     amount: 0,
     capacity: 5 * node.shelter,
   }));
+}
+
+function nearestWithin(
+  colonies: readonly FoodPatch[],
+  graph: HabitatGraph,
+  position: HabitatNode["position"],
+  range: number,
+) {
+  let best: FoodPatch | undefined,
+    bestDistance = range;
+  for (const colony of colonies) {
+    const d = distance(graph.node(colony.nodeId).position, position);
+    if (d < bestDistance) {
+      best = colony;
+      bestDistance = d;
+    }
+  }
+  return best;
 }
 
 /** Where hand-scattered insects land. */

@@ -18,6 +18,7 @@ const INSECT_GROWTH = 0.01;
 /** Newcomers let an emptied colony slowly recover instead of dying out. */
 const INSECT_ARRIVALS = 0.05;
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
+const validAmount = (n: number) => Number.isFinite(n) && n >= 0;
 interface Agent {
   state: AnimalState;
   profile: SpeciesProfile;
@@ -108,11 +109,7 @@ export class Ecosystem {
     }
     for (const patch of options.food ?? []) {
       this.graph.node(patch.nodeId);
-      if (
-        ![patch.amount, patch.capacity].every(
-          (n) => Number.isFinite(n) && n >= 0,
-        )
-      )
+      if (![patch.amount, patch.capacity].every(validAmount))
         throw new Error("Food amounts must be finite and non-negative.");
       this.food.set(patch.nodeId, { ...patch });
     }
@@ -140,19 +137,15 @@ export class Ecosystem {
   }
   addFood(nodeId: string, amount: number) {
     this.graph.node(nodeId);
-    if (!Number.isFinite(amount) || amount < 0)
-      throw new Error("Food amount must be finite and non-negative.");
+    if (!validAmount(amount))
+      throw new Error("Food amounts must be finite and non-negative.");
     const patch = this.food.get(nodeId) ?? { nodeId, amount: 0, capacity: 0 };
     patch.amount = Math.min(30, patch.amount + amount);
     this.food.set(nodeId, patch);
     for (const agent of this.agents.values()) agent.reconsiderAt = 0;
   }
   /** Long frames are discarded. A hidden tab never turns into hours of simulation. */
-  advance(
-    realSeconds: number,
-    paused = false,
-    heldIds: ReadonlySet<string> = new Set(),
-  ) {
+  advance(realSeconds: number, paused = false, heldIds?: ReadonlySet<string>) {
     if (!Number.isFinite(realSeconds) || realSeconds < 0)
       throw new Error("Frame delta must be finite and non-negative.");
     if (paused) return;
@@ -166,7 +159,7 @@ export class Ecosystem {
         Math.floor(this.elapsed / STEP) % Math.max(1, agents.length);
       for (let i = 0; i < agents.length; i++) {
         const agent = agents[(i + offset) % agents.length];
-        if (!heldIds.has(agent.state.id)) this.update(agent);
+        if (!heldIds?.has(agent.state.id)) this.update(agent);
       }
       this.breedInsects();
     }
