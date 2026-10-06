@@ -84,6 +84,14 @@ export function makePreset(preset: Preset): World {
     add("anthurium", -1.35, 0.4, 0.85, 1.2);
     add("log", -1.75, 1.75, 0.8, 0.2);
     add("leaf-litter", -1.05, 1.05, 1);
+    add("nest-fern", -2.75, 1.05, 0.9, 0.4);
+    add("swiss-cheese-plant", -1.25, -1.85, 0.75, 1.1);
+    add("calathea", -0.15, -0.55, 0.9, 2.2);
+    add("calathea", -2.05, -0.55, 0.8, 0.7);
+    add("fittonia", -0.35, 1.45, 1);
+    add("fittonia", -1.55, 0.35, 0.9);
+    add("fittonia", 0.05, 0.05, 0.85);
+    add("nest-fern", -0.55, -1.25, 0.7, 2.8);
     for (const [x, z, turn] of [
       [1.75, 0.95, 1.2],
       [1.95, 1.15, 1.3],
