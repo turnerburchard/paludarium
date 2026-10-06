@@ -1,13 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 import type { World } from "../model/schema";
-import { createWorldEcosystem, feedingStations } from "./worldHabitat";
+import {
+  createFishSchool,
+  createWorldEcosystem,
+  feedingStations,
+} from "./worldHabitat";
 import type { Ecosystem } from "./engine";
+import type { FishSchool } from "./fish";
 
 /** React is a consumer of the engine; it receives HUD snapshots four times a second. */
 export function useEcosystem(world: World) {
-  const live = useRef<{ world: World; engine: Ecosystem } | null>(null);
+  const live = useRef<{
+    world: World;
+    engine: Ecosystem;
+    fish: FishSchool;
+  } | null>(null);
   if (!live.current)
-    live.current = { world, engine: createWorldEcosystem(world) };
+    live.current = {
+      world,
+      engine: createWorldEcosystem(world),
+      fish: createFishSchool(world),
+    };
   const [snapshot, setSnapshot] = useState(() =>
     live.current!.engine.snapshot(),
   );
@@ -21,6 +34,7 @@ export function useEcosystem(world: World) {
     live.current = {
       world,
       engine: createWorldEcosystem(world, sharesAnimals ? previous : undefined),
+      fish: createFishSchool(world, sharesAnimals ? previous : undefined),
     };
     setSnapshot(live.current.engine.snapshot());
   }, [world]);

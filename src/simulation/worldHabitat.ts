@@ -1,6 +1,7 @@
 import type { World } from "../model/schema";
 import { assets, isFrog } from "../assets";
-import { groundHeight } from "../model/terrain";
+import { groundHeight, placementProblem } from "../model/terrain";
+import { FishSchool } from "./fish";
 import { Ecosystem } from "./engine";
 import { HabitatGraph, distance } from "./navigation";
 import type {
@@ -215,6 +216,32 @@ export function createWorldEcosystem(
     food: [...food.values()],
   });
 }
+/** Fish keep their place through ordinary edits; a fish that was moved, or
+ * whose spot is no longer water, starts again where it was placed. */
+export function createFishSchool(
+  world: World,
+  previous?: { world: World; fish: FishSchool },
+): FishSchool {
+  const isWater = (x: number, z: number) =>
+    !placementProblem("fish", x, z, world.environment);
+  const fish = world.objects
+    .filter((o) => o.kind === "fish")
+    .map((object) => {
+      const old = previous?.world.objects.find((o) => o.id === object.id);
+      const swimming = previous?.fish.get(object.id);
+      const unmoved = old && old.x === object.x && old.z === object.z;
+      if (swimming && unmoved && isWater(swimming.x, swimming.z))
+        return swimming;
+      return {
+        id: object.id,
+        x: object.x,
+        z: object.z,
+        heading: object.rotation,
+      };
+    });
+  return new FishSchool(fish, isWater);
+}
+
 /** Insects breed under cover: well-sheltered dry ground becomes a colony whose
  * size follows how much cover it has. Bare ground supports none. */
 export function insectColonies(graph: HabitatGraph): FoodPatch[] {

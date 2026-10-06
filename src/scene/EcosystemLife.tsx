@@ -10,15 +10,13 @@ export function EcosystemLife({
   paused: boolean;
   heldId: string | null;
 }) {
-  useFrame(
-    (_, dt) =>
-      ecosystem.live.current!.engine.advance(
-        dt,
-        paused || document.hidden,
-        heldId ? new Set([heldId]) : undefined,
-      ),
-    -1,
-  );
+  useFrame((_, dt) => {
+    const { engine, fish } = ecosystem.live.current!;
+    const stopped = paused || document.hidden;
+    const held = new Set(heldId ? [heldId] : []);
+    engine.advance(dt, stopped, held);
+    fish.advance(dt, stopped, held);
+  }, -1);
   const engine = ecosystem.live.current!.engine;
   return (
     <group>

@@ -161,16 +161,14 @@ export function Inhabitant({
       group.rotation.x = Math.sin(hop * Math.PI * 2) * 0.14;
       model.scale.y = 1 + Math.sin(t * 2.5 + object.seed) * 0.012;
     } else if (object.kind === "fish") {
-      const a = t * 0.45 + object.rotation,
-        x = object.x + Math.sin(a) * 0.42,
-        z = object.z + Math.cos(a) * 0.32;
-      if (!placementProblem("fish", x, z, environment)) {
+      const fish = ecosystem?.live.current!.fish.get(object.id);
+      if (fish) {
         group.position.set(
-          x,
+          fish.x,
           environment.water - 0.13 + Math.sin(t * 1.3) * 0.025,
-          z,
+          fish.z,
         );
-        group.rotation.y = Math.atan2(-Math.cos(a), Math.sin(a) * 0.76);
+        group.rotation.y = fish.heading;
       }
       const tail = model.getObjectByName("tail");
       if (tail) tail.rotation.z = Math.sin(t * 9) * 0.3;
