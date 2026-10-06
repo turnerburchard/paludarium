@@ -56,6 +56,7 @@ function makeSkirt(env: Environment) {
   return geo;
 }
 export function Terrain({ environment: env }: { environment: Environment }) {
+  const pebbles = useRef<THREE.InstancedMesh>(null);
   const surface = useMemo(
     () => makeTerrain(env),
     [env.width, env.depth, env.substrate],
@@ -72,6 +73,27 @@ export function Terrain({ environment: env }: { environment: Environment }) {
       size: 0.013 + random() * 0.035,
     }));
   }, [env.width, env.depth]);
+  useEffect(() => {
+    const mesh = pebbles.current;
+    if (!mesh) return;
+    const transform = new THREE.Object3D();
+    const pale = new THREE.Color("#c4b991"),
+      dark = new THREE.Color("#867c5b");
+    stones.forEach((stone, index) => {
+      transform.position.set(
+        stone.x,
+        groundHeight(stone.x, stone.z, env) + 0.005,
+        stone.z,
+      );
+      transform.scale.set(stone.size, stone.size * 0.5, stone.size);
+      transform.updateMatrix();
+      mesh.setMatrixAt(index, transform.matrix);
+      mesh.setColorAt(index, index % 3 === 0 ? pale : dark);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, [stones, env.width, env.depth, env.substrate]);
   useEffect(
     () => () => {
       surface.dispose();
@@ -91,19 +113,10 @@ export function Terrain({ environment: env }: { environment: Environment }) {
           side={THREE.DoubleSide}
         />
       </mesh>
-      {stones.map((s, i) => (
-        <mesh
-          key={i}
-          position={[s.x, groundHeight(s.x, s.z, env) + 0.005, s.z]}
-          scale={[s.size, s.size * 0.5, s.size]}
-        >
-          <icosahedronGeometry args={[1, 0]} />
-          <meshStandardMaterial
-            color={i % 3 === 0 ? "#c4b991" : "#867c5b"}
-            roughness={1}
-          />
-        </mesh>
-      ))}
+      <instancedMesh ref={pebbles} args={[undefined, undefined, stones.length]}>
+        <icosahedronGeometry args={[1, 0]} />
+        <meshStandardMaterial roughness={1} />
+      </instancedMesh>
     </group>
   );
 }

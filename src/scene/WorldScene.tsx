@@ -240,7 +240,7 @@ export function WorldScene(props: SceneProps) {
       shadows
       dpr={[1, 1.7]}
       camera={{ position: [9, 7.5, 11], fov: 36, near: 0.1, far: 100 }}
-      gl={{ antialias: true, alpha: false, preserveDrawingBuffer: true }}
+      gl={{ antialias: true, alpha: false }}
       onPointerMissed={() => {
         if (props.editor.tool.type === "select") props.editor.select(null);
       }}

@@ -87,7 +87,7 @@ export function Inhabitant({
     group.position.set(object.x, baseY, object.z);
     group.rotation.set(0, object.rotation, 0);
     if (frog && !ghost && ecosystem) {
-      const state = ecosystem.live.current!.engine.getAnimal(object.id);
+      const state = ecosystem.live.current!.engine.observeAnimal(object.id);
       if (state) {
         group.position.set(
           state.position.x,
