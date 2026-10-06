@@ -179,13 +179,13 @@ try {
   await page.getByRole("button", { name: "Habitat life", exact: true }).click();
   const life = page.getByRole("region", { name: "Habitat life", exact: true });
   const beforeFood = Number(
-    (await life.locator("small").textContent()).match(/\d+/)[0],
+    (await life.locator(".insect-summary").textContent()).match(/\d+/)[0],
   );
   await page
     .getByRole("button", { name: "Scatter insects", exact: true })
     .click();
   await page.waitForFunction((before) => {
-    const text = document.querySelector(".life-panel small")?.textContent ?? "";
+    const text = document.querySelector(".insect-summary")?.textContent ?? "";
     return Number(text.match(/\d+/)?.[0]) > before;
   }, beforeFood);
   await page.getByRole("button", { name: "Mist habitat", exact: true }).click();

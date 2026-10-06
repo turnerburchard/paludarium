@@ -1,19 +1,23 @@
+import { Eye } from "lucide-react";
+import { assets } from "../assets";
 import { plantCondition } from "../model/plants";
 import type { World } from "../model/schema";
 import type { EcosystemController } from "../simulation/useEcosystem";
 import { frogsSupported } from "../simulation/engine";
 import type { FoodPatch } from "../simulation/types";
-import { AnimalStatus } from "./AnimalStatus";
+import { activityLabels, AnimalStatus } from "./AnimalStatus";
 export function LifePanel({
   world,
   ecosystem,
   selectedId,
   paused,
+  onWatch,
 }: {
   world: World;
   ecosystem: EcosystemController;
   selectedId: string | null;
   paused: boolean;
+  onWatch: (id: string) => void;
 }) {
   const { snapshot } = ecosystem;
   if (!snapshot.animals.length)
@@ -57,9 +61,27 @@ export function LifePanel({
                     ? " There are more frogs than the insects here can feed. Add plants or moss so more insects can breed."
                     : ""
                 }`
-              : "Select a frog to see its activity and needs."}
+              : "Pick a frog to watch it up close."}
         </p>
       )}
+      <ul className="frog-list">
+        {snapshot.animals.map((animal) => {
+          const object = world.objects.find((o) => o.id === animal.id);
+          if (!object) return null;
+          return (
+            <li key={animal.id}>
+              <button
+                onClick={() => onWatch(animal.id)}
+                aria-pressed={animal.id === selectedId}
+              >
+                <span>{assets[object.kind].name}</span>
+                <small>{activityLabels[animal.activity]}</small>
+                <Eye size={15} />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
       {struggling > 0 && (
         <p>
           {plural(struggling, "plant")} {struggling === 1 ? "is" : "are"}{" "}
@@ -71,7 +93,9 @@ export function LifePanel({
         <button onClick={ecosystem.feed}>Scatter insects</button>
         <button onClick={ecosystem.mist}>Mist habitat</button>
       </div>
-      <small>{insectSummary(snapshot.food, supported)}</small>
+      <small className="insect-summary">
+        {insectSummary(snapshot.food, supported)}
+      </small>
     </section>
   );
 }

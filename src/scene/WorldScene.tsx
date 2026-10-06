@@ -65,13 +65,21 @@ function Scene({
       ? world.objects.find((o) => o.id === tool.id)
       : null;
   const kind = tool.type === "place" ? tool.kind : moving?.kind;
+  // Frame the tank on Reset and when the view's shape really changes (like
+  // rotating a phone), but not for small resizes such as a phone's URL bar.
+  const framedAspect = useRef(0);
   useEffect(() => {
-    if (controls.current) {
-      const fit = Math.max(1, 1.12 / (size.width / size.height));
-      controls.current.object.position.set(9 * fit, 7.5 * fit, 11 * fit);
-      controls.current.target.set(0, 0.8, 0);
-      controls.current.update();
-    }
+    framedAspect.current = 0;
+  }, [resetCamera]);
+  useEffect(() => {
+    const aspect = size.width / size.height;
+    if (!controls.current || !aspect) return;
+    if (Math.abs(aspect / framedAspect.current - 1) < 0.15) return;
+    framedAspect.current = aspect;
+    const fit = Math.max(1, 1.12 / aspect);
+    controls.current.object.position.set(9 * fit, 7.5 * fit, 11 * fit);
+    controls.current.target.set(0, 0.8, 0);
+    controls.current.update();
   }, [resetCamera, size.width, size.height]);
   useEffect(() => setCursor(null), [tool]);
   const point =

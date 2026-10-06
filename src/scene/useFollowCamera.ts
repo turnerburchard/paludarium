@@ -4,43 +4,76 @@ import * as THREE from "three";
 import type { OrbitControls } from "three-stdlib";
 import type { EcosystemController } from "../simulation/useEcosystem";
 
-/** Camera distance when watching starts. */
-const CLOSE_UP = 2.2;
+/** Where the camera settles when watching starts: this far away, looking
+ * down from high enough (angle from vertical) to see past most leaves. */
+const CLOSE_UP = 2.4;
+const CLOSE_UP_ANGLE = 0.85;
 
 /** Keeps the orbit target on a watched animal. It zooms in once when watching
- * starts; after that the viewer can orbit and zoom freely while it follows. */
+ * starts; after that the viewer can orbit and zoom freely while it follows.
+ * When watching stops, the camera eases back to where it was before. */
 export function useFollowCamera(
   controls: RefObject<OrbitControls | null>,
   ecosystem: EcosystemController,
   animalId: string | null,
 ) {
   const zooming = useRef(false);
+  const returning = useRef(false);
+  const home = useRef<{
+    position: THREE.Vector3;
+    target: THREE.Vector3;
+  } | null>(null);
   const vectors = useRef({
     animal: new THREE.Vector3(),
     step: new THREE.Vector3(),
+    view: new THREE.Spherical(),
   });
   useEffect(() => {
+    const orbit = controls.current;
     zooming.current = animalId !== null;
+    if (animalId && orbit) {
+      returning.current = false;
+      home.current ??= {
+        position: orbit.object.position.clone(),
+        target: orbit.target.clone(),
+      };
+    }
+    if (!animalId && home.current) returning.current = true;
   }, [animalId]);
   useFrame((_, delta) => {
     const orbit = controls.current;
+    if (orbit && returning.current && home.current) {
+      const ease = 1 - Math.exp(-delta * 5);
+      orbit.object.position.lerp(home.current.position, ease);
+      orbit.target.lerp(home.current.target, ease);
+      orbit.update();
+      if (orbit.object.position.distanceTo(home.current.position) < 0.02) {
+        returning.current = false;
+        home.current = null;
+      }
+      return;
+    }
     const animal = animalId
       ? ecosystem.live.current!.engine.getAnimal(animalId)
       : undefined;
     if (!orbit || !animal) return;
-    const { animal: position, step } = vectors.current;
+    const { animal: position, step, view } = vectors.current;
     const ease = 1 - Math.exp(-delta * 4);
     position.set(animal.position.x, animal.position.y + 0.1, animal.position.z);
     step.subVectors(position, orbit.target).multiplyScalar(ease);
     orbit.target.add(step);
     orbit.object.position.add(step);
     if (zooming.current) {
-      step.subVectors(orbit.object.position, orbit.target);
-      const distance = THREE.MathUtils.lerp(step.length(), CLOSE_UP, ease);
-      orbit.object.position
-        .copy(orbit.target)
-        .addScaledVector(step.normalize(), distance);
-      if (Math.abs(distance - CLOSE_UP) < 0.05) zooming.current = false;
+      // Keep the viewer's compass direction; ease distance and height.
+      view.setFromVector3(step.subVectors(orbit.object.position, orbit.target));
+      view.radius = THREE.MathUtils.lerp(view.radius, CLOSE_UP, ease);
+      view.phi = THREE.MathUtils.lerp(view.phi, CLOSE_UP_ANGLE, ease);
+      orbit.object.position.copy(orbit.target).add(step.setFromSpherical(view));
+      if (
+        Math.abs(view.radius - CLOSE_UP) < 0.05 &&
+        Math.abs(view.phi - CLOSE_UP_ANGLE) < 0.02
+      )
+        zooming.current = false;
     }
     orbit.update();
   });
