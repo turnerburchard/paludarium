@@ -4,9 +4,13 @@
 
 Frog activity runs in a renderer-independent TypeScript engine. Species choose destinations from connected habitat surfaces, guided by hunger, hydration, energy, the simulated day/night period, and unseeded randomness. The engine runs six simulated seconds per visible real second; a day/night cycle lasts five real minutes. These are game-tuning values, not physiological measurements.
 
-Frogs forage for finite insect portions, soak at a shallow shoreline, explore, recover energy, and sleep. Red-eyed and mossy frogs can use connected glass ladders. Dart frogs stay on the ground in this first navigation model. The care panel offers feeding, misting, and a selected frog's needs. Scarcity produces an actionable explanation, not death.
+Frogs forage for finite insect portions, soak at a shallow shoreline, explore, recover energy, and sleep. Red-eyed and mossy frogs can use connected glass ladders and plant stems. Tree frogs prefer sheltered leaves for daytime sleep and can leap between nearby perches. Mossy frogs crawl and use low perches; dart frogs make short hops along the ground. The care panel offers feeding, misting, and a selected frog's needs. Scarcity produces an actionable explanation, not death.
 
-The scene still uses stylized movement, not rigged walking/climbing animation. Fish swim as a loose school (see below) but have no needs yet. Insects are the first self-balancing resource (see below). There is no frog breeding, mortality, algae, nutrient cycle or waste yet. Plant leaves are not yet navigation surfaces.
+The scene still uses stylized movement, not rigged walking/climbing animation. Fish swim as a loose school (see below) but have no needs yet. Insects are the first self-balancing resource (see below). There is no frog breeding, mortality, algae, nutrient cycle or waste yet.
+
+Monstera, bromeliad, and fern definitions provide seeded stem routes, leaf positions, and surface normals from the same geometry data used to build the plants. Rotation and scale apply to those anchors. A plant needs a dry connection to nearby ground; disconnected or submerged plants are not reachable. Nearby leaves within 0.65 scene units admit a tree-frog leap. Removing or moving a plant remaps the frog to a reachable surface while preserving its needs.
+
+The engine exposes interpolated position, normal, hop lift, and tilt. Once an edge starts, it completes before a new decision redirects the frog. The renderer reads that pose; it never invents an independent hop. Sculpted heights feed placement, shoreline detection, and navigation through `groundHeight`. Terrain strokes preview visually while the simulation pauses, and rebuild navigation once on release.
 
 ## Insects
 
@@ -26,7 +30,7 @@ Each simulation step a colony below capacity grows logistically: `growth × (ins
 - `simulation/navigation.ts`: validated graph and reachable routes.
 - `simulation/engine.ts`: bounded live time, needs, decisions, movement, shared food consumption.
 - Frog behavior profiles (nocturnal, climbs, speed) live on each frog's asset definition in `src/assets/animals/frogs.ts`.
-- `simulation/worldHabitat.ts`: adapter from editor terrain/objects to navigation surfaces. Rocks and wood block ground cells. Plants provide shelter scores. Only shallow shoreline cells admit soaking.
+- `simulation/worldHabitat.ts`: adapter from editor terrain/objects to navigation surfaces. Rocks and wood block ground cells. Plants provide shelter and connected stem/leaf routes. Only shallow shoreline cells admit soaking.
 - `simulation/useEcosystem.ts`: React lifecycle and low-frequency HUD snapshots.
 - `scene/EcosystemLife.tsx`: advances the engine once per frame, renders feeding patches.
 - `scene/Inhabitant.tsx`: reads positions/activities and poses the existing animal mesh.
@@ -52,6 +56,6 @@ Species names do not define diets. In particular, strawberry poison frogs do not
 
 ## Integration and next steps
 
-Keep rendering changes and simulation changes separate. The engine exposes normal, direction and activity so future rigs can animate sleep, feeding and wall attachment. Plant perches should come from asset-authored anchors, not guessed leaf positions. Navigation currently avoids rocks rather than finding paths over their detailed geometry.
+Keep rendering changes and simulation changes separate. The engine exposes normal, direction, activity and motion so future rigs can animate sleep, feeding and wall attachment. Plant perches come from asset-authored anchors. Navigation currently avoids rocks rather than finding paths over their detailed geometry.
 
-Next: save live needs without advancing while closed; add authored plant/rock surface anchors; rig locomotion; then implement a small producer/grazer/decomposer system with resource conservation and clear feedback before adding reproduction or death.
+Next: save live needs without advancing while closed; add authored rock surface anchors; rig locomotion; then implement a small producer/grazer/decomposer system with resource conservation and clear feedback before adding reproduction or death.

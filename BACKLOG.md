@@ -12,6 +12,7 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 - [x] Published at turnerburchard.com/paludarium/ (GitHub Pages from this repo, deployed by CI on every push to `main`).
 - [x] Clean phone layout: full-screen scene, bottom dock, panels as a sheet; first visit opens on the Cloud forest.
 - [x] Watch a frog up close from the inspector or the Life panel's frog list.
+- [x] Saved terrain sculpting, soil/sand/stone painting, and pool/stream carving, with one undo step per gesture.
 
 ## Live animal behavior — first slice implemented
 
@@ -20,8 +21,9 @@ Priority: high. Goal: believable accelerated activity while the app is open, wit
 Implemented now: accelerated hunger/hydration/energy, finite insect feeding, misting, shore soaking, sleep, connected ground/glass routes and the Habitat life panel. See `docs/ECOSYSTEM.md`. Remaining acceptance:
 - [x] Species have separate energy, hydration and hunger needs.
 - [x] Animals choose among resting, seeking food, bathing and sheltering; sleep follows a sped-up day/night cycle.
-- [ ] Tree frogs can climb glass (implemented) and perch on plants (pending); dart and mossy frogs use appropriate surfaces.
-- [ ] Ground/glass graph routing is implemented; detailed collision meshes, plant perches and articulated pose transitions remain.
+- [x] Tree frogs climb glass and connected plant stems and perch on foliage; dart and mossy frogs use appropriate surfaces.
+- [x] Species-specific hops, climbs, crawls, and leaf leaps come from the simulation, without a separate renderer movement fallback.
+- [ ] Detailed collision meshes and articulated pose transitions remain.
 - [x] The user can see why an animal is struggling and has a clear way to help.
 - [x] Behavior state and decisions live outside React and Three.js. Inject a clock/random source for tests without requiring repeatable gameplay.
 
@@ -41,7 +43,7 @@ Priority: medium. Food resources, plant growth, crowding and reproduction; event
 - Artist-authored, rigged GLB animals when further anatomy and animation quality is needed. Preserve species metadata and replace only visual factories.
 - More real tropical plants, including better monstera and strawberries; distinct Costa Rican and Mountain West habitats.
 - Rocks, flowing water and habitat scales from bowls to large exhibits.
-- Profile representative populated scenes before increasing the object cap. Share geometry/materials and instance repeated scenery where useful.
+- Crowded-scene profiling and static plant batching are implemented; see `docs/PERFORMANCE.md`. Test physical mobile GPUs before increasing the 120-object cap.
 
 ## Product polish
 
@@ -53,7 +55,7 @@ Priority: medium. Food resources, plant growth, crowding and reproduction; event
 ## Habitat building and inspiration
 
 - Existing: rotate any selected plant/object with Turn or R; resize tank in Habitat settings.
-- Next building tools: sculpt terrain, paint soil/sand/rock regions, shape pools and streams with clear undoable gestures.
+- Terrain tools: sculpt, smooth, paint soil/sand/stone, and carve pools and streams with undoable gestures. Heights and surface paint survive save/export/import and tank resizing.
 - Presets should span blank landscaping (dirt/rock/sand/water), small planted starter habitats and complex waterfalls with mature communities.
 - Inspiration: Tanks for Nothin-style terrarium videos; a pleasant habitat to tend during breaks.
 
