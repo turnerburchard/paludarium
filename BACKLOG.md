@@ -8,6 +8,7 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 - [x] Continuous frog anatomy with folded legs, smaller eyes, toe pads and species markings.
 - [x] Desktop WASD camera movement, Shift for faster movement, typing/modal guards.
 - [x] Dark studio background, overhead illumination, saved warmth and brightness controls.
+- [x] Clear back glass across all habitats; removed stone/cork backdrops and their settings. Older saves and shared layouts still load.
 - [x] Separate glass from soil faces; match sidewall and surface subdivisions.
 - [x] Fully submerged Aquarium preset with driftwood, river stones, Java moss, cardinal and ember tetra schools; deep water fills below the rim and species swim at different depths.
 - [x] Fast production-build browser smoke on routine pushes; longer gesture regression suite remains available on demand.
@@ -18,7 +19,7 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 - [x] Compact watch cards and habitat settings; precise sliders and terrain tools sit behind disclosures.
 - [x] Size controls only for rocks and driftwood; slider release and blur form one undoable gesture, with previews cleared on commit and Undo.
 - [x] Static link-preview metadata and an actual-demo image; native sharing and copy-link fallbacks.
-- [x] Camera and open settings persist across View/Build; closer default framing and a clear home/reset control.
+- [x] Camera and open settings persist across View/Build; closer default framing and a clear home/reset control. Leaving an animal close-up restores auto-orbit; dragging or keyboard navigation can interrupt the return.
 - [x] Touch-friendly placement rotation: tap left/right or hold to spin. Terrain bars name the active brush.
 - [x] Clean branding and a stable rename field.
 - [x] Saved terrain sculpting, soil/sand/stone painting, and pool/stream carving, with one undo step per gesture.
@@ -68,7 +69,7 @@ Priority: medium. Food resources, plant growth, crowding and reproduction; event
 ## Habitat building and inspiration
 
 - Existing: rotate any selected plant/object with Turn or R; resize tank in Habitat settings.
-- Places to go: anthurium and climbing philodendron perches, a leaning branch and a hollow log with bark routes, and dens in the log and under rock shelters. Underwater plants (Amazon sword, eelgrass, rotala, and anubias and java fern, which also grow above water). Leaf litter and four mosses (cushion, sheet and fern moss on land, Java moss in the pool) give insects cover. Any stone or wood piece can grow one of the four mosses over its top from the inspector, and a stone or cork back wall can be mossy too.
+- Places to go: anthurium and climbing philodendron perches, a leaning branch and a hollow log with bark routes, and dens in the log and under rock shelters. Underwater plants (Amazon sword, eelgrass, rotala, and anubias and java fern, which also grow above water). Leaf litter and four mosses (cushion, sheet and fern moss on land, Java moss in the pool) give insects cover. Any stone or wood piece can grow one of the four mosses over its top from the inspector.
 - Terrain tools: sculpt, smooth, paint soil/sand/stone, and carve pools and streams with undoable gestures. Heights and surface paint survive save/export/import and tank resizing.
 - Presets should span blank landscaping (dirt/rock/sand/water), small planted starter habitats and complex waterfalls with mature communities.
 - Inspiration: Tanks for Nothin-style terrarium videos; a pleasant habitat to tend during breaks.

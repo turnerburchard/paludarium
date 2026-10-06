@@ -25,6 +25,22 @@ async function untrustedLink(text: string) {
 }
 
 describe("shared world snapshots", () => {
+  it.each(["stone", "cork"])(
+    "opens an older shared %s backdrop world with its layout intact",
+    async (material) => {
+      const world = makePreset("tropical");
+      const legacy = {
+        ...world,
+        environment: {
+          ...world.environment,
+          backdrop: { material, moss: "sheet" },
+        },
+      };
+      expect(
+        await readWorldLink(await untrustedLink(JSON.stringify(legacy))),
+      ).toEqual(world);
+    },
+  );
   it.each(["empty", "tropical", "mountain", "aquarium"] as const)(
     "round trips the %s layout in a URL-safe fragment",
     async (preset) => {

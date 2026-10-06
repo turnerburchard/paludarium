@@ -253,6 +253,15 @@ try {
     "habitat opens on simple lighting and water choices",
   );
   await page.locator("summary", { hasText: "Fine-tune habitat" }).click();
+  assert.equal(
+    await page.getByRole("button", { name: "Stone", exact: true }).count(),
+    0,
+    "backdrop choices are removed from habitat settings",
+  );
+  assert.equal(
+    await page.getByRole("button", { name: "Cork bark", exact: true }).count(),
+    0,
+  );
   const brightness = page.getByRole("slider", {
     name: "Light brightness",
     exact: true,
