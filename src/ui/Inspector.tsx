@@ -74,6 +74,7 @@ export function Inspector({
         max={2}
         step={0.05}
         format={(n) => `${Math.round(n * 100)}%`}
+        onPreview={(scale) => editor.previewObject(object.id, { scale })}
         onCommit={(scale) => editor.patchObject(object.id, { scale })}
       />
     </aside>
