@@ -1,4 +1,4 @@
-import { useEffect, useState, type SyntheticEvent } from "react";
+import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 interface Props {
   label: string;
   value: number;
@@ -22,11 +22,15 @@ export function RangeControl({
   onCommit,
 }: Props) {
   const [draft, setDraft] = useState(value);
+  const changed = useRef(false);
   useEffect(() => setDraft(value), [value]);
-  // Always commit on release: it also ends any preview. Committing an
-  // unchanged value adds nothing to history.
-  const commit = (event: SyntheticEvent<HTMLInputElement>) =>
+  // Pointer release, key release and blur can all end the same gesture.
+  // A later blur must never replay an already committed value after Undo.
+  const commit = (event: SyntheticEvent<HTMLInputElement>) => {
+    if (!changed.current) return;
+    changed.current = false;
     onCommit(Number(event.currentTarget.value));
+  };
   return (
     <label className="range-control">
       <span>
@@ -42,9 +46,13 @@ export function RangeControl({
         value={draft}
         onChange={(e) => {
           const next = Number(e.target.value);
+          changed.current = true;
           setDraft(next);
           onPreview?.(next);
         }}
+        onPointerDown={(event) =>
+          event.currentTarget.setPointerCapture(event.pointerId)
+        }
         onPointerUp={commit}
         onPointerCancel={commit}
         onKeyUp={commit}
