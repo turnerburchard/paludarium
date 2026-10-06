@@ -42,10 +42,10 @@ export function useEditor(readOnly = false) {
   const worldRef = useRef(world);
   worldRef.current = world;
   const selected = world.objects.find((o) => o.id === selectedId) ?? null;
-  const commit = useCallback(
-    (next: World) => dispatch({ type: "commit", world: next }),
-    [],
-  );
+  const commit = useCallback((next: World) => {
+    setPreview(null);
+    dispatch({ type: "commit", world: next });
+  }, []);
   useEffect(() => {
     setSaving(true);
     const timer = setTimeout(() => {
@@ -63,11 +63,11 @@ export function useEditor(readOnly = false) {
     setPreview(null);
   }
   const navigateHistory = useCallback((type: "undo" | "redo") => {
+    setPreview(null);
     // An unfinished stroke is the current edit. Cancel it without also
     // stepping past the last committed edit.
     if (stroke.current) {
       stroke.current = null;
-      setPreview(null);
       return;
     }
     dispatch({ type });
@@ -91,7 +91,6 @@ export function useEditor(readOnly = false) {
     const current = stroke.current;
     if (!current) return;
     stroke.current = null;
-    setPreview(null);
     commit(current.current);
     notify("Landscape updated. Undo reverses the whole stroke.");
   }

@@ -14,7 +14,7 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 - [x] Separate View/Build modes: viewing opens without editing menus, and frog taps start a close-up.
 - [x] Foliage fades when it blocks a watched frog and restores when watching ends.
 - [x] Compact watch cards and habitat settings; precise sliders and terrain tools sit behind disclosures.
-- [x] Size controls only for rocks and driftwood; slider release and blur form one undoable gesture.
+- [x] Size controls only for rocks and driftwood; slider release and blur form one undoable gesture, with previews cleared on commit and Undo.
 - [x] Static link-preview metadata and an actual-demo image; native sharing and copy-link fallbacks.
 - [x] Camera and open settings persist across View/Build; closer default framing and a clear home/reset control.
 - [x] Touch-friendly placement rotation: tap left/right or hold to spin. Terrain bars name the active brush.
@@ -26,6 +26,7 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 Priority: high. Goal: believable accelerated activity while the app is open, with randomness and visible reasons for behavior. No offline progression, fast-forward or equilibrium calculation.
 
 Implemented now: accelerated hunger/hydration/energy, finite insect feeding, misting, shore soaking, sleep, connected ground/glass routes and the Habitat life panel. See `docs/ECOSYSTEM.md`. Remaining acceptance:
+
 - [x] Species have separate energy, hydration and hunger needs.
 - [x] Animals choose among resting, seeking food, bathing and sheltering; sleep follows a sped-up day/night cycle.
 - [x] Tree frogs climb glass and connected plant stems and perch on foliage; dart and mossy frogs use appropriate surfaces.
