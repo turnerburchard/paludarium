@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { isLandAnimal } from "./assets";
 import { useEditor } from "./editor/useEditor";
 import { makePreset, type Preset } from "./model/presets";
-import { placementProblem } from "./model/terrain";
 import { WorldScene } from "./scene/WorldScene";
 import { useEcosystem } from "./simulation/useEcosystem";
 import { BottomHud } from "./ui/BottomHud";
@@ -71,10 +70,6 @@ export default function App({
     setPanel(next);
     setSheetOpen(true);
   }
-
-  const misplaced = world.objects.filter((o) =>
-    placementProblem(o.kind, o.x, o.z, world.environment),
-  );
 
   function startPreset(preset: Preset) {
     editor.replaceWorld(makePreset(preset));
@@ -165,27 +160,6 @@ export default function App({
       )}
       {!view && world.objects.length === 0 && tool.type === "select" && (
         <EmptyInvitation onPreset={startPreset} />
-      )}
-      {!view && (
-        <div className="scene-notices">
-          {misplaced.length > 0 && (
-            <button
-              className="habitat-warning"
-              onClick={() => {
-                // Each click moves on to the next object that needs a spot.
-                const current = misplaced.findIndex(
-                  (o) => o.id === editor.selectedId,
-                );
-                editor.select(misplaced[(current + 1) % misplaced.length].id);
-                editor.setTool({ type: "select" });
-              }}
-            >
-              {misplaced.length}{" "}
-              {misplaced.length === 1 ? "object needs" : "objects need"} a
-              better spot
-            </button>
-          )}
-        </div>
       )}
       {!view && selected && tool.type === "select" && !watchingId && (
         <Inspector

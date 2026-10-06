@@ -10,7 +10,7 @@ export const leafLitter: AssetDefinition = {
   description:
     "A drift of fallen leaves. Insects breed beneath it and frogs hunt over it.",
   radius: 0.45,
-  habitat: "land",
+  habitat: "either",
   shelter: true,
   build,
 };

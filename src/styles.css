@@ -477,18 +477,6 @@ button:hover:not(:disabled) {
   color: #becea9;
   padding-left: 0;
 }
-/* Top-left of the scene: warnings and tips stack instead of overlapping. */
-.scene-notices {
-  position: absolute;
-  left: 325px;
-  top: 103px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  z-index: 5;
-  pointer-events: none;
-}
 .inspector {
   position: absolute;
   right: 25px;
@@ -631,15 +619,6 @@ button:hover:not(:disabled) {
   font-size: 12px;
   line-height: 1.7;
   color: #99ae91;
-}
-.habitat-warning {
-  background: #473d2deb;
-  border: 1px solid #8d7445;
-  border-radius: 8px;
-  padding: 9px 12px;
-  font-size: 12px;
-  color: #e4cda7;
-  pointer-events: auto;
 }
 .modal-backdrop {
   position: absolute;
@@ -994,10 +973,6 @@ button:hover:not(:disabled) {
     left: 18px;
     top: 85px;
   }
-  .scene-notices {
-    left: 12px;
-    top: 68px;
-  }
   .empty-invitation .eyebrow {
     font-size: 9px;
   }
@@ -1063,11 +1038,6 @@ button:hover:not(:disabled) {
   }
   .range-control > span {
     font-size: 12px;
-  }
-  .habitat-warning {
-    font-size: 10px;
-    max-width: 145px;
-    padding: 7px;
   }
   .modal {
     padding: 20px;
@@ -1326,9 +1296,6 @@ button:hover:not(:disabled) {
   border-color: #73885c;
   background: #3b5038;
 }
-.scene-notices {
-  top: 164px;
-}
 @media (max-width: 760px) {
   .mode-switch {
     top: 68px;
@@ -1347,9 +1314,6 @@ button:hover:not(:disabled) {
   }
   .view-mode .inspector {
     bottom: 12px;
-  }
-  .scene-notices {
-    top: 126px;
   }
   .view-controls {
     bottom: max(16px, env(safe-area-inset-bottom));

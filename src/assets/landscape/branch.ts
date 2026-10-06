@@ -11,7 +11,7 @@ export const branch: AssetDefinition = {
   description:
     "A branch rising from the ground. Frogs walk up it to a lookout.",
   radius: 0.55,
-  habitat: "land",
+  habitat: "either",
   perches: branchPerches,
   build,
 };

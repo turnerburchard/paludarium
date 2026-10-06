@@ -10,7 +10,7 @@ export const rockShelter: AssetDefinition = {
   description:
     "A flat stone resting on two boulders. Frogs hide in the gap beneath.",
   radius: 0.66,
-  habitat: "land",
+  habitat: "either",
   blocksMovement: true,
   shelter: true,
   dens: () => [

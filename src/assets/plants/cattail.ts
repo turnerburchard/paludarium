@@ -10,7 +10,7 @@ export const cattail: AssetDefinition = {
   description:
     "Tall reeds with velvety brown seed heads, right at the water's edge.",
   radius: 0.32,
-  habitat: "land",
+  habitat: "either",
   shelter: true,
   soil: "shore",
   build,
