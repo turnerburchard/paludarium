@@ -9,7 +9,9 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 - [x] Desktop WASD camera movement, Shift for faster movement, typing/modal guards.
 - [x] Dark studio background, overhead illumination, saved warmth and brightness controls.
 - [x] Separate glass from soil faces; match sidewall and surface subdivisions.
-- [ ] Publish at turnerburchard.com/paludarium/ by deploying `dist/` into `paludarium/` in turnerburchard/turnerburchard.github.io.
+- [x] Published at turnerburchard.com/paludarium/ (GitHub Pages from this repo, deployed by CI on every push to `main`).
+- [x] Clean phone layout: full-screen scene, bottom dock, panels as a sheet; first visit opens on the Cloud forest.
+- [x] Watch a frog up close from the inspector or the Life panel's frog list.
 
 ## Live animal behavior — first slice implemented
 
@@ -28,7 +30,8 @@ Implemented now: accelerated hunger/hydration/energy, finite insect feeding, mis
 Priority: medium. Food resources, plant growth, crowding and reproduction; eventually mortality. Begin with one small food web. Explain imbalances gently before introducing losses. No money system or large menu stack. Fun and legibility matter more than biological detail.
 
 - [x] Insects breed in colonies under plant and moss cover; capacity follows cover, and the Life panel shows how many frogs they can feed.
-- [ ] Plant growth.
+- [x] Plants have soil preferences; struggling plants give less cover.
+- [ ] Plant growth over time. Open design questions for Turner: is growth saved with the world, how does it interact with undo, and how should growth look?
 - [ ] Decomposers and leaf litter feeding the insects.
 
 ## Art direction and scale
