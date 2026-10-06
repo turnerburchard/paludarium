@@ -226,6 +226,9 @@ try {
 
   await page.getByRole("button", { name: "Build", exact: true }).click();
   await page
+    .getByRole("button", { name: "Deselect object", exact: true })
+    .click();
+  await page
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Habitat", exact: true })
     .click();

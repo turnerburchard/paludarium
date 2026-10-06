@@ -290,6 +290,16 @@ try {
   await page.getByRole("button", { name: "Done", exact: true }).click();
 
   await page.setViewportSize({ width: 390, height: 844 });
+  const phoneCanvas = await page.locator("canvas").boundingBox();
+  assert.equal(phoneCanvas.y, 0, "phone Build also keeps a full-height canvas");
+  await page.getByRole("button", { name: "View", exact: true }).click();
+  assert.deepEqual(await page.locator("canvas").boundingBox(), phoneCanvas);
+  await page.getByRole("button", { name: "Build", exact: true }).click();
+  assert.deepEqual(
+    await page.locator("canvas").boundingBox(),
+    phoneCanvas,
+    "phone mode switches never resize the canvas",
+  );
   await page
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Add", exact: true })

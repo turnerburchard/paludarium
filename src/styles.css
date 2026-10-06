@@ -641,10 +641,6 @@ button:hover:not(:disabled) {
   color: #e4cda7;
   pointer-events: auto;
 }
-.view-mode .scene-shell {
-  left: 0;
-  top: 0;
-}
 .modal-backdrop {
   position: absolute;
   inset: 0;
@@ -821,9 +817,6 @@ button:hover:not(:disabled) {
     justify-content: center;
     padding: 0;
     height: 40px;
-  }
-  .scene-shell {
-    inset: 56px 0 0 0;
   }
   /* The sidebar becomes a bottom sheet, hidden until the dock opens it. */
   .sidebar {
@@ -1075,9 +1068,6 @@ button:hover:not(:disabled) {
     font-size: 10px;
     max-width: 145px;
     padding: 7px;
-  }
-  .view-mode .scene-shell {
-    inset: 0;
   }
   .modal {
     padding: 20px;
