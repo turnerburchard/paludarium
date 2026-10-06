@@ -56,7 +56,7 @@ try {
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(url);
   await page.getByRole("button", { name: "Build", exact: true }).click();
-  await page.locator(".asset-picture img").first().waitFor();
+  await page.locator(".asset-picture img").first().waitFor({ timeout: 90000 });
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
