@@ -34,7 +34,7 @@ export function makePreset(preset: Preset): World {
     add("bromeliad", -2.6, -0.1, 0.9);
     add("bromeliad", -0.8, -0.6, 0.75, 2);
     add("wood", -1.45, -0.3, 1.05, -0.4);
-    add("rock", 0.1, -1.2, 1.25, 0.4);
+    add("rock-shelter", 0.1, -1.2, 0.95, 0.4);
     add("rock", 0.2, 0.35, 0.8, 1.6);
     add("rock", 0.55, 1.25, 0.6, 1);
     add("rock", 1.6, -1.55, 0.65);
@@ -49,8 +49,8 @@ export function makePreset(preset: Preset): World {
   } else {
     add("rock", -1.65, -0.65, 1.8, 0.6);
     add("rock", -0.5, -1.4, 1.2, 2);
-    add("rock", -2.5, -1.25, 0.85);
-    add("rock", 0.3, 0.65, 1.0, 2);
+    add("rock-shelter", -2.5, -1.25, 0.8);
+    add("rock", 0.35, 0.75, 0.75, 2);
     add("rock", 0.75, 1.5, 0.55);
     add("wood", -1.3, 0.15, 0.8, 1.2);
     add("fern", -2.6, -0.3, 1.1);
@@ -80,6 +80,14 @@ export function makePreset(preset: Preset): World {
     add("fern", -1.7, -1.4, 1.05, 0.5);
     add("fern", -0.65, -0.1, 0.65, 1.6);
     add("strawberry", -2.3, 1.45, 0.85, 0.3);
+    add("philodendron", -3.0, -1.75, 1.1);
+    add("anthurium", -1.35, 0.4, 0.85, 1.2);
+    add("log", -1.75, 1.75, 0.8, 0.2);
+    add("leaf-litter", -1.05, 1.05, 1);
+  } else {
+    add("log", -1.65, 1.75, 0.8, 0.1);
+    add("leaf-litter", -1.85, 0.35, 0.9);
+    add("branch", -0.4, -0.55, 1, 2.6);
   }
   return {
     version: 1,
