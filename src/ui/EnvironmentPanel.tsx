@@ -1,10 +1,12 @@
 import { Sun, Sunset, Moon } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import { RangeControl } from "./RangeControl";
+import { TerrainControls } from "./TerrainControls";
 export function EnvironmentPanel({ editor }: { editor: Editor }) {
   const env = editor.world.environment;
   return (
     <div className="environment-panel">
+      <TerrainControls editor={editor} />
       <div className="section-label">LIGHT & ATMOSPHERE</div>
       <div className="light-options">
         {(

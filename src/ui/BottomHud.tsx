@@ -27,19 +27,27 @@ export function BottomHud({ editor }: { editor: Editor }) {
           </span>
           <div>
             <strong>
-              {verb} {kind ? assets[kind].name.toLowerCase() : ""}
+              {tool.type === "terrain"
+                ? "Shaping your landscape"
+                : `${verb} ${kind ? assets[kind].name.toLowerCase() : ""}`}
             </strong>
-            <span>Tap a spot in the tank · drag to orbit</span>
+            <span>
+              {tool.type === "terrain"
+                ? "Drag to brush · Escape to finish"
+                : "Tap a spot in the tank · drag to orbit"}
+            </span>
           </div>
-          <IconButton
-            label="Rotate placement (R)"
-            onClick={() => editor.rotate()}
-          >
-            <RotateCw size={18} />
-          </IconButton>
+          {tool.type !== "terrain" && (
+            <IconButton
+              label="Rotate placement (R)"
+              onClick={() => editor.rotate()}
+            >
+              <RotateCw size={18} />
+            </IconButton>
+          )}
           <button className="finish-button" onClick={editor.finish}>
-            {tool.type === "place" ? <Check size={16} /> : <X size={16} />}
-            {tool.type === "place" ? "Done" : "Cancel"}
+            {tool.type === "place" || tool.type === "terrain" ? <Check size={16} /> : <X size={16} />}
+            {tool.type === "place" || tool.type === "terrain" ? "Done" : "Cancel"}
           </button>
         </div>
       ) : (

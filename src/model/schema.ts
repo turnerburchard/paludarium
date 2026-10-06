@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TERRAIN_POINTS, groundMaterials } from "./terrainData";
 
 export const assetKinds = [
   "monstera",
@@ -36,6 +37,13 @@ export const environmentSchema = z.object({
   light: z.enum(["day", "golden", "moon"]),
   warmth: finite.min(0).max(1).default(0.45),
   brightness: finite.min(0.4).max(1.6).default(1),
+  // Additive version-1 data: older saves keep their original bank and palette.
+  terrain: z
+    .object({
+      heights: z.array(finite.min(-0.9).max(0.9)).length(TERRAIN_POINTS),
+      paint: z.array(z.enum(groundMaterials)).length(TERRAIN_POINTS),
+    })
+    .optional(),
 });
 export type Environment = z.infer<typeof environmentSchema>;
 export const worldSchema = z

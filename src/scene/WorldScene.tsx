@@ -19,6 +19,7 @@ import { useCameraNavigation } from "./useCameraNavigation";
 import { useFollowCamera } from "./useFollowCamera";
 import { Inhabitant } from "./Inhabitant";
 import { Tank, Terrain, Water } from "./Terrain";
+import { TerrainBrushCursor } from "./TerrainBrushCursor";
 
 const lighting = {
   day: { background: "#080b0d", intensity: 4.2, ambient: 0.25 },
@@ -56,7 +57,8 @@ function Scene({
     env.warmth,
   );
   const controls = useRef<OrbitControlsImpl>(null);
-  const { size } = useThree();
+  const { size, raycaster } = useThree();
+  const terrain = useRef<THREE.Group>(null);
   useCameraNavigation(controls, true);
   useFollowCamera(controls, ecosystem, watchingId);
   const [cursor, setCursor] = useState<{ x: number; z: number } | null>(null);
@@ -82,24 +84,31 @@ function Scene({
   }, [resetCamera, size.width, size.height]);
   useEffect(() => setCursor(null), [tool]);
   const point =
-    cursor && kind
+    cursor && (kind || tool.type === "terrain")
       ? boundedPosition(
           cursor.x,
           cursor.z,
           env,
-          assets[kind].radius * (moving?.scale ?? 1),
+          kind ? assets[kind].radius * (moving?.scale ?? 1) : 0,
         )
       : null;
   const problem =
     point && kind ? placementProblem(kind, point.x, point.z, env) : null;
   function track(e: ThreeEvent<PointerEvent>) {
-    if (!kind) return;
+    if (!kind && tool.type !== "terrain") return;
     e.stopPropagation();
-    setCursor({ x: e.point.x, z: e.point.z });
+    const point =
+      tool.type === "terrain" && terrain.current
+        ? raycaster.intersectObject(terrain.current, true)[0]?.point
+        : e.point;
+    if (!point) return;
+    setCursor({ x: point.x, z: point.z });
+    if (tool.type === "terrain") editor.continueTerrainStroke(point.x, point.z);
   }
   function place(e: ThreeEvent<MouseEvent>) {
     if (e.delta > 6) return;
     e.stopPropagation();
+    if (tool.type === "terrain") return;
     if (kind) editor.placeAt(e.point.x, e.point.z);
     else editor.select(null);
   }
@@ -137,8 +146,43 @@ function Scene({
           <meshBasicMaterial color="#dce3ef" side={THREE.DoubleSide} />
         </mesh>
       </EnvironmentLight>
-      <group onPointerMove={track} onClick={place}>
-        <Terrain environment={env} />
+      <group
+        onPointerMove={track}
+        onClick={place}
+        onPointerDown={(e) => {
+          if (tool.type !== "terrain" || e.button !== 0) return;
+          const point =
+            terrain.current &&
+            raycaster.intersectObject(terrain.current, true)[0]?.point;
+          if (!point) return;
+          e.stopPropagation();
+          // R3F supplies a capture target, but its published event type omits it.
+          if (
+            e.target &&
+            "setPointerCapture" in e.target &&
+            typeof e.target.setPointerCapture === "function"
+          )
+            e.target.setPointerCapture(e.pointerId);
+          setCursor({ x: point.x, z: point.z });
+          editor.beginTerrainStroke(point.x, point.z);
+        }}
+        onPointerUp={(e) => {
+          if (tool.type !== "terrain") return;
+          e.stopPropagation();
+          editor.endTerrainStroke();
+          if (
+            e.target &&
+            "releasePointerCapture" in e.target &&
+            typeof e.target.releasePointerCapture === "function"
+          )
+            e.target.releasePointerCapture(e.pointerId);
+        }}
+        onPointerCancel={editor.cancelTerrainStroke}
+        onLostPointerCapture={editor.cancelTerrainStroke}
+      >
+        <group ref={terrain}>
+          <Terrain environment={env} />
+        </group>
         <mesh
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, 0.001, 0]}
@@ -158,7 +202,8 @@ function Scene({
               paused={editor.paused}
               selected={!view && editor.selectedId === object.id}
               onSelect={(e) => {
-                if (e.delta > 6 || kind || view) return;
+                if (e.delta > 6 || kind || view || tool.type === "terrain")
+                  return;
                 e.stopPropagation();
                 editor.select(object.id);
               }}
@@ -170,7 +215,10 @@ function Scene({
         paused={editor.paused || tool.type !== "select"}
         heldId={watchingId ? null : editor.selectedId}
       />
-      <Water environment={env} paused={editor.paused} />
+      <Water
+        environment={env}
+        paused={editor.paused || tool.type === "terrain"}
+      />
       <Tank environment={env} />
       {point && kind && (
         <Inhabitant
@@ -192,7 +240,10 @@ function Scene({
           invalid={!!problem}
         />
       )}
-      {point && (
+      {point && tool.type === "terrain" && (
+        <TerrainBrushCursor {...point} radius={tool.radius} environment={env} />
+      )}
+      {point && kind && (
         <mesh
           position={[
             point.x,
@@ -226,6 +277,7 @@ function Scene({
         maxPolarAngle={Math.PI / 2.05}
         minPolarAngle={0.16}
         enablePan={false}
+        enableRotate={tool.type !== "terrain"}
         enableDamping
         dampingFactor={0.09}
         autoRotate={view && !editor.paused}
