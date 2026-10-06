@@ -21,6 +21,8 @@ import { rock } from "./landscape/rock";
 import { wood } from "./landscape/wood";
 import { branch } from "./landscape/branch";
 import { log } from "./landscape/log";
+import { rockShelter } from "./landscape/rockShelter";
+import { leafLitter } from "./landscape/leafLitter";
 
 export type { AssetDefinition, Category, FrogBehavior } from "./types";
 
@@ -41,6 +43,8 @@ export const assets = {
   wood,
   branch,
   log,
+  "rock-shelter": rockShelter,
+  "leaf-litter": leafLitter,
   fish,
 } satisfies Record<AssetKind, AssetDefinition>;
 

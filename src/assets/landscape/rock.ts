@@ -16,13 +16,21 @@ export const rock: AssetDefinition = {
 
 function build(random: () => number) {
   const root = new THREE.Group();
+  mesh(weatheredStone(), stoneMaterial(random), root, [0, 0.22, 0]);
+  return root;
+}
+
+/** A rounded, faceted stone about one unit across with a flat underside.
+ * `phase` shifts its weathering so stones in a group don't match. */
+export function weatheredStone(phase = 0) {
   const geo = new THREE.IcosahedronGeometry(0.47, 2),
     positions = geo.getAttribute("position");
   for (let i = 0; i < positions.count; i++) {
     const x = positions.getX(i),
       y = positions.getY(i),
       z = positions.getZ(i);
-    const rough = 1 + 0.13 * Math.sin(x * 21 + z * 9) * Math.cos(y * 17);
+    const rough =
+      1 + 0.13 * Math.sin(x * 21 + z * 9 + phase) * Math.cos(y * 17 + phase);
     positions.setXYZ(
       i,
       x * rough * 1.1,
@@ -31,10 +39,13 @@ function build(random: () => number) {
     );
   }
   geo.computeVertexNormals();
+  return geo;
+}
+
+export function stoneMaterial(random: () => number) {
   const stone = material(
     new THREE.Color().setHSL(0.13, 0.075, 0.23 + random() * 0.1),
   );
   stone.flatShading = true;
-  mesh(geo, stone, root, [0, 0.22, 0]);
-  return root;
+  return stone;
 }
