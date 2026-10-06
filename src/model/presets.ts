@@ -49,8 +49,8 @@ export function makePreset(preset: Preset): World {
   } else {
     add("rock", -1.65, -0.65, 1.8, 0.6);
     add("rock", -0.5, -1.4, 1.2, 2);
-    add("rock-shelter", -2.5, -1.25, 0.8);
-    add("rock", 0.35, 0.75, 0.75, 2);
+    add("rock", -2.5, -1.25, 0.85);
+    add("rock", 0.3, 0.65, 1.0, 2);
     add("rock", 0.75, 1.5, 0.55);
     add("wood", -1.3, 0.15, 0.8, 1.2);
     add("fern", -2.6, -0.3, 1.1);
