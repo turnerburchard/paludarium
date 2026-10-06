@@ -11,7 +11,8 @@
     "test:e2e": "node tests/e2e.mjs && node tests/terrain.e2e.mjs && node tests/mechanics.e2e.mjs",
     "format": "prettier --write src tests vite.config.ts",
     "format:check": "prettier --check src tests vite.config.ts",
-    "screenshot": "node scripts/screenshot.mjs"
+    "screenshot": "node scripts/screenshot.mjs",
+    "share-image": "node scripts/share-image.mjs"
   },
   "dependencies": {
     "@react-three/drei": "10.7.6",

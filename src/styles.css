@@ -1409,3 +1409,102 @@ button:hover:not(:disabled) {
     right: 12px;
   }
 }
+
+.view-intro {
+  position: absolute;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 3;
+  width: min(420px, calc(100% - 32px));
+}
+.view-intro h1 {
+  margin: 0 0 5px;
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+}
+.view-intro p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.view-intro button {
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 0;
+  background: transparent;
+  color: #b6c99d;
+  font-size: 12px;
+}
+.intro-build-button {
+  padding: 12px 18px;
+  background: var(--accent);
+  color: var(--ink);
+  border: 0;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.source-link {
+  color: var(--muted);
+  font-size: 12px;
+}
+.share-control {
+  position: relative;
+  display: flex;
+}
+.share-feedback,
+.share-fallback {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  padding: 10px 12px;
+  background: #192c24f5;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 8;
+}
+.share-fallback {
+  width: min(300px, calc(100vw - 24px));
+  white-space: normal;
+}
+.share-fallback > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.share-fallback input {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #13241c;
+  color: #deedc0;
+  font-size: 12px;
+}
+.app:not(.view-mode) .share-feedback,
+.app:not(.view-mode) .share-fallback {
+  top: auto;
+  bottom: calc(100% + 10px);
+}
+@media (max-width: 760px) {
+  .view-intro {
+    top: 87px;
+  }
+  .view-intro h1 {
+    font-size: 23px;
+  }
+  .view-mode .scene-tools {
+    gap: 0;
+    padding: 3px;
+  }
+  .view-mode .scene-tools .icon-button {
+    width: 40px;
+    height: 44px;
+  }
+}

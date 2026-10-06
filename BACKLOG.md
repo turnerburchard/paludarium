@@ -15,6 +15,7 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 - [x] Foliage fades when it blocks a watched frog and restores when watching ends.
 - [x] Compact watch cards and habitat settings; precise sliders and terrain tools sit behind disclosures.
 - [x] Size controls only for rocks and driftwood; slider release and blur form one undoable gesture.
+- [x] Static link-preview metadata and an actual-demo image; native sharing and copy-link fallbacks.
 - [x] Saved terrain sculpting, soil/sand/stone painting, and pool/stream carving, with one undo step per gesture.
 
 ## Live animal behavior — first slice implemented
