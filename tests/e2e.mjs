@@ -48,6 +48,14 @@ try {
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("http://127.0.0.1:5191");
   await page.locator(".asset-picture img").first().waitFor();
+  // A first visit opens on the cloud forest; start from an empty tank.
+  assert.equal(
+    await page.getByRole("textbox", { name: "World name" }).inputValue(),
+    "Cloud forest",
+    "first visit opens on a finished habitat",
+  );
+  await page.getByRole("button", { name: "New world", exact: true }).click();
+  await page.getByRole("button", { name: /Empty tank/ }).click();
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
@@ -104,7 +112,6 @@ try {
     .click();
   await clickWorld(-1.4, 0.76, 0.75);
   assert.equal((await saved()).objects.length, 1, "place a frog");
-  await page.getByRole("complementary", { name: "First habitat" }).waitFor();
   await page.getByRole("button", { name: "Done", exact: true }).click();
   let world = await saved();
   const frog = world.objects[0];
@@ -247,7 +254,7 @@ try {
   });
   assert.deepEqual(errors, [], "no browser runtime errors");
   console.log(
-    "PASS: placement, first-visit guide, selection, canceled copy/move, move, undo, watch, presets, persistence, export, invalid import, mobile layout, keyboard slider, runtime errors",
+    "PASS: first-visit preset, placement, selection, canceled copy/move, move, undo, watch, presets, persistence, export, invalid import, mobile layout, keyboard slider, runtime errors",
   );
 } finally {
   await browser?.close();
