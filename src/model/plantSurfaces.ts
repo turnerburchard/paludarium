@@ -157,3 +157,74 @@ export function fernPerches(random: () => number): PlantPerch[] {
     perchNormal: { x: 0, y: 1, z: 0 },
   }));
 }
+
+export interface AnthuriumLeaf extends PlantPerch {
+  /** Where the leaf stalk meets the blade, and the blade's frame there. */
+  base: PlantPoint;
+  direction: PlantPoint;
+  normal: PlantPoint;
+  length: number;
+  width: number;
+  /** How far the tip hangs below a flat blade, as a fraction of its length. */
+  droop: number;
+}
+
+/** Heart-shaped leaves held out almost level on arching stalks, so the broad
+ * base of each blade makes a natural perch. */
+export function anthuriumLeaves(random: () => number): AnthuriumLeaf[] {
+  return Array.from({ length: 7 }, (_, index) => {
+    const angle = index * 2.399 + random() * 0.4;
+    const height = 0.38 + random() * 0.42;
+    const reach = 0.12 + height * 0.3;
+    const base = {
+      x: Math.cos(angle) * reach,
+      y: height,
+      z: Math.sin(angle) * reach,
+    };
+    const direction = normalized({
+      x: Math.cos(angle),
+      y: -0.12 - random() * 0.18,
+      z: Math.sin(angle),
+    });
+    // The blade faces up, square to the midrib.
+    const normal = normalized({
+      x: -direction.x * direction.y,
+      y: 1 - direction.y * direction.y,
+      z: -direction.z * direction.y,
+    });
+    const length = 0.42 + height * 0.25 + random() * 0.08;
+    const width = length * 0.8;
+    const droop = 0.12 + random() * 0.08;
+    // Perch on the midrib a third of the way out, where the blade is still level.
+    const t = 0.33;
+    const sag = -droop * t * t * length;
+    const slope = -2 * droop * t;
+    const perch = {
+      x: base.x + direction.x * length * t + normal.x * (sag + 0.004),
+      y: base.y + direction.y * length * t + normal.y * (sag + 0.004),
+      z: base.z + direction.z * length * t + normal.z * (sag + 0.004),
+    };
+    const perchNormal = normalized({
+      x: normal.x - direction.x * slope,
+      y: normal.y - direction.y * slope,
+      z: normal.z - direction.z * slope,
+    });
+    const stem = [
+      { x: 0, y: 0, z: 0 },
+      { x: base.x * 0.2, y: height * 0.75, z: base.z * 0.2 },
+      { x: base.x * 0.7, y: height + 0.06, z: base.z * 0.7 },
+      base,
+    ];
+    return {
+      base,
+      direction,
+      normal,
+      length,
+      width,
+      droop,
+      stem,
+      perch,
+      perchNormal,
+    };
+  });
+}

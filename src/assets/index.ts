@@ -10,6 +10,7 @@ import {
   treeFrog,
 } from "./animals/frogs";
 import { fish } from "./animals/fish";
+import { anthurium } from "./plants/anthurium";
 import { bromeliad } from "./plants/bromeliad";
 import { fern } from "./plants/fern";
 import { grass } from "./plants/grass";
@@ -31,6 +32,7 @@ export const assets = {
   fern,
   strawberry,
   bromeliad,
+  anthurium,
   grass,
   moss,
   rock,
