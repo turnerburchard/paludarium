@@ -196,9 +196,7 @@ try {
     .click();
   await page.getByRole("button", { name: "Habitat life", exact: true }).click();
   const life = page.getByRole("region", { name: "Habitat life", exact: true });
-  await life
-    .getByRole("heading", { name: "A little world, unfolding" })
-    .waitFor();
+  await life.getByRole("button", { name: /Follow someone/ }).waitFor();
   assert.equal(
     await life
       .getByRole("button", { name: "Scatter insects", exact: true })
@@ -211,19 +209,11 @@ try {
       .count(),
     0,
   );
-  assert.equal(await life.locator(".frog-list").isVisible(), false);
-  await life.getByRole("button", { name: /Follow someone/ }).click();
-  await page
-    .getByRole("complementary", { name: "Watching", exact: true })
-    .waitFor();
-  await page
-    .getByRole("button", { name: "Stop watching", exact: true })
-    .click();
-  await page.getByRole("button", { name: "Build", exact: true }).click();
-  await life.locator("summary", { hasText: "Meet the inhabitants" }).click();
+  // Every land animal is listed to watch; fish are counted by species.
+  const lifeWorld = await saved();
   assert.equal(
     await life.locator(".frog-list button").count(),
-    (await saved()).objects.filter((object) =>
+    lifeWorld.objects.filter((object) =>
       [
         "tree-frog",
         "dart-frog",
@@ -235,10 +225,15 @@ try {
       ].includes(object.kind),
     ).length,
   );
-  await life
-    .locator("summary", { hasText: "What makes this world work?" })
+  await life.locator(".fish-list li", { hasText: "Cardinal tetra" }).waitFor();
+  await life.getByRole("button", { name: /Follow someone/ }).click();
+  await page
+    .getByRole("complementary", { name: "Watching", exact: true })
+    .waitFor();
+  await page
+    .getByRole("button", { name: "Stop watching", exact: true })
     .click();
-  await life.locator(".insect-summary").waitFor();
+  await page.getByRole("button", { name: "Build", exact: true }).click();
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export world", exact: true }).click();
   const download = await downloadPromise;

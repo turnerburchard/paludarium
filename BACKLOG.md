@@ -27,7 +27,7 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 
 Priority: high. Goal: believable accelerated activity while the app is open, with randomness and visible reasons for behavior. No offline progression, fast-forward or equilibrium calculation.
 
-Implemented now: accelerated hunger/hydration/energy, self-renewing insect colonies, shore soaking, sleep, connected ground/glass routes and an observation-first Habitat life notebook. See `docs/ECOSYSTEM.md`. Remaining acceptance:
+Implemented now: accelerated hunger/hydration/energy, self-renewing insect colonies, shore soaking, sleep, connected ground/glass routes and a Life tab that lists the inhabitants to watch. See `docs/ECOSYSTEM.md`. Remaining acceptance:
 
 - [x] Species have separate energy, hydration and hunger needs.
 - [x] Animals choose among resting, seeking food, bathing and sheltering; sleep follows a sped-up day/night cycle.
@@ -93,6 +93,7 @@ The title is **Paludarium**. Keep the saved-world storage key (`little-worlds:v1
 
 - [x] Share the current committed world as a compressed snapshot link; explore without replacing a recipient’s save, explicitly build a copy, and keep export/Undo available.
 - [x] Replace feed/mist buttons with a field notebook of actual behavior, a quick follow action, and tucked-away inhabitants and habitat guidance.
-- [ ] Consider richer interactions and ecological discoveries after watching how people use the notebook; avoid routine care chores.
+- [x] Simplify Life to a list of inhabitants with Follow someone; field notes and habitat guidance were removed from the panel (2026-10-06).
+- [ ] Consider richer interactions and ecological discoveries; avoid routine care chores.
 
 - [x] Keep View minimal: remove the title, tagline and large watch button; move the introduction and creature list behind a small info control.
