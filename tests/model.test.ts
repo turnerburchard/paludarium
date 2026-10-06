@@ -64,6 +64,11 @@ describe("safe files and valid habitat", () => {
         ).toBeNull();
     },
   );
+  it("explains files that aren't JSON at all", () => {
+    expect(() => parseWorld("hello")).toThrow(
+      "This file isn't a Paludarium terrarium.",
+    );
+  });
   it("rejects bad numbers, unsupported versions, duplicate IDs and excessive objects", () => {
     const world = makePreset("tropical");
     expect(() =>

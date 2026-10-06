@@ -1,4 +1,4 @@
-import { Check, MousePointer2, Plus, RotateCw } from "lucide-react";
+import { Check, MousePointer2, Plus, RotateCw, X } from "lucide-react";
 import { assets } from "../assets";
 import type { Editor } from "../editor/useEditor";
 import { IconButton } from "./IconButton";
@@ -37,11 +37,8 @@ export function BottomHud({ editor }: { editor: Editor }) {
           >
             <RotateCw size={18} />
           </IconButton>
-          <button
-            className="finish-button"
-            onClick={() => editor.setTool({ type: "select" })}
-          >
-            <Check size={16} />
+          <button className="finish-button" onClick={editor.finish}>
+            {tool.type === "place" ? <Check size={16} /> : <X size={16} />}
             {tool.type === "place" ? "Done" : "Cancel"}
           </button>
         </div>
