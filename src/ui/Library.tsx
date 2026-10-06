@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { Leaf, Mountain, Bird, Grid2X2, Plus } from "lucide-react";
 import { catalog, type Category } from "../assets";
-import type { AssetKind } from "../model/schema";
 import type { Editor } from "../editor/useEditor";
-import { makeThumbnails } from "../scene/thumbnails";
+import { loadThumbnails, type Thumbnails } from "../scene/thumbnails";
 type Filter = Category | "All";
 const categories: { name: Filter; icon: typeof Leaf }[] = [
   { name: "All", icon: Grid2X2 },
@@ -13,12 +12,13 @@ const categories: { name: Filter; icon: typeof Leaf }[] = [
 ];
 export function Library({ editor }: { editor: Editor }) {
   const [category, setCategory] = useState<Filter>("All");
-  const [thumbnails, setThumbnails] = useState<
-    Partial<Record<AssetKind, string>>
-  >({});
+  const [thumbnails, setThumbnails] = useState<Thumbnails>({});
   useEffect(() => {
-    const id = setTimeout(() => setThumbnails(makeThumbnails()), 80);
-    return () => clearTimeout(id);
+    let mounted = true;
+    void loadThumbnails().then((loaded) => mounted && setThumbnails(loaded));
+    return () => {
+      mounted = false;
+    };
   }, []);
   return (
     <>

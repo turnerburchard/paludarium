@@ -68,6 +68,8 @@ button:hover:not(:disabled) {
 .scene-shell {
   position: absolute;
   inset: 78px 0 0 300px;
+  /* Matches the scene background so the area doesn't flash before the first frame. */
+  background: #080b0d;
 }
 .scene-shell canvas {
   display: block;
