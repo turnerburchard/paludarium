@@ -27,6 +27,7 @@ Implemented now: accelerated hunger/hydration/energy, finite insect feeding, mis
 - [x] Tree frogs climb glass and connected plant stems and perch on foliage; dart and mossy frogs use appropriate surfaces.
 - [x] Species-specific hops, climbs, crawls, and leaf leaps come from the simulation, without a separate renderer movement fallback.
 - [x] Rigged frog animation: breathing, crouch and landing, turning on the spot, feet planted while crawling and climbing.
+- [x] A turnip-tailed gecko with its own skeleton, dash-and-pause gait and resting surfaces.
 - [ ] Detailed collision meshes remain.
 - [x] The user can see why an animal is struggling and has a clear way to help.
 - [x] Behavior state and decisions live outside React and Three.js. Inject a clock/random source for tests without requiring repeatable gameplay.

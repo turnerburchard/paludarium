@@ -201,7 +201,7 @@ describe("live ecosystem behavior", () => {
         { ...seed("one"), species: sleepy, nodeId: "a" },
         { ...seed("two"), species: sleepy, nodeId: "c" },
       ],
-      { speed: 1, elapsed: 900 },
+      { speed: 1, elapsed: 100 },
     );
     run(engine, 20);
     const spots = engine.snapshot().animals.map((animal) => animal.nodeId);
@@ -558,6 +558,29 @@ describe("plant perches and species movement", () => {
     expect(crawlLift).toBe(0);
     for (const engine of engines)
       expect(engine.getAnimal("frog")!.nodeId).toBe("b");
+  });
+  it("lets a gecko dash between spots and rest on bark rather than open ground", () => {
+    const graph = new HabitatGraph([
+      node("a", 0, ["b", "c"]),
+      node("b", 0.3, ["a"], { shelter: 0.5 }),
+      node("c", -0.3, ["a"], { shelter: 0.5, surface: "bark" }),
+    ]);
+    const engine = new Ecosystem(
+      graph,
+      [{ ...seed(), species: frogProfile("gecko") }],
+      { speed: 1, elapsed: 100 },
+    );
+    const positions: number[] = [];
+    for (let step = 0; step < 200; step++) {
+      engine.advance(0.1);
+      const gecko = engine.getAnimal("frog")!;
+      expect(gecko.motion.hop).toBe(false);
+      if (gecko.moving && gecko.motion.progress > 0)
+        positions.push(Math.abs(gecko.position.x));
+    }
+    expect(engine.getAnimal("frog")!.nodeId).toBe("c");
+    // Dashes start slowly: the first sample covers less than its share.
+    expect(positions[0]).toBeLessThan(0.3 / positions.length);
   });
   it("turns in place before setting off away from where it faces", () => {
     const graph = new HabitatGraph([

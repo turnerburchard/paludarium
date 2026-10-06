@@ -276,12 +276,13 @@ export class Ecosystem {
           ? "No insects within reach. Plants and moss give insects cover to breed."
           : "";
     if (inactive || needs.energy < 0.3) {
+      const restsOn = agent.profile.restsOn ?? ["leaf"];
       const shelters = reachable
         .map((id) => ({
           id,
           score:
             this.graph.node(id).shelter * 3 +
-            (this.graph.node(id).surface === "leaf" ? 1 : 0) -
+            (restsOn.includes(this.graph.node(id).surface) ? 1 : 0) -
             paths.get(id)!.length * 0.035 +
             this.roll() * 0.25,
         }))
@@ -359,7 +360,12 @@ export class Ecosystem {
       (style === "climb" &&
         (leap || (state.surface === "ground" && target.surface === "ground")));
     const flight = Math.max(0, Math.min(1, (edge.progress - 0.2) / 0.7));
-    const travel = hopping ? flight * flight * (3 - 2 * flight) : edge.progress;
+    // Scurriers dash between spots, speeding up and slowing to a stop.
+    const travel = hopping
+      ? flight * flight * (3 - 2 * flight)
+      : style === "scurry"
+        ? edge.progress * edge.progress * (3 - 2 * edge.progress)
+        : edge.progress;
     state.direction = {
       x: (target.position.x - edge.from.x) / Math.max(edge.distance, 0.001),
       y: (target.position.y - edge.from.y) / Math.max(edge.distance, 0.001),

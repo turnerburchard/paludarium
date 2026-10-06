@@ -10,6 +10,7 @@ import {
   treeFrog,
 } from "./animals/frogs";
 import { fish } from "./animals/fish";
+import { gecko } from "./animals/gecko";
 import { anthurium } from "./plants/anthurium";
 import { philodendron } from "./plants/philodendron";
 import { bromeliad } from "./plants/bromeliad";
@@ -33,6 +34,7 @@ export const assets = {
   "dart-frog": strawberryPoisonFrog,
   "blue-dart-frog": bluePoisonDartFrog,
   "mossy-frog": mossyFrog,
+  gecko,
   monstera,
   fern,
   strawberry,

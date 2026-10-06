@@ -32,14 +32,15 @@ describe("asset registry", () => {
   );
 });
 
-describe("frog assets", () => {
+describe("land animal assets", () => {
   it.each(catalog.filter((a) => a.behavior).map((a) => a.kind))(
     "builds a finite, grounded %s within its placement footprint",
     (kind) => {
       const model = buildAsset(kind, 42);
       const box = new Box3().setFromObject(model);
       expect(box.min.y).toBeGreaterThan(-0.04);
-      expect(box.max.y).toBeGreaterThan(0.1);
+      // Geckos lie flatter than frogs.
+      expect(box.max.y).toBeGreaterThan(0.07);
       expect(box.max.y).toBeLessThan(0.24);
       for (const axis of ["x", "z"] as const) {
         expect(box.min[axis]).toBeGreaterThan(-assets[kind].radius);
