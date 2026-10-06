@@ -27,7 +27,7 @@ import { grass } from "./plants/grass";
 import { monstera } from "./plants/monstera";
 import { swissCheesePlant } from "./plants/swissCheese";
 import { strawberry } from "./plants/strawberry";
-import { moss } from "./landscape/moss";
+import { cushionMoss, fernMoss, javaMoss, sheetMoss } from "./landscape/mosses";
 import { rock } from "./landscape/rock";
 import { wood } from "./landscape/wood";
 import { branch } from "./landscape/branch";
@@ -58,7 +58,10 @@ export const assets = {
   fittonia,
   cattail,
   grass,
-  moss,
+  moss: cushionMoss,
+  "sheet-moss": sheetMoss,
+  "fern-moss": fernMoss,
+  "java-moss": javaMoss,
   rock,
   wood,
   branch,

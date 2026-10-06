@@ -39,7 +39,7 @@ export function makePreset(preset: Preset): World {
     add("rock", 0.55, 1.25, 0.6, 1);
     add("rock", 1.6, -1.55, 0.65);
     add("moss", -1.9, 0.35, 1.15);
-    add("moss", -0.35, -1, 0.8);
+    add("fern-moss", -0.35, -1, 0.8);
     add("grass", -0.1, 0.8, 0.9);
     add("grass", -0.15, -1.6, 0.8);
     add("tree-frog", -1.25, 1.15, 1.2, -0.5);
@@ -65,16 +65,16 @@ export function makePreset(preset: Preset): World {
     add("tree-frog", -0.9, 0.2, 1.2, 0.4);
   }
   // A few overlapping ground-cover clusters make the ready-made habitats feel established.
-  for (const [x, z, scale] of [
-    [-2.6, -1.6, 1.2],
-    [-2, -1.5, 1.1],
-    [-1.4, -1.1, 1.25],
-    [-2.5, 0.2, 1.4],
-    [-1.65, 0.8, 1.2],
-    [-0.75, 1.35, 0.8],
-    [-0.55, -0.45, 0.9],
-  ])
-    add("moss", x, z, scale);
+  for (const [kind, x, z, scale] of [
+    ["sheet-moss", -2.6, -1.6, 1.2],
+    ["fern-moss", -2, -1.5, 1.1],
+    ["sheet-moss", -1.4, -1.1, 1.25],
+    ["sheet-moss", -2.5, 0.2, 1.4],
+    ["moss", -1.65, 0.8, 1.2],
+    ["fern-moss", -0.75, 1.35, 0.8],
+    ["sheet-moss", -0.55, -0.45, 0.9],
+  ] as const)
+    add(kind, x, z, scale);
   if (preset === "tropical") {
     add("monstera", -2.65, -0.7, 0.65, 1.7);
     add("fern", -1.7, -1.4, 1.05, 0.5);
@@ -93,6 +93,8 @@ export function makePreset(preset: Preset): World {
     add("fittonia", 0.05, 0.05, 0.85);
     add("nest-fern", -0.55, -1.25, 0.7, 2.8);
     add("turtle", -0.6, 0.95, 1, 2.4);
+    add("java-moss", 1.7, 1.35, 1.1);
+    add("java-moss", 2.45, 0.35, 0.9);
     for (const [x, z, turn] of [
       [1.75, 0.95, 1.2],
       [1.95, 1.15, 1.3],
@@ -109,6 +111,7 @@ export function makePreset(preset: Preset): World {
     add("cattail", 0.85, -1.35, 1, 0.4);
     add("cattail", 1.05, -1.75, 0.85, 2);
     add("snail", -1.0, 1.0, 1, 1.4);
+    add("java-moss", 2.7, -0.75, 1);
     for (const [x, z] of [
       [2.1, -0.2],
       [2.35, 0.05],
