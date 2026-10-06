@@ -8,11 +8,22 @@ import {
 } from "../src/simulation/worldHabitat";
 import { emptyWorld } from "../src/model/schema";
 import { makePreset } from "../src/model/presets";
+import type { AssetKind } from "../src/model/schema";
+import { emptyWorld } from "../src/model/schema";
+import { assets, plantPerches } from "../src/assets";
+import { transformPlantPoint } from "../src/model/plantSurfaces";
+import { groundHeight } from "../src/model/terrain";
 import type {
   AnimalSeed,
   HabitatNode,
   SpeciesProfile,
 } from "../src/simulation/types";
+
+function frogProfile(kind: AssetKind): SpeciesProfile {
+  const behavior = assets[kind].frog;
+  if (!behavior) throw new Error("Expected a frog species.");
+  return { id: kind, ...behavior };
+}
 
 const species: SpeciesProfile = {
   id: "test-frog",
@@ -291,5 +302,171 @@ describe("insects across edits", () => {
     edited.environment.width += 0.5;
     const after = createWorldEcosystem(edited, { world, engine });
     expect(breeding(after.snapshot().food)).toBeGreaterThan(before * 0.8);
+  });
+});
+
+describe("plant perches and species movement", () => {
+  const plantWorld = () => {
+    const world = emptyWorld();
+    world.objects = [
+      {
+        id: "plant",
+        kind: "monstera",
+        x: -1.7,
+        z: 0,
+        rotation: 0.7,
+        scale: 0.85,
+        seed: 173,
+      },
+      {
+        id: "frog",
+        kind: "tree-frog",
+        x: -1.5,
+        z: 0,
+        rotation: 0,
+        scale: 1,
+        seed: 1,
+      },
+    ];
+    return world;
+  };
+  it.each(["monstera", "bromeliad", "fern"] as const)(
+    "connects %s foliage to ground and seats perches on the transformed plant",
+    (kind) => {
+      const world = plantWorld();
+      world.objects[0].kind = kind;
+      const plant = world.objects[0];
+      const graph = buildHabitat(world);
+      const leaves = [...graph.nodes.values()].filter(
+        (n) => n.surface === "leaf",
+      );
+      expect(leaves.length).toBeGreaterThan(0);
+      const expected = transformPlantPoint(
+        plantPerches(plant)[0].perch,
+        plant,
+        groundHeight(plant.x, plant.z, world.environment),
+      );
+      expect(leaves[0].position).toEqual(expected);
+      const start = graph.nearest(
+        { x: -1.5, y: groundHeight(-1.5, 0, world.environment), z: 0 },
+        frogProfile("dart-frog"),
+      )!;
+      const treePaths = graph.paths(start.id, frogProfile("tree-frog"));
+      const dartPaths = graph.paths(start.id, frogProfile("dart-frog"));
+      expect(leaves.every((leaf) => treePaths.has(leaf.id))).toBe(true);
+      expect(leaves.every((leaf) => !dartPaths.has(leaf.id))).toBe(true);
+      for (const node of graph.nodes.values())
+        for (const neighbor of node.neighbors)
+          expect(graph.node(neighbor).neighbors).toContain(node.id);
+    },
+  );
+  it("chooses a leaf for daytime sleep and lands gracefully when its plant is removed", () => {
+    const world = plantWorld(),
+      graph = buildHabitat(world);
+    const start = graph.nearest(
+      { x: -1.5, y: groundHeight(-1.5, 0, world.environment), z: 0 },
+      frogProfile("dart-frog"),
+    )!;
+    const engine = new Ecosystem(
+      graph,
+      [
+        {
+          id: "frog",
+          species: frogProfile("tree-frog"),
+          nodeId: start.id,
+          needs: { hunger: 0.1, hydration: 0.9, energy: 0.8 },
+        },
+      ],
+      { elapsed: 0, speed: 1, random: () => 0.5 },
+    );
+    run(engine, 65);
+    const animal = engine.getAnimal("frog")!;
+    expect(animal.surface).toBe("leaf");
+    expect(animal.activity).toBe("sleeping");
+    const removed = {
+      ...world,
+      objects: world.objects.filter((object) => object.id !== "plant"),
+    };
+    const dropped = createWorldEcosystem(removed, { world, engine }).getAnimal(
+      "frog",
+    )!;
+    expect(dropped.surface).toBe("ground");
+    expect(dropped.needs).toEqual(animal.needs);
+    expect(dropped.position.y).toBeCloseTo(
+      groundHeight(dropped.position.x, dropped.position.z, removed.environment),
+    );
+    const moved = structuredClone(world);
+    moved.objects[0].x = -2.5;
+    const rerouted = createWorldEcosystem(moved, { world, engine });
+    run(rerouted, 20);
+    expect(
+      Object.values(rerouted.getAnimal("frog")!.position).every(
+        Number.isFinite,
+      ),
+    ).toBe(true);
+  });
+  it("limits mossy frogs to low foliage and reserves leaf-to-leaf leaps for tree frogs", () => {
+    const graph = new HabitatGraph([
+      node("a", 0, ["low"]),
+      node("low", 0.1, ["a", "high", "other"], {
+        surface: "leaf",
+        perchHeight: 0.3,
+      }),
+      node("high", 0.2, ["low"], { surface: "leaf", perchHeight: 1.2 }),
+      node("other", 0.3, ["low"], { surface: "leaf", perchHeight: 0.3 }),
+    ]);
+    expect(graph.allowed("low", frogProfile("mossy-frog"))).toBe(true);
+    expect(graph.allowed("high", frogProfile("mossy-frog"))).toBe(false);
+    expect(graph.paths("a", frogProfile("mossy-frog")).has("other")).toBe(
+      false,
+    );
+    expect(graph.paths("a", frogProfile("tree-frog")).has("other")).toBe(true);
+  });
+  it("poses hops and crawls differently without redirecting or teleporting mid-edge", () => {
+    const graph = new HabitatGraph([
+      node("a", 0, ["b"]),
+      node("b", 0.32, ["a"]),
+    ]);
+    const engines = (["dart-frog", "mossy-frog"] as const).map(
+      (kind) =>
+        new Ecosystem(
+          graph,
+          [{ ...seed(), species: { ...frogProfile(kind), speed: 0.04 } }],
+          {
+            speed: 1,
+            elapsed: 1000,
+            food: [{ nodeId: "b", amount: 3, capacity: 0 }],
+          },
+        ),
+    );
+    let hopLift = 0,
+      crawlLift = 0;
+    const previous = [0, 0];
+    for (let step = 0; step < 80; step++)
+      engines.forEach((engine, index) => {
+        engine.advance(0.1);
+        if (step === 30) engine.addFood("a", 3);
+        const animal = engine.getAnimal("frog")!;
+        expect(animal.position.x).toBeGreaterThanOrEqual(previous[index]);
+        expect(animal.position.x - previous[index]).toBeLessThan(0.009);
+        previous[index] = animal.position.x;
+        if (index === 0) hopLift = Math.max(hopLift, animal.motion.lift);
+        else crawlLift = Math.max(crawlLift, animal.motion.lift);
+      });
+    expect(hopLift).toBeGreaterThan(0.1);
+    expect(crawlLift).toBe(0);
+    for (const engine of engines)
+      expect(engine.getAnimal("frog")!.nodeId).toBe("b");
+  });
+  it("leaves a frog without reachable ground idle instead of creating a second behavior path", () => {
+    const world = plantWorld();
+    world.objects = world.objects.filter((object) => object.id === "frog");
+    world.environment.substrate = 0.12;
+    world.environment.water = 0.9;
+    const engine = createWorldEcosystem(world);
+    expect(engine.snapshot().animals).toEqual([]);
+    run(engine, 20);
+    expect(engine.snapshot().animals).toEqual([]);
+
   });
 });

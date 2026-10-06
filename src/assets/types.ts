@@ -1,6 +1,7 @@
 import type * as THREE from "three";
 import type { Soil } from "../model/plants";
 import type { AssetKind } from "../model/schema";
+import type { PlantPerch } from "../model/plantSurfaces";
 
 export type Category = "Plants" | "Landscape" | "Animals";
 
@@ -9,6 +10,8 @@ export interface FrogBehavior {
   nocturnal: boolean;
   climbs: boolean;
   speed: number;
+  movement?: "hop" | "climb" | "crawl";
+  maxPerchHeight?: number;
 }
 
 /** Everything the app knows about one kind of placeable thing. */
@@ -28,6 +31,7 @@ export interface AssetDefinition {
   /** Plants grow well only in the soil they like. */
   soil?: Soil;
   frog?: FrogBehavior;
+  perches?(random: () => number): PlantPerch[];
   /** Builds a fresh model. The same seed always gives the same shape. */
   build(random: () => number): THREE.Group;
 }

@@ -6,6 +6,7 @@ import type {
   FoodPatch,
   SimulationSnapshot,
   SpeciesProfile,
+  Vec3,
 } from "./types";
 
 const STEP = 0.1;
@@ -25,6 +26,7 @@ interface Agent {
   path: string[];
   arrival: Activity;
   reconsiderAt: number;
+  edge?: { from: Vec3; normal: Vec3; progress: number; distance: number };
 }
 export interface SimulationOptions {
   random?: () => number;
@@ -104,6 +106,8 @@ export class Ecosystem {
           activity: "resting",
           reason: "Settling in",
           moving: false,
+          surface: node.surface,
+          motion: { progress: 0, lift: 0, tilt: 0 },
         },
       });
     }
@@ -261,7 +265,8 @@ export class Ecosystem {
         .map((id) => ({
           id,
           score:
-            this.graph.node(id).shelter * 3 -
+            this.graph.node(id).shelter * 3 +
+            (this.graph.node(id).surface === "leaf" ? 1 : 0) -
             paths.get(id)!.length * 0.035 +
             this.roll() * 0.25,
         }))
@@ -271,9 +276,11 @@ export class Ecosystem {
         inactive ? "sleeping" : "resting",
         "seeking-shelter",
         unmet ||
-          (inactive
-            ? "Resting during the quiet part of the day"
-            : "Recovering energy"),
+          (this.graph.node(shelters[0].id).surface === "leaf"
+            ? "Taking shelter on a leaf perch"
+            : inactive
+              ? "Resting during the quiet part of the day"
+              : "Recovering energy"),
         25,
       );
       return;
@@ -303,12 +310,24 @@ export class Ecosystem {
   private move(agent: Agent) {
     const state = agent.state;
     const target = this.graph.node(agent.path[0]);
-    const d = distance(state.position, target.position),
-      step = agent.profile.speed * STEP;
-    if (d <= step) {
+    const edge = (agent.edge ??= {
+      from: copyVector(state.position),
+      normal: copyVector(state.normal),
+      progress: 0,
+      distance: distance(state.position, target.position),
+    });
+    edge.progress = Math.min(
+      1,
+      edge.progress +
+        (agent.profile.speed * STEP) / Math.max(edge.distance, 0.001),
+    );
+    if (edge.progress >= 1 - 1e-9) {
       state.position = copyVector(target.position);
       state.normal = copyVector(target.normal);
       state.nodeId = target.id;
+      state.surface = target.surface;
+      state.motion = { progress: 0, lift: 0, tilt: 0 };
+      agent.edge = undefined;
       agent.path.shift();
       if (!agent.path.length) {
         state.moving = false;
@@ -317,17 +336,46 @@ export class Ecosystem {
       }
       return;
     }
+    const style = agent.profile.movement;
+    const leap = state.surface === "leaf" && target.surface === "leaf";
+    const hopping =
+      style === "hop" ||
+      (style === "climb" &&
+        (leap || (state.surface === "ground" && target.surface === "ground")));
+    const flight = Math.max(0, Math.min(1, (edge.progress - 0.2) / 0.7));
+    const travel = hopping ? flight * flight * (3 - 2 * flight) : edge.progress;
     state.direction = {
-      x: (target.position.x - state.position.x) / d,
-      y: (target.position.y - state.position.y) / d,
-      z: (target.position.z - state.position.z) / d,
+      x: (target.position.x - edge.from.x) / Math.max(edge.distance, 0.001),
+      y: (target.position.y - edge.from.y) / Math.max(edge.distance, 0.001),
+      z: (target.position.z - edge.from.z) / Math.max(edge.distance, 0.001),
     };
     state.position = {
-      x: state.position.x + state.direction.x * step,
-      y: state.position.y + state.direction.y * step,
-      z: state.position.z + state.direction.z * step,
+      x: edge.from.x + (target.position.x - edge.from.x) * travel,
+      y: edge.from.y + (target.position.y - edge.from.y) * travel,
+      z: edge.from.z + (target.position.z - edge.from.z) * travel,
     };
-    // Keep the starting surface orientation until the actual edge transition.
+    const normal = {
+      x: edge.normal.x + (target.normal.x - edge.normal.x) * travel,
+      y: edge.normal.y + (target.normal.y - edge.normal.y) * travel,
+      z: edge.normal.z + (target.normal.z - edge.normal.z) * travel,
+    };
+    const length = Math.hypot(normal.x, normal.y, normal.z);
+    state.normal =
+      length > 0.001
+        ? { x: normal.x / length, y: normal.y / length, z: normal.z / length }
+        : copyVector(target.normal);
+    state.motion = {
+      progress: edge.progress,
+      lift: hopping
+        ? Math.sin(flight * Math.PI) *
+          (leap ? 0.18 : style === "hop" ? 0.11 : 0.08)
+        : 0,
+      tilt: hopping
+        ? Math.sin(flight * Math.PI * 2) * 0.13
+        : style === "crawl"
+          ? Math.sin(edge.progress * Math.PI * 4) * 0.025
+          : 0,
+    };
   }
   mist() {
     for (const agent of this.agents.values()) {

@@ -34,7 +34,13 @@ export class HabitatGraph {
     return node;
   }
   allowed(id: string, species: SpeciesProfile) {
-    return this.node(id).surface !== "glass" || species.climbs;
+    const node = this.node(id);
+    if (node.surface === "ground") return true;
+    if (!species.climbs) return false;
+    return (
+      node.perchHeight === undefined ||
+      node.perchHeight <= (species.maxPerchHeight ?? Infinity)
+    );
   }
   nearest(position: Vec3, species: SpeciesProfile) {
     let best: HabitatNode | undefined,
@@ -56,6 +62,12 @@ export class HabitatGraph {
       const id = queue[index];
       for (const next of this.node(id).neighbors) {
         if (paths.has(next) || !this.allowed(next, species)) continue;
+        if (
+          this.node(id).surface === "leaf" &&
+          this.node(next).surface === "leaf" &&
+          species.movement !== "climb"
+        )
+          continue;
         paths.set(next, [...paths.get(id)!, next]);
         queue.push(next);
       }

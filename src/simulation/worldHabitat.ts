@@ -1,5 +1,5 @@
 import type { World } from "../model/schema";
-import { assets, isFrog } from "../assets";
+import { assets, isFrog, plantPerches } from "../assets";
 import { plantCondition } from "../model/plants";
 import { groundHeight, placementProblem } from "../model/terrain";
 import { FishSchool } from "./fish";
@@ -22,6 +22,7 @@ const groundWalker: SpeciesProfile = {
   climbs: false,
   speed: 1,
 };
+import { transformPlantPoint } from "../model/plantSurfaces";
 
 /** Conservative ground navigation. The graph describes surfaces, not animal mesh anatomy. */
 export function buildHabitat(world: World): HabitatGraph {
@@ -157,6 +158,109 @@ export function buildHabitat(world: World): HabitatGraph {
       }
     }
   }
+  const groundNodes = nodes.filter((node) => node.surface === "ground");
+  for (const plant of world.objects) {
+    const leaves = plantPerches(plant);
+    if (!leaves.length) continue;
+    const baseY = groundHeight(plant.x, plant.z, env);
+    if (baseY < env.water + 0.025) continue;
+    const anchor = groundNodes.reduce<HabitatNode | undefined>(
+      (best, node) =>
+        !best ||
+        distance(node.position, { x: plant.x, y: baseY, z: plant.z }) <
+          distance(best.position, { x: plant.x, y: baseY, z: plant.z })
+          ? node
+          : best,
+      undefined,
+    );
+    if (
+      !anchor ||
+      distance(anchor.position, { x: plant.x, y: baseY, z: plant.z }) > 0.65
+    )
+      continue;
+    const base = { x: plant.x, y: baseY, z: plant.z };
+    const bridgeIsDry = Array.from({ length: 6 }, (_, i) => i / 5).every(
+      (t) =>
+        groundHeight(
+          anchor.position.x + (base.x - anchor.position.x) * t,
+          anchor.position.z + (base.z - anchor.position.z) * t,
+          env,
+        ) >=
+        env.water - 0.025,
+    );
+    if (!bridgeIsDry) continue;
+    for (const [leafIndex, leaf] of leaves.entries()) {
+      const perch = transformPlantPoint(leaf.perch, plant, baseY);
+      if (
+        Math.abs(perch.x) > env.width / 2 - 0.08 ||
+        Math.abs(perch.z) > env.depth / 2 - 0.08
+      )
+        continue;
+      const stem = [
+        anchor.position,
+        ...leaf.stem.map((point) => transformPlantPoint(point, plant, baseY)),
+      ];
+      let previous = anchor;
+      // Every edge is short enough to climb rather than crossing empty air.
+      for (let segment = 0; segment < stem.length - 1; segment++) {
+        const from = stem[segment],
+          to = stem[segment + 1];
+        const steps = Math.max(1, Math.ceil(distance(from, to) / 0.18));
+        for (let step = 1; step <= steps; step++) {
+          const t = step / steps;
+          const position = {
+            x: from.x + (to.x - from.x) * t,
+            y: from.y + (to.y - from.y) * t,
+            z: from.z + (to.z - from.z) * t,
+          };
+          const outward = { x: to.x - plant.x, y: 0, z: to.z - plant.z };
+          const length = Math.hypot(outward.x, outward.z);
+          const normal =
+            length > 0
+              ? { x: outward.x / length, y: 0, z: outward.z / length }
+              : { x: 1, y: 0, z: 0 };
+          const node: HabitatNode = {
+            id: `plant:${plant.id}:${leafIndex}:${segment}:${step}`,
+            position,
+            normal,
+            surface: "stem",
+            wet: false,
+            shelter: 0.3,
+            perchHeight: position.y - baseY,
+            neighbors: [previous.id],
+          };
+          previous.neighbors.push(node.id);
+          nodes.push(node);
+          previous = node;
+        }
+      }
+      const normal = transformPlantPoint(leaf.perchNormal, {
+        ...plant,
+        x: 0,
+        z: 0,
+        scale: 1,
+      });
+      const node: HabitatNode = {
+        id: `leaf:${plant.id}:${leafIndex}`,
+        position: perch,
+        normal,
+        surface: "leaf",
+        wet: false,
+        shelter: 1,
+        perchHeight: leaf.perch.y * plant.scale,
+        neighbors: [previous.id],
+      };
+      previous.neighbors.push(node.id);
+      nodes.push(node);
+    }
+  }
+  const perches = nodes.filter((node) => node.surface === "leaf");
+  for (let i = 0; i < perches.length; i++)
+    for (let j = i + 1; j < perches.length; j++)
+      if (distance(perches[i].position, perches[j].position) <= 0.65) {
+        perches[i].neighbors.push(perches[j].id);
+        perches[j].neighbors.push(perches[i].id);
+      }
   return new HabitatGraph(nodes);
 }
 

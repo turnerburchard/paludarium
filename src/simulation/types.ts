@@ -4,7 +4,7 @@ export interface Vec3 {
   y: number;
   z: number;
 }
-export type Surface = "ground" | "glass";
+export type Surface = "ground" | "glass" | "stem" | "leaf";
 export interface HabitatNode {
   id: string;
   position: Vec3;
@@ -13,12 +13,15 @@ export interface HabitatNode {
   wet: boolean;
   shelter: number;
   neighbors: string[];
+  perchHeight?: number;
 }
 export interface SpeciesProfile {
   id: string;
   nocturnal: boolean;
   climbs: boolean;
   speed: number;
+  movement?: "hop" | "climb" | "crawl";
+  maxPerchHeight?: number;
 }
 export interface Needs {
   hunger: number;
@@ -52,6 +55,8 @@ export interface AnimalState {
   activity: Activity;
   reason: string;
   moving: boolean;
+  surface: Surface;
+  motion: { progress: number; lift: number; tilt: number };
 }
 /** Insects at one spot. A colony (capacity above zero) breeds back toward its
  * capacity; insects scattered by hand (capacity zero) are simply eaten. */

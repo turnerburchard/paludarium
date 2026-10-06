@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type { AssetKind } from "../model/schema";
+import type { AssetKind, HabitatObject } from "../model/schema";
 import { randomFromSeed } from "../model/random";
 import type { AssetDefinition } from "./types";
 import { batchStaticAsset } from "./batch";
@@ -42,6 +42,9 @@ export const catalog: readonly AssetDefinition[] = Object.values(assets);
 
 export function isFrog(kind: AssetKind): boolean {
   return assets[kind].frog !== undefined;
+}
+export function plantPerches(object: HabitatObject) {
+  return assets[object.kind].perches?.(randomFromSeed(object.seed)) ?? [];
 }
 
 export function buildAsset(kind: AssetKind, seed = 1): THREE.Group {
