@@ -19,17 +19,20 @@ export interface SchoolOptions {
 }
 
 const TURN_RATE = 2.2;
-const NEIGHBOR_RANGE = 0.9;
+const NEIGHBOR_RANGE = 1.3;
 const PERSONAL_SPACE = 0.3;
 const LOOK_AHEAD = 0.4;
 /** Probe angles, nearest first, for finding open water when the shore is ahead. */
 const ESCAPE_ANGLES = [0.5, -0.5, 1, -1, 1.6, -1.6, 2.4, -2.4, Math.PI];
 
-/** Internal per-fish state: a slightly different pace, and a gentle turning
- * rate (radians per second) that drifts so each fish meanders its own way. */
+/** Internal per-fish state: a slightly different pace, a gentle turning
+ * rate (radians per second) that drifts so each fish meanders its own way,
+ * and a clock for when it next leaves or rejoins the others. */
 interface Swimmer extends Fish {
   pace: number;
   wander: number;
+  roaming: boolean;
+  untilChange: number;
 }
 
 const direction = (heading: number) => ({
@@ -56,6 +59,9 @@ export class FishSchool {
         ...f,
         pace: 0.85 + this.random() * 0.3,
         wander: 0,
+        roaming: false,
+        // Fish start schooled, then each drifts off on its own schedule.
+        untilChange: 3 + this.random() * 15,
       });
   }
 
@@ -86,6 +92,14 @@ export class FishSchool {
   }
 
   private swim(f: Swimmer, dt: number) {
+    f.untilChange -= dt;
+    if (f.untilChange <= 0) {
+      // Fish spend most of their time schooled, with a few seconds off alone.
+      f.roaming = !f.roaming;
+      f.untilChange = f.roaming
+        ? 3 + this.random() * 4
+        : 10 + this.random() * 20;
+    }
     const heading = direction(f.heading);
     let steerX = heading.x,
       steerZ = heading.z;
@@ -101,26 +115,30 @@ export class FishSchool {
         dz = other.z - f.z,
         d = Math.hypot(dx, dz);
       if (d > NEIGHBOR_RANGE) continue;
+      if (d < PERSONAL_SPACE && d > 0) {
+        steerX -= (dx / d) * (PERSONAL_SPACE - d) * 6;
+        steerZ -= (dz / d) * (PERSONAL_SPACE - d) * 6;
+      }
+      // The school doesn't follow a fish that has wandered off on its own.
+      if (other.roaming) continue;
       neighbors++;
       const otherHeading = direction(other.heading);
       alignX += otherHeading.x;
       alignZ += otherHeading.z;
       centerX += other.x;
       centerZ += other.z;
-      if (d < PERSONAL_SPACE && d > 0) {
-        steerX -= (dx / d) * (PERSONAL_SPACE - d) * 6;
-        steerZ -= (dz / d) * (PERSONAL_SPACE - d) * 6;
-      }
     }
-    if (neighbors) {
+    if (neighbors && !f.roaming) {
       steerX += (alignX / neighbors) * 0.6;
       steerZ += (alignZ / neighbors) * 0.6;
       steerX += (centerX / neighbors - f.x) * 0.5;
       steerZ += (centerZ / neighbors - f.z) * 0.5;
     }
 
+    // A roaming fish meanders more widely than one keeping with the school.
+    const reach = f.roaming ? 1.6 : 0.8;
     f.wander += (this.random() - 0.5) * 3 * dt;
-    f.wander = Math.max(-0.8, Math.min(0.8, f.wander));
+    f.wander = Math.max(-reach, Math.min(reach, f.wander));
     let target = Math.atan2(-steerX, -steerZ) + f.wander * dt;
     if (!this.waterAhead(f, target)) {
       const escape = ESCAPE_ANGLES.map((a) => target + a).find((angle) =>

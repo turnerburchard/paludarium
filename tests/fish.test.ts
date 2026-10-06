@@ -72,6 +72,26 @@ describe("fish school", () => {
     );
   });
 
+  it("drift apart for a while instead of always schooling", () => {
+    // A wide pool, so a roaming fish has room to leave the others.
+    const s = new FishSchool(five(), (x, z) => Math.hypot(x, z) < 3, {
+      random: randomFromSeed(3),
+    });
+    let apart = 0;
+    for (let second = 0; second < 240; second++) {
+      run(s, 1);
+      const fish = s.all();
+      if (
+        fish.some((a) =>
+          fish.every((b) => a === b || Math.hypot(a.x - b.x, a.z - b.z) > 0.9),
+        )
+      )
+        apart++;
+    }
+    expect(apart / 240).toBeGreaterThan(0.15);
+    expect(apart / 240).toBeLessThan(0.85);
+  });
+
   it("keeps a little space between fish", () => {
     const s = school(five());
     run(s, 60);
