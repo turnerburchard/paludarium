@@ -4,7 +4,7 @@ import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { assets, buildAsset, disposeAsset, isLandAnimal } from "../assets";
 import type { AssetKind, Environment, HabitatObject } from "../model/schema";
-import { swimmingHeight } from "../model/terrain";
+import { groundHeight, swimmingHeight } from "../model/terrain";
 import { objectBase } from "../model/stacking";
 import { FrogRig } from "./frogRig";
 import { GeckoRig } from "./geckoRig";
