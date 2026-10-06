@@ -1,0 +1,72 @@
+import { z } from "zod";
+
+export const assetKinds = [
+  "monstera",
+  "fern",
+  "strawberry",
+  "bromeliad",
+  "grass",
+  "moss",
+  "rock",
+  "wood",
+  "tree-frog",
+  "dart-frog",
+  "blue-dart-frog",
+  "mossy-frog",
+  "fish",
+] as const;
+export type AssetKind = (typeof assetKinds)[number];
+export const MAX_OBJECTS = 120;
+const finite = z.number().finite();
+export const objectSchema = z.object({
+  id: z.string().min(1).max(100),
+  kind: z.enum(assetKinds),
+  x: finite.min(-10).max(10),
+  z: finite.min(-10).max(10),
+  rotation: finite.min(-100).max(100),
+  scale: finite.min(0.4).max(2),
+  seed: z.number().int().min(0).max(2147483647),
+});
+export type HabitatObject = z.infer<typeof objectSchema>;
+export const environmentSchema = z.object({
+  width: finite.min(5).max(9),
+  depth: finite.min(3).max(6),
+  substrate: finite.min(0.12).max(0.55),
+  water: finite.min(0).max(0.9),
+  light: z.enum(["day", "golden", "moon"]),
+  warmth: finite.min(0).max(1).default(0.45),
+  brightness: finite.min(0.4).max(1.6).default(1),
+});
+export type Environment = z.infer<typeof environmentSchema>;
+export const worldSchema = z
+  .object({
+    version: z.literal(1),
+    name: z.string().trim().min(1).max(60),
+    environment: environmentSchema,
+    objects: z.array(objectSchema).max(MAX_OBJECTS),
+  })
+  .superRefine((world, ctx) => {
+    if (new Set(world.objects.map((o) => o.id)).size !== world.objects.length)
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Every object must have a unique ID.",
+      });
+  });
+export type World = z.infer<typeof worldSchema>;
+export const defaultEnvironment: Environment = {
+  width: 7,
+  depth: 4.5,
+  substrate: 0.25,
+  water: 0.44,
+  light: "day",
+  warmth: 0.45,
+  brightness: 1,
+};
+export function emptyWorld(): World {
+  return {
+    version: 1,
+    name: "My little world",
+    environment: { ...defaultEnvironment },
+    objects: [],
+  };
+}
