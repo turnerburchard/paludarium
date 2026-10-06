@@ -1,12 +1,13 @@
 import {
   defaultEnvironment,
+  AQUARIUM_WATER,
   emptyWorld,
   type AssetKind,
   type HabitatObject,
   type World,
 } from "./schema";
 import type { MossSpecies } from "./moss";
-export type Preset = "empty" | "tropical" | "mountain";
+export type Preset = "empty" | "tropical" | "mountain" | "aquarium";
 export function makePreset(preset: Preset): World {
   if (preset === "empty") return emptyWorld();
   let serial = 0;
@@ -29,6 +30,36 @@ export function makePreset(preset: Preset): World {
       seed: serial * 173,
       ...(moss && { moss }),
     });
+  if (preset === "aquarium") {
+    add("wood", -1.45, -0.35, 1.1, -0.5);
+    add("rock", -2.45, -0.95, 1.3, 0.5);
+    add("rock", -1.95, 0.85, 0.85, 2);
+    add("rock", 0.25, -1.15, 0.9, 1.4);
+    add("rock", 1.65, 0.95, 0.7, 2.7);
+    add("rock", 2.6, -0.5, 0.5, 0.6);
+    for (const [x, z, scale] of [
+      [-2.6, 0.3, 1.1],
+      [-1.75, -1.25, 1.2],
+      [-1.4, 0.85, 1],
+      [-0.55, -0.15, 1.2],
+      [0.65, -1.45, 1],
+      [1.5, 0.45, 1.1],
+      [2.55, 0.95, 0.9],
+    ])
+      add("java-moss", x, z, scale);
+    for (const [kind, x, z, heading] of [
+      ["cardinal-tetra", -0.7, 0.55, 1.2],
+      ["ember-tetra", 1.2, -0.6, 4.2],
+    ] as const)
+      for (let i = 0; i < 6; i++)
+        add(kind, x + (i % 3) * 0.3, z + Math.floor(i / 3) * 0.3, 1, heading);
+    return {
+      version: 1,
+      name: "Aquarium",
+      environment: { ...defaultEnvironment, water: AQUARIUM_WATER },
+      objects,
+    };
+  }
   if (preset === "tropical") {
     add("monstera", -2.15, -1.15, 1.25, 0.3);
     add("monstera", -0.65, -1.45, 0.85, 2.4);

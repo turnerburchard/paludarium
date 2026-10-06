@@ -1,13 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { historyReducer, type History } from "../src/editor/history";
 import { parseWorld } from "../src/editor/persistence";
-import { emptyWorld, MAX_OBJECTS } from "../src/model/schema";
+import {
+  AQUARIUM_WATER,
+  TANK_HEIGHT,
+  emptyWorld,
+  MAX_OBJECTS,
+} from "../src/model/schema";
 import { makePreset } from "../src/model/presets";
 import {
   boundedPosition,
   groundHeight,
   placementProblem,
+  swimmingHeight,
 } from "../src/model/terrain";
+import { assets, buildAsset, disposeAsset } from "../src/assets";
+import { Box3 } from "three";
+import { terrainPoint, TERRAIN_POINTS } from "../src/model/terrainData";
 
 describe("editor history", () => {
   const initial: History = { past: [], present: emptyWorld(), future: [] };
@@ -52,7 +61,7 @@ describe("editor history", () => {
   });
 });
 describe("safe files and valid habitat", () => {
-  it.each(["tropical", "mountain"] as const)(
+  it.each(["tropical", "mountain", "aquarium"] as const)(
     "round trips the %s preset and places every inhabitant in its habitat",
     (preset) => {
       const world = makePreset(preset);
@@ -142,5 +151,56 @@ describe("lighting compatibility", () => {
       seed: i,
     }));
     expect(parseWorld(JSON.stringify(world))).toEqual(world);
+  });
+});
+
+describe("a fully submerged aquarium", () => {
+  it("submerges the whole ground and hardscape without adding terrestrial inhabitants", () => {
+    const world = makePreset("aquarium");
+    const env = world.environment;
+    expect(env.water).toBe(AQUARIUM_WATER);
+    expect(env.water).toBeLessThan(TANK_HEIGHT);
+    for (let i = 0; i < TERRAIN_POINTS; i++) {
+      const { x, z } = terrainPoint(i, env);
+      expect(groundHeight(x, z, env)).toBeLessThan(env.water - 0.12);
+      expect(placementProblem("fish", x, z, env)).toBeNull();
+      expect(placementProblem("tree-frog", x, z, env)).toBeTruthy();
+    }
+    for (const object of world.objects) {
+      expect(assets[object.kind].habitat).not.toBe("land");
+      if (assets[object.kind].swims) continue;
+      const model = buildAsset(object.kind, object.seed);
+      const top = new Box3().setFromObject(model).max.y * object.scale;
+      disposeAsset(model);
+      expect(groundHeight(object.x, object.z, env) + top).toBeLessThan(
+        env.water,
+      );
+    }
+    expect(() =>
+      parseWorld(
+        JSON.stringify({
+          ...world,
+          environment: { ...env, water: TANK_HEIGHT },
+        }),
+      ),
+    ).toThrow();
+  });
+
+  it("keeps preferred depths in ponds and spreads schools through deep water", () => {
+    const pond = emptyWorld().environment;
+    expect(swimmingHeight(2, 0, pond, 0.13)).toBeCloseTo(
+      Math.max(groundHeight(2, 0, pond) + 0.05, pond.water - 0.13),
+    );
+    const env = makePreset("aquarium").environment;
+    const shallowSwimmer = swimmingHeight(2, 0, env, 0.13);
+    const deepSwimmer = swimmingHeight(2, 0, env, 0.23);
+    expect(shallowSwimmer - deepSwimmer).toBeGreaterThan(0.5);
+    expect(shallowSwimmer).toBeLessThan(env.water - 0.5);
+    for (const depth of [0.13, 0.23])
+      for (const bob of [-0.025, 0.025]) {
+        const y = swimmingHeight(-2, 0, env, depth, bob);
+        expect(y).toBeGreaterThan(groundHeight(-2, 0, env) + 0.05);
+        expect(y).toBeLessThan(env.water - 0.05);
+      }
   });
 });

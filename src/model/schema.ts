@@ -39,6 +39,8 @@ export const assetKinds = [
 ] as const;
 export type AssetKind = (typeof assetKinds)[number];
 export const MAX_OBJECTS = 120;
+export const TANK_HEIGHT = 2.9;
+export const AQUARIUM_WATER = TANK_HEIGHT - 0.25;
 const finite = z.number().finite();
 export const objectSchema = z.object({
   id: z.string().min(1).max(100),
@@ -59,7 +61,7 @@ export const environmentSchema = z.object({
   width: finite.min(5).max(9),
   depth: finite.min(3).max(6),
   substrate: finite.min(0.12).max(0.55),
-  water: finite.min(0).max(0.9),
+  water: finite.min(0).max(AQUARIUM_WATER),
   light: z.enum(["day", "golden", "moon"]),
   warmth: finite.min(0).max(1).default(0.45),
   brightness: finite.min(0.4).max(1.6).default(1),

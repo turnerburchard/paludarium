@@ -12,6 +12,7 @@ const port = 5192;
 const presets = [
   { name: "cloud-forest", button: /Cloud forest.*Monstera/ },
   { name: "alpine-creek", button: /Alpine creek.*strawberries/ },
+  { name: "aquarium", button: /Aquarium.*underwater/ },
 ];
 const viewports = [
   { name: "desktop", width: 1440, height: 960 },

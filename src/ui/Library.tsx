@@ -3,6 +3,7 @@ import { Leaf, Mountain, Bird, Grid2X2, Plus } from "lucide-react";
 import { catalog, type Category } from "../assets";
 import type { Editor } from "../editor/useEditor";
 import { loadThumbnails, type Thumbnails } from "../scene/thumbnails";
+import { MAX_GROUND_HEIGHT } from "../model/terrain";
 type Filter = Category | "All";
 const categories: { name: Filter; icon: typeof Leaf }[] = [
   { name: "All", icon: Grid2X2 },
@@ -13,6 +14,15 @@ const categories: { name: Filter; icon: typeof Leaf }[] = [
 export function Library({ editor }: { editor: Editor }) {
   const [category, setCategory] = useState<Filter>("All");
   const [thumbnails, setThumbnails] = useState<Thumbnails>({});
+  const available = catalog.filter(
+    (asset) =>
+      editor.world.environment.water <= MAX_GROUND_HEIGHT ||
+      (asset.habitat !== "land" && !asset.soil),
+  );
+  const activeCategory =
+    category === "All" || available.some((asset) => asset.category === category)
+      ? category
+      : "All";
   useEffect(() => {
     let mounted = true;
     void loadThumbnails().then((loaded) => mounted && setThumbnails(loaded));
@@ -23,21 +33,29 @@ export function Library({ editor }: { editor: Editor }) {
   return (
     <>
       <div className="category-tabs" aria-label="Object categories">
-        {categories.map(({ name, icon: Icon }) => (
-          <button
-            key={name}
-            className={category === name ? "active" : ""}
-            onClick={() => setCategory(name)}
-            aria-pressed={category === name}
-          >
-            <Icon size={17} />
-            <span>{name}</span>
-          </button>
-        ))}
+        {categories
+          .filter(
+            ({ name }) =>
+              name === "All" ||
+              available.some((asset) => asset.category === name),
+          )
+          .map(({ name, icon: Icon }) => (
+            <button
+              key={name}
+              className={activeCategory === name ? "active" : ""}
+              onClick={() => setCategory(name)}
+              aria-pressed={activeCategory === name}
+            >
+              <Icon size={17} />
+              <span>{name}</span>
+            </button>
+          ))}
       </div>
       <div className="asset-grid">
-        {catalog
-          .filter((a) => category === "All" || a.category === category)
+        {available
+          .filter(
+            (a) => activeCategory === "All" || a.category === activeCategory,
+          )
           .map((asset) => (
             <button
               key={asset.kind}

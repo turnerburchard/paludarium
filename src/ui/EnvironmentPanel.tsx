@@ -2,6 +2,7 @@ import { Sun, Sunset, Moon } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import { RangeControl } from "./RangeControl";
 import { TerrainControls } from "./TerrainControls";
+import { AQUARIUM_WATER } from "../model/schema";
 
 export function EnvironmentPanel({ editor }: { editor: Editor }) {
   const env = editor.world.environment;
@@ -38,6 +39,7 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
           { name: "Dry", water: 0 },
           { name: "Shoreline", water: 0.44 },
           { name: "Pool", water: 0.65 },
+          { name: "Aquarium", water: AQUARIUM_WATER },
         ].map(({ name, water }) => (
           <button
             key={name}
@@ -58,7 +60,7 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
           label="Water level"
           value={env.water}
           min={0}
-          max={0.9}
+          max={AQUARIUM_WATER}
           step={0.01}
           format={(n) => (n === 0 ? "Dry" : `${(n * 10).toFixed(1)} cm`)}
           onPreview={(water) => editor.previewEnvironment({ water })}

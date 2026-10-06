@@ -106,19 +106,22 @@ describe("fish school", () => {
 });
 
 describe("fish in a real tank", () => {
-  it("stay in the pond and inside the glass", () => {
-    const world = makePreset("tropical");
-    const env = world.environment;
-    const school = createFishSchool(world);
-    for (let second = 0; second < 300; second++) {
-      run(school, 1);
-      for (const f of school.all()) {
-        expect(Math.abs(f.x)).toBeLessThan(env.width / 2);
-        expect(Math.abs(f.z)).toBeLessThan(env.depth / 2);
-        expect(placementProblem("fish", f.x, f.z, env)).toBeNull();
+  it.each(["tropical", "aquarium"] as const)(
+    "stay in the %s water and inside the glass",
+    (preset) => {
+      const world = makePreset(preset);
+      const env = world.environment;
+      const school = createFishSchool(world);
+      for (let second = 0; second < 300; second++) {
+        run(school, 1);
+        for (const f of school.all()) {
+          expect(Math.abs(f.x)).toBeLessThan(env.width / 2);
+          expect(Math.abs(f.z)).toBeLessThan(env.depth / 2);
+          expect(placementProblem("fish", f.x, f.z, env)).toBeNull();
+        }
       }
-    }
-  });
+    },
+  );
 
   it("keep their place through an unrelated edit", () => {
     const world = makePreset("tropical");

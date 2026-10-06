@@ -1,6 +1,7 @@
 import type { Environment, HabitatObject, AssetKind } from "./schema";
 import { assets } from "../assets";
 import { terrainSamples } from "./terrainData";
+export const MAX_GROUND_HEIGHT = 1.25;
 export function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
@@ -27,7 +28,20 @@ export function groundHeight(x: number, z: number, env: Environment): number {
     (sum, sample) => sum + env.terrain!.heights[sample.index] * sample.weight,
     0,
   );
-  return clamp(base + delta, 0.08, 1.25);
+  return clamp(base + delta, 0.08, MAX_GROUND_HEIGHT);
+}
+/** Stretch each species' preferred depth in a deep tank, keeping shallow
+ * pond behavior unchanged and enough clearance above the substrate. */
+export function swimmingHeight(
+  x: number,
+  z: number,
+  env: Environment,
+  depth: number,
+  bob = 0,
+): number {
+  const ground = groundHeight(x, z, env);
+  const preferredDepth = depth * Math.max(1, (env.water - ground) / 0.4);
+  return Math.max(ground + 0.05, env.water - preferredDepth + bob);
 }
 export function boundedPosition(
   x: number,
