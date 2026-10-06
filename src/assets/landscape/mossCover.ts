@@ -12,13 +12,19 @@ export function growMoss(
   model: THREE.Group,
   species: MossSpecies,
   random: () => number,
+  // The direction moss favors, how squarely a face must turn toward it, and
+  // how wide its patches spread. Stones and wood grow it on top; a back wall
+  // grows broad patches facing the room.
+  { facing = UP, threshold = 0.45, spread = 1 } = {},
 ) {
   const phase = [random(), random(), random()].map((p) => p * 10);
   // Smooth bands across the model decide where moss grows thickest, so it
   // forms patches instead of covering every upward face the same.
-  const patchiness = (p: THREE.Vector3) =>
-    Math.sin(p.x * 6 + phase[0]) * Math.cos(p.z * 5 + phase[1]) * 0.6 +
-    Math.sin(p.y * 7 + phase[2]) * 0.4;
+  const patchiness = ({ x, y, z }: THREE.Vector3) =>
+    Math.sin((x * 6) / spread + phase[0]) *
+      Math.cos((z * 5) / spread + phase[1]) *
+      0.6 +
+    Math.sin((y * 7) / spread + phase[2]) * 0.4;
   const faces: {
     corners: THREE.Vector3[];
     normal: THREE.Vector3;
@@ -37,7 +43,7 @@ export function growMoss(
       const [a, b, c] = corners;
       const normal = b.clone().sub(a).cross(c.clone().sub(a)).normalize();
       const center = a.clone().add(b).add(c).divideScalar(3);
-      const growth = normal.y + patchiness(center) * 0.45 - 0.45;
+      const growth = normal.dot(facing) + patchiness(center) * 0.45 - threshold;
       if (growth > 0) faces.push({ corners, normal, growth });
     }
   });

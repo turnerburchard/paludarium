@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { batchStaticAsset } from "../src/assets/batch";
+import { buildBackdrop } from "../src/assets/landscape/backdrop";
 import { buildAsset, disposeAsset, assets } from "../src/assets";
 import { randomFromSeed } from "../src/model/random";
 
@@ -66,6 +67,23 @@ describe("moss cover", () => {
         stone.getCenter(new THREE.Vector3()).y,
       );
       [bare, mossy, again].forEach(disposeAsset);
+    },
+  );
+});
+
+describe("back walls", () => {
+  it.each(["stone", "cork"] as const)(
+    "keeps a %s wall and its moss inside the glass",
+    (material) => {
+      const wall = buildBackdrop(7, 2.9, { material, moss: "fern" });
+      const bounds = new THREE.Box3().setFromObject(wall);
+      // Geometry is stored as 32-bit floats.
+      expect(bounds.min.x).toBeGreaterThanOrEqual(-3.5 - 1e-6);
+      expect(bounds.max.x).toBeLessThanOrEqual(3.5 + 1e-6);
+      expect(bounds.max.y).toBeLessThanOrEqual(2.9 + 1e-6);
+      // The back glass stands 0.025 behind the wall's base.
+      expect(bounds.min.z).toBeGreaterThanOrEqual(-0.025);
+      disposeAsset(wall);
     },
   );
 });
