@@ -27,7 +27,7 @@ export function loadWorld(): { world: World; warning: string | null } {
     const saved = localStorage.getItem(STORAGE_KEY);
     // First visit opens on a finished habitat rather than an empty tank.
     return {
-      world: saved ? parseWorld(saved) : makePreset("tropical"),
+      world: saved ? parseWorld(saved) : makePreset("aquarium"),
       warning: null,
     };
   } catch {

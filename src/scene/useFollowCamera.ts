@@ -8,6 +8,8 @@ import {
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { OrbitControls } from "three-stdlib";
+import { assets } from "../assets";
+import { swimmingHeight } from "../model/terrain";
 import type { EcosystemController } from "../simulation/useEcosystem";
 
 /** Where the camera settles when watching starts: this far away, looking
@@ -90,13 +92,11 @@ export function useFollowCamera(
       }
       return;
     }
-    const animal = animalId
-      ? ecosystem.live.current!.engine.observeAnimal(animalId)
-      : undefined;
-    if (!orbit || !animal) return;
+    const at = animalId ? watchedPosition(ecosystem, animalId) : undefined;
+    if (!orbit || !at) return;
     const { animal: position, step, offset, view } = vectors.current;
     const ease = 1 - Math.exp(-delta * 4);
-    position.set(animal.position.x, animal.position.y + 0.1, animal.position.z);
+    position.set(at.x, at.y + 0.1, at.z);
     step.subVectors(position, orbit.target).multiplyScalar(ease);
     orbit.target.add(step);
     orbit.object.position.add(step);
@@ -121,4 +121,20 @@ export function useFollowCamera(
   // The saved view also covers the render between deselection and its effect.
   // Auto-orbit must stay off throughout the return or it never settles.
   return { active: !!animalId || returning || !!home.current, interrupt };
+}
+
+/** Where a watched land animal or fish is now. */
+function watchedPosition(ecosystem: EcosystemController, id: string) {
+  const { engine, fish, world } = ecosystem.live.current!;
+  const animal = engine.observeAnimal(id);
+  if (animal) return animal.position;
+  const swimmer = fish.get(id);
+  const object = world.objects.find((o) => o.id === id);
+  const swims = object && assets[object.kind].swims;
+  if (!swimmer || !swims) return undefined;
+  return {
+    x: swimmer.x,
+    y: swimmingHeight(swimmer.x, swimmer.z, world.environment, swims.depth),
+    z: swimmer.z,
+  };
 }

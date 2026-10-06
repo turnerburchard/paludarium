@@ -53,10 +53,10 @@ try {
   await page.goto("http://127.0.0.1:5191");
   await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.locator(".asset-picture img").first().waitFor({ timeout: 90000 });
-  // A first visit opens on the cloud forest; start from an empty tank.
+  // A first visit opens on the aquarium; start from an empty tank.
   assert.equal(
     await page.getByRole("textbox", { name: "World name" }).inputValue(),
-    "Cloud forest",
+    "Aquarium",
     "first visit opens on a finished habitat",
   );
   await page.getByRole("button", { name: "New world", exact: true }).click();
@@ -212,7 +212,7 @@ try {
   // Every land animal is listed to watch; fish are counted by species.
   const lifeWorld = await saved();
   assert.equal(
-    await life.locator(".frog-list button").count(),
+    await life.locator(".frog-list:not(.fish-list) button").count(),
     lifeWorld.objects.filter((object) =>
       [
         "tree-frog",

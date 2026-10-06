@@ -1,5 +1,5 @@
 import { Copy, Eye, Move, RotateCw, Trash2, X } from "lucide-react";
-import { assets, isLandAnimal } from "../assets";
+import { assets, isAnimal } from "../assets";
 import type { Editor } from "../editor/useEditor";
 import { plantCondition } from "../model/plants";
 import type { HabitatObject } from "../model/schema";
@@ -49,7 +49,7 @@ export function Inspector({
           {condition.note}
         </p>
       )}
-      {isLandAnimal(object.kind) && (
+      {isAnimal(object.kind) && (
         <button className="watch-button" onClick={onWatch}>
           <Eye size={17} />
           Watch up close
