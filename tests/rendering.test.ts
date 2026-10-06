@@ -20,7 +20,7 @@ function stats(root: THREE.Group) {
 }
 
 describe("static rendering batches", () => {
-  it.each([assets.moss.build, assets.fern.build])(
+  it.each([assets.moss.build, assets.strawberry.build])(
     "retains transformed geometry while reducing draws",
     (builder) => {
       const original = builder(randomFromSeed(173));
