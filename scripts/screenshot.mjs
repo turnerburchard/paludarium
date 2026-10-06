@@ -55,7 +55,10 @@ try {
     const page = await browser.newPage({ viewport });
     await page.goto(`http://127.0.0.1:${port}`);
     // Thumbnails finish after the scene has started drawing.
-    await page.locator(".asset-picture img").first().waitFor();
+    await page
+      .locator(".asset-picture img")
+      .first()
+      .waitFor({ state: "attached" });
     for (const preset of presets) {
       await page
         .getByRole("button", { name: "New world", exact: true })

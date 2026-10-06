@@ -228,7 +228,8 @@ try {
     "no mobile horizontal overflow",
   );
   await page
-    .getByRole("button", { name: "Habitat settings", exact: true })
+    .getByRole("navigation", { name: "Tools" })
+    .getByRole("button", { name: "Habitat", exact: true })
     .click();
   const water = page.getByRole("slider", { name: "Water level", exact: true });
   await water.focus();

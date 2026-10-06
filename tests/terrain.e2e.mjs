@@ -136,6 +136,19 @@ try {
     .click();
   assert.deepEqual(await saved(), sculpted, "redo restores the whole stroke");
 
+  const cancelFrom = await point(-1.75, 0),
+    cancelTo = await point(-1.4, 0.2);
+  await page.mouse.move(cancelFrom.x, cancelFrom.y);
+  await page.mouse.down();
+  await page.mouse.move(cancelTo.x, cancelTo.y, { steps: 4 });
+  await page.keyboard.press("Control+z");
+  await page.mouse.up();
+  assert.deepEqual(
+    await saved(),
+    sculpted,
+    "undo during a stroke cancels only the preview, preserving the previous edit",
+  );
+
   await page.getByRole("button", { name: "Paint sand", exact: true }).click();
   const sand = await point(-1.75, 0);
   await page.mouse.click(sand.x, sand.y);
@@ -196,11 +209,16 @@ try {
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page
-    .getByRole("button", { name: "Habitat settings", exact: true })
+    .getByRole("navigation", { name: "Tools" })
+    .getByRole("button", { name: "Habitat", exact: true })
     .click();
   await page.getByRole("button", { name: "Lower ground", exact: true }).click();
   const mobileBefore = await saved(),
     tap = await point(-1.2, -0.2);
+  await page.waitForFunction(
+    ({ x, y }) => document.elementFromPoint(x, y)?.tagName === "CANVAS",
+    tap,
+  );
   await page.touchscreen.tap(tap.x, tap.y);
   assert.notDeepEqual(
     (await saved()).environment.terrain.heights,

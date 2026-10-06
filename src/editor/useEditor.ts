@@ -60,6 +60,16 @@ export function useEditor() {
     stroke.current = null;
     setPreview(null);
   }
+  const navigateHistory = useCallback((type: "undo" | "redo") => {
+    // An unfinished stroke is the current edit. Cancel it without also
+    // stepping past the last committed edit.
+    if (stroke.current) {
+      stroke.current = null;
+      setPreview(null);
+      return;
+    }
+    dispatch({ type });
+  }, []);
   function beginTerrainStroke(x: number, z: number) {
     if (tool.type !== "terrain") return;
     stroke.current = new TerrainStroke(history.present, tool);
@@ -114,8 +124,7 @@ export function useEditor() {
         return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
-        cancelTerrainStroke();
-        dispatch({ type: e.shiftKey ? "redo" : "undo" });
+        navigateHistory(e.shiftKey ? "redo" : "undo");
       } else if (e.key === "Escape") {
         finish();
         select(null);
@@ -137,7 +146,7 @@ export function useEditor() {
     };
     window.addEventListener("keydown", keydown);
     return () => window.removeEventListener("keydown", keydown);
-  }, [remove, rotate]);
+  }, [remove, rotate, navigateHistory]);
   /** Leaves placing or moving and clears its leftover message. */
   function finish() {
     cancelTerrainStroke();
@@ -256,10 +265,10 @@ export function useEditor() {
     move,
     replaceWorld,
     rename,
-    undo: () => dispatch({ type: "undo" }),
-    redo: () => dispatch({ type: "redo" }),
-    canUndo: !!history.past.length,
-    canRedo: !!history.future.length,
+    undo: () => navigateHistory("undo"),
+    redo: () => navigateHistory("redo"),
+    canUndo: !!stroke.current || !!history.past.length,
+    canRedo: !stroke.current && !!history.future.length,
   };
 }
 export type Editor = ReturnType<typeof useEditor>;
