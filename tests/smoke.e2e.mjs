@@ -132,8 +132,15 @@ try {
       .count(),
     0,
   );
+  // Underwater plants stay; land plants are hidden.
   assert.equal(
-    await page.getByRole("button", { name: "Plants", exact: true }).count(),
+    await page
+      .getByRole("button", { name: "Amazon sword", exact: true })
+      .count(),
+    1,
+  );
+  assert.equal(
+    await page.getByRole("button", { name: "Monstera", exact: true }).count(),
     0,
   );
   assert.ok(
