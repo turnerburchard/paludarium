@@ -108,6 +108,14 @@ export function makePreset(preset: Preset): World {
     add("cattail", 0.85, -1.35, 1, 0.4);
     add("cattail", 1.05, -1.75, 0.85, 2);
     add("snail", -1.0, 1.0, 1, 1.4);
+    for (const [x, z] of [
+      [2.1, -0.2],
+      [2.35, 0.05],
+      [2.2, 0.3],
+      [2.5, -0.35],
+      [2.6, 0.2],
+    ])
+      add("tiger-barb", x, z, 1, 4.2);
   }
   return {
     version: 1,

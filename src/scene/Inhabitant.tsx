@@ -8,6 +8,8 @@ import { groundHeight } from "../model/terrain";
 import { FrogRig } from "./frogRig";
 import { GeckoRig } from "./geckoRig";
 import { SnailRig } from "./snailRig";
+import { SwimRig } from "./swimRig";
+import { barbSwim } from "../assets/animals/barb";
 
 interface Props {
   object: HabitatObject;
@@ -37,6 +39,13 @@ export function Inhabitant({
   );
   const rig = useMemo(
     () => createRig(object.kind, model),
+    [object.kind, model],
+  );
+  const swimming = useMemo(
+    () =>
+      object.kind === "tiger-barb"
+        ? new SwimRig(model, barbSwim, 1.3)
+        : undefined,
     [object.kind, model],
   );
   useEffect(() => () => disposeAsset(model), [model]);
@@ -158,6 +167,7 @@ export function Inhabitant({
       // The tail beats side to side, faster for quicker fish.
       const tail = model.getObjectByName("tail");
       if (tail) tail.rotation.y = Math.sin(t * swims.speed * 40) * 0.35;
+      swimming?.update(undefined, paused ? 0 : dt);
     } else if (assets[object.kind].category === "Plants") {
       group.rotation.z = Math.sin(t * 0.7 + object.seed) * 0.012;
     }

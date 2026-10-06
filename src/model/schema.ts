@@ -30,6 +30,7 @@ export const assetKinds = [
   "fish",
   "cardinal-tetra",
   "ember-tetra",
+  "tiger-barb",
 ] as const;
 export type AssetKind = (typeof assetKinds)[number];
 export const MAX_OBJECTS = 120;

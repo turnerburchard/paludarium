@@ -13,6 +13,7 @@ import { fish } from "./animals/fish";
 import { gecko } from "./animals/gecko";
 import { snail } from "./animals/snail";
 import { cardinalTetra, emberTetra } from "./animals/tetras";
+import { tigerBarb } from "./animals/barb";
 import { anthurium } from "./plants/anthurium";
 import { philodendron } from "./plants/philodendron";
 import { nestFern } from "./plants/nestFern";
@@ -65,6 +66,7 @@ export const assets = {
   fish,
   "cardinal-tetra": cardinalTetra,
   "ember-tetra": emberTetra,
+  "tiger-barb": tigerBarb,
 } satisfies Record<AssetKind, AssetDefinition>;
 
 export const catalog: readonly AssetDefinition[] = Object.values(assets);
