@@ -7,6 +7,12 @@ import {
   type World,
   type Environment,
 } from "../model/schema";
+import {
+  holdsUp,
+  replaceObject,
+  restingOn,
+  type Surface,
+} from "../model/stacking";
 import { boundedPosition, fitObject, placementProblem } from "../model/terrain";
 import { historyReducer } from "./history";
 import { TerrainStroke } from "./terrainStroke";
@@ -106,7 +112,11 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     if (!selectedId) return;
     commit({
       ...worldRef.current,
-      objects: worldRef.current.objects.filter((o) => o.id !== selectedId),
+      objects: replaceObject(
+        worldRef.current.objects,
+        worldRef.current.environment,
+        selectedId,
+      ),
     });
     select(null);
     setTool({ type: "select" });
@@ -177,7 +187,9 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     setPlacementRotation(0);
     notify("");
   }
-  function placeAt(x: number, z: number) {
+  /** Places the tool's object at a spot on the ground, or on top of a stone
+   * or wood piece when `surface` names one and the height of the spot. */
+  function placeAt(x: number, z: number, surface?: Surface) {
     const moving =
       tool.type === "move" || tool.type === "copy"
         ? world.objects.find((o) => o.id === tool.id)
@@ -190,18 +202,38 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       world.environment,
       assets[kind].radius * (moving?.scale ?? 1),
     );
+    const resting = restingOn(
+      surface,
+      position.x,
+      position.z,
+      world.environment,
+    );
+    if (
+      moving &&
+      tool.type === "move" &&
+      resting.support &&
+      holdsUp(world.objects, moving.id, resting.support)
+    ) {
+      notify("It can't rest on something that's sitting on it.");
+      return;
+    }
     const problem = placementProblem(
       kind,
       position.x,
       position.z,
       world.environment,
+      resting.lift,
     );
     if (problem) {
       notify(problem);
       return;
     }
     if (moving && tool.type === "move") {
-      patchObject(moving.id, { ...position, rotation: placementRotation });
+      patchObject(moving.id, {
+        ...position,
+        ...resting,
+        rotation: placementRotation,
+      });
       setTool({ type: "select" });
       notify("Just right.");
       return;
@@ -214,9 +246,11 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       id: crypto.randomUUID(),
       kind,
       ...position,
+      ...(resting.support && resting),
       rotation: placementRotation,
       scale: moving?.scale ?? 1,
       seed: moving?.seed ?? Math.floor(Math.random() * 2147483647),
+      ...(moving?.moss && { moss: moving.moss }),
     };
     commit({ ...world, objects: [...world.objects, object] });
     if (tool.type === "copy") {
@@ -313,10 +347,15 @@ function withObjectPatch(
   id: string,
   patch: Partial<HabitatObject>,
 ): World {
+  const object = world.objects.find((o) => o.id === id);
+  if (!object) return world;
   return {
     ...world,
-    objects: world.objects.map((o) =>
-      o.id === id ? fitObject({ ...o, ...patch }, world.environment) : o,
+    objects: replaceObject(
+      world.objects,
+      world.environment,
+      id,
+      fitObject({ ...object, ...patch }, world.environment),
     ),
   };
 }

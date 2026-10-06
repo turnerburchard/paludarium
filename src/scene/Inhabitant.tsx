@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { assets, buildAsset, disposeAsset, isLandAnimal } from "../assets";
 import type { AssetKind, Environment, HabitatObject } from "../model/schema";
 import { groundHeight } from "../model/terrain";
+import { objectBase } from "../model/stacking";
 import { FrogRig } from "./frogRig";
 import { GeckoRig } from "./geckoRig";
 import { SnailRig } from "./snailRig";
@@ -77,7 +78,7 @@ export function Inhabitant({
     }),
     [],
   );
-  const ground = groundHeight(object.x, object.z, environment);
+  const ground = objectBase(object, environment);
   const swims = assets[object.kind].swims;
   const baseY = swims
     ? Math.max(ground + 0.08, environment.water - swims.depth - 0.01)

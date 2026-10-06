@@ -48,8 +48,11 @@ export const objectSchema = z.object({
   rotation: finite.min(-100).max(100),
   scale: finite.min(0.4).max(2),
   seed: z.number().int().min(0).max(2147483647),
-  // Additive version-1 data: moss grown over stone or wood.
+  // Additive version-1 data: moss grown over stone or wood, and the stone or
+  // wood an object rests on, with its base this far above the ground.
   moss: z.enum(mossSpecies).optional(),
+  support: z.string().min(1).max(100).optional(),
+  lift: finite.min(0).max(4).optional(),
 });
 export type HabitatObject = z.infer<typeof objectSchema>;
 export const environmentSchema = z.object({
