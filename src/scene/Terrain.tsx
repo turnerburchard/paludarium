@@ -8,6 +8,9 @@ import { groundHeight, MAX_GROUND_HEIGHT } from "../model/terrain";
 import { makeWaterMaterial } from "./waterMaterial";
 import { disposeAsset } from "../assets";
 import { buildBackdrop } from "../assets/landscape/backdrop";
+import { MOSS_COLORS, mossMaterial } from "../assets/landscape/mosses";
+import { mossCarpet } from "../assets/landscape/mossCover";
+import { TERRAIN_POINTS, terrainPoint } from "../model/terrainData";
 
 function makeTerrain(env: Environment) {
   const geo = new THREE.PlaneGeometry(env.width, env.depth, 70, 48);
@@ -16,7 +19,12 @@ function makeTerrain(env: Environment) {
     colors = [];
   const soil = new THREE.Color("#443c2b"),
     sand = new THREE.Color("#a5936a");
-  const palette = { soil, sand, stone: new THREE.Color("#867c5b") };
+  const palette = {
+    soil,
+    sand,
+    stone: new THREE.Color("#867c5b"),
+    moss: new THREE.Color(MOSS_COLORS.sheet[1]),
+  };
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i),
       z = p.getZ(i),
@@ -110,13 +118,29 @@ export function Terrain({ environment: env }: { environment: Environment }) {
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     mesh.computeBoundingSphere();
   }, [stones, env.width, env.depth, env.substrate, env.terrain]);
+  const carpet = useMemo(() => {
+    const paint = env.terrain?.paint;
+    if (!paint) return undefined;
+    const points = [];
+    for (let index = 0; index < TERRAIN_POINTS; index++) {
+      if (paint[index] !== "moss") continue;
+      const { x, z } = terrainPoint(index, env);
+      const y = groundHeight(x, z, env);
+      // Underwater, the painted color stays but the cushions don't grow.
+      if (y > env.water) points.push(new THREE.Vector3(x, y, z));
+    }
+    return mossCarpet(points, randomFromSeed(31));
+  }, [env.width, env.depth, env.substrate, env.terrain, env.water]);
+  const carpetSkin = useMemo(() => mossMaterial(), []);
   useEffect(
     () => () => {
       surface.dispose();
       skirt.dispose();
+      carpet?.dispose();
     },
-    [surface, skirt],
+    [surface, skirt, carpet],
   );
+  useEffect(() => () => carpetSkin.dispose(), [carpetSkin]);
   return (
     <group>
       <mesh geometry={surface} receiveShadow>
@@ -129,6 +153,7 @@ export function Terrain({ environment: env }: { environment: Environment }) {
           side={THREE.DoubleSide}
         />
       </mesh>
+      {carpet && <mesh geometry={carpet} material={carpetSkin} receiveShadow />}
       <instancedMesh ref={pebbles} args={[undefined, undefined, stones.length]}>
         <icosahedronGeometry args={[1, 0]} />
         <meshStandardMaterial roughness={1} />

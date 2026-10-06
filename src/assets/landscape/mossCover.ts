@@ -151,3 +151,25 @@ function growTuft(species: MossSpecies, random: () => number) {
   tuft.deleteAttribute("uv");
   return tuft;
 }
+
+/** Low sheet moss cushions crowding the given ground points, for ground
+ * painted with moss. */
+export function mossCarpet(points: THREE.Vector3[], random: () => number) {
+  const lumps = points.flatMap((point) =>
+    [0, 1, 2, 3].map(() => {
+      const size = 0.04 + random() * 0.04;
+      const lump = dome(size, size * 0.4, "sheet", random, 0.3, 1);
+      lump.deleteAttribute("uv");
+      // Lumps spread across the gap to the next painted point and overlap.
+      return lump.translate(
+        point.x + (random() - 0.5) * 0.24,
+        point.y - 0.006,
+        point.z + (random() - 0.5) * 0.24,
+      );
+    }),
+  );
+  if (lumps.length === 0) return undefined;
+  const merged = mergeGeometries(lumps);
+  lumps.forEach((lump) => lump.dispose());
+  return merged ?? undefined;
+}
