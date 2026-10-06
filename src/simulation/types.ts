@@ -6,7 +6,7 @@ export interface Vec3 {
   y: number;
   z: number;
 }
-export type Surface = "ground" | "glass" | "stem" | "leaf";
+export type Surface = "ground" | "glass" | "stem" | "leaf" | "bark";
 export interface HabitatNode {
   id: string;
   position: Vec3;

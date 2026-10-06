@@ -19,6 +19,8 @@ import { strawberry } from "./plants/strawberry";
 import { moss } from "./landscape/moss";
 import { rock } from "./landscape/rock";
 import { wood } from "./landscape/wood";
+import { branch } from "./landscape/branch";
+import { log } from "./landscape/log";
 
 export type { AssetDefinition, Category, FrogBehavior } from "./types";
 
@@ -37,6 +39,8 @@ export const assets = {
   moss,
   rock,
   wood,
+  branch,
+  log,
   fish,
 } satisfies Record<AssetKind, AssetDefinition>;
 
@@ -47,6 +51,10 @@ export function isFrog(kind: AssetKind): boolean {
 }
 export function plantPerches(object: HabitatObject) {
   return assets[object.kind].perches?.(randomFromSeed(object.seed)) ?? [];
+}
+
+export function objectDens(object: HabitatObject) {
+  return assets[object.kind].dens?.(randomFromSeed(object.seed)) ?? [];
 }
 
 export function buildAsset(kind: AssetKind, seed = 1): THREE.Group {

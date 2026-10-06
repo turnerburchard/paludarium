@@ -11,6 +11,8 @@ export const assetKinds = [
   "moss",
   "rock",
   "wood",
+  "branch",
+  "log",
   "tree-frog",
   "dart-frog",
   "blue-dart-frog",

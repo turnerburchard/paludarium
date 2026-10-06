@@ -5,10 +5,20 @@ export interface PlantPoint {
   y: number;
   z: number;
 }
+/** A route from where an object meets the ground to a resting spot. */
 export interface PlantPerch {
   stem: PlantPoint[];
   perch: PlantPoint;
   perchNormal: PlantPoint;
+  /** Routes over wood follow the top of the bark, with a surface normal for
+   * each stem point. Plant stems have none and face outward. */
+  barkNormals?: PlantPoint[];
+}
+/** A sheltered spot inside an object, reached from an entrance on open ground.
+ * Heights are above the ground beneath each point. */
+export interface Den {
+  entrance: PlantPoint;
+  inside: PlantPoint;
 }
 export interface MonsteraLeaf extends PlantPerch {
   tip: PlantPoint;
