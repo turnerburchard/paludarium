@@ -105,6 +105,9 @@ export function makePreset(preset: Preset): World {
     add("log", -1.65, 1.75, 0.8, 0.1);
     add("leaf-litter", -1.85, 0.35, 0.9);
     add("branch", -0.4, -0.55, 1, 2.6);
+    add("cattail", 0.85, -1.35, 1, 0.4);
+    add("cattail", 1.05, -1.75, 0.85, 2);
+    add("snail", -1.0, 1.0, 1, 1.4);
   }
   return {
     version: 1,
