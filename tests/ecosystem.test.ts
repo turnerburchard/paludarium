@@ -568,7 +568,7 @@ describe("plant perches and species movement", () => {
     const engine = new Ecosystem(
       graph,
       [{ ...seed(), species: frogProfile("gecko") }],
-      { speed: 1, elapsed: 100 },
+      { speed: 1, elapsed: 1000 },
     );
     const positions: number[] = [];
     for (let step = 0; step < 200; step++) {
