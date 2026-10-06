@@ -16,6 +16,7 @@ import {
   placementProblem,
 } from "../model/terrain";
 import { useCameraNavigation } from "./useCameraNavigation";
+import { useFollowCamera } from "./useFollowCamera";
 import { Inhabitant } from "./Inhabitant";
 import { Tank, Terrain, Water } from "./Terrain";
 
@@ -32,17 +33,21 @@ const lighting = {
     ambient: 0.2,
   },
 };
+interface SceneProps {
+  editor: Editor;
+  resetCamera: number;
+  view: boolean;
+  ecosystem: EcosystemController;
+  /** An animal the camera follows. It keeps living while watched. */
+  watchingId: string | null;
+}
 function Scene({
   editor,
   resetCamera,
   view,
   ecosystem,
-}: {
-  editor: Editor;
-  resetCamera: number;
-  view: boolean;
-  ecosystem: EcosystemController;
-}) {
+  watchingId,
+}: SceneProps) {
   const { world, tool } = editor,
     env = world.environment,
     light = lighting[env.light];
@@ -53,6 +58,7 @@ function Scene({
   const controls = useRef<OrbitControlsImpl>(null);
   const { size } = useThree();
   useCameraNavigation(controls, true);
+  useFollowCamera(controls, ecosystem, watchingId);
   const [cursor, setCursor] = useState<{ x: number; z: number } | null>(null);
   const moving =
     tool.type === "move" || tool.type === "copy"
@@ -155,7 +161,7 @@ function Scene({
       <EcosystemLife
         ecosystem={ecosystem}
         paused={editor.paused || tool.type !== "select"}
-        heldId={editor.selectedId}
+        heldId={watchingId ? null : editor.selectedId}
       />
       <Water environment={env} paused={editor.paused} />
       <Tank environment={env} />
@@ -208,7 +214,7 @@ function Scene({
         ref={controls}
         makeDefault
         target={[0, 0.8, 0]}
-        minDistance={4}
+        minDistance={watchingId ? 1 : 4}
         maxDistance={30}
         maxPolarAngle={Math.PI / 2.05}
         minPolarAngle={0.16}
@@ -221,12 +227,7 @@ function Scene({
     </>
   );
 }
-export function WorldScene(props: {
-  editor: Editor;
-  resetCamera: number;
-  view: boolean;
-  ecosystem: EcosystemController;
-}) {
+export function WorldScene(props: SceneProps) {
   return (
     <Canvas
       shadows
