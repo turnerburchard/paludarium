@@ -868,10 +868,12 @@ button:hover:not(:disabled) {
     box-shadow: 0 -12px 40px #0007;
     transform: translateY(105%);
     transition: transform 0.25s ease;
+    pointer-events: none;
     z-index: 20;
   }
   .sheet-open .sidebar {
     transform: none;
+    pointer-events: auto;
   }
   .sheet-only {
     display: flex;

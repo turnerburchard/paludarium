@@ -25,7 +25,7 @@ Drag to orbit and scroll or pinch to zoom. To follow a frog with the camera, pic
 
 A first visit opens on the Cloud forest preset. On phones the scene fills the screen and a dock at the bottom opens the Add, Habitat and Life panels as a bottom sheet. Sliders show their effect live while dragging and become one undo step on release.
 
-Open **Habitat settings** to raise, lower, or smooth terrain; paint soil, sand, or stone; and carve pools or streams. Choose a brush size and drag across the ground. Each drag is one undoable edit. Escape cancels an unfinished stroke. Pools and streams set a minimum water level when needed; the Water level control adjusts it afterward. Terrain is included in saved and exported worlds.
+Open **Habitat settings** (**Habitat** on phones) to raise, lower, or smooth terrain; paint soil, sand, or stone; and carve pools or streams. Choose a brush size and drag across the ground. Each drag is one undoable edit. Escape cancels an unfinished stroke. Pools and streams set a minimum water level when needed; the Water level control adjusts it afterward. Terrain is included in saved and exported worlds.
 
 ## Architecture
 
