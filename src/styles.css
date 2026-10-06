@@ -469,6 +469,53 @@ button:hover:not(:disabled) {
   color: #becea9;
   padding-left: 0;
 }
+.first-steps {
+  position: absolute;
+  left: 325px;
+  top: 103px;
+  width: 300px;
+  padding: 14px 16px 6px;
+  background: #192c24e6;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  z-index: 4;
+}
+.first-steps-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.first-steps ol {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+}
+.first-steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+  font-size: 12px;
+  color: #ccdac0;
+}
+.first-steps li.done {
+  color: #8fa287;
+  text-decoration: line-through;
+}
+.first-steps-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #657950;
+  border-radius: 50%;
+}
+.first-steps li.done .first-steps-mark {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--ink);
+}
 .inspector {
   position: absolute;
   right: 25px;
@@ -942,6 +989,16 @@ button:hover:not(:disabled) {
   .empty-invitation {
     left: 18px;
     top: 85px;
+  }
+  .first-steps {
+    left: 12px;
+    top: 76px;
+    width: 220px;
+    padding: 10px 12px 4px;
+  }
+  .first-steps li {
+    font-size: 11px;
+    padding: 3px 0;
   }
   .empty-invitation .eyebrow {
     font-size: 9px;
