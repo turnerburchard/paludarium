@@ -2,6 +2,7 @@ import type { World } from "../model/schema";
 import { assets, isFrog, plantPerches } from "../assets";
 import { plantCondition } from "../model/plants";
 import { groundHeight, placementProblem } from "../model/terrain";
+import { transformPlantPoint } from "../model/plantSurfaces";
 import { FishSchool } from "./fish";
 import { Ecosystem } from "./engine";
 import { HabitatGraph, distance } from "./navigation";
@@ -22,7 +23,6 @@ const groundWalker: SpeciesProfile = {
   climbs: false,
   speed: 1,
 };
-import { transformPlantPoint } from "../model/plantSurfaces";
 
 /** Conservative ground navigation. The graph describes surfaces, not animal mesh anatomy. */
 export function buildHabitat(world: World): HabitatGraph {
@@ -227,6 +227,7 @@ export function buildHabitat(world: World): HabitatGraph {
             wet: false,
             shelter: 0.3,
             perchHeight: position.y - baseY,
+            plantId: plant.id,
             neighbors: [previous.id],
           };
           previous.neighbors.push(node.id);
@@ -248,6 +249,7 @@ export function buildHabitat(world: World): HabitatGraph {
         wet: false,
         shelter: 1,
         perchHeight: leaf.perch.y * plant.scale,
+        plantId: plant.id,
         neighbors: [previous.id],
       };
       previous.neighbors.push(node.id);
