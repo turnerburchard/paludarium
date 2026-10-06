@@ -36,7 +36,9 @@ export class HabitatGraph {
   allowed(id: string, species: SpeciesProfile) {
     const node = this.node(id);
     if (node.surface === "ground") return true;
-    if (!species.climbs) return false;
+    // Gently sloping bark is walkable by any frog; steeper bark needs a climber.
+    const walkable = node.surface === "bark" && node.normal.y >= 0.7;
+    if (!walkable && !species.climbs) return false;
     return (
       node.perchHeight === undefined ||
       node.perchHeight <= (species.maxPerchHeight ?? Infinity)

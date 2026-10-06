@@ -1,5 +1,5 @@
 import type { World } from "../model/schema";
-import { assets, isFrog, plantPerches } from "../assets";
+import { assets, isFrog, objectDens, plantPerches } from "../assets";
 import { plantCondition } from "../model/plants";
 import { groundHeight, placementProblem } from "../model/terrain";
 import { transformPlantPoint } from "../model/plantSurfaces";
@@ -11,6 +11,7 @@ import type {
   HabitatNode,
   FoodPatch,
   SpeciesProfile,
+  Vec3,
 } from "./types";
 
 /** Insect colonies are at least this far apart. */
@@ -159,46 +160,53 @@ export function buildHabitat(world: World): HabitatGraph {
     }
   }
   const groundNodes = nodes.filter((node) => node.surface === "ground");
-  for (const plant of world.objects) {
-    const leaves = plantPerches(plant);
-    if (!leaves.length) continue;
-    const baseY = groundHeight(plant.x, plant.z, env);
-    if (baseY < env.water + 0.025) continue;
+  /** The nearest ground node within range of a point, if the way between stays dry. */
+  const dryAnchor = (point: Vec3, range: number) => {
     const anchor = groundNodes.reduce<HabitatNode | undefined>(
       (best, node) =>
-        !best ||
-        distance(node.position, { x: plant.x, y: baseY, z: plant.z }) <
-          distance(best.position, { x: plant.x, y: baseY, z: plant.z })
+        !best || distance(node.position, point) < distance(best.position, point)
           ? node
           : best,
       undefined,
     );
-    if (
-      !anchor ||
-      distance(anchor.position, { x: plant.x, y: baseY, z: plant.z }) > 0.65
-    )
-      continue;
-    const base = { x: plant.x, y: baseY, z: plant.z };
-    const bridgeIsDry = Array.from({ length: 6 }, (_, i) => i / 5).every(
+    if (!anchor || distance(anchor.position, point) > range) return undefined;
+    const dry = Array.from({ length: 6 }, (_, i) => i / 5).every(
       (t) =>
         groundHeight(
-          anchor.position.x + (base.x - anchor.position.x) * t,
-          anchor.position.z + (base.z - anchor.position.z) * t,
+          anchor.position.x + (point.x - anchor.position.x) * t,
+          anchor.position.z + (point.z - anchor.position.z) * t,
           env,
         ) >=
         env.water - 0.025,
     );
-    if (!bridgeIsDry) continue;
-    for (const [leafIndex, leaf] of leaves.entries()) {
-      const perch = transformPlantPoint(leaf.perch, plant, baseY);
+    return dry ? anchor : undefined;
+  };
+  const up = { x: 0, y: 1, z: 0 };
+  for (const object of world.objects) {
+    const baseY = groundHeight(object.x, object.z, env);
+    if (baseY < env.water + 0.025) continue;
+    // Normals turn with the object but don't move or scale.
+    const turn = (v: Vec3) =>
+      transformPlantPoint(v, { ...object, x: 0, z: 0, scale: 1 });
+    for (const [routeIndex, route] of plantPerches(object).entries()) {
+      const perch = transformPlantPoint(route.perch, object, baseY);
       if (
         Math.abs(perch.x) > env.width / 2 - 0.08 ||
         Math.abs(perch.z) > env.depth / 2 - 0.08
       )
         continue;
+      const anchor = dryAnchor(
+        transformPlantPoint(route.stem[0], object, baseY),
+        0.65,
+      );
+      if (!anchor) continue;
       const stem = [
         anchor.position,
-        ...leaf.stem.map((point) => transformPlantPoint(point, plant, baseY)),
+        ...route.stem.map((point) => transformPlantPoint(point, object, baseY)),
+      ];
+      const barkNormals = route.barkNormals && [
+        up,
+        ...route.barkNormals.map(turn),
       ];
       let previous = anchor;
       // Every edge is short enough to climb rather than crossing empty air.
@@ -213,21 +221,17 @@ export function buildHabitat(world: World): HabitatGraph {
             y: from.y + (to.y - from.y) * t,
             z: from.z + (to.z - from.z) * t,
           };
-          const outward = { x: to.x - plant.x, y: 0, z: to.z - plant.z };
-          const length = Math.hypot(outward.x, outward.z);
-          const normal =
-            length > 0
-              ? { x: outward.x / length, y: 0, z: outward.z / length }
-              : { x: 1, y: 0, z: 0 };
           const node: HabitatNode = {
-            id: `plant:${plant.id}:${leafIndex}:${segment}:${step}`,
+            id: `plant:${object.id}:${routeIndex}:${segment}:${step}`,
             position,
-            normal,
-            surface: "stem",
+            normal: barkNormals
+              ? blend(barkNormals[segment], barkNormals[segment + 1], t)
+              : outward(to, object),
+            surface: barkNormals ? "bark" : "stem",
             wet: false,
             shelter: 0.3,
             perchHeight: position.y - baseY,
-            plantId: plant.id,
+            plantId: object.id,
             neighbors: [previous.id],
           };
           previous.neighbors.push(node.id);
@@ -235,25 +239,46 @@ export function buildHabitat(world: World): HabitatGraph {
           previous = node;
         }
       }
-      const normal = transformPlantPoint(leaf.perchNormal, {
-        ...plant,
-        x: 0,
-        z: 0,
-        scale: 1,
-      });
       const node: HabitatNode = {
-        id: `leaf:${plant.id}:${leafIndex}`,
+        id: `${barkNormals ? "bark" : "leaf"}:${object.id}:${routeIndex}`,
         position: perch,
-        normal,
-        surface: "leaf",
+        normal: turn(route.perchNormal),
+        surface: barkNormals ? "bark" : "leaf",
         wet: false,
-        shelter: 1,
-        perchHeight: leaf.perch.y * plant.scale,
-        plantId: plant.id,
+        shelter: barkNormals ? 0.5 : 1,
+        perchHeight: route.perch.y * object.scale,
+        plantId: object.id,
         neighbors: [previous.id],
       };
       previous.neighbors.push(node.id);
       nodes.push(node);
+    }
+    // A den is reached through its entrance and is fully sheltered inside.
+    for (const [denIndex, den] of objectDens(object).entries()) {
+      const [entrance, inside] = [den.entrance, den.inside].map((point) => {
+        const { x, z } = transformPlantPoint(point, object);
+        return { x, y: groundHeight(x, z, env) + point.y * object.scale, z };
+      });
+      const anchor = dryAnchor(entrance, 0.6);
+      if (!anchor || entrance.y < env.water + 0.025) continue;
+      let previous = anchor;
+      for (const [part, position, shelter] of [
+        ["entrance", entrance, 0.6],
+        ["inside", inside, 1],
+      ] as const) {
+        const node: HabitatNode = {
+          id: `den:${object.id}:${denIndex}:${part}`,
+          position,
+          normal: up,
+          surface: "ground",
+          wet: env.water > 0 && position.y <= env.water + 0.065,
+          shelter,
+          neighbors: [previous.id],
+        };
+        previous.neighbors.push(node.id);
+        nodes.push(node);
+        previous = node;
+      }
     }
   }
   const perches = nodes.filter((node) => node.surface === "leaf");
@@ -264,6 +289,24 @@ export function buildHabitat(world: World): HabitatGraph {
         perches[j].neighbors.push(perches[i].id);
       }
   return new HabitatGraph(nodes);
+}
+
+/** Plant stems face away from the plant's center. */
+function outward(point: Vec3, object: { x: number; z: number }): Vec3 {
+  const x = point.x - object.x,
+    z = point.z - object.z;
+  const length = Math.hypot(x, z);
+  return length > 0
+    ? { x: x / length, y: 0, z: z / length }
+    : { x: 1, y: 0, z: 0 };
+}
+
+function blend(a: Vec3, b: Vec3, t: number): Vec3 {
+  const x = a.x + (b.x - a.x) * t,
+    y = a.y + (b.y - a.y) * t,
+    z = a.z + (b.z - a.z) * t;
+  const length = Math.hypot(x, y, z) || 1;
+  return { x: x / length, y: y / length, z: z / length };
 }
 
 export function createWorldEcosystem(

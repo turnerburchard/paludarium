@@ -1,7 +1,7 @@
 import type * as THREE from "three";
 import type { Soil } from "../model/plants";
 import type { AssetKind } from "../model/schema";
-import type { PlantPerch } from "../model/plantSurfaces";
+import type { Den, PlantPerch } from "../model/plantSurfaces";
 
 export type Category = "Plants" | "Landscape" | "Animals";
 
@@ -32,6 +32,8 @@ export interface AssetDefinition {
   soil?: Soil;
   frog?: FrogBehavior;
   perches?(random: () => number): PlantPerch[];
+  /** Sheltered spots inside the object, such as under a rock overhang. */
+  dens?(random: () => number): Den[];
   /** Builds a fresh model. The same seed always gives the same shape. */
   build(random: () => number): THREE.Group;
 }
