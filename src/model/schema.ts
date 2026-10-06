@@ -7,6 +7,7 @@ export const assetKinds = [
   "strawberry",
   "bromeliad",
   "anthurium",
+  "philodendron",
   "grass",
   "moss",
   "rock",
