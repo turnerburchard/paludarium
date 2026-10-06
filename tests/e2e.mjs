@@ -104,6 +104,7 @@ try {
     .click();
   await clickWorld(-1.4, 0.76, 0.75);
   assert.equal((await saved()).objects.length, 1, "place a frog");
+  await page.getByRole("complementary", { name: "First habitat" }).waitFor();
   await page.getByRole("button", { name: "Done", exact: true }).click();
   let world = await saved();
   const frog = world.objects[0];
@@ -246,7 +247,7 @@ try {
   });
   assert.deepEqual(errors, [], "no browser runtime errors");
   console.log(
-    "PASS: placement, selection, canceled copy/move, move, undo, watch, presets, persistence, export, invalid import, mobile layout, keyboard slider, runtime errors",
+    "PASS: placement, first-visit guide, selection, canceled copy/move, move, undo, watch, presets, persistence, export, invalid import, mobile layout, keyboard slider, runtime errors",
   );
 } finally {
   await browser?.close();
