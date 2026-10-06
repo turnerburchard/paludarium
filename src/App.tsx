@@ -21,8 +21,7 @@ import { WatchCard } from "./ui/WatchCard";
 export default function App() {
   const editor = useEditor();
   const { world, selected, tool } = editor;
-  // Life follows the saved world, not every step of a slider drag, so frogs
-  // keep their old footing until the slider is released.
+  // Life follows committed edits, not intermediate brush or slider previews.
   const ecosystem = useEcosystem(editor.savedWorld);
   const files = useWorldFiles(editor);
   const [panel, setPanel] = useState<Panel>("objects");

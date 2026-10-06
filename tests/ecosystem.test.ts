@@ -9,7 +9,6 @@ import {
 import { emptyWorld } from "../src/model/schema";
 import { makePreset } from "../src/model/presets";
 import type { AssetKind } from "../src/model/schema";
-import { emptyWorld } from "../src/model/schema";
 import { assets, plantPerches } from "../src/assets";
 import { transformPlantPoint } from "../src/model/plantSurfaces";
 import { groundHeight } from "../src/model/terrain";

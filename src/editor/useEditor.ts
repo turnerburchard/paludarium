@@ -9,12 +9,15 @@ import {
 } from "../model/schema";
 import { boundedPosition, fitObject, placementProblem } from "../model/terrain";
 import { historyReducer } from "./history";
+import { TerrainStroke } from "./terrainStroke";
+import type { TerrainBrush } from "../model/terrainBrush";
 import { loadWorld, saveWorld } from "./persistence";
 export type Tool =
   | { type: "select" }
   | { type: "place"; kind: AssetKind }
   | { type: "move"; id: string }
-  | { type: "copy"; id: string };
+  | { type: "copy"; id: string }
+  | ({ type: "terrain" } & TerrainBrush);
 export function useEditor() {
   const [initial] = useState(loadWorld);
   const [history, dispatch] = useReducer(historyReducer, {
@@ -23,13 +26,10 @@ export function useEditor() {
     future: [],
   });
   const world = history.present;
-  // Shown instead of the saved world while a slider is being dragged, so the
-  // scene follows the gesture but history only records its end. A preview
-  // only applies to the world it was made from; any commit retires it.
-  const [preview, setPreview] = useState<{ base: World; world: World } | null>(
-    null,
-  );
+  // A gesture previews only its original world; committing retires it.
+  const [preview, setPreview] = useState<{ base: World; world: World } | null>(null);
   const shown = preview?.base === world ? preview.world : world;
+  const stroke = useRef<TerrainStroke | null>(null);
   const [tool, setTool] = useState<Tool>({ type: "select" });
   const [selectedId, select] = useState<string | null>(null);
   const [message, notify] = useState(initial.warning ?? "");
@@ -47,11 +47,35 @@ export function useEditor() {
   useEffect(() => {
     setSaving(true);
     const timer = setTimeout(() => {
-      setSaved(saveWorld(world));
+      setSaved(saveWorld(history.present));
       setSaving(false);
     }, 250);
     return () => clearTimeout(timer);
-  }, [world]);
+  }, [history.present]);
+  useEffect(() => {
+    stroke.current = null;
+    setPreview(null);
+  }, [tool]);
+  function cancelTerrainStroke() {
+    stroke.current = null;
+    setPreview(null);
+  }
+  function beginTerrainStroke(x: number, z: number) {
+    if (tool.type !== "terrain") return;
+    stroke.current = new TerrainStroke(history.present, tool);
+    setPreview({ base: stroke.current.original, world: stroke.current.dab(x, z) });
+  }
+  function continueTerrainStroke(x: number, z: number) {
+    if (stroke.current) setPreview({ base: stroke.current.original, world: stroke.current.dab(x, z) });
+  }
+  function endTerrainStroke() {
+    const current = stroke.current;
+    if (!current) return;
+    stroke.current = null;
+    setPreview(null);
+    commit(current.current);
+    notify("Landscape updated. Undo reverses the whole stroke.");
+  }
   const patchObject = useCallback(
     (id: string, patch: Partial<HabitatObject>) => {
       commit(withObjectPatch(worldRef.current, id, patch));
@@ -70,6 +94,7 @@ export function useEditor() {
   }, [commit, selectedId]);
   const rotate = useCallback(
     (amount = Math.PI / 6) => {
+      if (tool.type === "terrain") return;
       if (tool.type !== "select")
         setPlacementRotation((r) => (r + amount) % (Math.PI * 2));
       else if (selectedId) {
@@ -89,6 +114,7 @@ export function useEditor() {
         return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
+        cancelTerrainStroke();
         dispatch({ type: e.shiftKey ? "redo" : "undo" });
       } else if (e.key === "Escape") {
         finish();
@@ -114,6 +140,7 @@ export function useEditor() {
   }, [remove, rotate]);
   /** Leaves placing or moving and clears its leftover message. */
   function finish() {
+    cancelTerrainStroke();
     setTool({ type: "select" });
     notify("");
   }
@@ -195,14 +222,17 @@ export function useEditor() {
     notify("");
   }
   return {
-    /** What to show: the saved world, or a slider gesture in progress. */
     world: shown,
-    /** The saved world, ignoring any gesture in progress. */
+
     savedWorld: world,
     previewEnvironment: (patch: Partial<Environment>) =>
       setPreview({ base: world, world: withEnvironment(world, patch) }),
     previewObject: (id: string, patch: Partial<HabitatObject>) =>
       setPreview({ base: world, world: withObjectPatch(world, id, patch) }),
+    beginTerrainStroke,
+    continueTerrainStroke,
+    endTerrainStroke,
+    cancelTerrainStroke,
     tool,
     setTool,
     selected,

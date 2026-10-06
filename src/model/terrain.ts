@@ -1,5 +1,6 @@
 import type { Environment, HabitatObject, AssetKind } from "./schema";
 import { assets } from "../assets";
+import { terrainSamples } from "./terrainData";
 export function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
@@ -8,12 +9,25 @@ const smoothstep = (x: number) => {
   return t * t * (3 - 2 * t);
 };
 /** One shared surface function keeps rendered terrain, placement and animals aligned. */
-export function groundHeight(x: number, z: number, env: Environment): number {
+export function baseGroundHeight(
+  x: number,
+  z: number,
+  env: Environment,
+): number {
   const nx = x / env.width,
     nz = z / env.depth;
   const bank = 1 - smoothstep((nx + 0.08 + 0.09 * Math.sin(nz * 7)) / 0.42);
   const detail = 0.035 * Math.sin(x * 3.1) * Math.cos(z * 3.4);
   return env.substrate + bank * (0.42 + 0.16 * (nz + 0.5)) + detail;
+}
+export function groundHeight(x: number, z: number, env: Environment): number {
+  const base = baseGroundHeight(x, z, env);
+  if (!env.terrain) return base;
+  const delta = terrainSamples(x, z, env).reduce(
+    (sum, sample) => sum + env.terrain!.heights[sample.index] * sample.weight,
+    0,
+  );
+  return clamp(base + delta, 0.08, 1.25);
 }
 export function boundedPosition(
   x: number,

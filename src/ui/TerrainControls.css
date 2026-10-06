@@ -1,0 +1,39 @@
+.terrain-controls {
+  grid-column: 1 / -1;
+  margin-bottom: 26px;
+}
+.terrain-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.terrain-tools button,
+.reset-terrain {
+  border: 1px solid #455f3c;
+  background: #24392c;
+  border-radius: 7px;
+  padding: 10px 6px;
+  min-height: 40px;
+  font-size: 11px;
+}
+.terrain-tools button.active {
+  border-color: #93ac73;
+  background: #354b31;
+  color: #e3edcc;
+}
+.terrain-note {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.reset-terrain {
+  width: 100%;
+}
+@media (max-width: 760px) {
+  .terrain-controls {
+    margin: 10px 0 16px;
+  }
+  .terrain-tools {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

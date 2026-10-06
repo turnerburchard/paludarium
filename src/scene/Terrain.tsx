@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Environment } from "../model/schema";
 import { randomFromSeed } from "../model/random";
+import { terrainSamples } from "../model/terrainData";
 import { groundHeight } from "../model/terrain";
 
 function makeTerrain(env: Environment) {
@@ -12,6 +13,7 @@ function makeTerrain(env: Environment) {
     colors = [];
   const soil = new THREE.Color("#443c2b"),
     sand = new THREE.Color("#a5936a");
+  const palette = { soil, sand, stone: new THREE.Color("#867c5b") };
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i),
       z = p.getZ(i),
@@ -20,6 +22,17 @@ function makeTerrain(env: Environment) {
     const color = soil
       .clone()
       .lerp(sand, THREE.MathUtils.clamp((0.55 - h) * 2.3, 0, 1));
+    if (env.terrain) {
+      const natural = color.clone();
+      color.setRGB(0, 0, 0);
+      for (const { index, weight } of terrainSamples(x, z, env)) {
+        const material = env.terrain.paint[index];
+        const source = material === "natural" ? natural : palette[material];
+        color.r += source.r * weight;
+        color.g += source.g * weight;
+        color.b += source.b * weight;
+      }
+    }
     color.multiplyScalar(0.94 + 0.09 * Math.sin(x * 29) * Math.sin(z * 37));
     colors.push(color.r, color.g, color.b);
   }
@@ -59,11 +72,11 @@ export function Terrain({ environment: env }: { environment: Environment }) {
   const pebbles = useRef<THREE.InstancedMesh>(null);
   const surface = useMemo(
     () => makeTerrain(env),
-    [env.width, env.depth, env.substrate],
+    [env.width, env.depth, env.substrate, env.terrain],
   );
   const skirt = useMemo(
     () => makeSkirt(env),
-    [env.width, env.depth, env.substrate],
+    [env.width, env.depth, env.substrate, env.terrain],
   );
   const stones = useMemo(() => {
     const random = randomFromSeed(84);
@@ -93,7 +106,7 @@ export function Terrain({ environment: env }: { environment: Environment }) {
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     mesh.computeBoundingSphere();
-  }, [stones, env.width, env.depth, env.substrate]);
+  }, [stones, env.width, env.depth, env.substrate, env.terrain]);
   useEffect(
     () => () => {
       surface.dispose();
