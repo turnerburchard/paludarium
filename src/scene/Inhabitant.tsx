@@ -163,9 +163,13 @@ export function Inhabitant({
     } else if (object.kind === "fish") {
       const fish = ecosystem?.live.current!.fish.get(object.id);
       if (fish) {
+        // Swim below the surface, but never sink into the ground.
         group.position.set(
           fish.x,
-          environment.water - 0.13 + Math.sin(t * 1.3) * 0.025,
+          Math.max(
+            groundHeight(fish.x, fish.z, environment) + 0.05,
+            environment.water - 0.13 + Math.sin(t * 1.3) * 0.025,
+          ),
           fish.z,
         );
         group.rotation.y = fish.heading;

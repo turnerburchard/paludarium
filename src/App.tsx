@@ -66,6 +66,15 @@ export default function App() {
     setResetCamera((n) => n + 1);
   }
 
+  useEffect(() => {
+    if (!view) return;
+    const leave = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setView(false);
+    };
+    window.addEventListener("keydown", leave);
+    return () => window.removeEventListener("keydown", leave);
+  }, [view]);
+
   function toggleView() {
     setView((v) => !v);
     editor.setTool({ type: "select" });
@@ -126,7 +135,11 @@ export default function App() {
             <button
               className="habitat-warning"
               onClick={() => {
-                editor.select(misplaced[0].id);
+                // Each click moves on to the next object that needs a spot.
+                const current = misplaced.findIndex(
+                  (o) => o.id === editor.selectedId,
+                );
+                editor.select(misplaced[(current + 1) % misplaced.length].id);
                 editor.setTool({ type: "select" });
               }}
             >
