@@ -1,7 +1,13 @@
 export const TERRAIN_COLUMNS = 32;
 export const TERRAIN_ROWS = 24;
 export const TERRAIN_POINTS = (TERRAIN_COLUMNS + 1) * (TERRAIN_ROWS + 1);
-export const groundMaterials = ["natural", "soil", "sand", "stone"] as const;
+export const groundMaterials = [
+  "natural",
+  "soil",
+  "sand",
+  "stone",
+  "moss",
+] as const;
 export type GroundMaterial = (typeof groundMaterials)[number];
 
 interface Dimensions {

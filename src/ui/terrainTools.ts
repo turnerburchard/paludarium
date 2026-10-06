@@ -7,6 +7,7 @@ export const terrainTools: { mode: TerrainMode; label: string }[] = [
   { mode: "soil", label: "Paint soil" },
   { mode: "sand", label: "Paint sand" },
   { mode: "stone", label: "Paint stone" },
+  { mode: "moss", label: "Paint moss" },
   { mode: "pool", label: "Carve pool" },
   { mode: "stream", label: "Carve stream" },
 ];
