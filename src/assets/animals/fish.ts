@@ -10,6 +10,7 @@ export const fish: AssetDefinition = {
   description: "A small golden fish. Place it in the open water.",
   radius: 0.18,
   habitat: "water",
+  swims: { speed: 0.22, depth: 0.13 },
   build,
 };
 

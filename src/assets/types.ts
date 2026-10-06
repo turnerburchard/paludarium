@@ -37,6 +37,8 @@ export interface AssetDefinition {
   soil?: Soil;
   behavior?: AnimalBehavior;
   perches?(random: () => number): PlantPerch[];
+  /** How a fish swims: cruising speed, and how far below the surface it keeps. */
+  swims?: { speed: number; depth: number };
   /** Sheltered spots inside the object, such as under a rock overhang. */
   dens?(random: () => number): Den[];
   /** Builds a fresh model. The same seed always gives the same shape. */

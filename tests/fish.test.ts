@@ -15,6 +15,8 @@ const run = (s: FishSchool, seconds: number) => {
 const five = (): Fish[] =>
   [0, 1, 2, 3, 4].map((i) => ({
     id: `f${i}`,
+    species: "fish",
+    speed: 0.22,
     x: Math.cos(i) * 0.5,
     z: Math.sin(i) * 0.5,
     heading: i,
@@ -45,6 +47,28 @@ describe("fish school", () => {
       expect(Math.hypot(f.x - before[i].x, f.z - before[i].z)).toBeGreaterThan(
         0.2,
       ),
+    );
+  });
+
+  it("schools only with its own species", () => {
+    // A lone fish heading one way beside four heading the other.
+    const turnAfterASecond = (species: string) => {
+      const s = school([
+        { id: "lone", species, speed: 0.22, x: 0, z: 0, heading: 0 },
+        ...[0, 1, 2, 3].map((i) => ({
+          id: `f${i}`,
+          species: "tetra",
+          speed: 0.22,
+          x: Math.cos(i * 1.6) * 0.2,
+          z: Math.sin(i * 1.6) * 0.2,
+          heading: Math.PI,
+        })),
+      ]);
+      run(s, 1);
+      return Math.abs(Math.sin(s.get("lone")!.heading / 2));
+    };
+    expect(turnAfterASecond("tetra")).toBeGreaterThan(
+      turnAfterASecond("guppy") + 0.2,
     );
   });
 

@@ -67,10 +67,10 @@ export function Inhabitant({
     [],
   );
   const ground = groundHeight(object.x, object.z, environment);
-  const baseY =
-    object.kind === "fish"
-      ? Math.max(ground + 0.08, environment.water - 0.14)
-      : ground;
+  const swims = assets[object.kind].swims;
+  const baseY = swims
+    ? Math.max(ground + 0.08, environment.water - swims.depth - 0.01)
+    : ground;
   useFrame((_, frameDelta) => {
     const group = root.current;
     if (!group) return;
@@ -140,7 +140,7 @@ export function Inhabitant({
       rig.update(undefined, rigDelta);
       return;
     }
-    if (object.kind === "fish") {
+    if (swims) {
       const fish = ecosystem?.live.current!.fish.get(object.id);
       if (fish) {
         // Swim below the surface, but never sink into the ground.
@@ -148,14 +148,15 @@ export function Inhabitant({
           fish.x,
           Math.max(
             groundHeight(fish.x, fish.z, environment) + 0.05,
-            environment.water - 0.13 + Math.sin(t * 1.3) * 0.025,
+            environment.water - swims.depth + Math.sin(t * 1.3) * 0.025,
           ),
           fish.z,
         );
         group.rotation.y = fish.heading;
       }
+      // The tail beats side to side, faster for quicker fish.
       const tail = model.getObjectByName("tail");
-      if (tail) tail.rotation.z = Math.sin(t * 9) * 0.3;
+      if (tail) tail.rotation.y = Math.sin(t * swims.speed * 40) * 0.35;
     } else if (assets[object.kind].category === "Plants") {
       group.rotation.z = Math.sin(t * 0.7 + object.seed) * 0.012;
     }
