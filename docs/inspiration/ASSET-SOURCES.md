@@ -19,8 +19,9 @@ Every imported model needs a retained source, license, attribution if required, 
 | Model | Source and license | Use |
 | --- | --- | --- |
 | Tiger barb (`models/fish-quaternius.glb`) | ["Fish" by Quaternius](https://poly.pizza/m/BEcU9rjiAq), CC0 (a clownfish) | Baked by `scripts/prepare-fish-model.mjs` with its skeleton and swim clip (minus the root track, which carries the turn and scale), recolored as a tiger barb. |
+| Turtle (`models/turtle-poly-google.glb`) | ["Turtle" by Poly by Google](https://poly.pizza/m/2LCcq8vhqJ3), CC BY 3.0 | Simplified and given a simple skeleton by `scripts/prepare-turtle-model.mjs`, recolored as a painted wood turtle. |
 | Cattail (`models/cattail-poly-google.glb`) | ["Cattail" by Poly by Google](https://poly.pizza/m/9uT74BMpRrl), CC BY 3.0 | Baked by `scripts/prepare-static-models.mjs`; a shoreline plant. |
 | Snail (`models/snail-poly-google.glb`) | ["Snail" by Poly by Google](https://poly.pizza/m/aZ_cT-AIu2y), CC BY 3.0 | Baked by `scripts/prepare-static-models.mjs`; shell and body are separate parts for `SnailRig`. |
 | Gecko (`models/gecko-poly-google.glb`) | ["Salamander" by Poly by Google](https://poly.pizza/m/eqjMAgmr-pM), CC BY 3.0; its texture is named Tex_Gecko | Baked by `scripts/prepare-gecko-model.mjs` into the gold dust day gecko: turned to face -Z, scaled, fitted with the gecko skeleton and skin weights, and recolored from its four-color palette. Credited in THIRD_PARTY_NOTICES.md. |
 
-Owner-preferred look (October 6, 2026): Quaternius-style chunky low poly, as in the Animated Animal Pack and Animated Dinosaur Bundle on Poly Pizza. Candidates the owner suggested for later: turtle, hummingbird and parrot (see issue #27), black caiman, seahorse (Poly by Google, CC BY 3.0) and fish and spider (Quaternius, CC0).
+Owner-preferred look (October 6, 2026): Quaternius-style chunky low poly, as in the Animated Animal Pack and Animated Dinosaur Bundle on Poly Pizza. Candidates the owner suggested for later: hummingbird and parrot (see issue #27), black caiman, seahorse (Poly by Google, CC BY 3.0) and fish and spider (Quaternius, CC0).

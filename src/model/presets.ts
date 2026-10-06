@@ -92,6 +92,7 @@ export function makePreset(preset: Preset): World {
     add("fittonia", -1.55, 0.35, 0.9);
     add("fittonia", 0.05, 0.05, 0.85);
     add("nest-fern", -0.55, -1.25, 0.7, 2.8);
+    add("turtle", -0.6, 0.95, 1, 2.4);
     for (const [x, z, turn] of [
       [1.75, 0.95, 1.2],
       [1.95, 1.15, 1.3],
