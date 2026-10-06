@@ -377,6 +377,8 @@ button:hover:not(:disabled) {
   font-size: 11px;
   color: #bfceba;
   white-space: nowrap;
+  /* Stays legible over leaves and sand. */
+  text-shadow: 0 1px 4px #000c;
 }
 .navigation-hint i {
   height: 3px;
@@ -389,6 +391,9 @@ button:hover:not(:disabled) {
   color: #b4c6aa;
   min-height: 17px;
   text-align: center;
+}
+.status-message {
+  text-shadow: 0 1px 4px #000c;
 }
 .status-message:empty {
   visibility: hidden;
