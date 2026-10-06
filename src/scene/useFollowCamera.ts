@@ -62,7 +62,7 @@ export function useFollowCamera(
       return;
     }
     const animal = animalId
-      ? ecosystem.live.current!.engine.getAnimal(animalId)
+      ? ecosystem.live.current!.engine.observeAnimal(animalId)
       : undefined;
     if (!orbit || !animal) return;
     const { animal: position, step, offset, view } = vectors.current;

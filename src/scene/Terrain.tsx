@@ -5,6 +5,7 @@ import type { Environment } from "../model/schema";
 import { randomFromSeed } from "../model/random";
 import { terrainSamples } from "../model/terrainData";
 import { groundHeight } from "../model/terrain";
+import { makeWaterMaterial } from "./waterMaterial";
 
 function makeTerrain(env: Environment) {
   const geo = new THREE.PlaneGeometry(env.width, env.depth, 70, 48);
@@ -140,44 +141,22 @@ export function Water({
   environment: Environment;
   paused: boolean;
 }) {
-  const ref = useRef<THREE.Mesh>(null),
-    time = useRef(0);
+  const time = useRef({ value: 0 });
+  const material = useMemo(() => makeWaterMaterial(time.current), []);
+  useEffect(() => () => material.dispose(), [material]);
   useFrame((_, dt) => {
-    if (paused || !ref.current) return;
-    time.current += Math.min(dt, 0.05);
-    const p = ref.current.geometry.getAttribute("position");
-    for (let i = 0; i < p.count; i++) {
-      const x = p.getX(i),
-        y = p.getY(i);
-      p.setZ(
-        i,
-        Math.sin(x * 5 + time.current * 1.1) *
-          Math.cos(y * 4 + time.current * 0.7) *
-          0.008,
-      );
-    }
-    p.needsUpdate = true;
-    ref.current.geometry.computeVertexNormals();
+    if (!paused) time.current.value += Math.min(dt, 0.05);
   });
   if (env.water <= 0) return null;
   return (
     <mesh
-      ref={ref}
+      material={material}
       rotation={[-Math.PI / 2, 0, 0]}
       position={[0, env.water, 0]}
       receiveShadow
       renderOrder={2}
     >
       <planeGeometry args={[env.width - 0.015, env.depth - 0.015, 40, 28]} />
-      <meshStandardMaterial
-        color="#60adab"
-        transparent
-        opacity={0.47}
-        roughness={0.18}
-        metalness={0.2}
-        depthWrite={false}
-        side={THREE.DoubleSide}
-      />
     </mesh>
   );
 }
