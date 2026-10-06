@@ -18,6 +18,10 @@ const HUNGER_PER_PORTION = 0.2;
 const INSECT_GROWTH = 0.01;
 /** Newcomers let an emptied colony slowly recover instead of dying out. */
 const INSECT_ARRIVALS = 0.05;
+/** Frogs pivot on the spot before setting off at more than this angle (radians)
+ * from where they face, at TURN_RATE radians per simulated second. */
+const TURN_START = 0.8;
+const TURN_RATE = 0.6;
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const validAmount = (n: number) => Number.isFinite(n) && n >= 0;
 interface Agent {
@@ -27,6 +31,7 @@ interface Agent {
   arrival: Activity;
   reconsiderAt: number;
   edge?: { from: Vec3; normal: Vec3; progress: number; distance: number };
+  turning?: boolean;
 }
 export interface SimulationOptions {
   random?: () => number;
@@ -107,7 +112,7 @@ export class Ecosystem {
           reason: "Settling in",
           moving: false,
           surface: node.surface,
-          motion: { progress: 0, lift: 0, tilt: 0 },
+          motion: { progress: 0, lift: 0, tilt: 0, hop: false },
         },
       });
     }
@@ -310,6 +315,7 @@ export class Ecosystem {
   private move(agent: Agent) {
     const state = agent.state;
     const target = this.graph.node(agent.path[0]);
+    if (!agent.edge && this.turnToward(agent, target.position)) return;
     const edge = (agent.edge ??= {
       from: copyVector(state.position),
       normal: copyVector(state.normal),
@@ -326,7 +332,7 @@ export class Ecosystem {
       state.normal = copyVector(target.normal);
       state.nodeId = target.id;
       state.surface = target.surface;
-      state.motion = { progress: 0, lift: 0, tilt: 0 };
+      state.motion = { progress: 0, lift: 0, tilt: 0, hop: false };
       agent.edge = undefined;
       agent.path.shift();
       if (!agent.path.length) {
@@ -366,6 +372,7 @@ export class Ecosystem {
         : copyVector(target.normal);
     state.motion = {
       progress: edge.progress,
+      hop: hopping,
       lift: hopping
         ? Math.sin(flight * Math.PI) *
           (leap ? 0.18 : style === "hop" ? 0.11 : 0.08)
@@ -377,10 +384,64 @@ export class Ecosystem {
           : 0,
     };
   }
+  /** Rotates the facing toward a point about the surface normal. Returns
+   * whether the animal is still turning and should not set off yet. */
+  private turnToward(agent: Agent, point: Vec3) {
+    const state = agent.state;
+    const facing = alongSurface(state.direction, state.normal);
+    const wanted = alongSurface(
+      {
+        x: point.x - state.position.x,
+        y: point.y - state.position.y,
+        z: point.z - state.position.z,
+      },
+      state.normal,
+    );
+    const angle =
+      facing && wanted
+        ? Math.acos(Math.max(-1, Math.min(1, dot(facing, wanted))))
+        : 0;
+    // Once started, finish the turn rather than stopping at the threshold.
+    if (angle < (agent.turning ? 0.05 : TURN_START)) {
+      agent.turning = false;
+      return false;
+    }
+    agent.turning = true;
+    const n = state.normal;
+    const side = dot(n, cross(facing!, wanted!)) < 0 ? -1 : 1;
+    const step = side * Math.min(angle, TURN_RATE * STEP);
+    // Rodrigues' rotation; facing is perpendicular to the normal.
+    const across = cross(n, facing!);
+    state.direction = {
+      x: facing!.x * Math.cos(step) + across.x * Math.sin(step),
+      y: facing!.y * Math.cos(step) + across.y * Math.sin(step),
+      z: facing!.z * Math.cos(step) + across.z * Math.sin(step),
+    };
+    state.motion = { progress: 0, lift: 0, tilt: 0, hop: false };
+    return true;
+  }
   mist() {
     for (const agent of this.agents.values()) {
       agent.state.needs.hydration = clamp(agent.state.needs.hydration + 0.45);
       agent.reconsiderAt = 0;
     }
   }
+}
+
+const dot = (a: Vec3, b: Vec3) => a.x * b.x + a.y * b.y + a.z * b.z;
+const cross = (a: Vec3, b: Vec3): Vec3 => ({
+  x: a.y * b.z - a.z * b.y,
+  y: a.z * b.x - a.x * b.z,
+  z: a.x * b.y - a.y * b.x,
+});
+/** The unit direction of `v` within the surface, or undefined if it points along the normal. */
+function alongSurface(v: Vec3, normal: Vec3): Vec3 | undefined {
+  const along = dot(v, normal);
+  const x = v.x - normal.x * along,
+    y = v.y - normal.y * along,
+    z = v.z - normal.z * along;
+  const length = Math.hypot(x, y, z);
+  return length < 1e-6
+    ? undefined
+    : { x: x / length, y: y / length, z: z / length };
 }

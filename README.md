@@ -48,7 +48,7 @@ Conventions:
 
 **Adding an asset:** add its kind to `assetKinds` in the schema, write a definition file under `src/assets/` (see `plants/fern.ts` for a small one), and register it in `src/assets/index.ts`. TypeScript flags any kind without a definition. To swap a model, change only that asset's `build` function.
 
-**Frog model:** `scripts/prepare-frog-model.mjs` normalizes the original GLB (`docs/inspiration/preferred-frog-original.glb`) into the baked rest pose in `src/assets/animals/frog.json`. `src/assets/animals/frogs.ts` defines each species: proportions, coloring, markings and behavior. The GLB's rig and animation clips aren't used yet.
+**Frog model:** `scripts/prepare-frog-model.mjs` bakes the original GLB (`docs/inspiration/preferred-frog-original.glb`) into `src/assets/animals/frog.json`: the reshaped mesh with its skin weights, the skeleton, and the Idle, Jump and Attack clips. `src/assets/animals/frogs.ts` defines each species: proportions, coloring, markings and behavior. `src/scene/frogRig.ts` animates it: the jump clip follows each hop's progress, the frog breathes and sleeps low, and between hops its feet stay planted on the surface and step as the body moves or turns.
 
 ## Current behavior and limits
 
@@ -56,7 +56,7 @@ Conventions:
 - Undo covers the last 60 edits, including replacing a world.
 - Up to 120 objects. Dense plantings can be heavy on mobile GPUs.
 - Plants and frogs need dry ground and fish need water depth. Raising the water can invalidate existing placements, which get flagged.
-- Frogs seek food, water, rest, and sleep. Tree frogs climb connected glass and plant stems, rest on monstera, fern, and bromeliad foliage, and leap between nearby leaves. Dart frogs make short ground hops; mossy frogs crawl and use low perches. Movement is stylized rather than animated with a skeletal rig. Fish swim as a loose school in open water and turn back from the shore; they don't eat or get hungry yet.
+- Frogs seek food, water, rest, and sleep. Tree frogs climb connected glass and plant stems, rest on monstera, fern, and bromeliad foliage, and leap between nearby leaves. Dart frogs make short ground hops; mossy frogs crawl and use low perches. Frogs are animated with the source model's rig: a crouch before each hop, a landing, turns on the spot, and feet that stay on the surface while they crawl or climb. Fish swim as a loose school in open water and turn back from the shore; they don't eat or get hungry yet.
 - Insects breed in colonies under plant and moss cover, growing back toward a capacity set by that cover. A well-planted tank feeds its frogs without help; the Life panel shows how many frogs the insects can support.
 - Each plant likes a soil (water's edge, damp, or well drained up the bank), measured by height above the waterline. A plant outside its band struggles and gives less cover; the inspector says why.
 - The simulation runs only while the tab is visible. Only the layout is saved, and nothing advances while the app is closed.

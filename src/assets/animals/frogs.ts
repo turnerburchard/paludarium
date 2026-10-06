@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { AssetDefinition } from "../types";
-import frogParts from "./frog.json";
+import frogModel from "./frog.json";
 
 interface Appearance {
   back: string;
@@ -125,12 +125,55 @@ export const mossyFrog: AssetDefinition = {
     ),
 };
 
-/** Artist-authored silhouette and topology; colors vary without changing saved IDs.
+/** The source rig's clips, shared by every frog. They animate bones by name. */
+export const frogClips = Object.fromEntries(
+  Object.entries(frogModel.clips).map(([name, clip]) => [
+    name,
+    new THREE.AnimationClip(
+      name,
+      clip.duration,
+      clip.tracks.map((track) =>
+        track.path === "quaternion"
+          ? new THREE.QuaternionKeyframeTrack(
+              `${track.bone}.quaternion`,
+              track.times,
+              track.values,
+            )
+          : new THREE.VectorKeyframeTrack(
+              `${track.bone}.${track.path}`,
+              track.times,
+              track.values,
+            ),
+      ),
+    ),
+  ]),
+) as Record<keyof typeof frogModel.clips, THREE.AnimationClip>;
+
+/** Artist-authored silhouette, topology and rig; colors vary without changing saved IDs.
  * Source: Quaternius, poly.pizza/m/9Z2V8fpazF, CC0.
- * Rest-pose preparation and the original rig live outside the renderer.
+ * scripts/prepare-frog-model.mjs bakes the mesh, skin weights, skeleton and clips.
  */
 function buildFrog(appearance: Appearance, random: () => number) {
   const root = new THREE.Group();
+  const bones = frogModel.bones.map((data) => {
+    const bone = new THREE.Bone();
+    bone.name = data.name;
+    bone.position.fromArray(data.position);
+    bone.quaternion.fromArray(data.quaternion);
+    bone.scale.fromArray(data.scale);
+    return bone;
+  });
+  frogModel.bones.forEach((data, i) =>
+    (data.parent < 0 ? root : bones[data.parent]).add(bones[i]),
+  );
+  // Scale before binding so the skeleton's rest pose includes the proportions.
+  root.scale.set(
+    appearance.size,
+    appearance.height * appearance.size,
+    appearance.size,
+  );
+  root.updateMatrixWorld(true);
+  const skeleton = new THREE.Skeleton(bones);
   const back = new THREE.Color(appearance.back);
   const belly = new THREE.Color(appearance.belly);
   const feet = new THREE.Color(appearance.feet);
@@ -144,12 +187,24 @@ function buildFrog(appearance: Appearance, random: () => number) {
     stretch: 0.65 + random() * 0.7,
   }));
 
-  for (const part of frogParts) {
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute(
+  for (const part of frogModel.parts) {
+    const indexed = new THREE.BufferGeometry();
+    indexed.setAttribute(
       "position",
       new THREE.Float32BufferAttribute(part.positions, 3),
     );
+    indexed.setAttribute(
+      "skinIndex",
+      new THREE.Uint16BufferAttribute(part.skinIndex, 4),
+    );
+    indexed.setAttribute(
+      "skinWeight",
+      new THREE.Float32BufferAttribute(part.skinWeight, 4),
+    );
+    indexed.setIndex(part.index);
+    // Separate faces so markings can paint whole facets.
+    const geometry = indexed.toNonIndexed();
+    indexed.dispose();
     geometry.computeVertexNormals();
     const skin = part.material === "Green";
     const baseColor =
@@ -210,16 +265,11 @@ function buildFrog(appearance: Appearance, random: () => number) {
       }
       geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     }
-    geometry.scale(
-      appearance.size,
-      appearance.height * appearance.size,
-      appearance.size,
-    );
-    geometry.computeBoundingSphere();
-    const mesh = new THREE.Mesh(geometry, material);
+    const mesh = new THREE.SkinnedMesh(geometry, material);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     root.add(mesh);
+    mesh.bind(skeleton);
   }
   return root;
 }

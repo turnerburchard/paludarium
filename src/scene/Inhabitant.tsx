@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { assets, buildAsset, disposeAsset, isFrog } from "../assets";
 import type { Environment, HabitatObject } from "../model/schema";
 import { groundHeight } from "../model/terrain";
+import { FrogRig } from "./frogRig";
 
 interface Props {
   object: HabitatObject;
@@ -33,6 +34,10 @@ export function Inhabitant({
     [object.kind, object.seed],
   );
   const frog = isFrog(object.kind);
+  const rig = useMemo(
+    () => (frog ? new FrogRig(model) : undefined),
+    [frog, model],
+  );
   useEffect(() => () => disposeAsset(model), [model]);
   useEffect(() => {
     clock.current = 0;
@@ -56,6 +61,8 @@ export function Inhabitant({
       back: new THREE.Vector3(),
       matrix: new THREE.Matrix4(),
       rotation: new THREE.Quaternion(),
+      facing: new THREE.Quaternion(),
+      faced: false,
     }),
     [],
   );
@@ -64,14 +71,17 @@ export function Inhabitant({
     object.kind === "fish"
       ? Math.max(ground + 0.08, environment.water - 0.14)
       : ground;
-  useFrame((_, dt) => {
+  useFrame((_, frameDelta) => {
     const group = root.current;
     if (!group) return;
-    if (!paused && !selected && !ghost) clock.current += Math.min(dt, 0.05);
+    const dt = Math.min(frameDelta, 0.05);
+    if (!paused && !selected && !ghost) clock.current += dt;
     const t = clock.current;
+    // A watched frog stays selected while it moves, so only pausing stops it.
+    const rigDelta = paused ? 0 : dt;
     group.position.set(object.x, baseY, object.z);
     group.rotation.set(0, object.rotation, 0);
-    if (frog && !ghost && ecosystem) {
+    if (rig && !ghost && ecosystem) {
       const state = ecosystem.live.current!.engine.observeAnimal(object.id);
       if (state) {
         group.position.set(
@@ -112,18 +122,22 @@ export function Inhabitant({
         pose.right.crossVectors(pose.normal, pose.back).normalize();
         pose.matrix.makeBasis(pose.right, pose.normal, pose.back);
         pose.rotation.setFromRotationMatrix(pose.matrix);
-        group.quaternion.copy(pose.rotation);
+        // Ease into new headings so a change of edge reads as a turn, not a snap.
+        if (pose.faced)
+          pose.facing.slerp(pose.rotation, 1 - Math.exp(-12 * rigDelta));
+        else pose.facing.copy(pose.rotation);
+        pose.faced = true;
+        group.quaternion.copy(pose.facing);
         group.position.y += state.motion.lift;
         group.rotateX(state.motion.tilt);
-        model.scale.y =
-          state.activity === "sleeping" ? 0.92 : 1 + Math.sin(t * 2.5) * 0.01;
+        rig.update(state, rigDelta);
         return;
       }
     }
     if (ghost || selected) return;
     // A frog without a reachable surface remains idle at its saved placement.
-    if (frog) {
-      model.scale.y = 1;
+    if (rig) {
+      rig.update(undefined, rigDelta);
       return;
     }
     if (object.kind === "fish") {

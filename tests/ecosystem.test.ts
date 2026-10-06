@@ -51,7 +51,8 @@ function seed(
   id = "frog",
   needs = { hunger: 0.8, hydration: 0.8, energy: 0.8 },
 ): AnimalSeed {
-  return { id, species, nodeId: "a", needs };
+  // Facing along the test routes, so arrivals don't wait on a turn.
+  return { id, species, nodeId: "a", needs, direction: { x: 1, y: 0, z: 0 } };
 }
 function run(engine: Ecosystem, seconds: number) {
   for (let i = 0; i < seconds * 10; i++) engine.advance(0.1);
@@ -456,6 +457,32 @@ describe("plant perches and species movement", () => {
     expect(crawlLift).toBe(0);
     for (const engine of engines)
       expect(engine.getAnimal("frog")!.nodeId).toBe("b");
+  });
+  it("turns in place before setting off away from where it faces", () => {
+    const graph = new HabitatGraph([
+      node("a", 0, ["b"]),
+      node("b", 0.3, ["a"]),
+    ]);
+    const engine = new Ecosystem(
+      graph,
+      [{ ...seed(), direction: { x: -1, y: 0, z: 0 } }],
+      {
+        speed: 1,
+        elapsed: 1000,
+        food: [{ nodeId: "b", amount: 3, capacity: 0 }],
+      },
+    );
+    // Facing the opposite way, it pivots on the spot through every
+    // direction in between before it takes a step.
+    let pivotSteps = 0;
+    for (let step = 0; step < 200; step++) {
+      engine.advance(0.1);
+      const frog = engine.getAnimal("frog")!;
+      if (frog.position.x > 0) break;
+      if (Math.abs(frog.direction.x) < 0.9) pivotSteps++;
+    }
+    expect(pivotSteps).toBeGreaterThan(10);
+    expect(engine.getAnimal("frog")!.position.x).toBeGreaterThan(0);
   });
   it("leaves a frog without reachable ground idle instead of creating a second behavior path", () => {
     const world = plantWorld();

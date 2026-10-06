@@ -1,5 +1,6 @@
-/** Bake the CC0 reference's rest pose for the existing synchronous asset factory.
- * The original GLB and animation rig remain in docs/inspiration for later rig work.
+/** Bake the CC0 reference frog into data the synchronous asset factory can use:
+ * the reshaped, simplified mesh with its skin weights, the skeleton in habitat
+ * space, and the animation clips the renderer plays.
  * Run from the repository root: node scripts/prepare-frog-model.mjs
  */
 import { readFileSync, writeFileSync } from "node:fs";
@@ -7,7 +8,9 @@ import {
   Box3,
   BufferGeometry,
   Float32BufferAttribute,
+  Matrix4,
   Mesh,
+  Quaternion,
   Vector3,
 } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -23,17 +26,43 @@ gltf.scene.updateMatrixWorld(true);
 const bounds = new Box3().setFromObject(gltf.scene);
 const center = bounds.getCenter(new Vector3());
 const scale = 0.62 / (bounds.max.x - bounds.min.x);
-function habitatPoint(point) {
-  return new Vector3(
-    -(point.x - center.x) * scale,
-    (point.y - bounds.min.y) * scale,
-    -(point.z - center.z) * scale,
-  );
-}
-const bones = new Map();
+// The source faces +Z; the habitat's animal convention faces -Z, so turn it
+// half a revolution about Y after centering it on its feet.
+const habitat = new Matrix4()
+  .makeRotationY(Math.PI)
+  .multiply(new Matrix4().makeScale(scale, scale, scale))
+  .multiply(new Matrix4().makeTranslation(-center.x, -bounds.min.y, -center.z));
+const habitatPoint = (point) => point.clone().applyMatrix4(habitat);
+
+// Every node under the armature's root bone, including the "_end" tips the
+// renderer uses as leg effectors. The root carries the habitat transform so
+// that the clips, which animate its descendants, keep their original values.
+const rootBone = gltf.scene.getObjectByName("root");
+const bones = [];
+const boneIndex = new Map();
+rootBone.traverse((node) => {
+  boneIndex.set(node, bones.length);
+  const local =
+    node === rootBone
+      ? habitat.clone().multiply(node.matrixWorld)
+      : node.matrix.clone();
+  const position = new Vector3();
+  const quaternion = new Quaternion();
+  const size = new Vector3();
+  local.decompose(position, quaternion, size);
+  bones.push({
+    name: node.name,
+    parent: node === rootBone ? -1 : boneIndex.get(node.parent),
+    position: round(position.toArray(), 6),
+    quaternion: round(quaternion.toArray(), 6),
+    scale: round(size.toArray(), 6),
+  });
+});
+
+const joints = new Map();
 gltf.scene.traverse((object) => {
   if (object.isBone)
-    bones.set(
+    joints.set(
       object.name,
       habitatPoint(object.getWorldPosition(new Vector3())),
     );
@@ -47,22 +76,26 @@ const limbSegments = [
   ["BackUpLegL", "BackLowLegL"],
   ["BackLegR", "BackUpLegR"],
   ["BackUpLegR", "BackLowLegR"],
-].map(([a, b]) => [bones.get(a), bones.get(b)]);
+].map(([a, b]) => [joints.get(a), joints.get(b)]);
 const reduction = { Green: 0.48, Yellow: 0.4, Red: 0.7, Black: 0.5 };
 const parts = [];
 gltf.scene.traverse((object) => {
   if (!(object instanceof Mesh)) return;
   const geometry = object.geometry;
   const positions = geometry.getAttribute("position");
+  const skinIndices = geometry.getAttribute("skinIndex");
+  const skinWeights = geometry.getAttribute("skinWeight");
   const index = geometry.index;
   const vertices = [];
+  // Simplification only collapses vertices onto existing ones, so each
+  // surviving position finds its original skin weights by exact lookup.
+  const skins = new Map();
   const point = new Vector3();
   for (let i = 0; i < (index?.count ?? positions.count); i++) {
     const vertex = index ? index.getX(i) : i;
     point.fromBufferAttribute(positions, vertex);
     if (object.isSkinnedMesh) object.applyBoneTransform(vertex, point);
     point.applyMatrix4(object.matrixWorld);
-    // The source faces +Z; the habitat's animal convention faces -Z.
     point.copy(habitatPoint(point));
     // Add substance perpendicular to the limb bones, rather than inflating the torso.
     if (Math.abs(point.x) > 0.12 && point.y > 0.025) {
@@ -96,7 +129,17 @@ gltf.scene.traverse((object) => {
       const eyeX = x < 0 ? -0.076 : 0.073;
       x = eyeX + (x - eyeX) * 1.4;
     }
-    vertices.push(...[x, y, z].map((v) => Number(v.toFixed(6))));
+    const baked = [x, y, z].map((v) => Math.fround(Number(v.toFixed(6))));
+    vertices.push(...baked);
+    const key = baked.join();
+    if (!skins.has(key))
+      skins.set(key, {
+        index: [0, 1, 2, 3].map(
+          (k) =>
+            boneIndex.get(object.skeleton.bones[skinIndices.getComponent(vertex, k)]),
+        ),
+        weight: [0, 1, 2, 3].map((k) => skinWeights.getComponent(vertex, k)),
+      });
   }
   // Simplify offline so runtime factories stay small and readable. Material
   // regions are processed separately to retain the eyes and belly color boundary.
@@ -109,19 +152,56 @@ gltf.scene.traverse((object) => {
       welded.getAttribute("position").count * reduction[object.material.name],
     ),
   );
-  const flat = simplified.toNonIndexed();
-  parts.push({
+  const kept = simplified.getAttribute("position");
+  const part = {
     material: object.material.name,
-    positions: Array.from(flat.getAttribute("position").array, (v) =>
-      Number(v.toFixed(6)),
-    ),
-  });
+    positions: round(Array.from(kept.array), 6),
+    index: Array.from(simplified.index.array),
+    skinIndex: [],
+    skinWeight: [],
+  };
+  for (let i = 0; i < kept.count; i++) {
+    const skin = skins.get([kept.getX(i), kept.getY(i), kept.getZ(i)].join());
+    if (!skin) throw new Error(`No skin weights for ${object.name} vertex ${i}`);
+    part.skinIndex.push(...skin.index);
+    part.skinWeight.push(...round(skin.weight, 3));
+  }
+  parts.push(part);
   baked.dispose();
   welded.dispose();
   simplified.dispose();
-  flat.dispose();
 });
-writeFileSync("src/assets/animals/frog.json", JSON.stringify(parts));
-console.log(
-  `Prepared ${parts.reduce((n, p) => n + p.positions.length / 9, 0)} triangles.`,
+
+const clipNames = { idle: "Frog_Idle", jump: "Frog_Jump", attack: "Frog_Attack" };
+const clips = Object.fromEntries(
+  Object.entries(clipNames).map(([key, name]) => {
+    const clip = gltf.animations.find((a) => a.name.endsWith(name));
+    return [
+      key,
+      {
+        duration: Number(clip.duration.toFixed(4)),
+        tracks: clip.tracks.map((track) => {
+          const [bone, path] = track.name.split(".");
+          return {
+            bone,
+            path,
+            times: round(Array.from(track.times), 4),
+            values: round(Array.from(track.values), 5),
+          };
+        }),
+      },
+    ];
+  }),
 );
+
+writeFileSync(
+  "src/assets/animals/frog.json",
+  JSON.stringify({ bones, parts, clips }),
+);
+console.log(
+  `Prepared ${parts.reduce((n, p) => n + p.index.length / 3, 0)} triangles, ${bones.length} bones.`,
+);
+
+function round(values, digits) {
+  return values.map((v) => Number(v.toFixed(digits)));
+}
