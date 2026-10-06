@@ -27,7 +27,9 @@ export function useEditor() {
   });
   const world = history.present;
   // A gesture previews only its original world; committing retires it.
-  const [preview, setPreview] = useState<{ base: World; world: World } | null>(null);
+  const [preview, setPreview] = useState<{ base: World; world: World } | null>(
+    null,
+  );
   const shown = preview?.base === world ? preview.world : world;
   const stroke = useRef<TerrainStroke | null>(null);
   const [tool, setTool] = useState<Tool>({ type: "select" });
@@ -73,10 +75,17 @@ export function useEditor() {
   function beginTerrainStroke(x: number, z: number) {
     if (tool.type !== "terrain") return;
     stroke.current = new TerrainStroke(history.present, tool);
-    setPreview({ base: stroke.current.original, world: stroke.current.dab(x, z) });
+    setPreview({
+      base: stroke.current.original,
+      world: stroke.current.dab(x, z),
+    });
   }
   function continueTerrainStroke(x: number, z: number) {
-    if (stroke.current) setPreview({ base: stroke.current.original, world: stroke.current.dab(x, z) });
+    if (stroke.current)
+      setPreview({
+        base: stroke.current.original,
+        world: stroke.current.dab(x, z),
+      });
   }
   function endTerrainStroke() {
     const current = stroke.current;

@@ -62,7 +62,7 @@ button:hover:not(:disabled) {
 .app {
   height: 100dvh;
   min-height: 560px;
-  overflow: hidden;
+  overflow: clip;
   position: relative;
 }
 .scene-shell {
@@ -869,11 +869,13 @@ button:hover:not(:disabled) {
     transform: translateY(105%);
     transition: transform 0.25s ease;
     pointer-events: none;
+    visibility: hidden;
     z-index: 20;
   }
   .sheet-open .sidebar {
     transform: none;
     pointer-events: auto;
+    visibility: visible;
   }
   .sheet-only {
     display: flex;

@@ -466,6 +466,5 @@ describe("plant perches and species movement", () => {
     expect(engine.snapshot().animals).toEqual([]);
     run(engine, 20);
     expect(engine.snapshot().animals).toEqual([]);
-
   });
 });
