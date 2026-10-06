@@ -1,6 +1,7 @@
 import { Copy, Eye, Move, RotateCw, Trash2, X } from "lucide-react";
 import { assets, isFrog } from "../assets";
 import type { Editor } from "../editor/useEditor";
+import { plantCondition } from "../model/plants";
 import type { HabitatObject } from "../model/schema";
 import { IconButton } from "./IconButton";
 import { RangeControl } from "./RangeControl";
@@ -15,6 +16,7 @@ export function Inspector({
   onWatch: () => void;
 }) {
   const asset = assets[object.kind];
+  const condition = plantCondition(object, editor.world.environment);
   return (
     <aside className="inspector" aria-label="Selected object">
       <div className="inspector-heading">
@@ -30,6 +32,17 @@ export function Inspector({
         <p className="species-name">{asset.scientificName}</p>
       )}
       <p>{asset.description}</p>
+      {condition && (
+        <p
+          className={
+            condition.thriving
+              ? "plant-condition"
+              : "plant-condition struggling"
+          }
+        >
+          {condition.note}
+        </p>
+      )}
       {isFrog(object.kind) && (
         <button className="watch-button" onClick={onWatch}>
           <Eye size={17} />

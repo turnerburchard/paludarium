@@ -1,4 +1,5 @@
 import type * as THREE from "three";
+import type { Soil } from "../model/plants";
 import type { AssetKind } from "../model/schema";
 
 export type Category = "Plants" | "Landscape" | "Animals";
@@ -22,8 +23,10 @@ export interface AssetDefinition {
   habitat: "land" | "water" | "either";
   /** Frogs route around it. */
   blocksMovement?: boolean;
-  /** Frogs prefer to rest and sleep near it. */
+  /** Frogs prefer to rest and sleep near it, and insects breed under it. */
   shelter?: boolean;
+  /** Plants grow well only in the soil they like. */
+  soil?: Soil;
   frog?: FrogBehavior;
   /** Builds a fresh model. The same seed always gives the same shape. */
   build(random: () => number): THREE.Group;

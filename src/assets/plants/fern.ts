@@ -10,6 +10,7 @@ export const fern: AssetDefinition = {
   radius: 0.36,
   habitat: "land",
   shelter: true,
+  soil: "damp",
   build,
 };
 

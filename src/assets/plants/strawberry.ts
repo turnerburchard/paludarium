@@ -12,6 +12,7 @@ export const strawberry: AssetDefinition = {
   radius: 0.34,
   habitat: "land",
   shelter: true,
+  soil: "drained",
   build,
 };
 

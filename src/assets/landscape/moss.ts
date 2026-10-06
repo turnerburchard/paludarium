@@ -11,6 +11,7 @@ export const moss: AssetDefinition = {
   radius: 0.4,
   habitat: "land",
   shelter: true,
+  soil: "damp",
   build,
 };
 

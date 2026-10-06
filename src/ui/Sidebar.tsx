@@ -59,6 +59,7 @@ export function Sidebar({
           <EnvironmentPanel editor={editor} />
         ) : (
           <LifePanel
+            world={editor.world}
             ecosystem={ecosystem}
             selectedId={editor.selectedId}
             paused={editor.paused}
