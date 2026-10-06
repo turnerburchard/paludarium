@@ -37,6 +37,7 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
         max={1}
         step={0.05}
         format={(n) => (n < 0.35 ? "Cool" : n > 0.65 ? "Warm" : "Neutral")}
+        onPreview={(warmth) => editor.previewEnvironment({ warmth })}
         onCommit={(warmth) => editor.changeEnvironment({ warmth })}
       />
       <RangeControl
@@ -46,6 +47,7 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
         max={1.6}
         step={0.05}
         format={(n) => `${Math.round(n * 100)}%`}
+        onPreview={(brightness) => editor.previewEnvironment({ brightness })}
         onCommit={(brightness) => editor.changeEnvironment({ brightness })}
       />
       <div className="section-label">THE ENCLOSURE</div>
@@ -56,6 +58,7 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
         max={9}
         step={0.5}
         format={(n) => `${Math.round(n * 10)} cm`}
+        onPreview={(width) => editor.previewEnvironment({ width })}
         onCommit={(width) => editor.changeEnvironment({ width })}
       />
       <RangeControl
@@ -65,6 +68,7 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
         max={6}
         step={0.5}
         format={(n) => `${Math.round(n * 10)} cm`}
+        onPreview={(depth) => editor.previewEnvironment({ depth })}
         onCommit={(depth) => editor.changeEnvironment({ depth })}
       />
       <RangeControl
@@ -74,6 +78,7 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
         max={0.55}
         step={0.01}
         format={(n) => `${(n * 10).toFixed(1)} cm`}
+        onPreview={(substrate) => editor.previewEnvironment({ substrate })}
         onCommit={(substrate) => editor.changeEnvironment({ substrate })}
       />
       <RangeControl
@@ -83,6 +88,7 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
         max={0.9}
         step={0.01}
         format={(n) => (n === 0 ? "Dry" : `${(n * 10).toFixed(1)} cm`)}
+        onPreview={(water) => editor.previewEnvironment({ water })}
         onCommit={(water) => editor.changeEnvironment({ water })}
       />
       <p className="panel-note">

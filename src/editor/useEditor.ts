@@ -23,6 +23,10 @@ export function useEditor() {
     future: [],
   });
   const world = history.present;
+  // Shown instead of the saved world while a slider is being dragged, so the
+  // scene follows the gesture but history only records its end.
+  const [preview, setPreview] = useState<World | null>(null);
+  useEffect(() => setPreview(null), [world]);
   const [tool, setTool] = useState<Tool>({ type: "select" });
   const [selectedId, select] = useState<string | null>(null);
   const [message, notify] = useState(initial.warning ?? "");
@@ -47,13 +51,8 @@ export function useEditor() {
   }, [world]);
   const patchObject = useCallback(
     (id: string, patch: Partial<HabitatObject>) => {
-      const current = worldRef.current;
-      commit({
-        ...current,
-        objects: current.objects.map((o) =>
-          o.id === id ? fitObject({ ...o, ...patch }, current.environment) : o,
-        ),
-      });
+      setPreview(null);
+      commit(withObjectPatch(worldRef.current, id, patch));
     },
     [commit],
   );
@@ -177,12 +176,8 @@ export function useEditor() {
     notify(`${assets[kind].name} added. Place another, or finish.`);
   }
   function changeEnvironment(patch: Partial<Environment>) {
-    const environment = { ...world.environment, ...patch };
-    commit({
-      ...world,
-      environment,
-      objects: world.objects.map((o) => fitObject(o, environment)),
-    });
+    setPreview(null);
+    commit(withEnvironment(world, patch));
   }
   function rename(name: string) {
     if (name !== world.name) commit({ ...world, name });
@@ -205,7 +200,14 @@ export function useEditor() {
     notify("");
   }
   return {
-    world,
+    /** What to show: the saved world, or a slider gesture in progress. */
+    world: preview ?? world,
+    /** The saved world, ignoring any gesture in progress. */
+    savedWorld: world,
+    previewEnvironment: (patch: Partial<Environment>) =>
+      setPreview(withEnvironment(world, patch)),
+    previewObject: (id: string, patch: Partial<HabitatObject>) =>
+      setPreview(withObjectPatch(world, id, patch)),
     tool,
     setTool,
     selected,
@@ -236,3 +238,25 @@ export function useEditor() {
   };
 }
 export type Editor = ReturnType<typeof useEditor>;
+
+function withEnvironment(world: World, patch: Partial<Environment>): World {
+  const environment = { ...world.environment, ...patch };
+  return {
+    ...world,
+    environment,
+    objects: world.objects.map((o) => fitObject(o, environment)),
+  };
+}
+
+function withObjectPatch(
+  world: World,
+  id: string,
+  patch: Partial<HabitatObject>,
+): World {
+  return {
+    ...world,
+    objects: world.objects.map((o) =>
+      o.id === id ? fitObject({ ...o, ...patch }, world.environment) : o,
+    ),
+  };
+}
