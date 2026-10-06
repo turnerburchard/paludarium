@@ -25,6 +25,11 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
         <dd>Drag with one finger or the mouse. Pinch or scroll to zoom.</dd>
         <dt>Rearrange</dt>
         <dd>Select an object, choose Move, then tap its new home.</dd>
+        <dt>Watch a frog</dt>
+        <dd>
+          Select a frog and choose Watch up close. The camera follows it while
+          it goes about its day. Escape stops watching.
+        </dd>
         <dt>Turn</dt>
         <dd>R rotates; Shift R rotates the other way.</dd>
         <dt>Undo / redo</dt>

@@ -1,5 +1,5 @@
-import { Copy, Move, RotateCw, Trash2, X } from "lucide-react";
-import { assets } from "../assets";
+import { Copy, Eye, Move, RotateCw, Trash2, X } from "lucide-react";
+import { assets, isFrog } from "../assets";
 import type { Editor } from "../editor/useEditor";
 import type { HabitatObject } from "../model/schema";
 import { IconButton } from "./IconButton";
@@ -8,9 +8,11 @@ import { RangeControl } from "./RangeControl";
 export function Inspector({
   editor,
   object,
+  onWatch,
 }: {
   editor: Editor;
   object: HabitatObject;
+  onWatch: () => void;
 }) {
   const asset = assets[object.kind];
   return (
@@ -28,6 +30,12 @@ export function Inspector({
         <p className="species-name">{asset.scientificName}</p>
       )}
       <p>{asset.description}</p>
+      {isFrog(object.kind) && (
+        <button className="watch-button" onClick={onWatch}>
+          <Eye size={17} />
+          Watch up close
+        </button>
+      )}
       <div className="object-actions">
         <button onClick={editor.move}>
           <Move size={18} />

@@ -1,16 +1,7 @@
 import type { EcosystemController } from "../simulation/useEcosystem";
 import { frogsSupported } from "../simulation/engine";
-import type { Activity, FoodPatch } from "../simulation/types";
-const labels: Record<Activity, string> = {
-  exploring: "Exploring",
-  "seeking-food": "Looking for insects",
-  eating: "Eating insects",
-  "seeking-water": "Heading to the shoreline",
-  bathing: "Soaking",
-  "seeking-shelter": "Finding a resting spot",
-  sleeping: "Sleeping",
-  resting: "Resting",
-};
+import type { FoodPatch } from "../simulation/types";
+import { AnimalStatus } from "./AnimalStatus";
 export function LifePanel({
   ecosystem,
   selectedId,
@@ -48,32 +39,7 @@ export function LifePanel({
         <span>{plural(frogs, "frog")}</span>
       </div>
       {animal ? (
-        <>
-          <strong>{labels[animal.activity]}</strong>
-          <p>{animal.reason}</p>
-          <div className="life-needs">
-            {(
-              [
-                ["Fullness", 1 - animal.needs.hunger],
-                ["Hydration", animal.needs.hydration],
-                ["Energy", animal.needs.energy],
-              ] as const
-            ).map(([label, value]) => (
-              <label key={label}>
-                <span>{label}</span>
-                <meter
-                  aria-label={label}
-                  min={0}
-                  max={1}
-                  low={0.3}
-                  high={0.7}
-                  optimum={1}
-                  value={value}
-                />
-              </label>
-            ))}
-          </div>
-        </>
+        <AnimalStatus animal={animal} />
       ) : (
         <p>
           {thirsty

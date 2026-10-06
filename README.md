@@ -21,7 +21,7 @@ npm run test:e2e
 
 ## Controls
 
-Drag to orbit and scroll to zoom. On desktop, WASD pans the camera (Shift to move faster); **Reset Camera** restores the default view. Keyboard navigation is ignored while typing in fields or dialogs.
+Drag to orbit and scroll to zoom. Select a frog and choose **Watch up close** to follow it with the camera. On desktop, WASD pans the camera (Shift to move faster); **Reset Camera** restores the default view. Keyboard navigation is ignored while typing in fields or dialogs.
 
 ## Architecture
 

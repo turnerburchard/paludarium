@@ -146,6 +146,13 @@ try {
     .getByRole("button", { name: "Undo (⌘/Ctrl Z)", exact: true })
     .click();
   assert.equal((await saved()).objects[0].x, frog.x, "undo move");
+  await clickWorld(frog.x, 0.95, frog.z);
+  await page.getByRole("button", { name: "Watch up close" }).click();
+  await page.getByRole("complementary", { name: "Watching" }).waitFor();
+  await page.keyboard.press("Escape");
+  await page
+    .getByRole("complementary", { name: "Watching" })
+    .waitFor({ state: "detached" });
   await page.getByRole("button", { name: "New world", exact: true }).click();
   await page.getByRole("button", { name: /Cloud forest.*Monstera/ }).click();
   world = await saved();
@@ -239,7 +246,7 @@ try {
   });
   assert.deepEqual(errors, [], "no browser runtime errors");
   console.log(
-    "PASS: placement, selection, canceled copy/move, move, undo, presets, persistence, export, invalid import, mobile layout, keyboard slider, runtime errors",
+    "PASS: placement, selection, canceled copy/move, move, undo, watch, presets, persistence, export, invalid import, mobile layout, keyboard slider, runtime errors",
   );
 } finally {
   await browser?.close();

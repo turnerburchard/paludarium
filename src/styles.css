@@ -497,6 +497,33 @@ button:hover:not(:disabled) {
   color: #a9bba1;
   margin: 10px 0 19px;
 }
+.watch-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: -6px 0 16px;
+  padding: 9px;
+  border: 1px solid #536b49;
+  border-radius: 7px;
+  background: #2b422f;
+  color: #deedc0;
+  font-size: 12px;
+  cursor: pointer;
+}
+.watch-button:hover {
+  background: #38533c;
+}
+.inspector strong {
+  display: block;
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.inspector strong + p {
+  margin: 4px 0 12px;
+}
 .object-actions {
   display: flex;
   justify-content: space-between;

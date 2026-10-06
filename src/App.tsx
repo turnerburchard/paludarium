@@ -15,6 +15,7 @@ import { SceneBoundary } from "./ui/SceneBoundary";
 import { SceneTools } from "./ui/SceneTools";
 import { Sidebar, type Panel } from "./ui/Sidebar";
 import { TopBar } from "./ui/TopBar";
+import { WatchCard } from "./ui/WatchCard";
 
 export default function App() {
   const editor = useEditor();
@@ -24,6 +25,10 @@ export default function App() {
   const [view, setView] = useState(false);
   const [resetCamera, setResetCamera] = useState(0);
   const [dialog, setDialog] = useState<"new-world" | "help" | null>(null);
+  const [watchRequest, setWatchRequest] = useState<string | null>(null);
+  // Deselecting (Escape, clicking away) also stops watching.
+  const watchingId =
+    watchRequest && watchRequest === selected?.id ? watchRequest : null;
 
   useEffect(() => {
     if (selected && isFrog(selected.kind)) setPanel("life");
@@ -62,6 +67,7 @@ export default function App() {
             resetCamera={resetCamera}
             view={view}
             ecosystem={ecosystem}
+            watchingId={watchingId}
           />
         </SceneBoundary>
       </div>
@@ -78,8 +84,19 @@ export default function App() {
       {!view && world.objects.length === 0 && tool.type === "select" && (
         <EmptyInvitation onPreset={startPreset} />
       )}
-      {!view && selected && tool.type === "select" && (
-        <Inspector editor={editor} object={selected} />
+      {!view && selected && tool.type === "select" && !watchingId && (
+        <Inspector
+          editor={editor}
+          object={selected}
+          onWatch={() => setWatchRequest(selected.id)}
+        />
+      )}
+      {!view && selected && watchingId && (
+        <WatchCard
+          object={selected}
+          ecosystem={ecosystem}
+          onStop={() => setWatchRequest(null)}
+        />
       )}
       <SceneTools
         editor={editor}
