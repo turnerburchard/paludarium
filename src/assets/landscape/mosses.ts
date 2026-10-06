@@ -146,14 +146,15 @@ function colorFaces(
 }
 
 /** A lumpy, faceted dome, lighter on top as cushions bleach in the light. */
-function dome(
+export function dome(
   radius: number,
   height: number,
   species: MossSpecies,
   random: () => number,
   roughness = 0.12,
+  detail = 2,
 ) {
-  const geometry = new THREE.IcosahedronGeometry(1, 2).toNonIndexed();
+  const geometry = new THREE.IcosahedronGeometry(1, detail).toNonIndexed();
   const position = geometry.getAttribute("position");
   const phase = random() * 10;
   for (let i = 0; i < position.count; i++) {
@@ -215,7 +216,7 @@ export function mat(
 }
 
 /** Tiny branching sprigs, each a stem with paired leaflets, lying over a mat. */
-function sprigs(
+export function sprigs(
   count: number,
   radius: number,
   species: MossSpecies,
@@ -258,7 +259,7 @@ function sprigs(
 }
 
 /** Thin, wavering wisps that stray outward and up from a clump. */
-function strands(count: number, radius: number, random: () => number) {
+export function strands(count: number, radius: number, random: () => number) {
   const corners: THREE.Vector3[] = [];
   for (let i = 0; i < count; i++) {
     const angle = random() * Math.PI * 2,

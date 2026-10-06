@@ -35,8 +35,8 @@ export function Inhabitant({
   const root = useRef<THREE.Group>(null),
     clock = useRef(0);
   const model = useMemo(
-    () => buildAsset(object.kind, object.seed),
-    [object.kind, object.seed],
+    () => buildAsset(object.kind, object.seed, object.moss),
+    [object.kind, object.seed, object.moss],
   );
   const rig = useMemo(
     () => createRig(object.kind, model),

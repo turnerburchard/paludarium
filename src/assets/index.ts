@@ -3,6 +3,8 @@ import type { AssetKind, HabitatObject } from "../model/schema";
 import { randomFromSeed } from "../model/random";
 import type { AssetDefinition } from "./types";
 import { batchStaticAsset } from "./batch";
+import type { MossSpecies } from "../model/moss";
+import { growMoss } from "./landscape/mossCover";
 import {
   bluePoisonDartFrog,
   mossyFrog,
@@ -89,10 +91,17 @@ export function objectDens(object: HabitatObject) {
   return assets[object.kind].dens?.(randomFromSeed(object.seed)) ?? [];
 }
 
-export function buildAsset(kind: AssetKind, seed = 1): THREE.Group {
+export function buildAsset(
+  kind: AssetKind,
+  seed = 1,
+  moss?: MossSpecies,
+): THREE.Group {
   const asset = assets[kind];
   const model = asset.build(randomFromSeed(seed));
-  return asset.category === "Animals" ? model : batchStaticAsset(model);
+  if (asset.category === "Animals") return model;
+  const batched = batchStaticAsset(model);
+  if (moss) growMoss(batched, moss, randomFromSeed(seed + 1));
+  return batched;
 }
 
 export function disposeAsset(root: THREE.Object3D) {
