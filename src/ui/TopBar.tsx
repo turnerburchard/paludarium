@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import {
   Check,
   Download,
@@ -9,33 +8,20 @@ import {
   Upload,
 } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
-import { downloadWorld, parseWorld } from "../editor/persistence";
 import { IconButton } from "./IconButton";
 
 export function TopBar({
   editor,
   onNewWorld,
+  onExport,
+  onImport,
 }: {
   editor: Editor;
   onNewWorld: () => void;
+  onExport: () => void;
+  onImport: () => void;
 }) {
   const { world } = editor;
-  const importInput = useRef<HTMLInputElement>(null);
-
-  async function importFile(file: File | undefined) {
-    if (!file) return;
-    try {
-      if (file.size > 250_000)
-        throw new Error("This file is too large for a terrarium.");
-      editor.replaceWorld(parseWorld(await file.text()));
-      editor.notify("Your world is ready.");
-    } catch (error) {
-      editor.notify(
-        error instanceof Error ? error.message : "Could not import this file.",
-      );
-    }
-    if (importInput.current) importInput.current.value = "";
-  }
 
   return (
     <header className="topbar">
@@ -89,16 +75,16 @@ export function TopBar({
         >
           <Redo2 size={18} />
         </IconButton>
-        <span className="divider" />
-        <IconButton label="Export world" onClick={() => downloadWorld(world)}>
-          <Download size={18} />
-        </IconButton>
-        <IconButton
-          label="Import world"
-          onClick={() => importInput.current?.click()}
-        >
-          <Upload size={18} />
-        </IconButton>
+        {/* On phones these move into the panel sheet. */}
+        <span className="file-actions">
+          <span className="divider" />
+          <IconButton label="Export world" onClick={onExport}>
+            <Download size={18} />
+          </IconButton>
+          <IconButton label="Import world" onClick={onImport}>
+            <Upload size={18} />
+          </IconButton>
+        </span>
         <button
           className="new-world"
           onClick={onNewWorld}
@@ -109,13 +95,6 @@ export function TopBar({
           <span>New world</span>
         </button>
       </div>
-      <input
-        ref={importInput}
-        type="file"
-        accept=".json,application/json"
-        hidden
-        onChange={(e) => void importFile(e.target.files?.[0])}
-      />
     </header>
   );
 }
