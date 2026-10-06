@@ -20,6 +20,8 @@ Draw calls fell about 94%. Rendered triangles stay around 79,000; batching reduc
 
 SwiftShader renders on the CPU, and the desktop sample contains only ten to twelve frames. These timings describe this software-renderer stress test, not expected hardware frame rates. A phone viewport is not a physical phone GPU. Profile real devices before increasing the cap or claiming a frame-rate target. The current experiment does not measure a tank full of animated frogs or sustained thermal behavior.
 
+Both samples used the earlier sidebar layout. Subsequent phone UI changes give the canvas more space, so run the script again when measuring the current phone layout.
+
 ## Reproduce
 
 Start a development server, then run:

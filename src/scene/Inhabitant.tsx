@@ -80,7 +80,7 @@ export function Inhabitant({
           state.position.z,
         );
         const live = ecosystem.live.current!;
-        if (environment.terrain !== live.world.environment.terrain) {
+        if (environment !== live.world.environment) {
           const node = live.engine.graph.node(state.nodeId);
           const plant = node.plantId
             ? live.world.objects.find((part) => part.id === node.plantId)

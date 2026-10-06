@@ -55,6 +55,24 @@ describe("saved landscape brushes", () => {
       parseWorld(JSON.stringify({ ...emptyWorld(), environment: env })),
     ).not.toThrow();
   });
+  it("sculpts the same path consistently with sparse or frequent pointer events", () => {
+    const original = emptyWorld();
+    const brush = { mode: "raise" as const, radius: 0.65 };
+    const sparse = new TerrainStroke(original, brush);
+    sparse.dab(-2.2, -0.6);
+    sparse.dab(-1, 0.6);
+    const frequent = new TerrainStroke(original, brush);
+    for (let step = 0; step <= 120; step++) {
+      const t = step / 120;
+      frequent.dab(-2.2 + 1.2 * t, -0.6 + 1.2 * t);
+    }
+    const expected = sparse.current.environment.terrain!.heights;
+    frequent.current.environment.terrain!.heights.forEach((height, index) =>
+      expect(height).toBeCloseTo(expected[index], 4),
+    );
+    const finished = frequent.current;
+    expect(frequent.dab(-1, 0.6)).toBe(finished);
+  });
   it("paints material independently of height and retains edits after resizing", () => {
     const env = applyTerrainBrush(emptyWorld().environment, -1.75, 0, {
       mode: "raise",

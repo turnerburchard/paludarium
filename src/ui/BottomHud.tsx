@@ -46,8 +46,14 @@ export function BottomHud({ editor }: { editor: Editor }) {
             </IconButton>
           )}
           <button className="finish-button" onClick={editor.finish}>
-            {tool.type === "place" || tool.type === "terrain" ? <Check size={16} /> : <X size={16} />}
-            {tool.type === "place" || tool.type === "terrain" ? "Done" : "Cancel"}
+            {tool.type === "place" || tool.type === "terrain" ? (
+              <Check size={16} />
+            ) : (
+              <X size={16} />
+            )}
+            {tool.type === "place" || tool.type === "terrain"
+              ? "Done"
+              : "Cancel"}
           </button>
         </div>
       ) : (

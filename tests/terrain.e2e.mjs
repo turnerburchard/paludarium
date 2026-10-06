@@ -215,10 +215,34 @@ try {
   await page.getByRole("button", { name: "Lower ground", exact: true }).click();
   const mobileBefore = await saved(),
     tap = await point(-1.2, -0.2);
-  await page.waitForFunction(
-    ({ x, y }) => document.elementFromPoint(x, y)?.tagName === "CANVAS",
-    tap,
+  assert.equal(
+    await page.locator(".app").evaluate((app) => app.scrollTop),
+    0,
+    "closing the sheet cannot scroll the scene out of view",
   );
+  await page
+    .waitForFunction(
+      ({ x, y }) => document.elementFromPoint(x, y)?.tagName === "CANVAS",
+      tap,
+    )
+    .catch(async (error) => {
+      console.log(
+        "Mobile brush target",
+        tap,
+        await page.evaluate(({ x, y }) => {
+          const hit = document.elementFromPoint(x, y);
+          const rect = document.querySelector("canvas").getBoundingClientRect();
+          return {
+            hit: hit?.tagName,
+            className: hit?.className,
+            canvas: rect.toJSON(),
+            app: document.querySelector(".app").className,
+          };
+        }, tap),
+      );
+      await page.screenshot({ path: "/tmp/paludarium-terrain-failure.png" });
+      throw error;
+    });
   await page.touchscreen.tap(tap.x, tap.y);
   assert.notDeepEqual(
     (await saved()).environment.terrain.heights,
