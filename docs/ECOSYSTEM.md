@@ -6,7 +6,7 @@ Frog activity runs in a renderer-independent TypeScript engine. Species choose d
 
 Frogs forage for finite insect portions, soak at a shallow shoreline, explore, recover energy, and sleep. Red-eyed and mossy frogs can use connected glass ladders. Dart frogs stay on the ground in this first navigation model. The care panel offers feeding, misting, and a selected frog's needs. Scarcity produces an actionable explanation, not death.
 
-The scene still uses stylized movement, not rigged walking/climbing animation. Fish remain decorative. Insects are the first self-balancing resource (see below). There is no frog breeding, mortality, algae, nutrient cycle or waste yet. Plant leaves are not yet navigation surfaces.
+The scene still uses stylized movement, not rigged walking/climbing animation. Fish swim as a loose school (see below) but have no needs yet. Insects are the first self-balancing resource (see below). There is no frog breeding, mortality, algae, nutrient cycle or waste yet. Plant leaves are not yet navigation surfaces.
 
 ## Insects
 
@@ -15,6 +15,10 @@ Insects live in colonies on sheltered, dry ground. `insectColonies` in `worldHab
 Each simulation step a colony below capacity grows logistically: `growth × (insects + arrivals) × (1 − insects / capacity)`. Growth is fastest at half capacity, so a colony that frogs keep about half eaten feeds them best. The small `arrivals` term means an eaten-out colony slowly recovers instead of going extinct. Insects scattered by hand have zero capacity and don't breed.
 
 `frogsSupported` turns total colony capacity into an approximate number of frogs fed indefinitely, using the same constants as the engine. The Life panel shows it, and hungry frogs in an overcrowded tank get a hint to add cover. Edits keep insects: a patch whose spot is still a colony joins it; otherwise it stays as scattered food.
+
+## Fish
+
+`simulation/fish.ts` is a small, separate school simulation. Each fish keeps a slightly different pace and a slowly drifting turning rate, lines up with and drifts toward fish within about a scene unit, keeps a little personal space, and looks ahead so it turns away from the shore before reaching it. "Water" is exactly where a fish may be placed (`placementProblem`), so swimming and placement can't disagree. Fish keep their positions through ordinary edits unless they were moved or their spot dried out. They don't eat, tire or breed yet.
 
 ## Code boundaries
 

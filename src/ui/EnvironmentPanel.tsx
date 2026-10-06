@@ -92,7 +92,7 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
       <div className="section-label">A LIVING SCENE</div>
       <p className="panel-note">
         Insects breed under plants and moss, and frogs hunt them. A well-planted
-        tank feeds its frogs on its own. Fish movement is decorative for now.
+        tank feeds its frogs on its own. Fish school together in open water.
       </p>
     </div>
   );
