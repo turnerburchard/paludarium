@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import type { Environment } from "../model/schema";
+import { TANK_HEIGHT, type Environment } from "../model/schema";
 import { randomFromSeed } from "../model/random";
 import { terrainSamples } from "../model/terrainData";
-import { groundHeight } from "../model/terrain";
+import { groundHeight, MAX_GROUND_HEIGHT } from "../model/terrain";
 import { makeWaterMaterial } from "./waterMaterial";
 
 function makeTerrain(env: Environment) {
@@ -143,25 +143,59 @@ export function Water({
 }) {
   const time = useRef({ value: 0 });
   const material = useMemo(() => makeWaterMaterial(time.current), []);
+  material.opacity = env.water > MAX_GROUND_HEIGHT ? 0.22 : 0.47;
   useEffect(() => () => material.dispose(), [material]);
   useFrame((_, dt) => {
     if (!paused) time.current.value += Math.min(dt, 0.05);
   });
   if (env.water <= 0) return null;
   return (
-    <mesh
-      material={material}
-      rotation={[-Math.PI / 2, 0, 0]}
-      position={[0, env.water, 0]}
-      receiveShadow
-      renderOrder={2}
-    >
-      <planeGeometry args={[env.width - 0.015, env.depth - 0.015, 40, 28]} />
-    </mesh>
+    <group>
+      {[-1, 1].map((side) => (
+        <group key={side}>
+          <mesh
+            position={[0, env.water / 2, side * (env.depth / 2 - 0.008)]}
+            renderOrder={3}
+          >
+            <planeGeometry args={[env.width - 0.015, env.water]} />
+            <meshBasicMaterial
+              color="#60adab"
+              transparent
+              opacity={0.07}
+              depthWrite={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+          <mesh
+            position={[side * (env.width / 2 - 0.008), env.water / 2, 0]}
+            rotation={[0, Math.PI / 2, 0]}
+            renderOrder={3}
+          >
+            <planeGeometry args={[env.depth - 0.015, env.water]} />
+            <meshBasicMaterial
+              color="#60adab"
+              transparent
+              opacity={0.07}
+              depthWrite={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        </group>
+      ))}
+      <mesh
+        material={material}
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, env.water, 0]}
+        receiveShadow
+        renderOrder={2}
+      >
+        <planeGeometry args={[env.width - 0.015, env.depth - 0.015, 40, 28]} />
+      </mesh>
+    </group>
   );
 }
 export function Tank({ environment: env }: { environment: Environment }) {
-  const h = 2.9,
+  const h = TANK_HEIGHT,
     w = env.width,
     d = env.depth;
   const edges = useMemo(

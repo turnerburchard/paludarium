@@ -4,7 +4,7 @@ import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { assets, buildAsset, disposeAsset, isLandAnimal } from "../assets";
 import type { AssetKind, Environment, HabitatObject } from "../model/schema";
-import { groundHeight } from "../model/terrain";
+import { swimmingHeight } from "../model/terrain";
 import { objectBase } from "../model/stacking";
 import { FrogRig } from "./frogRig";
 import { GeckoRig } from "./geckoRig";
@@ -81,7 +81,7 @@ export function Inhabitant({
   const ground = objectBase(object, environment);
   const swims = assets[object.kind].swims;
   const baseY = swims
-    ? Math.max(ground + 0.08, environment.water - swims.depth - 0.01)
+    ? swimmingHeight(object.x, object.z, environment, swims.depth, -0.01)
     : ground;
   useFrame((_, frameDelta) => {
     const group = root.current;
@@ -158,9 +158,12 @@ export function Inhabitant({
         // Swim below the surface, but never sink into the ground.
         group.position.set(
           fish.x,
-          Math.max(
-            groundHeight(fish.x, fish.z, environment) + 0.05,
-            environment.water - swims.depth + Math.sin(t * 1.3) * 0.025,
+          swimmingHeight(
+            fish.x,
+            fish.z,
+            environment,
+            swims.depth,
+            Math.sin(t * 1.3) * 0.025,
           ),
           fish.z,
         );
