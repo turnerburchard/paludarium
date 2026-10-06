@@ -4,12 +4,7 @@ import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import { assets, buildAsset, disposeAsset, isFrog } from "../assets";
 import type { Environment, HabitatObject } from "../model/schema";
-import {
-  boundedPosition,
-  groundHeight,
-  placementProblem,
-} from "../model/terrain";
-import { randomFromSeed } from "../model/random";
+import { groundHeight } from "../model/terrain";
 
 interface Props {
   object: HabitatObject;
@@ -38,19 +33,9 @@ export function Inhabitant({
     [object.kind, object.seed],
   );
   const frog = isFrog(object.kind);
-  const animation = useRef({
-    cycle: -1,
-    from: { x: object.x, z: object.z },
-    to: { x: object.x, z: object.z },
-  });
   useEffect(() => () => disposeAsset(model), [model]);
   useEffect(() => {
     clock.current = 0;
-    animation.current = {
-      cycle: -1,
-      from: { x: object.x, z: object.z },
-      to: { x: object.x, z: object.z },
-    };
   }, [object.x, object.z, environment]);
   useEffect(() => {
     model.traverse((o) => {
@@ -115,52 +100,20 @@ export function Inhabitant({
         pose.matrix.makeBasis(pose.right, pose.normal, pose.back);
         pose.rotation.setFromRotationMatrix(pose.matrix);
         group.quaternion.copy(pose.rotation);
-        if (state.moving && state.normal.y > 0.5)
-          group.position.y += Math.abs(Math.sin(t * 9)) * 0.035;
+        group.position.y += state.motion.lift;
+        group.rotateX(state.motion.tilt);
         model.scale.y =
           state.activity === "sleeping" ? 0.92 : 1 + Math.sin(t * 2.5) * 0.01;
         return;
       }
     }
     if (ghost || selected) return;
+    // A frog without a reachable surface remains idle at its saved placement.
     if (frog) {
-      const period = 6 + (object.seed % 5),
-        cycle = Math.floor(t / period),
-        phase = t % period;
-      if (cycle !== animation.current.cycle) {
-        const random = randomFromSeed(object.seed + cycle * 17),
-          state = animation.current;
-        state.cycle = cycle;
-        state.from = state.to;
-        const candidate = boundedPosition(
-          object.x + (random() - 0.5) * 1.05,
-          object.z + (random() - 0.5) * 1.05,
-          environment,
-          0.4,
-        );
-        state.to = placementProblem(
-          object.kind,
-          candidate.x,
-          candidate.z,
-          environment,
-        )
-          ? state.from
-          : candidate;
-      }
-      const { from, to } = animation.current,
-        hop = THREE.MathUtils.clamp((phase - (period - 0.65)) / 0.65, 0, 1);
-      const x = THREE.MathUtils.lerp(from.x, to.x, hop),
-        z = THREE.MathUtils.lerp(from.z, to.z, hop);
-      group.position.set(
-        x,
-        groundHeight(x, z, environment) + Math.sin(hop * Math.PI) * 0.28,
-        z,
-      );
-      if (hop > 0 && Math.hypot(to.x - from.x, to.z - from.z) > 0.01)
-        group.rotation.y = Math.atan2(-(to.x - from.x), -(to.z - from.z));
-      group.rotation.x = Math.sin(hop * Math.PI * 2) * 0.14;
-      model.scale.y = 1 + Math.sin(t * 2.5 + object.seed) * 0.012;
-    } else if (object.kind === "fish") {
+      model.scale.y = 1;
+      return;
+    }
+    if (object.kind === "fish") {
       const fish = ecosystem?.live.current!.fish.get(object.id);
       if (fish) {
         // Swim below the surface, but never sink into the ground.

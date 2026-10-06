@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { material, branch, blade } from "../geometry";
+import { bromeliadLeaves } from "../../model/plantSurfaces";
 import type { AssetDefinition } from "../types";
 
 export const bromeliad: AssetDefinition = {
@@ -12,6 +13,7 @@ export const bromeliad: AssetDefinition = {
   habitat: "land",
   shelter: true,
   soil: "damp",
+  perches: bromeliadLeaves,
   build,
 };
 
@@ -22,18 +24,17 @@ function build(random: () => number) {
     material("#487a41"),
     material("#8caa54"),
   ];
-  for (let i = 0; i < 13; i++) {
-    const a = i * 2.4;
+  for (const [i, surface] of bromeliadLeaves(random).entries()) {
     blade(
       root,
-      new THREE.Vector3(0, 0.03, 0),
+      new THREE.Vector3(surface.tip.x, surface.tip.y, surface.tip.z),
       new THREE.Vector3(
-        Math.cos(a) * 0.7,
-        0.3 + random() * 0.5,
-        Math.sin(a) * 0.7,
+        surface.direction.x,
+        surface.direction.y,
+        surface.direction.z,
       ),
-      0.6 + random() * 0.2,
-      0.16,
+      surface.length,
+      surface.width,
       leaves[i % 3],
     );
   }

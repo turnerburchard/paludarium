@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { material, curvedStem, blade } from "../geometry";
+import { monsteraLeaves } from "../../model/plantSurfaces";
 import type { AssetDefinition } from "../types";
 
 export const monstera: AssetDefinition = {
@@ -12,6 +13,7 @@ export const monstera: AssetDefinition = {
   habitat: "land",
   shelter: true,
   soil: "damp",
+  perches: monsteraLeaves,
   build,
 };
 
@@ -19,35 +21,25 @@ function build(random: () => number) {
   const root = new THREE.Group(),
     stem = material("#507139");
   const greens = ["#245c36", "#337a43", "#458d4d", "#265f38"];
-  for (let i = 0; i < 7; i++) {
-    const angle = i * 2.399 + random() * 0.3,
-      height = 0.7 + random() * 0.95;
-    const tip = new THREE.Vector3(
-      Math.cos(angle) * (0.25 + height * 0.23),
-      height,
-      Math.sin(angle) * (0.25 + height * 0.23),
-    );
+  for (const [i, surface] of monsteraLeaves(random).entries()) {
+    const tip = new THREE.Vector3(surface.tip.x, surface.tip.y, surface.tip.z);
     curvedStem(
       root,
-      [
-        new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3(tip.x * 0.2, height * 0.6, tip.z * 0.2),
-        tip,
-      ],
+      surface.stem.map((point) => new THREE.Vector3(point.x, point.y, point.z)),
       0.022,
       stem,
     );
     const direction = new THREE.Vector3(
-      Math.cos(angle) * 0.85,
-      0.15 + random() * 0.35,
-      Math.sin(angle) * 0.85,
+      surface.direction.x,
+      surface.direction.y,
+      surface.direction.z,
     );
     const leaf = blade(
       root,
       tip,
       direction,
-      0.65 + height * 0.15,
-      0.68,
+      surface.length,
+      surface.width,
       material(greens[i % 4]),
       true,
     );
