@@ -18,6 +18,8 @@ import { TopBar } from "./ui/TopBar";
 import { useWorldFiles } from "./ui/useWorldFiles";
 import { WatchCard } from "./ui/WatchCard";
 import { ViewControls } from "./ui/ViewControls";
+import { ViewIntro } from "./ui/ViewIntro";
+import { AboutDialog } from "./ui/AboutDialog";
 
 export default function App() {
   const [view, setView] = useState(true);
@@ -30,7 +32,9 @@ export default function App() {
   // On phones the sidebar is a sheet, closed until a dock button opens it.
   const [sheetOpen, setSheetOpen] = useState(false);
   const [resetCamera, setResetCamera] = useState(0);
-  const [dialog, setDialog] = useState<"new-world" | "help" | null>(null);
+  const [dialog, setDialog] = useState<"new-world" | "help" | "about" | null>(
+    null,
+  );
   const [watchRequest, setWatchRequest] = useState<string | null>(null);
   // Deselecting (Escape, clicking away) also stops watching.
   const watchingId =
@@ -186,7 +190,10 @@ export default function App() {
         }}
       />
       {view && !watchingId && (
-        <ViewControls world={world} ecosystem={ecosystem} onWatch={watch} />
+        <>
+          <ViewIntro onAbout={() => setDialog("about")} />
+          <ViewControls world={world} ecosystem={ecosystem} onWatch={watch} />
+        </>
       )}
       {!view && <BottomHud editor={editor} />}
       {dialog === "new-world" && (
@@ -196,6 +203,15 @@ export default function App() {
         />
       )}
       {dialog === "help" && <HelpDialog onClose={() => setDialog(null)} />}
+      {dialog === "about" && (
+        <AboutDialog
+          onClose={() => setDialog(null)}
+          onBuild={() => {
+            setDialog(null);
+            changeMode(false);
+          }}
+        />
+      )}
     </main>
   );
 }

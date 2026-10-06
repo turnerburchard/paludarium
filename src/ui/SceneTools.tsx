@@ -1,6 +1,7 @@
 import { Eye, Hammer, Maximize2, Pause, Play } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import { IconButton } from "./IconButton";
+import { ShareButton } from "./ShareButton";
 
 export function SceneTools({
   editor,
@@ -34,6 +35,7 @@ export function SceneTools({
         <IconButton label="Reset camera" onClick={onResetCamera}>
           <Maximize2 size={19} />
         </IconButton>
+        <ShareButton />
       </div>
     </>
   );
