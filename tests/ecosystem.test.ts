@@ -188,6 +188,17 @@ describe("live ecosystem behavior", () => {
     }
     expect(engine.getAnimal("frog")!.nodeId).toBe("c");
   });
+  it("keeps a grazer fed without insects", () => {
+    const graph = new HabitatGraph([node("a", 0, [])]);
+    const engine = new Ecosystem(
+      graph,
+      [{ ...seed(), species: frogProfile("snail") }],
+      { speed: 1, elapsed: 0 },
+    );
+    const before = engine.getAnimal("frog")!.needs.hunger;
+    run(engine, 600);
+    expect(engine.getAnimal("frog")!.needs.hunger).toBe(before);
+  });
   it("never sends two frogs to the same spot", () => {
     const graph = new HabitatGraph([
       node("a", 0, ["b"]),
@@ -336,7 +347,9 @@ describe("insect colonies", () => {
   it("can keep a frog fed without help in a planted tank", () => {
     const engine = createWorldEcosystem(makePreset("mountain"));
     run(engine, 3600);
-    const frogs = engine.snapshot().animals;
+    const frogs = engine
+      .snapshot()
+      .animals.filter((animal) => animal.speciesId === "tree-frog");
     expect(frogs).toHaveLength(1);
     expect(frogs[0].needs.hunger).toBeLessThan(0.8);
   });

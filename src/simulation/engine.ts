@@ -192,7 +192,9 @@ export class Ecosystem {
   private update(agent: Agent) {
     const state = agent.state,
       needs = state.needs;
-    needs.hunger = clamp(needs.hunger + STEP * HUNGER_RATE);
+    // Grazers feed as they go, on algae the simulation doesn't track.
+    if (!agent.profile.grazes)
+      needs.hunger = clamp(needs.hunger + STEP * HUNGER_RATE);
     needs.hydration = clamp(needs.hydration - STEP * 0.0014);
     needs.energy = clamp(
       needs.energy - STEP * (state.moving ? 0.0018 : 0.0007),

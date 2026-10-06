@@ -17,6 +17,9 @@ export interface AnimalBehavior {
   maxPerchHeight?: number;
   /** Surfaces it likes to rest on, beyond plain shelter. Frogs favor leaves. */
   restsOn?: Surface[];
+  /** Feeds on algae and film wherever it goes, so it never goes hungry and
+   * leaves the insects to others. */
+  grazes?: boolean;
 }
 
 /** Everything the app knows about one kind of placeable thing. */
