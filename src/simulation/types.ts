@@ -1,3 +1,5 @@
+import type { FrogBehavior } from "../assets/types";
+
 /** Engine units are scene units and simulated seconds. Needs are normalized to 0–1. */
 export interface Vec3 {
   x: number;
@@ -14,14 +16,10 @@ export interface HabitatNode {
   shelter: number;
   neighbors: string[];
   perchHeight?: number;
+  plantId?: string;
 }
-export interface SpeciesProfile {
+export interface SpeciesProfile extends FrogBehavior {
   id: string;
-  nocturnal: boolean;
-  climbs: boolean;
-  speed: number;
-  movement?: "hop" | "climb" | "crawl";
-  maxPerchHeight?: number;
 }
 export interface Needs {
   hunger: number;

@@ -79,6 +79,19 @@ export function Inhabitant({
           state.position.y,
           state.position.z,
         );
+        const live = ecosystem.live.current!;
+        if (environment.terrain !== live.world.environment.terrain) {
+          const node = live.engine.graph.node(state.nodeId);
+          const plant = node.plantId
+            ? live.world.objects.find((part) => part.id === node.plantId)
+            : undefined;
+          const anchor = plant ?? state.position;
+          // Navigation stays committed during a stroke; keep the preview pose
+          // attached to the ground or to the base of its supporting plant.
+          group.position.y +=
+            groundHeight(anchor.x, anchor.z, environment) -
+            groundHeight(anchor.x, anchor.z, live.world.environment);
+        }
         pose.normal
           .set(state.normal.x, state.normal.y, state.normal.z)
           .normalize();
