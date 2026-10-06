@@ -41,7 +41,7 @@ try {
     ],
   });
   const page = await browser.newPage({
-    viewport: { width: 1440, height: 960 },
+    viewport: { width: 960, height: 640 },
   });
   const errors = [];
   let fiberUrl;
