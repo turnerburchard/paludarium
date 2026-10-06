@@ -43,8 +43,8 @@ export function AboutDialog({
         Make it yours
       </button>
       <p className="panel-note">
-        No account or download. Your layout saves on this device; Export in
-        Build keeps a backup. The Share button sends the project link.
+        No account or download. Your layout saves on this device. Share sends a
+        snapshot others can explore and copy; Export keeps a backup.
       </p>
       <a
         className="source-link"

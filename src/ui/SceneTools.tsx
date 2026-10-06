@@ -35,7 +35,7 @@ export function SceneTools({
         <IconButton label="Reset view" onClick={onResetCamera}>
           <Home size={19} />
         </IconButton>
-        <ShareButton />
+        <ShareButton world={editor.savedWorld} />
       </div>
     </>
   );

@@ -1531,3 +1531,44 @@ button:hover:not(:disabled) {
     width: 100%;
   }
 }
+
+.world-loading {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  background: #0e1c16;
+  color: #deedc0;
+  font-size: 15px;
+}
+.view-intro-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+.view-intro-actions a {
+  color: var(--muted);
+  font-size: 12px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  text-underline-offset: 3px;
+}
+.view-intro h1 {
+  overflow-wrap: anywhere;
+}
+.shared-world-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.shared-world-actions > button:not(.intro-build-button) {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
