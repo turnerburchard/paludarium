@@ -11,7 +11,10 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 - [x] Separate glass from soil faces; match sidewall and surface subdivisions.
 - [x] Published at turnerburchard.com/paludarium/ (GitHub Pages from this repo, deployed by CI on every push to `main`).
 - [x] Clean phone layout: full-screen scene, bottom dock, panels as a sheet; first visit opens on the Cloud forest.
-- [x] Watch a frog up close from the inspector or the Life panel's frog list.
+- [x] Separate View/Build modes: viewing opens without editing menus, and frog taps start a close-up.
+- [x] Foliage fades when it blocks a watched frog and restores when watching ends.
+- [x] Compact watch cards and habitat settings; precise sliders and terrain tools sit behind disclosures.
+- [x] Size controls only for rocks and driftwood; slider release and blur form one undoable gesture.
 - [x] Saved terrain sculpting, soil/sand/stone painting, and pool/stream carving, with one undo step per gesture.
 
 ## Live animal behavior — first slice implemented

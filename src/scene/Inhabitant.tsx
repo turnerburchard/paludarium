@@ -149,6 +149,10 @@ export function Inhabitant({
   return (
     <group
       ref={root}
+      userData={{
+        plant: assets[object.kind].category === "Plants",
+        objectId: object.id,
+      }}
       position={[object.x, baseY, object.z]}
       rotation={[0, object.rotation, 0]}
       scale={object.scale}

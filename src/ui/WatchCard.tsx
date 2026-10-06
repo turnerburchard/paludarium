@@ -28,11 +28,8 @@ export function WatchCard({
           <X size={17} />
         </IconButton>
       </div>
-      {asset.scientificName && (
-        <p className="species-name">{asset.scientificName}</p>
-      )}
       {animal ? (
-        <AnimalStatus animal={animal} />
+        <AnimalStatus animal={animal} compact />
       ) : (
         <p>This frog can't reach any ground right now.</p>
       )}

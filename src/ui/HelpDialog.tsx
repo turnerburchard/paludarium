@@ -27,15 +27,18 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
         <dd>Select an object, choose Move, then tap its new home.</dd>
         <dt>Watch a frog</dt>
         <dd>
-          Select a frog and choose Watch up close. The camera follows it while
-          it goes about its day. Escape stops watching.
+          In View mode, tap a frog or choose Watch a frog. The camera follows
+          it, and foliage fades out of the way. Escape stops watching.
         </dd>
         <dt>Turn</dt>
         <dd>R rotates; Shift R rotates the other way.</dd>
         <dt>Undo / redo</dt>
         <dd>⌘ or Ctrl Z / Shift Z. Each slider gesture is one step.</dd>
         <dt>Pause</dt>
-        <dd>Space pauses the inhabitants. The eye button hides the tools.</dd>
+        <dd>
+          Space pauses the inhabitants. View hides editing tools; Build reveals
+          them.
+        </dd>
         <dt>Care for the frogs</dt>
         <dd>
           Insects breed in the cover of plants and moss, so more planting feeds

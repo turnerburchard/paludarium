@@ -653,22 +653,6 @@ button:hover:not(:disabled) {
   left: 0;
   top: 0;
 }
-.view-mode .topbar {
-  display: none;
-}
-.return-button {
-  position: absolute;
-  left: 24px;
-  top: 24px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid var(--line);
-  background: #182d25d9;
-  border-radius: 8px;
-  font-size: 13px;
-}
 .modal-backdrop {
   position: absolute;
   inset: 0;
@@ -1105,15 +1089,8 @@ button:hover:not(:disabled) {
     max-width: 145px;
     padding: 7px;
   }
-  .view-mode .scene-tools {
-    bottom: 20px;
-  }
   .view-mode .scene-shell {
     inset: 0;
-  }
-  .view-mode .return-button {
-    left: 14px;
-    top: 14px;
   }
   .modal {
     padding: 20px;
@@ -1264,5 +1241,171 @@ button:hover:not(:disabled) {
   .panel-tabs button:first-child {
     font-size: 11px;
     gap: 4px;
+  }
+}
+
+.mode-switch {
+  position: absolute;
+  top: 103px;
+  left: 325px;
+  z-index: 6;
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+  background: #192c24ed;
+  border: 1px solid var(--line);
+  border-radius: 30px;
+}
+.mode-switch button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: 24px;
+  background: transparent;
+  font-size: 13px;
+  color: var(--muted);
+}
+.mode-switch button[aria-pressed="true"] {
+  background: #3b5038;
+  color: #e4efcf;
+}
+.view-mode .mode-switch {
+  top: 24px;
+  left: 24px;
+}
+.view-mode .inspector {
+  top: auto;
+  bottom: 24px;
+}
+.view-controls {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100% - 32px);
+  z-index: 5;
+}
+.watch-world-button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #536b49;
+  border-radius: 30px;
+  padding: 13px 20px;
+  background: #192c24ed;
+  font-size: 13px;
+}
+.watch-picker {
+  width: 300px;
+  max-width: 100%;
+  max-height: 45dvh;
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #192c24f5;
+}
+.watch-picker p,
+.view-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.watch-picker .frog-list {
+  margin-bottom: 0;
+}
+.more-options {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+}
+.more-options summary {
+  cursor: pointer;
+  padding: 16px 0;
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 44px;
+}
+.more-options summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.more-options .range-control {
+  margin-top: 4px;
+}
+.object-about {
+  border: 0;
+  margin-top: 0;
+}
+.object-about summary {
+  padding-top: 3px;
+}
+.inspector .plant-condition {
+  margin: 0 0 16px;
+}
+.water-options {
+  display: flex;
+  gap: 8px;
+}
+.water-options button {
+  flex: 1;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #25392c;
+  font-size: 12px;
+}
+.water-options button[aria-pressed="true"] {
+  border-color: #73885c;
+  background: #3b5038;
+}
+.scene-notices {
+  top: 164px;
+}
+@media (max-width: 760px) {
+  .mode-switch {
+    top: 68px;
+    left: 12px;
+  }
+  .view-mode .mode-switch {
+    top: 12px;
+    left: 12px;
+  }
+  .mode-switch button {
+    padding: 0 12px;
+  }
+  .view-mode .scene-tools .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+  .view-mode .inspector {
+    bottom: 12px;
+  }
+  .scene-notices {
+    top: 126px;
+  }
+  .view-controls {
+    bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  .environment-panel {
+    display: block;
+  }
+}
+.view-mode .scene-tools {
+  top: 24px;
+  right: 24px;
+  bottom: auto;
+}
+@media (max-width: 760px) {
+  .view-mode .scene-tools {
+    top: 12px;
+    right: 12px;
   }
 }

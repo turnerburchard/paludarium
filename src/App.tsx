@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { isFrog } from "./assets";
 import { useEditor } from "./editor/useEditor";
 import { makePreset, type Preset } from "./model/presets";
 import { placementProblem } from "./model/terrain";
@@ -17,9 +17,11 @@ import { Sidebar, type Panel } from "./ui/Sidebar";
 import { TopBar } from "./ui/TopBar";
 import { useWorldFiles } from "./ui/useWorldFiles";
 import { WatchCard } from "./ui/WatchCard";
+import { ViewControls } from "./ui/ViewControls";
 
 export default function App() {
-  const editor = useEditor();
+  const [view, setView] = useState(true);
+  const editor = useEditor(view);
   const { world, selected, tool } = editor;
   // Life follows committed edits, not intermediate brush or slider previews.
   const ecosystem = useEcosystem(editor.savedWorld);
@@ -27,7 +29,6 @@ export default function App() {
   const [panel, setPanel] = useState<Panel>("objects");
   // On phones the sidebar is a sheet, closed until a dock button opens it.
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [view, setView] = useState(false);
   const [resetCamera, setResetCamera] = useState(0);
   const [dialog, setDialog] = useState<"new-world" | "help" | null>(null);
   const [watchRequest, setWatchRequest] = useState<string | null>(null);
@@ -72,19 +73,20 @@ export default function App() {
     setResetCamera((n) => n + 1);
   }
 
-  useEffect(() => {
-    if (!view) return;
-    const leave = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setView(false);
-    };
-    window.addEventListener("keydown", leave);
-    return () => window.removeEventListener("keydown", leave);
-  }, [view]);
-
-  function toggleView() {
-    setView((v) => !v);
-    editor.setTool({ type: "select" });
+  function changeMode(next: boolean) {
+    if (next === view) return;
+    editor.finish();
     editor.select(null);
+    setWatchRequest(null);
+    setSheetOpen(false);
+    setView(next);
+  }
+
+  function activateObject(id: string) {
+    const object = world.objects.find((o) => o.id === id);
+    if (view) {
+      if (object && isFrog(object.kind)) watch(id);
+    } else editor.select(id);
   }
 
   return (
@@ -102,15 +104,18 @@ export default function App() {
             view={view}
             ecosystem={ecosystem}
             watchingId={watchingId}
+            onActivateObject={activateObject}
           />
         </SceneBoundary>
       </div>
-      <TopBar
-        editor={editor}
-        onNewWorld={() => setDialog("new-world")}
-        onExport={files.exportWorld}
-        onImport={files.importWorld}
-      />
+      {!view && (
+        <TopBar
+          editor={editor}
+          onNewWorld={() => setDialog("new-world")}
+          onExport={files.exportWorld}
+          onImport={files.importWorld}
+        />
+      )}
       {files.fileInput}
       {!view && (
         <Sidebar
@@ -129,7 +134,7 @@ export default function App() {
         <MobileDock
           editor={editor}
           onOpen={openPanel}
-          onWatchWorld={toggleView}
+          onWatchWorld={() => changeMode(true)}
         />
       )}
       {!view && world.objects.length === 0 && tool.type === "select" && (
@@ -158,12 +163,13 @@ export default function App() {
       )}
       {!view && selected && tool.type === "select" && !watchingId && (
         <Inspector
+          key={selected.id}
           editor={editor}
           object={selected}
           onWatch={() => watch(selected.id)}
         />
       )}
-      {!view && selected && watchingId && (
+      {selected && watchingId && (
         <WatchCard
           object={selected}
           ecosystem={ecosystem}
@@ -173,17 +179,14 @@ export default function App() {
       <SceneTools
         editor={editor}
         view={view}
-        onToggleView={toggleView}
+        onChangeMode={changeMode}
         onResetCamera={() => {
           setWatchRequest(null);
           setResetCamera((n) => n + 1);
         }}
       />
-      {view && (
-        <button className="return-button" onClick={() => setView(false)}>
-          <ArrowLeft size={17} />
-          Back to building
-        </button>
+      {view && !watchingId && (
+        <ViewControls world={world} ecosystem={ecosystem} onWatch={watch} />
       )}
       {!view && <BottomHud editor={editor} />}
       {dialog === "new-world" && (

@@ -18,7 +18,7 @@ export type Tool =
   | { type: "move"; id: string }
   | { type: "copy"; id: string }
   | ({ type: "terrain" } & TerrainBrush);
-export function useEditor() {
+export function useEditor(readOnly = false) {
   const [initial] = useState(loadWorld);
   const [history, dispatch] = useReducer(historyReducer, {
     past: [],
@@ -131,6 +131,14 @@ export function useEditor() {
       const target = e.target instanceof Element ? e.target : null;
       if (target?.closest("input,textarea,select,[contenteditable=true]"))
         return;
+      if (readOnly) {
+        if (e.key === "Escape") select(null);
+        else if (e.code === "Space" && !target?.closest("button,a")) {
+          e.preventDefault();
+          setPaused((p) => !p);
+        }
+        return;
+      }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
         navigateHistory(e.shiftKey ? "redo" : "undo");
@@ -155,7 +163,7 @@ export function useEditor() {
     };
     window.addEventListener("keydown", keydown);
     return () => window.removeEventListener("keydown", keydown);
-  }, [remove, rotate, navigateHistory]);
+  }, [remove, rotate, navigateHistory, readOnly]);
   /** Leaves placing or moving and clears its leftover message. */
   function finish() {
     cancelTerrainStroke();

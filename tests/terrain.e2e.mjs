@@ -51,6 +51,7 @@ try {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(url);
+  await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.locator(".asset-picture img").first().waitFor();
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
@@ -60,6 +61,7 @@ try {
   await page
     .getByRole("button", { name: "Habitat settings", exact: true })
     .click();
+  await page.locator("summary", { hasText: "Shape landscape" }).click();
 
   async function saved() {
     await page.evaluate(
@@ -202,6 +204,7 @@ try {
     "export and import preserve the landscape",
   );
   await page.reload();
+  await page.getByRole("button", { name: "Build", exact: true }).click();
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
@@ -212,6 +215,7 @@ try {
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Habitat", exact: true })
     .click();
+  await page.locator("summary", { hasText: "Shape landscape" }).click();
   await page.getByRole("button", { name: "Lower ground", exact: true }).click();
   const mobileBefore = await saved(),
     tap = await point(-1.2, -0.2);
