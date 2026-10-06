@@ -93,14 +93,23 @@ export function useEditor() {
         e.preventDefault();
         dispatch({ type: e.shiftKey ? "redo" : "undo" });
       } else if (e.key === "Escape") {
-        setTool({ type: "select" });
+        finish();
         select(null);
       } else if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
         remove();
-      } else if (e.key.toLowerCase() === "r")
+      } else if (
+        e.key.toLowerCase() === "r" &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey
+      )
         rotate(e.shiftKey ? -Math.PI / 6 : Math.PI / 6);
-      else if (e.code === "Space") {
+      // Space on a focused button presses it; elsewhere it pauses life.
+      else if (
+        e.code === "Space" &&
+        !(e.target as HTMLElement)?.closest("button,a")
+      ) {
         e.preventDefault();
         setPaused((p) => !p);
       }
@@ -108,6 +117,11 @@ export function useEditor() {
     window.addEventListener("keydown", keydown);
     return () => window.removeEventListener("keydown", keydown);
   }, [remove, rotate]);
+  /** Leaves placing or moving and clears its leftover message. */
+  function finish() {
+    setTool({ type: "select" });
+    notify("");
+  }
   function choose(kind: AssetKind) {
     setTool({ type: "place", kind });
     select(null);
@@ -170,6 +184,9 @@ export function useEditor() {
       objects: world.objects.map((o) => fitObject(o, environment)),
     });
   }
+  function rename(name: string) {
+    if (name !== world.name) commit({ ...world, name });
+  }
   function replaceWorld(next: World) {
     commit(next);
     select(null);
@@ -179,13 +196,13 @@ export function useEditor() {
     if (!selected) return;
     setPlacementRotation(selected.rotation);
     setTool({ type: "move", id: selected.id });
-    notify("Choose a new spot. Escape to cancel.");
+    notify("");
   }
   function duplicate() {
     if (!selected || world.objects.length >= MAX_OBJECTS) return;
     setPlacementRotation(selected.rotation);
     setTool({ type: "copy", id: selected.id });
-    notify("Choose a spot for the copy. Escape to cancel.");
+    notify("");
   }
   return {
     world,
@@ -202,6 +219,7 @@ export function useEditor() {
     setPaused,
     placementRotation,
     choose,
+    finish,
     placeAt,
     changeEnvironment,
     patchObject,
@@ -210,6 +228,7 @@ export function useEditor() {
     duplicate,
     move,
     replaceWorld,
+    rename,
     undo: () => dispatch({ type: "undo" }),
     redo: () => dispatch({ type: "redo" }),
     canUndo: !!history.past.length,

@@ -5,7 +5,13 @@ export const STORAGE_KEY = "little-worlds:v1";
 export function parseWorld(text: string): World {
   if (text.length > 250_000)
     throw new Error("This file is too large for a terrarium.");
-  const result = worldSchema.safeParse(JSON.parse(text));
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error("This file isn't a Paludarium terrarium.");
+  }
+  const result = worldSchema.safeParse(data);
   if (!result.success)
     throw new Error("This is not a supported Paludarium terrarium file.");
   return {

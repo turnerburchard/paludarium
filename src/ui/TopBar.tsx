@@ -44,7 +44,7 @@ export function TopBar({
           maxLength={60}
           onBlur={(e) => {
             const name = e.target.value.trim();
-            if (name) editor.replaceWorld({ ...world, name });
+            if (name) editor.rename(name);
             else e.target.value = world.name;
           }}
           onKeyDown={(e) => {
