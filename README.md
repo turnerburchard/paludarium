@@ -17,13 +17,13 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-`dist/` is a portable static website with relative asset paths. Source belongs in `turnerburchard/paludarium`; publish the contents of `dist/` into `paludarium/` in `turnerburchard/turnerburchard.github.io` for https://turnerburchard.com/paludarium/. The adjacent `publish.sh` performs this one-time export and deployment using your own GitHub CLI login. It does not establish automatic synchronization with ChatGPT Sites.
+`dist/` is a portable static website with relative asset paths. Source belongs in `turnerburchard/paludarium`; publish the contents of `dist/` into `paludarium/` in `turnerburchard/turnerburchard.github.io` for https://turnerburchard.com/paludarium/. The adjacent `publish.sh` performs this export and deployment using your own GitHub CLI login. It does not establish automatic synchronization with ChatGPT Sites.
 
 ## Rights
 
 This project is publicly visible, proprietary software. See [LICENSE](LICENSE). No additional permission is granted to reuse, modify, redistribute, sell, or deploy covered material, except as required by law or granted by GitHub's terms. Third-party libraries and the CC0 Quaternius frog retain their own terms. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-This export captures Sites source commit `28027d9be4655e7524ba5cc34872d0b3e3e684a8`. Unlicensed inspiration images are omitted from the public export; the original working project retains them.
+This export captures Sites source commit `0dd66498edc7ff44ab6946c44e6d09a0a9031d98`. Unlicensed inspiration images are omitted from the public export; the original working project retains them.
 
 ## Architecture
 

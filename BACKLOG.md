@@ -69,3 +69,7 @@ Model producers (plants/algae), detritus, microbial decomposition, appropriate s
 ## Naming decision
 
 The title is **Paludarium**, selected by the owner. Keep the existing hosting URL and saved-world storage key so bookmarks and saved habitats continue to work. The requested personal-domain destination remains turnerburchard.com/terrarium, deferred while GitHub write access is unavailable. Continue publishing to the existing ChatGPT site for now.
+
+## GitHub export — October 5, 2026
+
+The current requested destination is **https://turnerburchard.com/paludarium/**. The older `/terrarium/` entries above record the previous plan. The export package includes a publishing script and proprietary rights notice; publication remains pending while the owner uses local GitHub authentication.

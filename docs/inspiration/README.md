@@ -12,6 +12,8 @@ Whole-game references: mountain river diorama (reference image omitted from this
 
 Further owner feedback: the imported frog was too large, mean-looking and skinny; the rocks are the strongest visual benchmark. The current mesh is simplified offline from 4,920 to 2,314 triangles, with thicker limbs, wider pupils and smaller species-dependent scale. The original file remains unchanged, so future rig work can start from it rather than the baked and simplified mesh.
 
+The next asset pass removes the fish's ellipsoid body and cone tail in favor of a narrow spindle, distinct fins and forked tail. Moss becomes a shallow connected patch with small fronds. Driftwood uses tapered, irregular seven-sided sections, angular forks and inset end grain. Plants use broad leaf planes, lower-sided stems, pointed strawberry geometry and thin flower petals. `src/scene/assets/faceted.ts` provides the small explicit-triangle/ring-volume helpers. Rocks retain their existing model and palette. Saved IDs and ecosystem rules remain unchanged.
+
 See [the project brief](../PROJECT-BRIEF.md) for the full idea backlog and durable attachment identities.
 
 The public export omits reference PNG/JPEG images whose redistribution rights have not been established. The CC0 original frog GLB remains included.

@@ -6,6 +6,7 @@ export function material(color: THREE.ColorRepresentation, roughness = 0.7) {
     color,
     roughness,
     side: THREE.DoubleSide,
+    flatShading: true,
   });
 }
 export function mesh(
@@ -33,7 +34,7 @@ export function ellipsoid(
   detail = 16,
 ) {
   const object = mesh(
-    new THREE.SphereGeometry(1, detail, 12),
+    new THREE.IcosahedronGeometry(1, detail > 8 ? 1 : 0),
     mat,
     parent,
     position,
@@ -51,7 +52,7 @@ export function branch(
 ) {
   const delta = end.clone().sub(start);
   const object = mesh(
-    new THREE.CylinderGeometry(topRadius, radius, delta.length(), 8),
+    new THREE.CylinderGeometry(topRadius, radius, delta.length(), 5),
     mat,
     parent,
     start.clone().add(end).multiplyScalar(0.5),
@@ -68,9 +69,9 @@ export function curvedStem(
   return mesh(
     new THREE.TubeGeometry(
       new THREE.CatmullRomCurve3(points),
-      12,
+      Math.max(3, points.length - 1),
       radius,
-      5,
+      4,
       false,
     ),
     mat,
@@ -135,7 +136,7 @@ function leafGeometry(
         );
         shape.holes.push(hole);
       }
-  const geo = new THREE.ShapeGeometry(shape, 12);
+  const geo = new THREE.ShapeGeometry(shape, 3);
   const p = geo.getAttribute("position");
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i),

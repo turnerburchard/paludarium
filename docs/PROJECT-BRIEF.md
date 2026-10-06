@@ -54,6 +54,8 @@ Current collaboration boundary: this thread owns frog models and deployment; the
 
 Further frog feedback: imported frogs initially looked too large, mean-looking and skinny. Reduce overall scale, soften the eye expression, add natural limb substance while keeping lean anatomy, and use fewer polygons. The user considers the current rocks the strongest visual asset; use their polygon scale and restrained surfaces as the benchmark.
 
+Other asset priorities: fish, moss cushion and log were identified as the worst remaining big blobs. Apply the same low-poly art direction across the other assets, preserving the successful rocks as the benchmark.
+
 ## Building and habitat ideas
 
 ### Initial experience accepted in the earlier plan
