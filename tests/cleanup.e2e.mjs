@@ -290,6 +290,10 @@ try {
   await page.getByRole("button", { name: "Done", exact: true }).click();
 
   await page.setViewportSize({ width: 390, height: 844 });
+  // The canvas resizes a frame after the viewport does.
+  await page.waitForFunction(
+    () => document.querySelector("canvas").getBoundingClientRect().width <= 390,
+  );
   const phoneCanvas = await page.locator("canvas").boundingBox();
   assert.equal(phoneCanvas.y, 0, "phone Build also keeps a full-height canvas");
   await page.getByRole("button", { name: "View", exact: true }).click();
