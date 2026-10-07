@@ -208,6 +208,37 @@ describe("animal movement", () => {
     expect(outings(174).visits).not.toEqual(first.visits);
   });
 
+  it("is grounded only at ground nodes and walking between them", () => {
+    const crawler = { ...species, movement: "crawl" as const };
+    const graph = new HabitatGraph([
+      node("a", 0, 0, ["b"]),
+      node("b", 0.32, 0, ["a", "rock"]),
+      {
+        ...node("rock", 0.64, 0, ["b"]),
+        position: { x: 0.64, y: 0.04, z: 0 },
+        surface: "stone",
+      },
+    ]);
+    const engine = new Ecosystem(graph, [seed(crawler)], {
+      elapsed: 0,
+      random: () => 0.5,
+      food: [{ nodeId: "rock", amount: 5, capacity: 0 }],
+    });
+    const seen = new Set<string>();
+    for (let frame = 0; frame < 60 * 60; frame++) {
+      engine.advance(1 / 60);
+      const state = engine.getAnimal("frog")!;
+      const onRockEdge = state.nodeId === "b" && state.motion.progress > 0;
+      const expected = state.nodeId !== "rock" && !onRockEdge;
+      expect(state.grounded).toBe(expected);
+      seen.add(`${state.nodeId}:${state.grounded}`);
+      if (state.nodeId === "rock") break;
+    }
+    expect(seen).toEqual(
+      new Set(["a:true", "b:true", "b:false", "rock:false"]),
+    );
+  });
+
   it("keeps non-climbing frogs off steep stone approaches", () => {
     const graph = new HabitatGraph([
       node("a", 0, 0, ["ledge"]),

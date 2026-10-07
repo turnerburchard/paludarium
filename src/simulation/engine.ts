@@ -144,6 +144,7 @@ export class Ecosystem {
           reason: "Settling in",
           moving: false,
           surface: node.surface,
+          grounded: node.surface === "ground",
           motion: { progress: 0, lift: 0, tilt: 0, hop: false },
         },
       });
@@ -606,6 +607,7 @@ export class Ecosystem {
       state.normal = copyVector(target.normal);
       state.nodeId = target.id;
       state.surface = target.surface;
+      state.grounded = target.surface === "ground";
       state.motion = { progress: 0, lift: 0, tilt: 0, hop: false };
       agent.edge = undefined;
       agent.path.shift();
@@ -673,6 +675,8 @@ export class Ecosystem {
       y: edge.normal.y + (target.normal.y - edge.normal.y) * travel,
       z: edge.normal.z + (target.normal.z - edge.normal.z) * travel,
     };
+    state.grounded =
+      !edge.hop && state.surface === "ground" && target.surface === "ground";
     const length = Math.hypot(normal.x, normal.y, normal.z);
     state.normal =
       length > 0.001
