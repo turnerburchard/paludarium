@@ -20,7 +20,7 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 - [x] Size controls only for rocks and driftwood; slider release and blur form one undoable gesture, with previews cleared on commit and Undo.
 - [x] Static link-preview metadata and an actual-demo image; native sharing and copy-link fallbacks.
 - [x] Camera and open settings persist across View/Build; closer default framing and a clear home/reset control. Leaving an animal close-up restores auto-orbit; dragging or keyboard navigation can interrupt the return.
-- [x] Reliable tap placement on phones: no drag preview or simultaneous camera movement; Done/Cancel restores navigation.
+- [x] Reliable tap placement on phones: track native canvas touches, reject drags and multi-touch placement, and allow two-finger panning in every mode. Placement controls sit at the bottom of the viewport.
 - [x] Touch-friendly placement rotation: tap left/right or hold to spin. Terrain bars name the active brush.
 - [x] Clean branding and a stable rename field.
 - [x] Saved terrain sculpting, soil/sand/stone painting, and pool/stream carving, with one undo step per gesture.

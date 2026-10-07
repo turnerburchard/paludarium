@@ -942,15 +942,22 @@ button:hover:not(:disabled) {
     padding: 0 12px;
     gap: 6px;
   }
+  .bottom-hud.placing {
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
   .navigation-hint {
     display: none;
   }
   .status-message {
+    order: -1;
     font-size: 11px;
     max-width: 300px;
     background: #1b3029bb;
     border-radius: 5px;
     padding: 4px 8px;
+  }
+  .status-message:empty {
+    display: none;
   }
   .placement-bar {
     padding: 8px;
