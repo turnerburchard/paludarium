@@ -65,11 +65,11 @@ Priority: medium. Deeper food resources and plant growth can follow the simple b
 Direction agreed with Turner on 2026-10-07: default breeding and slow mortality, with a simple shared planting and tank-space budget. Plant requirements are tuning values, not a fixed two-plants rule. No sexes or recurring feeding/misting chores.
 
 - [x] All animal species breed with a healthy same-species adult, producing a juvenile that grows into an adult.
-- [x] Planting and space constrain breeding and long-term condition; sustained shortages cause mortality, and old age eventually removes animals.
+- [x] Planting and space constrain breeding and long-term condition; sustained shortages cause mortality, and old age eventually removes animals. Animals with nowhere they can live (flooded or drained) die within minutes.
 - [x] Saved age, condition and offspring, with no offline advancement or automatic Undo steps. Undo can restore an earlier population.
 - [x] Bounded close-up springtail visuals and life-stage/condition feedback.
 - [ ] Longer-term life stages: eggs and tadpoles, researched per species ([#34](https://github.com/turnerburchard/paludarium/issues/34)).
-- [ ] Cherry shrimp populations and fish predation ([#35](https://github.com/turnerburchard/paludarium/issues/35)); tiny crabs and other invertebrates ([#36](https://github.com/turnerburchard/paludarium/issues/36)). A vampire crab, stripe-tailed scorpion and desert blonde tarantula walk the land; shoreline and underwater invertebrates are still to come.
+- [ ] Cherry shrimp populations and fish predation ([#35](https://github.com/turnerburchard/paludarium/issues/35)); tiny crabs and other invertebrates ([#36](https://github.com/turnerburchard/paludarium/issues/36)). A vampire crab, stripe-tailed scorpion and desert blonde tarantula walk the land, and the vampire crab also walks underwater. Fully aquatic walkers (a Thai micro crab, a Mexican dwarf crayfish and a cherry shrimp) are next.
 - [ ] Higher habitat capacity, with physical-phone profiling before raising the limit ([#37](https://github.com/turnerburchard/paludarium/issues/37)). Temperature and water type remain separate ([#31](https://github.com/turnerburchard/paludarium/issues/31)).
 
 ## Art direction and scale
