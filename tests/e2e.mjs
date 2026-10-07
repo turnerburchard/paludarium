@@ -59,6 +59,7 @@ try {
     "Aquarium",
     "first visit opens on a finished habitat",
   );
+  await page.getByRole("button", { name: "My worlds", exact: true }).click();
   await page.getByRole("button", { name: "New world", exact: true }).click();
   await page
     .getByRole("dialog", { name: "Start a world" })
@@ -80,7 +81,12 @@ try {
         ?.textContent?.includes("Saved on this device"),
     );
     return page.evaluate(
-      (key) => JSON.parse(localStorage.getItem(key)),
+      (key) =>
+        JSON.parse(localStorage.getItem(key), (key, value) =>
+          key === "" && value.worlds
+            ? value.worlds.find((entry) => entry.id === value.activeId).world
+            : value,
+        ),
       storageKey,
     );
   }
@@ -200,6 +206,7 @@ try {
     .getByRole("complementary", { name: "Watching" })
     .waitFor({ state: "detached" });
   await page.getByRole("button", { name: "Build", exact: true }).click();
+  await page.getByRole("button", { name: "My worlds", exact: true }).click();
   await page.getByRole("button", { name: "New world", exact: true }).click();
   await page
     .getByRole("dialog", { name: "Start a world" })
@@ -264,7 +271,13 @@ try {
     .click();
   await page.getByRole("button", { name: "Build", exact: true }).click();
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Export world", exact: true }).click();
+  await page.getByRole("button", { name: "My worlds", exact: true }).click();
+  await page
+    .getByRole("button", { name: /^Options for/ })
+    .last()
+    .click();
+  await page.getByRole("button", { name: "Export file", exact: true }).click();
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   const download = await downloadPromise;
   assert.equal(download.suggestedFilename(), "cloud-forest.json");
   const invalidBefore = await saved();
@@ -339,8 +352,11 @@ try {
   await page.keyboard.press("Tab");
   await page.waitForFunction(
     (before) =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")).environment.water >
-      before,
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).environment.water > before,
     world.environment.water,
   );
 

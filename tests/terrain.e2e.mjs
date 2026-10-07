@@ -60,6 +60,7 @@ try {
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
+  await page.getByRole("button", { name: "My worlds", exact: true }).click();
   await page.getByRole("button", { name: "New world", exact: true }).click();
   await page
     .getByRole("dialog", { name: "Start a world" })
@@ -86,7 +87,11 @@ try {
       { timeout: 30000 },
     );
     return page.evaluate(() =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")),
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ),
     );
   }
   async function point(x, z) {
@@ -96,7 +101,11 @@ try {
         return groundHeight(
           x,
           z,
-          JSON.parse(localStorage.getItem("little-worlds:v1")).environment,
+          JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+            key === "" && value.worlds
+              ? value.worlds.find((entry) => entry.id === value.activeId).world
+              : value,
+          ).environment,
         );
       },
       { x, z },
@@ -184,6 +193,10 @@ try {
       const { groundHeight } = await import("/src/model/terrain.ts");
       const env = JSON.parse(
         localStorage.getItem("little-worlds:v1"),
+        (key, value) =>
+          key === "" && value.worlds
+            ? value.worlds.find((entry) => entry.id === value.activeId).world
+            : value,
       ).environment;
       return groundHeight(-2.2, 0.7, env) < env.water - 0.12;
     }),
@@ -192,7 +205,13 @@ try {
   await page.getByRole("button", { name: "Done", exact: true }).click();
   await page.screenshot({ path: "/tmp/paludarium-terrain-desktop.png" });
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Export world", exact: true }).click();
+  await page.getByRole("button", { name: "My worlds", exact: true }).click();
+  await page
+    .getByRole("button", { name: /^Options for/ })
+    .last()
+    .click();
+  await page.getByRole("button", { name: "Export file", exact: true }).click();
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   const download = await downloadPromise;
   const exported = await readFile(await download.path());
   assert.deepEqual(

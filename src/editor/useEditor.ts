@@ -19,7 +19,13 @@ import { boundedPosition, fitObject, placementProblem } from "../model/terrain";
 import { historyReducer } from "./history";
 import { TerrainStroke } from "./terrainStroke";
 import type { TerrainBrush } from "../model/terrainBrush";
-import { loadWorld, saveWorld } from "./persistence";
+import {
+  activeWorld,
+  loadLibrary,
+  saveLibrary,
+  updateLibrary,
+  type WorldLibrary,
+} from "./persistence";
 export type Tool =
   | { type: "select" }
   | { type: "place"; kind: AssetKind }
@@ -27,10 +33,12 @@ export type Tool =
   | { type: "copy"; id: string }
   | ({ type: "terrain" } & TerrainBrush);
 export function useEditor(readOnly = false, sharedWorld?: World) {
-  const [initial] = useState(loadWorld);
+  const [initial] = useState(loadLibrary);
+  const [library, setLibrary] = useState(initial.library);
+  const initialWorld = activeWorld(initial.library);
   const [history, dispatch] = useReducer(historyReducer, {
     past: [],
-    present: initial.world,
+    present: initialWorld,
     future: [],
   });
   const [isShared, setIsShared] = useState(!!sharedWorld);
@@ -45,7 +53,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   const [tool, setTool] = useState<Tool>({ type: "select" });
   const [chosenId, select] = useState<string | null>(null);
   const [message, notify] = useState(initial.warning ?? "");
-  const [saved, setSaved] = useState(true);
+  const [saved, setSaved] = useState(!initial.warning);
   const [saving, setSaving] = useState(false);
   const [paused, setPaused] = useState(false);
   const [placementRotation, setPlacementRotation] = useState(0);
@@ -70,15 +78,15 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   );
   useEffect(() => {
     // An unreadable save stays in storage until the user starts over for real.
-    if (isShared || (initial.warning && history.present === initial.world))
+    if (isShared || (initial.warning && history.present === initialWorld))
       return;
     setSaving(true);
     const timer = setTimeout(() => {
-      setSaved(saveWorld(history.present));
+      setSaved(saveLibrary(updateLibrary(library, history.present)));
       setSaving(false);
     }, 250);
     return () => clearTimeout(timer);
-  }, [history.present, isShared, initial]);
+  }, [history.present, isShared, initial, initialWorld, library]);
   useEffect(() => {
     stroke.current = null;
     setPreview(null);
@@ -290,10 +298,60 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   function rename(name: string) {
     if (name !== world.name) commit({ ...world, name });
   }
-  function replaceWorld(next: World) {
-    commit(next);
+  function switchLibrary(next: WorldLibrary): boolean {
+    if (!saveLibrary(next)) {
+      setSaved(false);
+      notify(
+        "Your worlds could not be saved. Export a backup from My worlds before continuing.",
+      );
+      return false;
+    }
+    setLibrary(next);
+    dispatch({ type: "open", world: activeWorld(next) });
+    setIsShared(false);
+    setSaved(true);
     select(null);
     setTool({ type: "select" });
+    setPreview(null);
+    stroke.current = null;
+    notify("");
+    return true;
+  }
+  function createWorld(next: World): boolean {
+    const id = createObjectId();
+    const current = updateLibrary(library, history.present);
+    return switchLibrary({
+      ...current,
+      activeId: id,
+      worlds: [...current.worlds, { id, world: next }],
+    });
+  }
+  function openWorld(id: string): boolean {
+    if (id === library.activeId && !isShared) return true;
+    return switchLibrary({
+      ...updateLibrary(library, history.present),
+      activeId: id,
+    });
+  }
+  function deleteWorld(id: string): boolean {
+    const current = updateLibrary(library, history.present);
+    const worlds = current.worlds.filter((entry) => entry.id !== id);
+    if (!worlds.length) return false;
+    const next = {
+      ...current,
+      activeId: current.activeId === id ? worlds[0].id : current.activeId,
+      worlds,
+    };
+    if (id === current.activeId && !isShared) return switchLibrary(next);
+    if (!saveLibrary(next)) {
+      setSaved(false);
+      notify("Your worlds could not be saved.");
+      return false;
+    }
+    setLibrary(next);
+    if (id === current.activeId)
+      dispatch({ type: "open", world: activeWorld(next) });
+    return true;
   }
   function move() {
     if (!selected) return;
@@ -311,14 +369,11 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     world: shown,
     isShared,
     updateLife,
-    adoptSharedWorld: () => {
-      if (!isShared || !shared) return false;
-      const saved = saveWorld(shared);
-      commit(shared);
-      setIsShared(false);
-      setSaved(saved);
-      return saved;
-    },
+    library: updateLibrary(library, history.present),
+    createWorld,
+    openWorld,
+    deleteWorld,
+    adoptSharedWorld: () => (shared ? createWorld(shared) : false),
     savedWorld: world,
     previewEnvironment: (patch: Partial<Environment>) =>
       setPreview({ base: world, world: withEnvironment(world, patch) }),
@@ -349,7 +404,6 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     rotate,
     duplicate,
     move,
-    replaceWorld,
     rename,
     undo: () => navigateHistory("undo"),
     redo: () => navigateHistory("redo"),

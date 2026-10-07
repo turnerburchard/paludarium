@@ -75,6 +75,9 @@ try {
       .waitFor({ state: "attached", timeout: 90000 });
     for (const preset of presets) {
       await page
+        .getByRole("button", { name: "My worlds", exact: true })
+        .click();
+      await page
         .getByRole("button", { name: "New world", exact: true })
         .click();
       await page

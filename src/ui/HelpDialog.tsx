@@ -57,8 +57,11 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
         </dd>
         <dt>Saving and sharing</dt>
         <dd>
-          Autosaves stay in this browser. Share sends your current layout as a
-          link others can explore and copy. Export keeps a file backup.
+          Autosaves stay in this browser. My worlds lets you switch habitats
+          without losing progress, start another, or import a file. Share sends
+          your current layout as a link others can explore and copy. Each
+          world’s options include Export file for backups. Undo history resets
+          when you switch worlds.
         </dd>
       </dl>
       <p className="panel-note">
