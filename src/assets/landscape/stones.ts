@@ -18,38 +18,44 @@ export const sandstone: AssetDefinition = {
   blocksMovement: true,
   build: (random) => {
     const root = new THREE.Group();
-    // Layers stack up from the base. Softer ones wear back between harder
-    // ledges, and the block rounds off toward the top.
-    const layers = 7 + Math.floor(random() * 3);
-    const height = 0.38 + random() * 0.12;
-    const outline = Array.from({ length: 10 }, () => 0.8 + random() * 0.35);
-    const rings: Point[][] = [];
-    const tones: string[] = [];
-    for (let l = 0; l < layers; l++) {
-      const bottom = (l / layers) * height,
-        top = ((l + 1) / layers) * height;
-      const round = Math.sqrt(1 - Math.pow((l + 0.5) / layers, 4));
-      const soft =
-        (l % 2 === 1 && random() < 0.8 ? 0.9 : 1) * (0.95 + random() * 0.08);
-      const shiftX = (random() - 0.5) * 0.04,
-        shiftZ = (random() - 0.5) * 0.04;
-      const ring = (y: number) =>
-        outline.map((r, side): Point => {
-          const a = (side / outline.length) * Math.PI * 2;
-          const radius = 0.45 * r * round * soft;
-          return [
-            Math.cos(a) * radius * 1.15 + shiftX,
-            y,
-            -Math.sin(a) * radius * 0.85 + shiftZ,
-          ];
-        });
-      rings.push(ring(bottom), ring(top));
-      tones.push(SANDSTONE[(l + Math.floor(random() * 2)) % SANDSTONE.length]);
-    }
+    // The boulder is a stack of cross sections from base to crown. Softer
+    // layers wear back into sloping grooves between the harder bands, and the
+    // crown rounds off, so the sides step without any square edges.
+    const height = 0.5 + random() * 0.14;
+    const bands = 3 + Math.floor(random() * 2);
+    const phase = random() * Math.PI;
+    // Bedding planes tilt a little, as they do in real outcrops.
+    const tiltX = (random() - 0.5) * 0.12,
+      tiltZ = (random() - 0.5) * 0.12;
+    const outline = Array.from({ length: 12 }, () => 0.85 + random() * 0.3);
+    const groove = (t: number) =>
+      Math.max(0, Math.sin(t * bands * Math.PI * 2 + phase)) ** 2;
+    const levels = 22;
+    const rings = Array.from({ length: levels + 1 }, (_, level) => {
+      const t = level / levels;
+      const crown = Math.max(0.3, (1 - t ** 4) ** 0.4);
+      const radius = 0.45 * crown * (1 - 0.08 * groove(t));
+      return outline.map((r, side): Point => {
+        const a = (side / outline.length) * Math.PI * 2;
+        // The outline wanders a little with height, so the sides bulge and
+        // lean instead of rising straight.
+        const wander = 1 + 0.07 * Math.sin(t * 4 + side * 1.7 + phase);
+        const x = Math.cos(a) * radius * r * wander * 1.15,
+          z = -Math.sin(a) * radius * r * wander * 0.85;
+        return [x, t * height + (x * tiltX + z * tiltZ) * t, z];
+      });
+    });
+    const tones = Array.from({ length: bands }, () => Math.floor(random() * 3));
     const geo = ringVolume(rings);
-    paint(geo, (center) => {
-      const layer = Math.floor((center.y / height) * layers - 0.001);
-      return tones[Math.max(0, Math.min(layers - 1, layer))];
+    paint(geo, (center, normal) => {
+      // The crown's rings crowd together, so banding there turns into a
+      // star. Color the whole top as one weathered surface instead.
+      if (normal.y > 0.7) return SANDSTONE[tones[bands - 1] + 1];
+      const rise = height + center.x * tiltX + center.z * tiltZ;
+      const t = Math.min(1, Math.max(0, center.y / rise));
+      const tone = tones[Math.min(bands - 1, Math.floor(t * bands))];
+      // The worn-back grooves are the softer, darker layers.
+      return SANDSTONE[groove(t) > 0.3 ? tone : tone + 2];
     });
     mesh(geo, stoneSkin(), root);
     return root;
@@ -78,6 +84,7 @@ export const sandstoneLedge: AssetDefinition = {
         height,
         0.7 - i * 0.1 + random() * 0.1,
         random,
+        0.18,
       );
       const side = SANDSTONE[(i + Math.floor(random() * 2)) % SANDSTONE.length];
       const top = SANDSTONE[Math.min(SANDSTONE.length - 1, i + 2)];
@@ -254,15 +261,17 @@ function shapedStone(
 }
 
 /** A flat, irregular slab: a seven-sided plate with a jittered outline, so
- * stacked slabs never line up. */
+ * stacked slabs never line up. A bevel pulls the top and bottom rims in so
+ * the edges look worn rather than sawn. */
 function slab(
   width: number,
   height: number,
   depth: number,
   random: () => number,
+  bevel = 0,
 ) {
   const sides = 7;
-  const geo = new THREE.CylinderGeometry(0.5, 0.5, height, sides, 1);
+  const geo = new THREE.CylinderGeometry(0.5, 0.5, height, sides, 2);
   const positions = geo.getAttribute("position");
   const jitter = Array.from({ length: sides }, () => 0.65 + random() * 0.5);
   for (let i = 0; i < positions.count; i++) {
@@ -272,8 +281,9 @@ function slab(
     const side =
       Math.round(((Math.atan2(z, x) + Math.PI) / (Math.PI * 2)) * sides) %
       sides;
-    positions.setX(i, x * width * jitter[side]);
-    positions.setZ(i, z * depth * jitter[side]);
+    const rim = Math.abs(positions.getY(i)) > height / 4 ? 1 - bevel : 1;
+    positions.setX(i, x * width * jitter[side] * rim);
+    positions.setZ(i, z * depth * jitter[side] * rim);
   }
   const flat = geo.toNonIndexed();
   geo.dispose();
