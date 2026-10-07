@@ -142,11 +142,15 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   useEffect(() => {
     const keydown = (e: KeyboardEvent) => {
       const target = e.target instanceof Element ? e.target : null;
-      if (target?.closest("input,textarea,select,[contenteditable=true]"))
+      // An open dialog owns the keyboard; the world behind it stays as it is.
+      if (
+        target?.closest("input,textarea,select,[contenteditable=true]") ||
+        document.querySelector('[role="dialog"]')
+      )
         return;
       if (readOnly) {
         if (e.key === "Escape") select(null);
-        else if (e.code === "Space" && !target?.closest("button,a")) {
+        else if (e.code === "Space" && !target?.closest("button,a,summary")) {
           e.preventDefault();
           setPaused((p) => !p);
         }
@@ -168,8 +172,8 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
         !e.altKey
       )
         rotate(e.shiftKey ? -Math.PI / 6 : Math.PI / 6);
-      // Space on a focused button presses it; elsewhere it pauses life.
-      else if (e.code === "Space" && !target?.closest("button,a")) {
+      // Space on a focused control presses it; elsewhere it pauses life.
+      else if (e.code === "Space" && !target?.closest("button,a,summary")) {
         e.preventDefault();
         setPaused((p) => !p);
       }
