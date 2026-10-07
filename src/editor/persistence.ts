@@ -28,11 +28,22 @@ const librarySchema = z
   .object({
     version: z.literal(1),
     activeId: z.string(),
-    worlds: z.array(z.object({ id: z.string(), world: worldSchema })).min(1),
+    worlds: z
+      .array(
+        z.object({
+          id: z.string(),
+          world: worldSchema,
+          preview: z.literal(true).optional(),
+        }),
+      )
+      .min(1),
   })
   .superRefine((library, ctx) => {
     if (
       !library.worlds.some((entry) => entry.id === library.activeId) ||
+      library.worlds.some(
+        (entry) => entry.preview && entry.id !== library.activeId,
+      ) ||
       new Set(library.worlds.map((entry) => entry.id)).size !==
         library.worlds.length
     )
@@ -42,9 +53,13 @@ const librarySchema = z
       });
   });
 export type WorldLibrary = z.infer<typeof librarySchema>;
-export function createLibrary(world: World): WorldLibrary {
+export function createLibrary(world: World, preview = false): WorldLibrary {
   const id = createObjectId();
-  return { version: 1, activeId: id, worlds: [{ id, world }] };
+  return {
+    version: 1,
+    activeId: id,
+    worlds: [{ id, world, ...(preview && { preview: true }) }],
+  };
 }
 export function parseLibrary(text: string): WorldLibrary {
   const data = JSON.parse(text);
@@ -70,12 +85,31 @@ export function activeWorld(library: WorldLibrary): World {
 export function updateLibrary(
   library: WorldLibrary,
   world: World,
+  edited = false,
 ): WorldLibrary {
   return {
     ...library,
-    worlds: library.worlds.map((entry) =>
-      entry.id === library.activeId ? { ...entry, world } : entry,
-    ),
+    worlds: library.worlds.map((entry) => {
+      if (entry.id !== library.activeId) return entry;
+      if (edited) return { id: entry.id, world };
+      return { ...entry, world };
+    }),
+  };
+}
+export function openLibraryWorld(
+  library: WorldLibrary,
+  entry: WorldLibrary["worlds"][number],
+): WorldLibrary {
+  return {
+    ...library,
+    activeId: entry.id,
+    // Only the open preset is resumable. Kept worlds survive browsing.
+    worlds: [
+      entry,
+      ...library.worlds.filter(
+        (other) => !other.preview && other.id !== entry.id,
+      ),
+    ],
   };
 }
 export function loadLibrary(): {
@@ -87,7 +121,7 @@ export function loadLibrary(): {
     return {
       library: saved
         ? parseLibrary(saved)
-        : createLibrary(makePreset("aquarium")),
+        : createLibrary(makePreset("aquarium"), true),
       warning: null,
     };
   } catch {

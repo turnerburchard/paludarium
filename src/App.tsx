@@ -3,7 +3,7 @@ import { Info } from "lucide-react";
 import { IconButton } from "./ui/IconButton";
 import { isAnimal } from "./assets";
 import { useEditor } from "./editor/useEditor";
-import { makePreset, type Preset } from "./model/presets";
+import type { Preset } from "./model/presets";
 import { WorldScene } from "./scene/WorldScene";
 import { useEcosystem } from "./simulation/useEcosystem";
 import { BottomHud } from "./ui/BottomHud";
@@ -72,7 +72,7 @@ export default function App({
   }
 
   function startPreset(preset: Preset) {
-    if (!editor.createWorld(makePreset(preset))) return;
+    if (!editor.startPreset(preset)) return;
     clearWorldLink();
     setWatchRequest(null);
     setDialog(null);
