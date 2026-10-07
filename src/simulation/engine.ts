@@ -569,11 +569,27 @@ export class Ecosystem {
       agent.hasTravelled = true;
       agent.recent.push(target.id);
       if (agent.recent.length > 20) agent.recent.shift();
-      if (
-        agent.path.length &&
-        ((state.needs.hydration < 0.25 && state.activity !== "seeking-water") ||
-          (state.needs.hunger > 0.8 && state.activity !== "seeking-food"))
-      ) {
+      const urgentWater =
+        state.needs.hydration < 0.25 && state.activity !== "seeking-water";
+      const urgentFood =
+        state.needs.hunger > 0.8 &&
+        state.activity !== "seeking-food" &&
+        state.activity !== "seeking-water";
+      const canHelp =
+        (urgentWater || urgentFood) &&
+        [...agent.routes!.navigation.distances.keys()].some(
+          (id) =>
+            (urgentWater && this.graph.node(id).wet) ||
+            (urgentFood && (this.food.get(id)?.amount ?? 0) > 0.001),
+        );
+      const occupied = [...this.agents.values()].some(
+        (other) =>
+          other !== agent &&
+          (other.state.nodeId === target.id || other.path.at(-1) === target.id),
+      );
+      // An unmet need is not a reason to abandon a route at every cell, or
+      // stop on another animal's resting spot. Redirect only where help exists.
+      if (agent.path.length && canHelp && !occupied) {
         agent.path = [];
         agent.reconsiderAt = 0;
         state.moving = false;

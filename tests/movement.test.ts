@@ -48,6 +48,45 @@ function random(seed: number) {
 }
 
 describe("animal movement", () => {
+  it("does not abandon a route on an occupied shelter when no food is reachable", () => {
+    const graph = new HabitatGraph([
+      node("a", 0, 0, ["b"]),
+      { ...node("b", 0.3, 0, ["a", "c"]), shelter: 1 },
+      node("c", 0.6, 0, ["b"]),
+    ]);
+    const sleepy = {
+      ...species,
+      nocturnal: true,
+      movement: undefined,
+      speed: 0.2,
+    };
+    let passedShelter = false;
+    for (let randomSeed = 1; randomSeed <= 32; randomSeed++) {
+      const engine = new Ecosystem(
+        graph,
+        [
+          { ...seed(sleepy), id: "one" },
+          {
+            ...seed(sleepy),
+            id: "two",
+            nodeId: "c",
+            direction: { x: -1, y: 0, z: 0 },
+          },
+        ],
+        { speed: 1, elapsed: 100, random: random(randomSeed) },
+      );
+      for (let i = 0; i < 200; i++) {
+        engine.advance(0.1);
+        const animals = engine.snapshot().animals;
+        const resting = animals.filter((animal) => !animal.moving);
+        expect(new Set(resting.map((animal) => animal.nodeId)).size).toBe(
+          resting.length,
+        );
+        if (engine.getAnimal("two")!.nodeId === "b") passedShelter = true;
+      }
+    }
+    expect(passedShelter).toBe(true);
+  });
   it("hops in under half a real second, with steady forward flight and a quick landing", () => {
     // Slow crawling must not turn a jump into slow motion.
     const engine = new Ecosystem(
