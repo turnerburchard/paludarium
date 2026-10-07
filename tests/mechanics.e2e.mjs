@@ -144,7 +144,9 @@ try {
     "watching offers no edit actions",
   );
   assert.equal(
-    await page.getByRole("meter").count(),
+    await page
+      .getByRole("meter", { name: /^(Fullness|Hydration|Energy)$/ })
+      .count(),
     0,
     "needs start collapsed",
   );

@@ -49,12 +49,11 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
         </dd>
         <dt>See what unfolds</dt>
         <dd>
-          Plants shelter insects; shallow shorelines offer moisture. Creatures
-          forage, soak, climb and sleep on a sped-up day/night cycle. Life
-          records field notes when you see a new behavior. Follow someone to
-          take a closer look, or change the habitat to give them new places to
-          go. Life pauses while the tab is hidden; activity and notes restart on
-          reload.
+          Planting and tank space support your animals. Healthy adults of the
+          same species can have young, which slowly grow up. Crowding and too
+          little planting gradually lower condition. Follow someone to see their
+          age and condition. Life pauses while the tab is hidden; age, condition
+          and offspring stay saved when you return.
         </dd>
         <dt>Keep your world</dt>
         <dd>

@@ -3,6 +3,7 @@ import { assets } from "../assets";
 import type { World } from "../model/schema";
 import type { AnimalState } from "../simulation/types";
 import { activityLabels } from "./AnimalStatus";
+import { animalLife, MATURITY_AGE } from "../simulation/lifeCycle";
 
 export function CreatureList({
   world,
@@ -26,7 +27,10 @@ export function CreatureList({
               onClick={() => onWatch(animal.id)}
               aria-pressed={animal.id === selectedId}
             >
-              <span>{assets[object.kind].name}</span>
+              <span>
+                {assets[object.kind].name}
+                {animalLife(object).age < MATURITY_AGE && " · Juvenile"}
+              </span>
               <small>{activityLabels[animal.activity]}</small>
               <Eye size={15} />
             </button>

@@ -1120,14 +1120,16 @@ button:hover:not(:disabled) {
   gap: 5px;
   margin: 8px 0 12px;
 }
-.life-needs label {
+.life-needs label,
+.animal-condition {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 11px;
   color: #bacb9b;
 }
-.life-needs meter {
+.life-needs meter,
+.animal-condition meter {
   width: 55%;
   height: 9px;
 }

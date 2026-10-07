@@ -34,7 +34,8 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     future: [],
   });
   const [isShared, setIsShared] = useState(!!sharedWorld);
-  const world = isShared && sharedWorld ? sharedWorld : history.present;
+  const [shared, setShared] = useState(sharedWorld);
+  const world = isShared && shared ? shared : history.present;
   // A gesture previews only its original world; committing retires it.
   const [preview, setPreview] = useState<{ base: World; world: World } | null>(
     null,
@@ -57,6 +58,16 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     setPreview(null);
     dispatch({ type: "commit", world: next });
   }, []);
+  const updateLife = useCallback(
+    (base: World, next: World) => {
+      if (isShared) {
+        setShared((current) => (current === base ? next : current));
+        return;
+      }
+      dispatch({ type: "simulate", base, world: next });
+    },
+    [isShared],
+  );
   useEffect(() => {
     // An unreadable save stays in storage until the user starts over for real.
     if (isShared || (initial.warning && history.present === initial.world))
@@ -299,10 +310,11 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   return {
     world: shown,
     isShared,
+    updateLife,
     adoptSharedWorld: () => {
-      if (!isShared || !sharedWorld) return false;
-      const saved = saveWorld(sharedWorld);
-      commit(sharedWorld);
+      if (!isShared || !shared) return false;
+      const saved = saveWorld(shared);
+      commit(shared);
       setIsShared(false);
       setSaved(saved);
       return saved;

@@ -49,12 +49,24 @@ Implemented now: accelerated hunger/hydration/energy, self-renewing insect colon
 
 ## Later: an ecosystem that rewards balance
 
-Priority: medium. Food resources, plant growth, crowding and reproduction; eventually mortality. Begin with one small food web. Explain imbalances gently before introducing losses. No money system or large menu stack. Fun and legibility matter more than biological detail.
+Priority: medium. Deeper food resources and plant growth can follow the simple breeding and mortality rules below. Begin with one small food web. No money system or large menu stack. Fun and legibility matter more than biological detail.
 
 - [x] Insects breed in colonies under plant and moss cover; capacity follows cover, and the Life panel gives quiet habitat guidance for insect eaters, excluding grazers.
 - [x] Plants have soil preferences; struggling plants give less cover.
 - [ ] Plant growth over time. Open design questions for Turner: is growth saved with the world, how does it interact with undo, and how should growth look?
 - [ ] Decomposers and leaf litter feeding the insects.
+
+## Forgiving life cycles
+
+Direction agreed with Turner on 2026-10-07: default breeding and slow mortality, with a simple shared planting and tank-space budget. Plant requirements are tuning values, not a fixed two-plants rule. No sexes or recurring feeding/misting chores.
+
+- [x] All animal species breed with a healthy same-species adult, producing a juvenile that grows into an adult.
+- [x] Planting and space constrain breeding and long-term condition; sustained shortages cause mortality, and old age eventually removes animals.
+- [x] Saved age, condition and offspring, with no offline advancement or automatic Undo steps. Undo can restore an earlier population.
+- [x] Bounded close-up springtail visuals and life-stage/condition feedback.
+- [ ] Longer-term life stages: eggs and tadpoles, researched per species ([#34](https://github.com/turnerburchard/paludarium/issues/34)).
+- [ ] Cherry shrimp populations and fish predation ([#35](https://github.com/turnerburchard/paludarium/issues/35)); tiny crabs and other invertebrates ([#36](https://github.com/turnerburchard/paludarium/issues/36)).
+- [ ] Higher habitat capacity, with physical-phone profiling before raising the limit ([#37](https://github.com/turnerburchard/paludarium/issues/37)). Temperature and water type remain separate ([#31](https://github.com/turnerburchard/paludarium/issues/31)).
 
 ## Art direction and scale
 

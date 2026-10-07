@@ -6,9 +6,15 @@ export interface History {
 }
 export type HistoryAction =
   | { type: "commit"; world: World }
+  | { type: "simulate"; base: World; world: World }
   | { type: "undo" }
   | { type: "redo" };
 export function historyReducer(state: History, action: HistoryAction): History {
+  if (action.type === "simulate") {
+    return state.present === action.base
+      ? { ...state, present: action.world }
+      : state;
+  }
   if (action.type === "commit") {
     if (JSON.stringify(action.world) === JSON.stringify(state.present))
       return state;

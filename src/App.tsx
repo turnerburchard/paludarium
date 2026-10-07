@@ -33,7 +33,7 @@ export default function App({
   const editor = useEditor(view, sharedWorld);
   const { world, selected, tool } = editor;
   // Life follows committed edits, not intermediate brush or slider previews.
-  const ecosystem = useEcosystem(editor.savedWorld);
+  const ecosystem = useEcosystem(editor.savedWorld, editor.updateLife);
   const files = useWorldFiles(editor);
   const [panel, setPanel] = useState<Panel>("objects");
   // On phones the sidebar is a sheet, closed until a dock button opens it.

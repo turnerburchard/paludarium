@@ -4,9 +4,9 @@
 
 Frog activity runs in a renderer-independent TypeScript engine. Species choose destinations from connected habitat surfaces, guided by hunger, hydration, energy, the simulated day/night period, and unseeded randomness. The engine runs six simulated seconds per visible real second; a day/night cycle lasts five real minutes. These are game-tuning values, not physiological measurements.
 
-Frogs forage for finite insect portions, soak at a shallow shoreline, explore, recover energy, and sleep. Cover holds in humidity, so an animal dries out at 40% of the open-ground rate under full shelter. Walking costs energy by distance, and travel time weighs on where an animal shelters and when it sets off for water, so slow walkers settle nearby and leave for a far shoreline early. An animal that finds every reachable shoreline spot taken waits on the way for its turn. Red-eyed and mossy frogs can use connected glass ladders and plant stems. Tree frogs prefer sheltered leaves for daytime sleep and can leap between nearby perches. Mossy frogs crawl and use low perches; dart frogs make short hops along the ground. The watch card shows an animal’s needs. The Life panel lists inhabitants to follow; there are no routine feed or mist chores, and scarcity does not cause death.
+Frogs forage for finite insect portions, soak at a shallow shoreline, explore, recover energy, and sleep. Cover holds in humidity, so an animal dries out at 40% of the open-ground rate under full shelter. Walking costs energy by distance, and travel time weighs on where an animal shelters and when it sets off for water, so slow walkers settle nearby and leave for a far shoreline early. An animal that finds every reachable shoreline spot taken waits on the way for its turn. Red-eyed and mossy frogs can use connected glass ladders and plant stems. Tree frogs prefer sheltered leaves for daytime sleep and can leap between nearby perches. Mossy frogs crawl and use low perches; dart frogs make short hops along the ground. The watch card shows needs, life stage and condition. The Life panel lists inhabitants and quiet planting/space guidance; there are no routine feed or mist chores. Short-term needs guide activity; long-term survival uses the shared planting and space budget described below.
 
-Frogs use rigged crouch, jump and landing clips, breathing, and planted feet while walking or climbing. Geckos dash and pause with a rigged gait. Fish swim as a loose school (see below) but have no needs yet. Insects are the first self-balancing resource (see below). There is no frog breeding, mortality, algae, nutrient cycle or waste yet.
+Frogs use rigged crouch, jump and landing clips, breathing, and planted feet while walking or climbing. Geckos dash and pause with a rigged gait. Fish swim as a loose school (see below) without individual feeding behaviors. All animals share slow breeding, growth and mortality. There is no predation, algae, nutrient cycle or waste yet.
 
 Monstera, bromeliad, and fern definitions provide seeded stem routes, leaf positions, and surface normals from the same geometry data used to build the plants. Rotation and scale apply to those anchors. A plant needs a dry connection to nearby ground or its stone/wood support; disconnected or submerged plants are not reachable. Nearby leaves within 0.65 scene units admit a tree-frog leap. Removing or moving a plant remaps the frog to a reachable surface while preserving its needs.
 
@@ -24,11 +24,11 @@ Insects live in colonies on sheltered, dry ground. `insectColonies` in `worldHab
 
 Each simulation step a colony below capacity grows logistically: `growth × (insects + arrivals) × (1 − insects / capacity)`. Growth is fastest at half capacity, so a colony that frogs keep about half eaten feeds them best. The small `arrivals` term means an eaten-out colony slowly recovers instead of going extinct. Food outside a colony has zero capacity and doesn't breed.
 
-`insectEatersSupported` turns total colony capacity into an approximate number of frogs fed indefinitely, using the same constants as the engine. The Life panel uses it for tucked-away advice to add cover, counting insect eaters rather than grazers. There are no feed or mist buttons: lasting habitat changes are the interaction. Edits keep insects: a patch whose spot is still a colony joins it; otherwise it stays as scattered food.
+`insectEatersSupported` estimates the number of insect eaters supported by the foraging colonies, using the same constants as the engine. Long-term population guidance instead uses the shared planting and space budget. There are no feed or mist buttons: lasting habitat changes are the interaction. Edits keep insects: a patch whose spot is still a colony joins it; otherwise it stays as scattered food.
 
 ## Fish
 
-`simulation/fish.ts` is a small, separate school simulation. Each fish keeps a slightly different pace and a slowly drifting turning rate, lines up with and drifts toward fish within about a scene unit, keeps a little personal space, and looks ahead so it turns away from the shore before reaching it. "Water" is exactly where a fish may be placed (`placementProblem`), so swimming and placement can't disagree. Fish keep their positions through ordinary edits unless they were moved or their spot dried out. They don't eat, tire or breed yet.
+`simulation/fish.ts` is a small, separate school simulation. Each fish keeps a slightly different pace and a slowly drifting turning rate, lines up with and drifts toward fish within about a scene unit, keeps a little personal space, and looks ahead so it turns away from the shore before reaching it. "Water" is exactly where a fish may be placed (`placementProblem`), so swimming and placement can't disagree. Fish keep their positions through ordinary edits unless they were moved or their spot dried out. Their breeding and mortality come from the shared life-cycle rules, without individual hunger or fatigue simulation.
 
 ## Code boundaries
 
@@ -40,6 +40,7 @@ Each simulation step a colony below capacity grows logistically: `growth × (ins
 - `simulation/landSurfaces.ts`: exposed hardscape routes and solid-interior checks.
 - `simulation/worldHabitat.ts`: adapter from editor terrain/objects to connected ground, glass, hardscape, stem/leaf and den routes. Only shallow shoreline surfaces admit soaking.
 - `simulation/useEcosystem.ts`: React lifecycle and low-frequency HUD snapshots.
+- `simulation/lifeCycle.ts`: pure shared planting/space budgets and saved animal age, condition, reproduction and juvenile scale. Randomness is injected for births.
 - `scene/EcosystemLife.tsx`: advances the engine once per frame, renders feeding patches.
 - `scene/Inhabitant.tsx`: reads positions/activities and poses the existing animal mesh.
 - `simulation/discoveries.ts`: recognizes observed arrivals and behaviors, rather than planned routes. The engine keeps one note per behavior and carries those notes across ordinary edits.
@@ -51,7 +52,19 @@ The renderer does not decide where food is, when an animal sleeps, or how needs 
 
 No wall-clock catch-up or equilibrium jump exists. Hidden tabs and Pause freeze simulation; editing placement also pauses it. Frame gaps above 250 ms are discarded rather than replayed. Selecting a frog holds its position/needs while inspecting it.
 
-Layout JSON remains version 1. Live activity, food, needs and field notes currently restart on reload; the UI explicitly says so. Normal edits retain needs and available food, remapping animals to the new surface graph. New presets/imports with new object IDs start a new session. Runtime state persistence can be added separately, without introducing elapsed offline time.
+World JSON remains version 1 with optional validated `life` data on animals. Older worlds still load, with deterministic adult starting ages and lifespans derived from their seeds. Live activity, food, short-term needs and field notes restart on reload. Normal edits retain needs and available food, remapping animals to the new surface graph. Age, condition and offspring survive reload, export and sharing. Shared worlds evolve in memory without overwriting the recipient's own save.
+
+## Forgiving population rules
+
+The life-cycle clock uses active real seconds, independently of the accelerated movement/day clock. The controller publishes a world update about every five active seconds. Only a birth or death rebuilds the movement engines; an age or condition update reuses them. Automatic updates replace the present world without adding history entries or clearing Redo. Undo/Redo restores the whole historical world, including its population and life-cycle data.
+
+The initial tuning counts one suitable plant or moss patch per supported animal, and one scene-square-unit of tank area per animal. Both are simple global budgets across the whole habitat. Planting in unsuitable soil or placement does not contribute. Size, detailed diets, separate land/water food webs and chemistry are intentionally outside this version. Existing insect foraging still supplies activity, but insect portions do not determine mortality or reproduction.
+
+Two same-species adults with condition at least 0.6 accumulate breeding readiness while the habitat is supported. After 30 healthy active minutes, a pair can produce one juvenile if another animal fits the planting, space and object limits. There are no sexes. Juveniles render at 45% of adult scale and grow to full size over 15 active minutes, using the existing model, rig and conservative adult navigation.
+
+Lifespans vary from three to five active hours. Adults placed by the editor begin at varied ages so founding pairs do not all die together. An unsupported animal slowly loses condition in proportion to the shortage, taking about two hours to die with no support at all. Supported habitats restore condition over about 30 minutes. The Life panel explains planting and crowding pressure; watch cards show condition and juvenile/adult/older-adult stages.
+
+Springtails are a close-up visual sample, at most five instanced shapes per existing foraging patch. They do not create saved objects or individual population updates. Fish and grazers use the same life-cycle budget without new feeding/navigation systems.
 
 ## Natural-history basis
 
@@ -67,4 +80,4 @@ Species names do not define diets. In particular, strawberry poison frogs do not
 
 Keep rendering changes and simulation changes separate. The engine exposes normal, direction, activity and motion so future rigs can animate sleep, feeding and wall attachment. Plant perches come from asset-authored anchors; hardscape routes come from the exposed geometry. The importable `examples/stacked-lookout.json` demonstrates a planted stack.
 
-Next: improve whole-body clearance through tight gaps; save live needs without advancing while closed; then implement a small producer/grazer/decomposer system with resource conservation and clear feedback before adding reproduction or death.
+Follow-ups: species-appropriate eggs/tadpoles (#34), cherry shrimp and predation (#35), tiny crabs (#36), and higher habitat capacity with physical-mobile profiling (#37). Temperature and water type remain in #31. Detailed food webs and plant growth are separate from the shared planting budget.
