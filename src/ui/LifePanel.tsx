@@ -18,6 +18,7 @@ export function LifePanel({
   onWatch: (id: string) => void;
 }) {
   const { snapshot } = ecosystem;
+  const { habitat } = ecosystem;
   const animals = snapshot.animals;
   // Fish by species, each with the ids of the fish of that kind.
   const fish = new Map<AssetKind, string[]>();
@@ -59,6 +60,16 @@ export function LifePanel({
         </span>
         <span>{animals.length + fishCount} inhabitants</span>
       </div>
+      {habitat.population > 0 && (
+        <p>
+          {habitat.food < 1
+            ? "More planting would support this population."
+            : "Enough planting for this population."}
+          {habitat.space < 1 &&
+            " The tank is crowded. A larger habitat would help."}{" "}
+          Breeding needs spare food and space.
+        </p>
+      )}
       {animals.length + fishCount === 0 && (
         <p>Nothing lives here yet. Add an animal or some fish.</p>
       )}

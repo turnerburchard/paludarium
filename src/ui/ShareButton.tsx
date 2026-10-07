@@ -15,8 +15,6 @@ export function ShareButton({ world }: { world: World }) {
   const [manual, setManual] = useState(false);
   useEffect(() => {
     let canceled = false;
-    setCopied(false);
-    setManual(false);
     createWorldLink(world, project.url).then(
       (url) => {
         if (!canceled) setPrepared({ world, url });

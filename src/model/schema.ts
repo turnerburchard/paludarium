@@ -93,6 +93,14 @@ export const objectSchema = z.object({
   rotation: finite.min(-100).max(100),
   scale: finite.min(0.4).max(2),
   seed: z.number().int().min(0).max(2147483647),
+  life: z
+    .object({
+      age: finite.min(0),
+      lifespan: finite.positive(),
+      condition: finite.min(0).max(1),
+      breeding: finite.min(0),
+    })
+    .optional(),
   // Additive version-1 data: moss grown over stone or wood, and the stone or
   // wood an object rests on, with its base this far above the ground.
   moss: z.enum(mossSpecies).optional(),

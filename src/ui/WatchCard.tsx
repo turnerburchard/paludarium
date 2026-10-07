@@ -4,6 +4,7 @@ import type { HabitatObject } from "../model/schema";
 import type { EcosystemController } from "../simulation/useEcosystem";
 import { AnimalStatus } from "./AnimalStatus";
 import { IconButton } from "./IconButton";
+import { animalLife, MATURITY_AGE } from "../simulation/lifeCycle";
 
 /** Shown instead of the inspector while the camera follows an animal. */
 export function WatchCard({
@@ -17,6 +18,10 @@ export function WatchCard({
 }) {
   const asset = assets[object.kind];
   const animal = ecosystem.snapshot.animals.find((a) => a.id === object.id);
+  const life = animalLife(object);
+  let lifeStage = "Adult";
+  if (life.age < MATURITY_AGE) lifeStage = "Juvenile · Growing";
+  else if (life.age > life.lifespan * 0.8) lifeStage = "Older adult";
   return (
     <aside className="inspector" aria-label="Watching">
       <div className="inspector-heading">
@@ -28,6 +33,25 @@ export function WatchCard({
           <X size={17} />
         </IconButton>
       </div>
+      <p>{lifeStage}</p>
+      <label className="animal-condition">
+        <span>Condition</span>
+        <meter
+          aria-label="Condition"
+          min={0}
+          max={1}
+          low={0.4}
+          high={0.7}
+          optimum={1}
+          value={life.condition}
+        />
+      </label>
+      {life.condition < 0.7 && (
+        <p>
+          Condition is low. More planting or fewer animals gives the habitat
+          time to recover.
+        </p>
+      )}
       {animal ? (
         <AnimalStatus animal={animal} compact />
       ) : asset.swims ? (

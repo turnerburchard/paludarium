@@ -268,7 +268,11 @@ function Scene({
       </group>
       <EcosystemLife
         ecosystem={ecosystem}
-        paused={editor.paused || tool.type !== "select"}
+        paused={
+          editor.paused ||
+          tool.type !== "select" ||
+          editor.world !== editor.savedWorld
+        }
         heldId={view || watchingId ? null : editor.selectedId}
       />
       <Water

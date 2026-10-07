@@ -14,6 +14,7 @@ import { TurtleRig } from "./turtleRig";
 import { SwimRig } from "./swimRig";
 import { barbSwim } from "../assets/animals/barb";
 import { SWIM_BOB } from "../simulation/swimSpace";
+import { juvenileScale } from "../simulation/lifeCycle";
 
 interface Props {
   object: HabitatObject;
@@ -186,7 +187,7 @@ export function Inhabitant({
       }}
       position={[object.x, baseY, object.z]}
       rotation={[0, object.rotation, 0]}
-      scale={object.scale}
+      scale={object.scale * juvenileScale(object)}
       onClick={onSelect}
     >
       <primitive object={model} />
