@@ -61,7 +61,10 @@ try {
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
   await page.getByRole("button", { name: "New world", exact: true }).click();
-  await page.getByRole("button", { name: /Empty tank/ }).click();
+  await page
+    .getByRole("dialog", { name: "Start a world" })
+    .getByRole("button", { name: "Empty tank", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Habitat settings", exact: true })
     .click();
