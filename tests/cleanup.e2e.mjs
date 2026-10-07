@@ -251,9 +251,8 @@ try {
   });
   await page.getByRole("button", { name: "About Paludarium" }).click();
   await page.getByRole("dialog", { name: "About Paludarium" }).waitFor();
-  await page
-    .getByRole("button", { name: "Make it yours", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Close introduction" }).click();
+  await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.getByRole("textbox", { name: "World name" }).waitFor();
   assert.equal(await page.getByText("TERRARIUM STUDIO").count(), 0);
   const status = page.locator(".save-status");

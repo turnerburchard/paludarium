@@ -52,21 +52,21 @@ export function AboutDialog({
       </p>
       <div className="modal-footer">
         <a
-        className="source-link"
-        href="https://turnerburchard.com"
-        target="_blank"
-        rel="noreferrer"
+          className="source-link"
+          href="https://turnerburchard.com"
+          target="_blank"
+          rel="noreferrer"
         >
-        Made by Turner Burchard
+          Made by Turner Burchard
         </a>
         <p> · </p>
         <a
-        className="source-link"
-        href="https://github.com/turnerburchard/paludarium"
-        target="_blank"
-        rel="noreferrer"
+          className="source-link"
+          href="https://github.com/turnerburchard/paludarium"
+          target="_blank"
+          rel="noreferrer"
         >
-         View source
+          View source
         </a>
       </div>
     </Modal>
