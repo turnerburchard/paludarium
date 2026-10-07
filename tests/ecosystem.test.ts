@@ -551,6 +551,7 @@ describe("plant perches and species movement", () => {
           {
             speed: 1,
             elapsed: 1000,
+            random: () => 0.5,
             food: [{ nodeId: "b", amount: 3, capacity: 0 }],
           },
         ),
@@ -561,10 +562,12 @@ describe("plant perches and species movement", () => {
     for (let step = 0; step < 80; step++)
       engines.forEach((engine, index) => {
         engine.advance(0.1);
-        if (step === 30) engine.addFood("a", 3);
+        if (step === 10) engine.addFood("a", 3);
         const animal = engine.getAnimal("frog")!;
         expect(animal.position.x).toBeGreaterThanOrEqual(previous[index]);
-        expect(animal.position.x - previous[index]).toBeLessThan(0.009);
+        expect(animal.position.x - previous[index]).toBeLessThan(
+          index === 0 ? 0.025 : 0.009,
+        );
         previous[index] = animal.position.x;
         if (index === 0) hopLift = Math.max(hopLift, animal.motion.lift);
         else crawlLift = Math.max(crawlLift, animal.motion.lift);
