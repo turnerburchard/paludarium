@@ -102,6 +102,7 @@ const MODELS = [
     // "Rock Flat" by Kenney, poly.pizza/m/CrSoV13mCU, CC0.
     source: "docs/inspiration/models/rock-flat-kenney.glb",
     out: "src/assets/landscape/flagstone.json",
+    solid: true,
     width: 0.7,
     sink: 0.3,
   },
@@ -129,6 +130,7 @@ const MODELS = [
     // "log with fungus" by sirkitree, poly.pizza/m/32czhZtc7oY, CC-BY 3.0.
     source: "docs/inspiration/models/log-fungus-sirkitree.glb",
     out: "src/assets/landscape/fungusLog.json",
+    solid: true,
     length: 1.15,
     sink: 0.1,
   },
@@ -186,16 +188,22 @@ for (const model of MODELS) {
   // Rocks and logs settle part of their height into the ground.
   const floor = bounds.min.y + (model.sink ?? 0) * size.y;
   const parts = new Map();
+  const kept = new Set();
   for (const face of faces) {
+    const corners = face.corners.map((p) =>
+      [
+        flip * (p.x - center.x) * scale,
+        (p.y - floor) * scale,
+        flip * (p.z - center.z) * scale,
+      ].map((v) => Number(v.toFixed(5))),
+    );
+    // Some models stack a back face on a front face. Animals walk hardscape
+    // by its face normals, and a back-to-back pair cancels out to nothing.
+    const shape = corners.map(String).sort().join("|");
+    if (model.solid && kept.has(shape)) continue;
+    kept.add(shape);
     const part = parts.get(face.key) ?? { color: face.key, positions: [] };
-    for (const p of face.corners)
-      part.positions.push(
-        ...[
-          flip * (p.x - center.x) * scale,
-          (p.y - floor) * scale,
-          flip * (p.z - center.z) * scale,
-        ].map((v) => Number(v.toFixed(5))),
-      );
+    part.positions.push(...corners.flat());
     parts.set(face.key, part);
   }
   writeFileSync(model.out, JSON.stringify({ parts: [...parts.values()] }));
