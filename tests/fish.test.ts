@@ -4,6 +4,7 @@ import { randomFromSeed } from "../src/model/random";
 import { makePreset } from "../src/model/presets";
 import { placementProblem } from "../src/model/terrain";
 import { createFishSchool } from "../src/simulation/worldHabitat";
+import { SwimSpace } from "../src/simulation/swimSpace";
 
 /** A round pond of radius 1 centered on the origin. */
 const pond = (x: number, z: number) => Math.hypot(x, z) < 1;
@@ -123,6 +124,28 @@ describe("fish school", () => {
     stepped.advance(0.1);
     expect(capped.all()).toEqual(stepped.all());
   });
+
+  it("ignores frames with no elapsed time", () => {
+    const s = school(five());
+    const before = s.all();
+    s.advance(0);
+    s.advance(-1);
+    expect(s.all()).toEqual(before);
+  });
+
+  it("retains its pace and ongoing turns when the habitat is rebuilt", () => {
+    const original = new FishSchool(five(), pond, { random: () => 0.5 });
+    run(original, 8);
+    const rebuilt = new FishSchool(original.all(), pond, {
+      random: () => 0.5,
+      previous: original,
+    });
+    for (let tick = 0; tick < 90; tick++) {
+      original.advance(1 / 30);
+      rebuilt.advance(1 / 30);
+      expect(rebuilt.all()).toEqual(original.all());
+    }
+  });
 });
 
 describe("fish in a real tank", () => {
@@ -131,16 +154,32 @@ describe("fish in a real tank", () => {
     (preset) => {
       const world = makePreset(preset);
       const env = world.environment;
-      const school = createFishSchool(world);
+      const school = createFishSchool(world, undefined, randomFromSeed(8));
+      const space = new SwimSpace(world);
+      const traveled = new Map(school.all().map((fish) => [fish.id, 0]));
       for (let second = 0; second < 300; second++) {
-        run(school, 1);
-        for (const f of school.all()) {
+        const before = school.all();
+        for (let tick = 0; tick < 10; tick++) school.advance(0.1);
+        for (const [i, f] of school.all().entries()) {
           expect(Math.abs(f.x)).toBeLessThan(env.width / 2);
           expect(Math.abs(f.z)).toBeLessThan(env.depth / 2);
           expect(placementProblem("fish", f.x, f.z, env)).toBeNull();
+          expect(space.canStart(f, f.x, f.z, f.heading)).toBe(true);
+          traveled.set(
+            f.id,
+            traveled.get(f.id)! +
+              Math.hypot(f.x - before[i].x, f.z - before[i].z),
+          );
         }
       }
+      if (preset === "aquarium")
+        for (const fish of school.all())
+          expect(
+            traveled.get(fish.id),
+            `${fish.species} keeps exploring`,
+          ).toBeGreaterThan(fish.speed * 300 * 0.2);
     },
+    20_000,
   );
 
   it("keep their place through an unrelated edit", () => {

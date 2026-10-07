@@ -12,6 +12,7 @@ import { SnailRig } from "./snailRig";
 import { TurtleRig } from "./turtleRig";
 import { SwimRig } from "./swimRig";
 import { barbSwim } from "../assets/animals/barb";
+import { SWIM_BOB } from "../simulation/swimSpace";
 
 interface Props {
   object: HabitatObject;
@@ -87,7 +88,7 @@ export function Inhabitant({
     const group = root.current;
     if (!group) return;
     const dt = Math.min(frameDelta, 0.05);
-    if (!paused && !selected && !ghost) clock.current += dt;
+    if (!paused && !ghost && (!selected || swims)) clock.current += dt;
     const t = clock.current;
     // A watched animal stays selected while it moves, so only pausing stops it.
     const rigDelta = paused ? 0 : dt;
@@ -146,25 +147,20 @@ export function Inhabitant({
         return;
       }
     }
-    if (ghost || selected) return;
+    if (ghost || (selected && !swims)) return;
     // An animal without a reachable surface stays idle where it was placed.
     if (rig) {
       rig.update(undefined, rigDelta);
       return;
     }
     if (swims) {
-      const fish = ecosystem?.live.current!.fish.get(object.id);
+      const fish = ecosystem?.live.current!.fish.get(object.id, environment);
       if (fish) {
         // Swim below the surface, but never sink into the ground.
         group.position.set(
           fish.x,
-          swimmingHeight(
-            fish.x,
-            fish.z,
-            environment,
-            swims.depth,
-            Math.sin(t * 1.3) * 0.025,
-          ),
+          (fish.y ?? swimmingHeight(fish.x, fish.z, environment, swims.depth)) +
+            Math.sin(t * 1.3) * (fish.bob ?? SWIM_BOB),
           fish.z,
         );
         group.rotation.y = fish.heading;

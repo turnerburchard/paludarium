@@ -134,7 +134,9 @@ function watchedPosition(ecosystem: EcosystemController, id: string) {
   if (!swimmer || !swims) return undefined;
   return {
     x: swimmer.x,
-    y: swimmingHeight(swimmer.x, swimmer.z, world.environment, swims.depth),
+    y:
+      swimmer.y ??
+      swimmingHeight(swimmer.x, swimmer.z, world.environment, swims.depth),
     z: swimmer.z,
   };
 }

@@ -38,10 +38,11 @@ export function swimmingHeight(
   env: Environment,
   depth: number,
   bob = 0,
+  clearance = 0.05,
 ): number {
   const ground = groundHeight(x, z, env);
   const preferredDepth = depth * Math.max(1, (env.water - ground) / 0.4);
-  return Math.max(ground + 0.05, env.water - preferredDepth + bob);
+  return Math.max(ground + clearance, env.water - preferredDepth + bob);
 }
 export function boundedPosition(
   x: number,

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { isLandAnimal } from "../assets";
+import { isAnimal } from "../assets";
 import type { World } from "../model/schema";
 import { createFishSchool, createWorldEcosystem } from "./worldHabitat";
 import type { Ecosystem } from "./engine";
@@ -27,7 +27,7 @@ export function useEcosystem(world: World) {
     // Brand new preset/import IDs mean a fresh habitat. Normal edits retain live needs.
     const sharesAnimals = world.objects.some(
       (o) =>
-        isLandAnimal(o.kind) &&
+        isAnimal(o.kind) &&
         previous.world.objects.some((p) => p.id === o.id && p.kind === o.kind),
     );
     live.current = {
