@@ -601,9 +601,132 @@ try {
     ),
     "the camera return does not resume after releasing the drag",
   );
+  console.log("Checking fish continuity through habitat edits");
+  await page.close();
+  const fishPage = await browser.newPage({
+    viewport: { width: 390, height: 844 },
+  });
+  fishPage.on("pageerror", (error) => errors.push(error.message));
+  let fishFiberUrl;
+  fishPage.on("response", (response) => {
+    if (response.url().includes("@react-three_fiber.js"))
+      fishFiberUrl = response.url();
+  });
+  const fishWorld = {
+    ...world,
+    name: "Fish continuity",
+    environment: { ...world.environment, water: 2.65 },
+    objects: [
+      {
+        id: "shark",
+        kind: "rainbow-shark",
+        x: 0.8,
+        z: 0.7,
+        rotation: 0,
+        scale: 1,
+        seed: 3,
+      },
+      {
+        id: "cory",
+        kind: "corydoras",
+        x: 1.8,
+        z: 0.7,
+        rotation: 0,
+        scale: 1,
+        seed: 3,
+      },
+      { id: "stone", kind: "rock", x: 0, z: 0, rotation: 0, scale: 1, seed: 3 },
+    ],
+  };
+  await fishPage.addInitScript(
+    (world) => localStorage.setItem("little-worlds:v1", JSON.stringify(world)),
+    fishWorld,
+  );
+  await fishPage.goto(url);
+  await fishPage.bringToFront();
+  await fishPage.getByRole("button", { name: "About Paludarium" }).waitFor();
+  assert.ok(fishFiberUrl);
+  const fishPositions = () =>
+    fishPage.evaluate(async (url) => {
+      const { _roots } = await import(url);
+      const state = _roots
+        .get(document.querySelector("canvas"))
+        ?.store.getState();
+      const positions = {};
+      state?.scene.traverse((part) => {
+        if (["shark", "cory"].includes(part.userData.objectId))
+          positions[part.userData.objectId] = [
+            part.position.x,
+            part.position.z,
+          ];
+      });
+      return positions;
+    }, fishFiberUrl);
+  const deadline = Date.now() + 30000;
+  let moved = false;
+  while (Date.now() < deadline) {
+    const positions = await fishPositions();
+    if (
+      positions.shark &&
+      Math.hypot(positions.shark[0] - 0.8, positions.shark[1] - 0.7) > 0.08
+    ) {
+      moved = true;
+      break;
+    }
+    await fishPage.waitForTimeout(100);
+  }
+  assert.ok(moved, "bottom fish actually swim in the rendered habitat");
+  await fishPage
+    .getByRole("button", { name: "Pause life (Space)", exact: true })
+    .click();
+  await fishPage.getByRole("button", { name: "Build", exact: true }).click();
+  await fishPage
+    .getByRole("navigation", { name: "Tools" })
+    .getByRole("button", { name: "Habitat", exact: true })
+    .click();
+  const beforeLight = await fishPositions();
+  assert.ok(beforeLight.shark && beforeLight.cory);
+  await fishPage.getByRole("button", { name: "Golden", exact: true }).click();
+  await fishPage.waitForFunction(
+    () =>
+      JSON.parse(localStorage.getItem("little-worlds:v1")).environment.light ===
+      "golden",
+  );
+  await fishPage.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  assert.deepEqual(
+    await fishPositions(),
+    beforeLight,
+    "a fish-only habitat keeps every live position through an edit",
+  );
+  await fishPage
+    .getByRole("button", { name: "Habitat life", exact: true })
+    .click();
+  await fishPage
+    .locator(".fish-list")
+    .getByRole("button", { name: /Rainbow shark/ })
+    .click();
+  await fishPage.getByRole("complementary", { name: "Watching" }).waitFor();
+  await fishPage.getByRole("button", { name: "Build", exact: true }).click();
+  await fishPage.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  assert.deepEqual(
+    await fishPositions(),
+    beforeLight,
+    "a watched fish stays at its live position when switching to Build",
+  );
+  await fishPage.close();
   assert.deepEqual(errors, [], "no browser runtime errors");
   console.log(
-    "PASS: mobile View, read-only shortcuts, frog taps, foliage fade/restore, hidden settings, static-only size controls, keyboard and outside-release slider undo, watch return, resumed auto-orbit and panning",
+    "PASS: mobile View, read-only shortcuts, frog taps, foliage fade/restore, hidden settings, static-only size controls, keyboard and outside-release slider undo, watch return, resumed auto-orbit and panning, fish movement and edit continuity",
   );
 } finally {
   await browser?.close();

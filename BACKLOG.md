@@ -13,7 +13,7 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 - [x] Fully submerged Aquarium preset with driftwood, river stones, Java moss, cardinal and ember tetra schools; deep water fills below the rim and species swim at different depths.
 - [x] Fast production-build browser smoke on routine pushes; longer gesture regression suite remains available on demand.
 - [x] Published at turnerburchard.com/paludarium/ (GitHub Pages from this repo, deployed by CI on every push to `main`).
-- [x] Clean phone layout: full-screen scene, bottom dock, panels as a sheet; first visit opens on the Cloud forest.
+- [x] Clean phone layout: full-screen scene, bottom dock, panels as a sheet; first visit opens on the Aquarium.
 - [x] Separate View/Build modes: viewing opens without editing menus, and frog taps start a close-up.
 - [x] Foliage fades when it blocks a watched frog, holds through brief clear gaps, and returns gradually after 2.5 seconds of clear sight; stopping watch restores it immediately.
 - [x] Compact watch cards and habitat settings; precise sliders and terrain tools sit behind disclosures.
@@ -37,7 +37,8 @@ Implemented now: accelerated hunger/hydration/energy, self-renewing insect colon
 - [x] Species-specific hops, climbs, crawls, and leaf leaps come from the simulation, without a separate renderer movement fallback.
 - [x] Rigged frog animation: breathing, crouch and landing, turning on the spot, feet planted while crawling and climbing.
 - [x] A gold dust day gecko (rigged CC BY model) with a dash-and-pause gait and resting surfaces.
-- [ ] Detailed collision meshes remain.
+- [x] Fish steer around actual submerged hardscape and plant geometry, including narrow passages, hollow logs, body size and preferred depth.
+- [ ] Detailed land-animal collision meshes remain.
 - [x] The user can see why an animal is struggling and has a clear way to help.
 - [x] Behavior state and decisions live outside React and Three.js. Inject a clock/random source for tests without requiring repeatable gameplay.
 
