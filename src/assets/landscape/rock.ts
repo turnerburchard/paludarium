@@ -24,14 +24,16 @@ function build(random: () => number) {
 /** A rounded, faceted stone about one unit across with a flat underside.
  * `phase` shifts its weathering so stones in a group don't match. */
 export function weatheredStone(phase = 0) {
-  const geo = new THREE.IcosahedronGeometry(0.47, 2),
+  const geo = new THREE.IcosahedronGeometry(0.47, 3),
     positions = geo.getAttribute("position");
   for (let i = 0; i < positions.count; i++) {
     const x = positions.getX(i),
       y = positions.getY(i),
       z = positions.getZ(i);
+    // Broad, gentle lumps, so neighboring faces turn only a little and
+    // the stone reads as one smooth mass.
     const rough =
-      1 + 0.13 * Math.sin(x * 21 + z * 9 + phase) * Math.cos(y * 17 + phase);
+      1 + 0.09 * Math.sin(x * 9 + z * 5 + phase) * Math.cos(y * 8 + phase);
     positions.setXYZ(
       i,
       x * rough * 1.1,
