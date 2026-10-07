@@ -38,9 +38,6 @@ export function NewWorldDialog({
         <button onClick={() => onPreset("aquarium")}>
           <span>04</span>
           <strong>Aquarium</strong>
-          <small>
-            A whole underwater world, with driftwood and schooling fish.
-          </small>
         </button>
       </div>
     </Modal>
