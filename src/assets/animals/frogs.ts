@@ -118,10 +118,10 @@ export const mossyFrog: AssetDefinition = {
   build: (random) =>
     buildFrog(
       {
-        back: "#53683b",
-        belly: "#7b7a4e",
-        iris: "#88794b",
-        feet: "#424b30",
+        back: "#3b5426",
+        belly: "#4d4b30",
+        iris: "#7a6a3c",
+        feet: "#2b3620",
         height: 0.9,
         size: 0.84,
         roughness: 0.86,
@@ -244,8 +244,8 @@ function buildFrog(appearance: Appearance, random: () => number) {
   const belly = new THREE.Color(appearance.belly);
   const feet = new THREE.Color(appearance.feet);
   const dark = new THREE.Color("#112329");
-  const mossLight = new THREE.Color("#92904d");
-  const mossDark = new THREE.Color("#202d21");
+  const mossLight = new THREE.Color("#7f9a3a");
+  const mossDark = new THREE.Color("#141c12");
   const spots = Array.from({ length: appearance.spots ?? 0 }, () => ({
     x: (random() - 0.5) * 0.28,
     z: (random() - 0.5) * 0.43,
@@ -324,7 +324,7 @@ function buildFrog(appearance: Appearance, random: () => number) {
             Math.sin(x * 40 + Math.sin(z * 29) * 2) * Math.cos(z * 41 - y * 43);
           color.lerp(
             mottling > 0 ? mossLight : mossDark,
-            Math.abs(mottling) * 0.65,
+            Math.abs(mottling) * 0.9,
           );
         }
         for (let corner = 0; corner < 3; corner++)
