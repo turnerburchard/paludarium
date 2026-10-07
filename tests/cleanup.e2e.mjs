@@ -478,9 +478,14 @@ try {
     1,
     "a drag returning to its start does not place anything",
   );
-  assert.deepEqual(
-    (await placementCamera()).position,
-    beforeTouch.position,
+  const afterTouch = await placementCamera();
+  // Damping can finish settling by a fraction of a pixel during the gesture.
+  assert.ok(
+    Math.hypot(
+      ...afterTouch.position.map(
+        (value, index) => value - beforeTouch.position[index],
+      ),
+    ) < 0.001,
     "dragging during placement leaves the camera still",
   );
   await touch("touchStart", [finger]);

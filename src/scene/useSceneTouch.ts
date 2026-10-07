@@ -8,12 +8,16 @@ export function useSceneTouch(
   enabled: boolean,
   onTap: (event: PointerEvent) => void,
 ) {
-  const { gl } = useThree();
+  const { gl, events } = useThree();
   const commit = useRef(onTap);
   commit.current = onTap;
   const suppressClick = useRef(false);
   useEffect(() => {
     const canvas = gl.domElement;
+    // Fiber and OrbitControls receive events on the surrounding container.
+    // Pointer capture can route a canvas tap's release to that container.
+    const surface =
+      events.connected instanceof HTMLElement ? events.connected : canvas;
     const pointers = new Map<number, { x: number; y: number }>();
     let tap: { id: number; x: number; y: number } | null = null;
     let span = 0;
@@ -79,7 +83,9 @@ export function useSceneTouch(
       if (
         finished?.id === event.pointerId &&
         pointers.size === 0 &&
-        event.target === canvas &&
+        surface.contains(
+          document.elementFromPoint(event.clientX, event.clientY),
+        ) &&
         Math.hypot(event.clientX - finished.x, event.clientY - finished.y) <= 12
       )
         commit.current(event);
@@ -95,8 +101,8 @@ export function useSceneTouch(
       event.stopPropagation();
       event.preventDefault();
     }
-    canvas.addEventListener("pointerdown", down, true);
-    canvas.addEventListener("click", click, true);
+    surface.addEventListener("pointerdown", down, true);
+    surface.addEventListener("click", click, true);
     document.addEventListener("pointermove", move, true);
     document.addEventListener("touchmove", zoom, {
       capture: true,
@@ -107,13 +113,13 @@ export function useSceneTouch(
     window.addEventListener("blur", cancel);
     return () => {
       cancel();
-      canvas.removeEventListener("pointerdown", down, true);
-      canvas.removeEventListener("click", click, true);
+      surface.removeEventListener("pointerdown", down, true);
+      surface.removeEventListener("click", click, true);
       document.removeEventListener("pointermove", move, true);
       document.removeEventListener("touchmove", zoom, true);
       document.removeEventListener("pointerup", up, true);
       document.removeEventListener("pointercancel", cancel);
       window.removeEventListener("blur", cancel);
     };
-  }, [enabled, gl, controls]);
+  }, [enabled, gl, events, controls]);
 }
