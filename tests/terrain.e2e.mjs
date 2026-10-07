@@ -70,6 +70,13 @@ try {
     .getByRole("button", { name: "Habitat settings", exact: true })
     .click();
   await page.locator("summary", { hasText: "Shape landscape" }).click();
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Carve stream", exact: true })
+      .count(),
+    0,
+    "the duplicate stream tool is removed",
+  );
 
   async function saved() {
     await page.evaluate(
@@ -172,6 +179,15 @@ try {
   );
 
   await page.getByRole("button", { name: "Paint sand", exact: true }).click();
+  assert.ok(
+    await page
+      .getByText(
+        "Cover the ground with sand color without changing its height.",
+        { exact: true },
+      )
+      .isVisible(),
+    "the selected brush explains its effect",
+  );
   const sand = await point(-1.75, 0);
   await page.mouse.click(sand.x, sand.y);
   const painted = await saved();
@@ -184,6 +200,20 @@ try {
     sculpted.environment.terrain.heights,
     "paint retains height",
   );
+  await page.getByRole("button", { name: "Paint moss", exact: true }).click();
+  const edge = await point(-3.4, -2.15);
+  await page.mouse.click(edge.x, edge.y);
+  const mossy = await saved();
+  assert.ok(
+    mossy.environment.terrain.paint.includes("moss"),
+    "moss paints at the tank edge",
+  );
+  assert.deepEqual(
+    mossy.environment.terrain.heights,
+    painted.environment.terrain.heights,
+    "moss paint retains height",
+  );
+  await page.screenshot({ path: "/tmp/paludarium-moss-boundary.png" });
   await page.getByRole("button", { name: "Carve pool", exact: true }).click();
   const pool = await point(-2.2, 0.7);
   await page.mouse.click(pool.x, pool.y);

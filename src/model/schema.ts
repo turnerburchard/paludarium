@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { TERRAIN_POINTS, groundMaterials } from "./terrainData";
+import {
+  TERRAIN_POINTS,
+  groundMaterials,
+  MAX_GROUND_HEIGHT,
+} from "./terrainData";
 import { mossSpecies } from "./moss";
 
 export const assetKinds = [
@@ -136,7 +140,9 @@ export const environmentSchema = z.object({
   // Additive version-1 data: older saves keep their original bank and palette.
   terrain: z
     .object({
-      heights: z.array(finite.min(-0.9).max(0.9)).length(TERRAIN_POINTS),
+      heights: z
+        .array(finite.min(-0.9).max(MAX_GROUND_HEIGHT))
+        .length(TERRAIN_POINTS),
       paint: z.array(z.enum(groundMaterials)).length(TERRAIN_POINTS),
     })
     .optional(),
