@@ -1,7 +1,17 @@
 export const TERRAIN_COLUMNS = 32;
 export const TERRAIN_ROWS = 24;
 export const TERRAIN_POINTS = (TERRAIN_COLUMNS + 1) * (TERRAIN_ROWS + 1);
-export const MAX_GROUND_HEIGHT = 2.4;
+export const DEFAULT_TANK_HEIGHT = 2.9;
+export const MIN_TANK_HEIGHT = 1.5;
+export const MAX_TANK_HEIGHT = 6;
+
+export function groundCeiling(env: { height: number }) {
+  return env.height - 0.05;
+}
+
+export function waterCeiling(env: { height: number }) {
+  return env.height - 0.25;
+}
 export const groundMaterials = [
   "natural",
   "soil",

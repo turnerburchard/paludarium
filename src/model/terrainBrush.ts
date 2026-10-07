@@ -3,7 +3,7 @@ import {
   TERRAIN_COLUMNS,
   TERRAIN_ROWS,
   TERRAIN_POINTS,
-  MAX_GROUND_HEIGHT,
+  groundCeiling,
   terrainPoint,
   type GroundMaterial,
 } from "./terrainData";
@@ -68,9 +68,18 @@ export function applyTerrainBrush(
         }, 0) / neighbors.length;
       delta += (average - height) * weight * 0.65;
     } else if (weight > 0.15) paint[index] = brush.mode;
+    if (
+      brush.mode === "soil" ||
+      brush.mode === "sand" ||
+      brush.mode === "stone" ||
+      brush.mode === "moss"
+    ) {
+      changed ||= paint[index] !== terrain.paint[index];
+      continue;
+    }
     heights[index] =
       Math.round(
-        clamp(delta, Math.max(-0.9, 0.08 - base), MAX_GROUND_HEIGHT - base) *
+        clamp(delta, Math.max(-0.9, 0.08 - base), groundCeiling(env) - base) *
           10000,
       ) / 10000;
     changed ||=

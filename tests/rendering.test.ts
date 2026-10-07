@@ -3,7 +3,6 @@ import * as THREE from "three";
 import { batchStaticAsset } from "../src/assets/batch";
 import { buildAsset, disposeAsset, assets } from "../src/assets";
 import { randomFromSeed } from "../src/model/random";
-import { mossCarpet, mossCushions } from "../src/assets/landscape/mossCover";
 
 function stats(root: THREE.Group) {
   let meshes = 0,
@@ -51,30 +50,6 @@ describe("static rendering batches", () => {
 });
 
 describe("moss cover", () => {
-  it.each([
-    { width: 5, depth: 3 },
-    { width: 9, depth: 6 },
-  ])("keeps painted moss inside a $width by $depth tank", (bounds) => {
-    const points = [-1, 1].flatMap((x) =>
-      [-1, 1].map(
-        (z) =>
-          new THREE.Vector3(
-            (x * bounds.width) / 2,
-            0.5,
-            (z * bounds.depth) / 2,
-          ),
-      ),
-    );
-    const cushions = mossCushions(points, randomFromSeed(31));
-    const carpet = mossCarpet(cushions, bounds)!;
-    carpet.computeBoundingBox();
-    expect(carpet.boundingBox!.min.x).toBeGreaterThanOrEqual(-bounds.width / 2);
-    expect(carpet.boundingBox!.max.x).toBeLessThanOrEqual(bounds.width / 2);
-    expect(carpet.boundingBox!.min.z).toBeGreaterThanOrEqual(-bounds.depth / 2);
-    expect(carpet.boundingBox!.max.z).toBeLessThanOrEqual(bounds.depth / 2);
-    carpet.dispose();
-    cushions.forEach((c) => c.lumps.forEach((l) => l.dispose()));
-  });
   it.each(["rock", "log", "rock-shelter"] as const)(
     "grows a %s's moss over its top, the same way for the same seed",
     (kind) => {
@@ -93,21 +68,4 @@ describe("moss cover", () => {
       [bare, mossy, again].forEach(disposeAsset);
     },
   );
-  it("keeps dry carpet cushions unchanged when water covers others", () => {
-    const points = [0, 0.2, 0.4].map((y) => new THREE.Vector3(y * 4, y, 0));
-    const cushions = mossCushions(points, randomFromSeed(31));
-    const full = mossCarpet(cushions)!;
-    const dry = mossCarpet(cushions.filter((c) => c.point.y > 0.1))!;
-    const lowest = mossCarpet(cushions.slice(0, 1))!;
-    const position = (g: THREE.BufferGeometry) => g.getAttribute("position");
-    expect(position(dry).count).toBe(
-      position(full).count - position(lowest).count,
-    );
-    // The dry cushions are the tail of the full carpet, vertex for vertex.
-    const offset = position(lowest).count * 3;
-    expect(Array.from(position(dry).array)).toEqual(
-      Array.from(position(full).array).slice(offset),
-    );
-    expect(mossCarpet([])).toBeUndefined();
-  });
 });

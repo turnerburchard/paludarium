@@ -192,6 +192,13 @@ try {
     "paint retains height",
   );
   await page.getByRole("button", { name: "Paint moss", exact: true }).click();
+  const mossFrom = await point(-2.2, -0.7),
+    mossTo = await point(-1.2, 0.5);
+  await page.mouse.move(mossFrom.x, mossFrom.y);
+  await page.mouse.down();
+  await page.mouse.move(mossTo.x, mossTo.y, { steps: 16 });
+  await page.mouse.up();
+  await saved();
   const edge = await point(-3.4, -2.15);
   await page.mouse.click(edge.x, edge.y);
   const mossy = await saved();
@@ -205,26 +212,51 @@ try {
     "moss paint retains height",
   );
   await page.screenshot({ path: "/tmp/paludarium-moss-boundary.png" });
-  await page.getByRole("button", { name: "Carve pool", exact: true }).click();
-  const pool = await point(-2.2, 0.7);
-  await page.mouse.click(pool.x, pool.y);
-  const pooled = await saved();
-  assert.ok(
-    await page.evaluate(async () => {
-      const { groundHeight } = await import("/src/model/terrain.ts");
-      const env = JSON.parse(
-        localStorage.getItem("little-worlds:v1"),
-        (key, value) =>
-          key === "" && value.worlds
-            ? value.worlds.find((entry) => entry.id === value.activeId).world
-            : value,
-      ).environment;
-      return groundHeight(-2.2, 0.7, env) < env.water - 0.12;
-    }),
-    "carved pool fills with usable water",
+  assert.equal(
+    await page.getByRole("button", { name: "Carve pool", exact: true }).count(),
+    0,
+  );
+  await page.getByRole("button", { name: "Lower ground", exact: true }).click();
+  const lower = await point(-2.2, 0.7);
+  await page.mouse.click(lower.x, lower.y);
+  const lowered = await saved();
+  assert.notDeepEqual(
+    lowered.environment.terrain.heights,
+    mossy.environment.terrain.heights,
+    "lower ground edits height",
   );
   await page.getByRole("button", { name: "Done", exact: true }).click();
   await page.screenshot({ path: "/tmp/paludarium-terrain-desktop.png" });
+  await page.locator("summary", { hasText: "Fine-tune habitat" }).click();
+  const height = page.getByRole("slider", { name: "Tank height", exact: true });
+  await height.focus();
+  await height.press("End");
+  assert.equal((await saved()).environment.height, 6, "height reaches 60 cm");
+  await page.getByRole("button", { name: "Full", exact: true }).click();
+  assert.equal(
+    (await saved()).environment.water,
+    5.75,
+    "full water follows tank height",
+  );
+  await height.focus();
+  await height.press("Home");
+  const shrunk = await saved();
+  assert.equal(shrunk.environment.height, 1.5);
+  assert.equal(shrunk.environment.water, 1.25, "shrinking clamps water");
+  await page
+    .getByRole("button", { name: "Undo (⌘/Ctrl Z)", exact: true })
+    .click();
+  const restored = await saved();
+  assert.equal(restored.environment.height, 6);
+  assert.equal(
+    restored.environment.water,
+    5.75,
+    "one undo restores height and water",
+  );
+  await page.getByRole("button", { name: "Shallow", exact: true }).click();
+  const resized = await saved();
+  assert.equal(resized.environment.water, 0.44);
+  await page.screenshot({ path: "/tmp/paludarium-tall-tank.png" });
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page
@@ -237,7 +269,7 @@ try {
   const exported = await readFile(await download.path());
   assert.deepEqual(
     JSON.parse(exported.toString()),
-    pooled,
+    resized,
     "export includes terrain data",
   );
   await page
@@ -251,7 +283,7 @@ try {
   });
   assert.deepEqual(
     await saved(),
-    pooled,
+    resized,
     "export and import preserve the landscape",
   );
   await page.reload();
@@ -259,7 +291,7 @@ try {
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
-  assert.deepEqual(await saved(), pooled, "autosave survives reload");
+  assert.deepEqual(await saved(), resized, "autosave survives reload");
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page
@@ -318,7 +350,7 @@ try {
   await page.screenshot({ path: "/tmp/paludarium-terrain-mobile.png" });
   assert.deepEqual(errors, [], "no terrain browser errors");
   console.log(
-    "PASS: terrain drag, whole-stroke undo/redo, paint, pool, reset, export/import, reload, mobile touch, runtime errors",
+    "PASS: terrain drag, whole-stroke undo/redo, paint, tank height, water limits, reset, export/import, reload, mobile touch, runtime errors",
   );
 } finally {
   await browser?.close();
