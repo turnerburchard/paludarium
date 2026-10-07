@@ -15,7 +15,8 @@ const SANDSTONE = ["#8e4a2c", "#a85a33", "#b9703f", "#c98c56", "#d8aa77"];
 export const sandstone: AssetDefinition = {
   kind: "sandstone",
   name: "Sandstone boulder",
-  category: "Landscape",
+  group: "Stone",
+  biomes: ["Desert"],
   description:
     "A rounded desert boulder banded in red and cream, weathered smooth by wind and sand.",
   radius: 0.5,
@@ -28,7 +29,8 @@ export const sandstone: AssetDefinition = {
 export const sandstoneLedge: AssetDefinition = {
   kind: "sandstone-ledge",
   name: "Sandstone ledge",
-  category: "Landscape",
+  group: "Stone",
+  biomes: ["Desert"],
   description:
     "Flat slabs of red sandstone stacked in steps, a warm place for lizards to bask.",
   radius: 0.55,
@@ -67,7 +69,8 @@ export const sandstoneLedge: AssetDefinition = {
 export const granite: AssetDefinition = {
   kind: "granite",
   name: "Granite boulder",
-  category: "Landscape",
+  group: "Stone",
+  biomes: ["Temperate"],
   description:
     "A big mountain boulder, pale grey flecked with pink and black, with tufts of grass in its cracks.",
   radius: 0.5,
@@ -91,7 +94,8 @@ export const granite: AssetDefinition = {
 export const slate: AssetDefinition = {
   kind: "slate",
   name: "Slate stack",
-  category: "Landscape",
+  group: "Stone",
+  biomes: ["Temperate"],
   description:
     "Thin, dark plates of slate piled at angles, with crevices between them.",
   radius: 0.48,
@@ -132,7 +136,8 @@ export const slate: AssetDefinition = {
 export const limestone: AssetDefinition = {
   kind: "limestone",
   name: "Limestone outcrop",
-  category: "Landscape",
+  group: "Stone",
+  biomes: ["Tropical"],
   description:
     "Pale, pitted karst stone with fluted sides and hollows where moss and frogs settle.",
   radius: 0.42,
@@ -168,7 +173,8 @@ export const limestone: AssetDefinition = {
 export const pebbles: AssetDefinition = {
   kind: "pebbles",
   name: "River pebbles",
-  category: "Landscape",
+  group: "Stone",
+  biomes: ["Tropical", "Temperate", "Desert"],
   description:
     "A scatter of smooth, rounded pebbles in mixed greys and browns.",
   radius: 0.36,
@@ -200,7 +206,8 @@ export const pebbles: AssetDefinition = {
 export const sandstonePillar: AssetDefinition = {
   kind: "sandstone-pillar",
   name: "Sandstone pillar",
-  category: "Landscape",
+  group: "Stone",
+  biomes: ["Desert"],
   description:
     "A tall, banded spire of red sandstone left standing after the softer rock around it wore away.",
   radius: 0.3,
@@ -214,7 +221,8 @@ export const sandstonePillar: AssetDefinition = {
 export const limestonePinnacle: AssetDefinition = {
   kind: "limestone-pinnacle",
   name: "Limestone pinnacle",
-  category: "Landscape",
+  group: "Stone",
+  biomes: ["Tropical"],
   description:
     "A pale karst spire, streaked darker where rain runs down it and damp at its base.",
   radius: 0.34,
@@ -234,7 +242,8 @@ export const limestonePinnacle: AssetDefinition = {
 export const flagstone: AssetDefinition = {
   kind: "flagstone",
   name: "Flat stone",
-  category: "Landscape",
+  group: "Stone",
+  biomes: ["Temperate", "Desert"],
   description:
     "A broad, flat stone set into the ground, for stepping across wet soil or basking on.",
   radius: 0.35,
@@ -252,7 +261,8 @@ export const flagstone: AssetDefinition = {
 export const scree: AssetDefinition = {
   kind: "scree",
   name: "Scree",
-  category: "Landscape",
+  group: "Stone",
+  biomes: ["Temperate"],
   description:
     "Sharp, broken rocks shed from a mountainside, crusted here and there with pale lichen.",
   radius: 0.3,

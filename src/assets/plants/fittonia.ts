@@ -7,7 +7,8 @@ export const fittonia: AssetDefinition = {
   kind: "fittonia",
   name: "Nerve plant",
   scientificName: "Fittonia albivenis",
-  category: "Plants",
+  group: "Leafy plants",
+  biomes: ["Tropical"],
   description:
     "A low mound of small leaves netted with pink veins, cover for insects.",
   radius: 0.3,

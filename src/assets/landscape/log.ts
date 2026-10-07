@@ -8,7 +8,8 @@ import { banded, barkMaterials, limbRings } from "./bark";
 export const log: AssetDefinition = {
   kind: "log",
   name: "Hollow log",
-  category: "Landscape",
+  group: "Wood",
+  biomes: ["Tropical", "Temperate"],
   description:
     "A fallen, hollow log. Frogs shelter inside and sun on top, and insects breed beneath it.",
   radius: 0.62,

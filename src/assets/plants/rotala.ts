@@ -7,7 +7,8 @@ export const rotala: AssetDefinition = {
   kind: "rotala",
   name: "Rotala",
   scientificName: "Rotala rotundifolia",
-  category: "Plants",
+  group: "Aquatic plants",
+  biomes: ["Tropical"],
   description:
     "A bunch of slender stems with small round leaves that blush pink toward the light.",
   radius: 0.24,

@@ -6,7 +6,8 @@ export const cattail: AssetDefinition = {
   kind: "cattail",
   name: "Cattail",
   scientificName: "Typha latifolia",
-  category: "Plants",
+  group: "Grasses",
+  biomes: ["Temperate", "Desert"],
   description:
     "Tall reeds with velvety brown seed heads, right at the water's edge.",
   radius: 0.32,

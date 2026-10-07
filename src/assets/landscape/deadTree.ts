@@ -5,7 +5,8 @@ import deadTreeModel from "./deadTree.json";
 export const deadTree: AssetDefinition = {
   kind: "dead-tree",
   name: "Dead tree",
-  category: "Landscape",
+  group: "Wood",
+  biomes: ["Desert"],
   description:
     "A small tree long dead and bleached grey by the sun, its bare branches still reaching out over the sand.",
   radius: 0.4,

@@ -8,7 +8,8 @@ export const columbine: AssetDefinition = {
   kind: "columbine",
   name: "Colorado blue columbine",
   scientificName: "Aquilegia coerulea",
-  category: "Plants",
+  group: "Leafy plants",
+  biomes: ["Temperate"],
   description:
     "A mound of lacy leaves under nodding blue and white flowers with long spurs. A wildflower of mountain meadows and aspen groves.",
   radius: 0.28,

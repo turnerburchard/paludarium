@@ -7,7 +7,8 @@ import { barkLimb, barkMaterials } from "./bark";
 export const branch: AssetDefinition = {
   kind: "branch",
   name: "Leaning branch",
-  category: "Landscape",
+  group: "Wood",
+  biomes: ["Temperate", "Desert"],
   description:
     "A branch rising from the ground. Frogs walk up it to a lookout.",
   radius: 0.55,

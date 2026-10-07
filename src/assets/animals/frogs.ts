@@ -22,7 +22,8 @@ export const treeFrog: AssetDefinition = {
   kind: "tree-frog",
   name: "Red-eyed tree frog",
   scientificName: "Agalychnis callidryas",
-  category: "Animals",
+  group: "Amphibians",
+  biomes: ["Tropical"],
   description:
     "A green canopy frog with scarlet eyes, striped flanks, and orange toe pads.",
   radius: 0.24,
@@ -47,7 +48,8 @@ export const strawberryPoisonFrog: AssetDefinition = {
   kind: "dart-frog",
   name: "Strawberry poison frog",
   scientificName: "Oophaga pumilio",
-  category: "Animals",
+  group: "Amphibians",
+  biomes: ["Tropical"],
   description:
     "A small Central American frog, shown in a red and blue-legged color form.",
   radius: 0.2,
@@ -73,7 +75,8 @@ export const bluePoisonDartFrog: AssetDefinition = {
   kind: "blue-dart-frog",
   name: "Blue poison dart frog",
   scientificName: "Dendrobates tinctorius · azureus morph",
-  category: "Animals",
+  group: "Amphibians",
+  biomes: ["Tropical"],
   description:
     "Cobalt skin with individual dark spots. A striking forest-floor frog.",
   radius: 0.26,
@@ -99,7 +102,8 @@ export const mossyFrog: AssetDefinition = {
   kind: "mossy-frog",
   name: "Vietnamese mossy frog",
   scientificName: "Theloderma corticale",
-  category: "Animals",
+  group: "Amphibians",
+  biomes: ["Tropical"],
   description:
     "A squat, rough-skinned frog with moss-like green and brown camouflage.",
   radius: 0.28,
@@ -131,7 +135,8 @@ export const canyonTreeFrog: AssetDefinition = {
   kind: "canyon-tree-frog",
   name: "Canyon tree frog",
   scientificName: "Dryophytes arenicolor",
-  category: "Animals",
+  group: "Amphibians",
+  biomes: ["Temperate", "Desert"],
   description:
     "A small, granite-grey frog with dark blotches that clings to boulders beside desert streams.",
   radius: 0.22,
@@ -163,7 +168,8 @@ export const chorusFrog: AssetDefinition = {
   kind: "chorus-frog",
   name: "Boreal chorus frog",
   scientificName: "Pseudacris maculata",
-  category: "Animals",
+  group: "Amphibians",
+  biomes: ["Temperate"],
   description:
     "A tiny brown frog with dark stripes down its back. Its trilling call is one of the first sounds of a mountain spring.",
   radius: 0.18,

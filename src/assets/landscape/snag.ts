@@ -5,7 +5,8 @@ import snagModel from "./snag.json";
 export const snag: AssetDefinition = {
   kind: "snag",
   name: "Spruce snag",
-  category: "Landscape",
+  group: "Wood",
+  biomes: ["Temperate"],
   description:
     "A broken length of weathered spruce, split at one end, with a dead limb still reaching up.",
   radius: 0.6,

@@ -7,7 +7,8 @@ export const javaFern: AssetDefinition = {
   kind: "java-fern",
   name: "Java fern",
   scientificName: "Microsorum pteropus",
-  category: "Plants",
+  group: "Aquatic plants",
+  biomes: ["Tropical"],
   description:
     "Long, rippled blades in an arching clump. Grows above or below water, rooted on wood or stone.",
   radius: 0.32,

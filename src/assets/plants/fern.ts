@@ -7,7 +7,8 @@ import type { AssetDefinition } from "../types";
 export const fern: AssetDefinition = {
   kind: "fern",
   name: "Forest fern",
-  category: "Plants",
+  group: "Leafy plants",
+  biomes: ["Tropical", "Temperate"],
   description: "Arching fronds, at home beside a shady pond.",
   radius: 0.36,
   habitat: "land",

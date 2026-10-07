@@ -6,7 +6,8 @@ export const treePhilodendron: AssetDefinition = {
   kind: "tree-philodendron",
   name: "Lacy tree philodendron",
   scientificName: "Thaumatophyllum bipinnatifidum",
-  category: "Plants",
+  group: "Leafy plants",
+  biomes: ["Tropical"],
   description:
     "Deeply lobed, glossy leaves spreading from a short trunk on the rainforest floor.",
   radius: 0.45,

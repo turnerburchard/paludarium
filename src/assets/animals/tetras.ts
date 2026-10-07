@@ -7,7 +7,8 @@ export const cardinalTetra: AssetDefinition = {
   kind: "cardinal-tetra",
   name: "Cardinal tetra",
   scientificName: "Paracheirodon axelrodi",
-  category: "Animals",
+  group: "Fish",
+  biomes: ["Tropical"],
   description:
     "A slender schooling fish with an electric blue stripe over a red belly. Add several.",
   radius: 0.12,
@@ -31,7 +32,8 @@ export const emberTetra: AssetDefinition = {
   kind: "ember-tetra",
   name: "Ember tetra",
   scientificName: "Hyphessobrycon amandae",
-  category: "Animals",
+  group: "Fish",
+  biomes: ["Tropical"],
   description:
     "A tiny glowing orange fish that drifts in loose groups near the surface.",
   radius: 0.1,

@@ -6,7 +6,8 @@ export const hairgrass: AssetDefinition = {
   kind: "hairgrass",
   name: "Tufted hairgrass",
   scientificName: "Deschampsia cespitosa",
-  category: "Plants",
+  group: "Grasses",
+  biomes: ["Temperate"],
   description:
     "Soft, fine tussocks that crowd wet mountain meadows and creek banks.",
   radius: 0.26,

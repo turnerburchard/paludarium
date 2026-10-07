@@ -7,7 +7,8 @@ export const calathea: AssetDefinition = {
   kind: "calathea",
   name: "Prayer plant",
   scientificName: "Goeppertia orbifolia",
-  category: "Plants",
+  group: "Leafy plants",
+  biomes: ["Tropical"],
   description:
     "Round leaves banded in silver and green, held up on slender stalks.",
   radius: 0.36,
