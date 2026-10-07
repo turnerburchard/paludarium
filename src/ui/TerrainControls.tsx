@@ -24,7 +24,6 @@ export function TerrainControls({ editor }: { editor: Editor }) {
                 mode,
                 radius,
               });
-              editor.notify(label);
             }}
           >
             {label}

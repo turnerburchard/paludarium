@@ -143,7 +143,6 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     if (!current) return;
     stroke.current = null;
     commit(current.current);
-    notify("Landscape updated. Undo reverses the whole stroke.");
   }
   const patchObject = useCallback(
     (id: string, patch: Partial<HabitatObject>) => {
