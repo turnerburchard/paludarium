@@ -144,9 +144,14 @@ try {
       { url: fiberUrl, x, z },
     );
   }
+  const syntheticTouches = new Map();
   async function pointer(type, point, id = 1, wrongOffsets = false) {
+    const touch = { identifier: id, clientX: point.x, clientY: point.y };
+    if (type === "pointerup" || type === "pointercancel")
+      syntheticTouches.delete(id);
+    else syntheticTouches.set(id, touch);
     await page.evaluate(
-      async ({ type, point, id, wrongOffsets, url }) => {
+      async ({ type, point, id, wrongOffsets, url, touches, touch }) => {
         const event = new PointerEvent(type, {
           bubbles: true,
           pointerType: "touch",
@@ -170,12 +175,35 @@ try {
         if (type === "pointerup" || type === "pointercancel")
           captureTarget.releasePointerCapture = () => {};
         try {
-          (wrongOffsets ? captureTarget : canvas).dispatchEvent(event);
+          const target = wrongOffsets ? captureTarget : canvas;
+          target.dispatchEvent(event);
+          // Match the complete native touch sample that accompanies pointers.
+          // WebKit does not permit constructing Touch objects.
+          const types = {
+            pointerdown: "touchstart",
+            pointermove: "touchmove",
+            pointerup: "touchend",
+            pointercancel: "touchcancel",
+          };
+          const sample = new Event(types[type], { bubbles: true });
+          Object.defineProperties(sample, {
+            touches: { value: touches },
+            changedTouches: { value: [touch] },
+          });
+          target.dispatchEvent(sample);
         } finally {
           captureTarget.releasePointerCapture = release;
         }
       },
-      { type, point, id, wrongOffsets, url: fiberUrl },
+      {
+        type,
+        point,
+        id,
+        wrongOffsets,
+        url: fiberUrl,
+        touches: [...syntheticTouches.values()],
+        touch,
+      },
     );
   }
   async function bottomBar() {
@@ -447,9 +475,70 @@ try {
     5,
     "camera navigation preserves the layout in all modes",
   );
+  stage = "frog placement after an interrupted zoom gesture";
+  await page.getByRole("button", { name: "Build", exact: true }).tap();
+  await page.getByRole("button", { name: "New world", exact: true }).tap();
+  await page.getByRole("button", { name: "Empty tank", exact: true }).tap();
+  await page.getByRole("button", { name: "Build", exact: true }).tap();
+  await page
+    .getByRole("navigation", { name: "Tools" })
+    .getByRole("button", { name: "Add", exact: true })
+    .tap();
+  await page
+    .getByRole("button", { name: "Red-eyed tree frog", exact: true })
+    .tap();
+  await page.evaluate(async (url) => {
+    const { _roots } = await import(url);
+    const { camera, controls } = _roots
+      .get(document.querySelector("canvas"))
+      .store.getState();
+    camera.position
+      .copy(controls.target)
+      .add(camera.position.clone().sub(controls.target).setLength(4));
+    controls.update();
+  }, fiberUrl);
+  await page.waitForTimeout(500);
+  point = await spot(0, 0);
+  await page.touchscreen.tap(point.x, point.y);
+  await page.waitForFunction(
+    () =>
+      JSON.parse(localStorage.getItem("little-worlds:v1")).objects.length === 1,
+  );
+  // iOS may end a browser gesture without delivering its final pointerup.
+  await pointer("pointerdown", point, 81);
+  await page.touchscreen.tap(point.x, point.y);
+  await page.waitForTimeout(350);
+  assert.equal(
+    (await saved()).objects.length,
+    2,
+    "a fresh frog tap recovers after a missing pointer release",
+  );
+  await pointer("pointercancel", point, 81);
+  // A complete touchend must commit even if no pointerup reaches the page.
+  await pointer("pointerdown", point, 82);
+  await page.evaluate((point) => {
+    const event = new Event("touchend", { bubbles: true });
+    Object.defineProperties(event, {
+      touches: { value: [] },
+      changedTouches: {
+        value: [{ identifier: 82, clientX: point.x, clientY: point.y }],
+      },
+    });
+    document.querySelector("canvas").dispatchEvent(event);
+  }, point);
+  await page.waitForTimeout(350);
+  assert.equal(
+    (await saved()).objects.length,
+    3,
+    "touch release commits a frog without a corresponding pointerup",
+  );
+  await pointer("pointercancel", point, 82);
+  await page.screenshot({
+    path: `/tmp/paludarium-frog-${safari ? "webkit" : "chromium"}.png`,
+  });
   assert.deepEqual(errors, [], "no browser runtime errors");
   console.log(
-    `PASS (${safari ? "WebKit" : "Chromium"}): aquarium taps, native coordinates, drag/cancel rejection, two-finger pan in placement/Build/View, pinch zoom, tap after navigation, bottom controls after viewport resizing`,
+    `PASS (${safari ? "WebKit" : "Chromium"}): aquarium taps, native coordinates, drag/cancel rejection, two-finger pan in placement/Build/View, pinch zoom, tap after navigation, bottom controls after viewport resizing, zoomed frog placement after lost pointer releases`,
   );
 } finally {
   await browser?.close();
