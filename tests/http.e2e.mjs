@@ -113,6 +113,7 @@ try {
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Add", exact: true })
     .tap();
+  await page.getByRole("button", { name: "Animals", exact: true }).tap();
   await page
     .getByRole("button", { name: "Red-eyed tree frog", exact: true })
     .tap();

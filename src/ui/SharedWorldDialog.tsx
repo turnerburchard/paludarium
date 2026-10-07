@@ -19,7 +19,7 @@ export function SharedWorldDialog({
   return (
     <Modal label="Build a copy" onClose={onClose}>
       <div className="modal-heading">
-        <h2>Make this world yours</h2>
+        <h2>Build a copy</h2>
         <IconButton label="Keep watching" onClick={onClose}>
           <X size={20} />
         </IconButton>

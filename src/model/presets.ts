@@ -84,7 +84,7 @@ export function makePreset(preset: Preset): World {
     // Bigger fish: angelfish and gouramis in the open water, a rainbow shark
     // and a group of corydoras along the bottom.
     for (const [kind, x, z, heading] of [
-      ["angelfish", -1.2, -0.4, 0.6],
+      ["angelfish", -1.0, -0.2, 0.6],
       ["angelfish", -0.8, -0.7, 0.8],
       ["angelfish", -1.5, -0.9, 0.5],
       ["pearl-gourami", 1.6, 0.2, 3.6],
@@ -211,12 +211,14 @@ function cloudForest(add: Add, objects: HabitatObject[]) {
   add("water-lily", 2.6, -0.9, 1, 0.4);
   add("water-lily", 2.75, -1.55, 0.8, 2);
   for (const [x, z, turn] of [
-    [1.75, 0.95, 1.2],
-    [2.1, 0.75, 1.1],
-    [1.95, 0.2, 1.3],
-    [2.4, 0.55, 1.25],
+    [2.7, -0.5, 0.2],
+    [3.0, -0.7, 0.1],
+    [2.75, -1.2, 0.3],
+    [3.05, -1.4, 0.2],
   ])
-    add("convict-cichlid", x, z, 1, turn);
+    add("convict-cichlid", x, z, 0.8, turn);
+  add("bonnet-mushrooms", -0.4, 0.5, 1, 0.6);
+  add("bonnet-mushrooms", -2.75, 1.75, 0.9, 2);
   return objects;
 }
 
@@ -253,12 +255,15 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
   add("cattail", 0.85, -1.35, 1, 0.4);
   add("cattail", 1.05, -1.75, 0.85, 2);
   add("java-moss", 2.7, -0.75, 1);
-  add("cutthroat-trout", 2.1, -0.2, 1, 4.2);
-  add("cutthroat-trout", 1.5, 0.6, 0.9, 1);
+  add("cutthroat-trout", 2.3, 0.2, 0.8, 4.2);
+  add("cutthroat-trout", 2.6, -1.6, 0.75, 0.2);
   add("sculpin", 2.2, 0.5, 1, 3);
-  add("sculpin", 2.55, -1.1, 1, 0.5);
+  add("sculpin", 2.2, -1.3, 1, 0.5);
   add("scree", 0.3, 0.55, 1, 0.8);
   add("flagstone", 0.6, -0.15, 1, 2.1);
+  // A fly agaric under the spruce and a bolete out on the bank.
+  add("fly-agaric", -2.6, 1.75, 1, 0.4);
+  add("bolete", -0.4, 0.85, 1, 1.8);
   return objects;
 }
 
@@ -294,12 +299,14 @@ function limestoneGrotto(add: Add, objects: HabitatObject[]) {
   for (let i = 0; i < 8; i++)
     add(
       "harlequin-rasbora",
-      2.2 + (i % 4) * 0.2,
-      0.3 + Math.floor(i / 4) * 0.3,
+      2.35 + (i % 4) * 0.18,
+      -1.0 + Math.floor(i / 4) * 0.3,
       1,
       4.5,
     );
   add("limestone-pinnacle", 1.0, -1.2, 0.9, 0.6, "java");
+  add("bonnet-mushrooms", -2.75, 1.45, 1, 1.1);
+  add("bonnet-mushrooms", -1.25, 1.75, 0.85, 2.7);
   return objects;
 }
 
@@ -342,6 +349,8 @@ function desertSpring(add: Add, objects: HabitatObject[]) {
     add("pupfish", x, z, 1, turn);
   add("flagstone", 1.3, -0.55, 0.9, 1.3);
   add("dead-tree", -1.1, 0.65, 1, 0.9);
+  // Chuckwallas live in small colonies, and a second one lets them breed.
+  add("chuckwalla", 1.85, 1.3, 0.95, 3.2);
   return objects;
 }
 

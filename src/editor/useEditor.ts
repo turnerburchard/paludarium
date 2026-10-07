@@ -260,7 +260,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
         rotation: placementRotation,
       });
       setTool({ type: "select" });
-      notify("Just right.");
+      notify("");
       return;
     }
     if (world.objects.length >= MAX_OBJECTS) {

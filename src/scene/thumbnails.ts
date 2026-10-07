@@ -4,23 +4,35 @@ import { buildAsset, catalog, disposeAsset } from "../assets";
 
 export type Thumbnails = Partial<Record<AssetKind, string>>;
 
-let thumbnails: Promise<Thumbnails> | undefined;
+const thumbnails: Thumbnails = {};
+let pending: Promise<Thumbnails> = Promise.resolve({});
 
-/** Thumbnails are rendered once per page load and shared by every library mount.
- * Each render would otherwise create (and churn) a second WebGL context. */
-export function loadThumbnails(): Promise<Thumbnails> {
-  thumbnails ??= renderThumbnails();
-  return thumbnails;
+/** Serialize batches so scrolling and tab changes never compete for WebGL contexts. */
+export function loadThumbnails(
+  kinds: AssetKind[],
+  signal: AbortSignal,
+): Promise<Thumbnails> {
+  pending = pending.then(async () => {
+    const missing = kinds.filter((kind) => !thumbnails[kind]);
+    if (missing.length && !signal.aborted)
+      Object.assign(thumbnails, await renderThumbnails(missing, signal));
+    return Object.fromEntries(kinds.map((kind) => [kind, thumbnails[kind]]));
+  });
+  return pending;
 }
 
 const nextFrame = () =>
   new Promise((resolve) => requestAnimationFrame(resolve));
 
 /** Uses the real asset builders, a few assets per frame so the scene keeps drawing. */
-async function renderThumbnails(): Promise<Thumbnails> {
+async function renderThumbnails(
+  kinds: AssetKind[],
+  signal: AbortSignal,
+): Promise<Thumbnails> {
   const output: Thumbnails = {};
   // Let the scene draw its first frames before competing for the GPU.
   await new Promise((resolve) => setTimeout(resolve, 500));
+  if (signal.aborted) return output;
   let renderer: THREE.WebGLRenderer | undefined;
   try {
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -37,10 +49,12 @@ async function renderThumbnails(): Promise<Thumbnails> {
     const fill = new THREE.DirectionalLight("#b7d9cc", 2);
     fill.position.set(3, 2, -2);
     scene.add(fill);
-    for (const [i, asset] of catalog.entries()) {
+    for (const [i, kind] of kinds.entries()) {
+      const asset = catalog.find((asset) => asset.kind === kind)!;
       // A few per frame: each wait also renders the full scene, which is
       // slow on software rendering.
-      if (i % 4 === 0) await nextFrame();
+      if (i % 2 === 0) await nextFrame();
+      if (signal.aborted) break;
       const model = buildAsset(asset.kind, 173),
         box = new THREE.Box3().setFromObject(model),
         center = box.getCenter(new THREE.Vector3()),
