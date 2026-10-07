@@ -167,6 +167,24 @@ try {
     .click();
   assert.equal((await saved()).objects[0].x, frog.x, "undo move");
   await clickWorld(frog.x, 0.95, frog.z);
+  await page.getByRole("button", { name: "Move", exact: true }).click();
+  await page.keyboard.press("Control+z");
+  assert.equal((await saved()).objects.length, 0, "undo placing the frog");
+  assert.equal(
+    await page.getByRole("button", { name: "Cancel", exact: true }).count(),
+    0,
+    "undoing away the moving object ends the move",
+  );
+  await page.keyboard.press("Delete");
+  assert.notEqual(
+    await page.locator(".status-message").textContent(),
+    "Removed. Undo will bring it back.",
+    "nothing is selected once undo takes the object away",
+  );
+  await page.keyboard.press("Control+Shift+z");
+  assert.equal((await saved()).objects.length, 1, "redo placing the frog");
+  await page.keyboard.press("Escape");
+  await clickWorld(frog.x, 0.95, frog.z);
   await page.getByRole("button", { name: "Watch up close" }).click();
   await page.getByRole("complementary", { name: "Watching" }).waitFor();
   assert.equal(
