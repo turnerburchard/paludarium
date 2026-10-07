@@ -89,6 +89,11 @@ import {
 } from "./landscape/stones";
 import { fungusLog } from "./landscape/fungusLog";
 import { snag } from "./landscape/snag";
+import { treeRoots } from "./landscape/treeRoots";
+import { stump } from "./landscape/stump";
+import { deadTree } from "./landscape/deadTree";
+import { ludwigia } from "./plants/ludwigia";
+import { dwarfSagittaria } from "./plants/dwarfSagittaria";
 import { leafLitter } from "./landscape/leafLitter";
 
 export type { AssetDefinition, Category, AnimalBehavior } from "./types";
@@ -138,6 +143,8 @@ export const assets = {
   "amazon-sword": amazonSword,
   vallisneria,
   rotala,
+  ludwigia,
+  "dwarf-sagittaria": dwarfSagittaria,
   anubias,
   "java-fern": javaFern,
   cryptocoryne,
@@ -162,6 +169,9 @@ export const assets = {
   log,
   "fungus-log": fungusLog,
   snag,
+  stump,
+  "dead-tree": deadTree,
+  "tree-roots": treeRoots,
   "rock-shelter": rockShelter,
   "leaf-litter": leafLitter,
   fish,

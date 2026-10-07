@@ -142,6 +142,30 @@ const MODELS = [
     sink: 0.12,
     roles: { bark: "75522f", barkLight: "9e6a3a", cut: "d98d4a" },
   },
+  {
+    // "Tree roots" by Poly by Google, poly.pizza/m/eYfjQLsebfA, CC-BY 3.0.
+    source: "docs/inspiration/models/tree-roots-poly-google.glb",
+    out: "src/assets/landscape/treeRoots.json",
+    height: 0.8,
+    sink: 0.04,
+    solid: true,
+    roles: { wood: "7d5b32", cut: "c08444", dark: "130701" },
+  },
+  {
+    // "Tree Stump with Moss" by Quaternius, poly.pizza/m/nFvEbUX6LE, CC0.
+    source: "docs/inspiration/models/stump-moss-quaternius.glb",
+    out: "src/assets/landscape/stump.json",
+    width: 0.8,
+    sink: 0.05,
+    solid: true,
+  },
+  {
+    // "Dead Tree Trunk" by Zsky, poly.pizza/m/HdJ7JoEvKR, CC-BY 3.0.
+    source: "docs/inspiration/models/dead-tree-zsky.glb",
+    out: "src/assets/landscape/deadTree.json",
+    height: 1.15,
+    solid: true,
+  },
 ];
 
 for (const model of MODELS) {

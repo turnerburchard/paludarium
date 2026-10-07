@@ -85,6 +85,11 @@ export const assetKinds = [
   "limestone-pinnacle",
   "fungus-log",
   "snag",
+  "tree-roots",
+  "stump",
+  "dead-tree",
+  "ludwigia",
+  "dwarf-sagittaria",
 ] as const;
 export type AssetKind = (typeof assetKinds)[number];
 export const MAX_OBJECTS = 120;
