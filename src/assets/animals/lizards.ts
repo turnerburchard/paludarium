@@ -40,6 +40,52 @@ export const leopardLizard: AssetDefinition = {
   build: (random) => buildLizard(paintLeopardLizard, random),
 };
 
+export const desertSpinyLizard: AssetDefinition = {
+  kind: "desert-spiny-lizard",
+  name: "Desert spiny lizard",
+  scientificName: "Sceloporus magister",
+  category: "Animals",
+  description:
+    "A heavy, spiny-scaled lizard, dark with yellow bands and a black collar, that basks on rock and wood.",
+  radius: 0.45,
+  habitat: "land",
+  behavior: {
+    nocturnal: false,
+    climbs: false,
+    speed: 0.075,
+    movement: "scurry",
+    restsOn: ["stone", "bark"],
+  },
+  build: (random) => buildLizard(paintSpinyLizard, random),
+};
+
+export const fenceLizard: AssetDefinition = {
+  kind: "fence-lizard",
+  name: "Plateau fence lizard",
+  scientificName: "Sceloporus tristichus",
+  category: "Animals",
+  description:
+    "A grey-brown mountain lizard with pale side stripes, dark chevrons and a blue-washed belly.",
+  radius: 0.45,
+  habitat: "land",
+  behavior: {
+    nocturnal: false,
+    climbs: false,
+    speed: 0.08,
+    movement: "scurry",
+    restsOn: ["stone", "bark"],
+  },
+  build: (random) => buildLizard(paintFenceLizard, random),
+};
+
+/** Every species built on the lizard model, which the gecko rig animates. */
+export const lizardKinds = new Set<string>([
+  gecko.kind,
+  leopardLizard.kind,
+  desertSpinyLizard.kind,
+  fenceLizard.kind,
+]);
+
 /** Colors one face, given the source color of its part, its center in model
  * space, and a per-animal offset so no two animals share a pattern. */
 type Painter = (
@@ -147,4 +193,36 @@ function paintLeopardLizard(source: string, at: THREE.Vector3, flecks: number) {
   const noise = Math.sin(at.x * 260 + at.z * 190 + flecks) * 0.5 + 0.5;
   if (noise > 0.8) return new THREE.Color("#4a3523");
   return new THREE.Color("#b99a6b");
+}
+
+/** Dark scales with broken yellow bands across the back, a black collar, a
+ * grey head and a ringed tail. */
+function paintSpinyLizard(source: string, at: THREE.Vector3, flecks: number) {
+  if (source === EYE) return new THREE.Color("#16130f");
+  if (source === TOES) return new THREE.Color("#4a4236");
+  if (source === UNDERSIDE) return new THREE.Color("#8f8775");
+  if (source !== BACK) throw new Error(`Unexpected lizard color ${source}.`);
+  if (at.z < -0.27) return new THREE.Color("#77705f");
+  if (at.z < -0.22) return new THREE.Color("#1c1915");
+  if (at.z > 0.13)
+    return new THREE.Color(Math.sin(at.z * 60) > 0 ? "#5c503d" : "#2c261e");
+  const noise = Math.sin(at.x * 230 + at.z * 150 + flecks) * 0.5 + 0.5;
+  if (Math.abs(at.x) < 0.05 && Math.sin(at.z * 70) > 0.4 && noise > 0.35)
+    return new THREE.Color("#d4ae38");
+  return new THREE.Color(noise > 0.75 ? "#5e523f" : "#3a3127");
+}
+
+/** Grey-brown with a pale stripe down each side of the back and dark
+ * chevrons between them. */
+function paintFenceLizard(source: string, at: THREE.Vector3, flecks: number) {
+  if (source === EYE) return new THREE.Color("#16130f");
+  if (source === TOES) return new THREE.Color("#6d6455");
+  if (source === UNDERSIDE) return new THREE.Color("#7f8c99");
+  if (source !== BACK) throw new Error(`Unexpected lizard color ${source}.`);
+  const side = Math.abs(at.x);
+  if (side > 0.035 && side < 0.05 && at.z < 0.13)
+    return new THREE.Color("#c4b89c");
+  if (side < 0.035 && Math.sin(at.z * 90 + side * 60 + flecks) > 0.55)
+    return new THREE.Color("#3b3229");
+  return new THREE.Color("#7b7161");
 }

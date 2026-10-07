@@ -132,7 +132,10 @@ export function makePreset(preset: Preset): World {
     add("grass", -0.2, 1.4, 0.8);
     add("moss", -1.6, 0.8, 1.2);
     add("moss", -2.2, -0.1, 1.2);
-    add("tree-frog", -0.9, 0.2, 1.2, 0.4);
+    // Animals of Utah's mountain creeks: a canyon tree frog for the boulders
+    // by the water and a fence lizard basking on the bank.
+    add("canyon-tree-frog", -0.9, 0.2, 1.2, 0.4);
+    add("fence-lizard", -0.35, -0.45, 1.1, 2.2);
   }
   // A few overlapping ground-cover clusters make the ready-made habitats feel established.
   for (const [kind, x, z, scale] of [

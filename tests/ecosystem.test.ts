@@ -445,7 +445,7 @@ describe("insect colonies", () => {
     run(engine, 3600);
     const frogs = engine
       .snapshot()
-      .animals.filter((animal) => animal.speciesId === "tree-frog");
+      .animals.filter((animal) => animal.speciesId === "canyon-tree-frog");
     expect(frogs).toHaveLength(1);
     expect(frogs[0].needs.hunger).toBeLessThan(0.8);
   }, 20_000);

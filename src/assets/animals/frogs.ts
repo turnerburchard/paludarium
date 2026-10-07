@@ -125,6 +125,38 @@ export const mossyFrog: AssetDefinition = {
     ),
 };
 
+export const canyonTreeFrog: AssetDefinition = {
+  kind: "canyon-tree-frog",
+  name: "Canyon tree frog",
+  scientificName: "Dryophytes arenicolor",
+  category: "Animals",
+  description:
+    "A small, granite-grey frog with dark blotches that clings to boulders beside desert streams.",
+  radius: 0.22,
+  habitat: "land",
+  behavior: {
+    nocturnal: true,
+    climbs: true,
+    speed: 0.04,
+    movement: "climb",
+    restsOn: ["stone"],
+  },
+  build: (random) =>
+    buildFrog(
+      {
+        back: "#6f6a5b",
+        belly: "#d6ccb0",
+        iris: "#8f7d4f",
+        feet: "#a08b62",
+        height: 0.95,
+        size: 0.62,
+        roughness: 0.82,
+        spots: 30,
+      },
+      random,
+    ),
+};
+
 /** The source rig's clips, shared by every frog. They animate bones by name. */
 export const frogClips = Object.fromEntries(
   Object.entries(frogModel.clips).map(([name, clip]) => [

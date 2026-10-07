@@ -7,12 +7,18 @@ import type { MossSpecies } from "../model/moss";
 import { growMoss } from "./landscape/mossCover";
 import {
   bluePoisonDartFrog,
+  canyonTreeFrog,
   mossyFrog,
   strawberryPoisonFrog,
   treeFrog,
 } from "./animals/frogs";
 import { fish } from "./animals/fish";
-import { gecko, leopardLizard } from "./animals/lizards";
+import {
+  desertSpinyLizard,
+  fenceLizard,
+  gecko,
+  leopardLizard,
+} from "./animals/lizards";
 import { snail } from "./animals/snail";
 import { turtle } from "./animals/turtle";
 import { cardinalTetra, emberTetra } from "./animals/tetras";
@@ -56,8 +62,11 @@ export const assets = {
   "dart-frog": strawberryPoisonFrog,
   "blue-dart-frog": bluePoisonDartFrog,
   "mossy-frog": mossyFrog,
+  "canyon-tree-frog": canyonTreeFrog,
   gecko,
   "leopard-lizard": leopardLizard,
+  "desert-spiny-lizard": desertSpinyLizard,
+  "fence-lizard": fenceLizard,
   snail,
   turtle,
   monstera,
