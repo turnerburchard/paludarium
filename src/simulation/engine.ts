@@ -20,6 +20,10 @@ const DAY_LENGTH = 1800;
 /** Hunger gained per simulated second, and removed by eating one insect portion. */
 const HUNGER_RATE = 0.002;
 const HUNGER_PER_PORTION = 0.2;
+/** Energy spent per scene unit walked, on top of what any waking second costs. */
+const WALK_ENERGY = 0.0275;
+/** Hydration lost per simulated second in the open. */
+const HYDRATION_RATE = 0.0014;
 /** Colony growth per simulated second. A full-cover colony feeds about one frog. */
 const INSECT_GROWTH = 0.01;
 /** Newcomers let an emptied colony slowly recover instead of dying out. */
@@ -268,9 +272,17 @@ export class Ecosystem {
     // Grazers feed as they go, on algae the simulation doesn't track.
     if (!agent.profile.grazes)
       needs.hunger = clamp(needs.hunger + STEP * HUNGER_RATE);
-    needs.hydration = clamp(needs.hydration - STEP * 0.0014);
+    // Cover holds in humidity, so a sheltered animal dries out more slowly.
+    const cover = this.graph.node(state.nodeId).shelter;
+    needs.hydration = clamp(
+      needs.hydration - STEP * HYDRATION_RATE * (1 - 0.6 * cover),
+    );
+    // Walking costs energy by distance, so slow walkers aren't worn out by
+    // the time a trip takes.
     needs.energy = clamp(
-      needs.energy - STEP * (state.moving ? 0.0018 : 0.0007),
+      needs.energy -
+        STEP *
+          (0.0007 + (state.moving ? WALK_ENERGY * agent.profile.speed : 0)),
     );
     // Decide at graph nodes, never teleport to a new path while halfway along an edge.
     if (!state.moving && this.elapsed >= agent.reconsiderAt) this.decide(agent);
@@ -325,7 +337,10 @@ export class Ecosystem {
     const food =
       nearest(reachable.filter((id) => insects(id) >= 0.5)) ??
       nearest(reachable.filter((id) => insects(id) > 0.001));
-    const water = nearest(reachable.filter((id) => this.graph.node(id).wet));
+    const shoreline = [...lengths.keys()].filter(
+      (id) => this.graph.node(id).wet,
+    );
+    const water = nearest(shoreline.filter((id) => reachable.includes(id)));
     const inactive = agent.profile.nocturnal
       ? this.phase === "day"
       : this.phase === "night";
@@ -347,8 +362,35 @@ export class Ecosystem {
       state.reason = reason;
       agent.reconsiderAt = this.elapsed + duration;
     };
-    if (needs.hydration < 0.4 && water) {
+    // Slow walkers far from water set off early enough to arrive before
+    // they dry out.
+    const shore = nearest(shoreline);
+    const thirsty =
+      needs.hydration <
+      Math.max(
+        0.4,
+        shore
+          ? 0.15 + (lengths.get(shore)! / agent.profile.speed) * HYDRATION_RATE
+          : 0,
+      );
+    if (thirsty && water) {
       go(water, "bathing", "seeking-water", "Finding a damp shoreline", 30);
+      return;
+    }
+    // Shoreline is scarce. Rather than give up while another animal soaks,
+    // wait at the closest free spot on the way for a turn.
+    const busyWater = !water && shore;
+    if (thirsty && busyWater) {
+      const wait = [state.nodeId, ...navigation.pathTo(busyWater)]
+        .filter((id) => id === state.nodeId || !taken.has(id))
+        .at(-1)!;
+      go(
+        wait,
+        "resting",
+        "seeking-water",
+        "Waiting for a turn at the water",
+        4,
+      );
       return;
     }
     if (needs.hunger > 0.5 && food) {
@@ -356,7 +398,7 @@ export class Ecosystem {
       return;
     }
     const unmet =
-      needs.hydration < 0.4 && !water
+      thirsty && !water
         ? "No reachable damp shoreline. Shape a shallow pool or raise the water slightly."
         : needs.hunger > 0.5 && !food
           ? "No insects within reach. Plants and moss give insects cover to breed."
@@ -379,7 +421,8 @@ export class Ecosystem {
           score:
             this.graph.node(id).shelter * 3 +
             (restsOn.includes(this.graph.node(id).surface) ? 1 : 0) -
-            lengths.get(id)! * 0.1 +
+            // Slow walkers settle for nearer cover.
+            (lengths.get(id)! * 0.008) / agent.profile.speed +
             this.roll() * 0.25,
         }))
         .sort((a, b) => b.score - a.score);
