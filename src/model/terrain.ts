@@ -1,7 +1,11 @@
 import type { Environment, HabitatObject, AssetKind } from "./schema";
 import { assets } from "../assets";
-import { terrainSamples, MAX_GROUND_HEIGHT } from "./terrainData";
-export { MAX_GROUND_HEIGHT } from "./terrainData";
+import {
+  terrainSamples,
+  terrainPoint,
+  TERRAIN_POINTS,
+  groundCeiling,
+} from "./terrainData";
 export function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
@@ -23,12 +27,21 @@ export function baseGroundHeight(
 }
 export function groundHeight(x: number, z: number, env: Environment): number {
   const base = baseGroundHeight(x, z, env);
-  if (!env.terrain) return base;
-  const delta = terrainSamples(x, z, env).reduce(
-    (sum, sample) => sum + env.terrain!.heights[sample.index] * sample.weight,
-    0,
-  );
-  return clamp(base + delta, 0.08, MAX_GROUND_HEIGHT);
+  const delta = env.terrain
+    ? terrainSamples(x, z, env).reduce(
+        (sum, sample) =>
+          sum + env.terrain!.heights[sample.index] * sample.weight,
+        0,
+      )
+    : 0;
+  return clamp(base + delta, 0.08, groundCeiling(env));
+}
+export function hasDryGround(env: Environment): boolean {
+  for (let index = 0; index < TERRAIN_POINTS; index++) {
+    const { x, z } = terrainPoint(index, env);
+    if (groundHeight(x, z, env) >= env.water + 0.025) return true;
+  }
+  return false;
 }
 /** The upward surface normal of the ground, from its slope. */
 export function groundNormal(x: number, z: number, env: Environment) {

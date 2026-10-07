@@ -64,7 +64,7 @@ function Scene({
   );
   const controls = useRef<OrbitControlsImpl>(null);
   const { raycaster, camera, gl } = useThree();
-  const terrain = useRef<THREE.Group>(null);
+  const terrain = useRef<THREE.Mesh>(null);
   const inhabitants = useRef<THREE.Group>(null);
   useWatchVisibility(inhabitants, ecosystem, watchingId);
   const followCamera = useFollowCamera(
@@ -84,7 +84,7 @@ function Scene({
       ? world.objects.find((o) => o.id === tool.id)
       : null;
   const kind = tool.type === "place" ? tool.kind : moving?.kind;
-  useCameraLayout(controls, resetCamera, view);
+  useCameraLayout(controls, resetCamera, view, env.height);
   useEffect(() => setCursor(null), [tool]);
   useSceneTouch(controls, !!kind, (event) => {
     if (!inhabitants.current) return;
@@ -237,9 +237,7 @@ function Scene({
         onPointerCancel={editor.cancelTerrainStroke}
         onLostPointerCapture={editor.cancelTerrainStroke}
       >
-        <group ref={terrain}>
-          <Terrain environment={env} />
-        </group>
+        <Terrain environment={env} groundRef={terrain} />
         <mesh
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, 0.001, 0]}

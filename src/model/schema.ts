@@ -2,7 +2,10 @@ import { z } from "zod";
 import {
   TERRAIN_POINTS,
   groundMaterials,
-  MAX_GROUND_HEIGHT,
+  DEFAULT_TANK_HEIGHT,
+  MIN_TANK_HEIGHT,
+  MAX_TANK_HEIGHT,
+  waterCeiling,
 } from "./terrainData";
 import { mossSpecies } from "./moss";
 
@@ -106,8 +109,8 @@ export const assetKinds = [
 ] as const;
 export type AssetKind = (typeof assetKinds)[number];
 export const MAX_OBJECTS = 120;
-export const TANK_HEIGHT = 2.9;
-export const AQUARIUM_WATER = TANK_HEIGHT - 0.25;
+export const TANK_HEIGHT = DEFAULT_TANK_HEIGHT;
+export const AQUARIUM_WATER = waterCeiling({ height: TANK_HEIGHT });
 const finite = z.number().finite();
 export const objectSchema = z.object({
   id: z.string().min(1).max(100),
@@ -132,24 +135,33 @@ export const objectSchema = z.object({
   lift: finite.min(0).max(4).optional(),
 });
 export type HabitatObject = z.infer<typeof objectSchema>;
-export const environmentSchema = z.object({
-  width: finite.min(5).max(9),
-  depth: finite.min(3).max(6),
-  substrate: finite.min(0.12).max(0.55),
-  water: finite.min(0).max(AQUARIUM_WATER),
-  light: z.enum(["day", "golden", "moon"]),
-  warmth: finite.min(0).max(1).default(0.45),
-  brightness: finite.min(0.4).max(1.6).default(1),
-  // Additive version-1 data: older saves keep their original bank and palette.
-  terrain: z
-    .object({
-      heights: z
-        .array(finite.min(-0.9).max(MAX_GROUND_HEIGHT))
-        .length(TERRAIN_POINTS),
-      paint: z.array(z.enum(groundMaterials)).length(TERRAIN_POINTS),
-    })
-    .optional(),
-});
+export const environmentSchema = z
+  .object({
+    width: finite.min(5).max(9),
+    depth: finite.min(3).max(6),
+    height: finite
+      .min(MIN_TANK_HEIGHT)
+      .max(MAX_TANK_HEIGHT)
+      .default(DEFAULT_TANK_HEIGHT),
+    substrate: finite.min(0.12).max(0.55),
+    water: finite.min(0).max(waterCeiling({ height: MAX_TANK_HEIGHT })),
+    light: z.enum(["day", "golden", "moon"]),
+    warmth: finite.min(0).max(1).default(0.45),
+    brightness: finite.min(0.4).max(1.6).default(1),
+    // Additive version-1 data: older saves keep their original bank and palette.
+    terrain: z
+      .object({
+        heights: z
+          .array(finite.min(-0.9).max(MAX_TANK_HEIGHT))
+          .length(TERRAIN_POINTS),
+        paint: z.array(z.enum(groundMaterials)).length(TERRAIN_POINTS),
+      })
+      .optional(),
+  })
+  .refine((env) => env.water <= waterCeiling(env), {
+    message: "Water must stay below the tank rim.",
+    path: ["water"],
+  });
 export type Environment = z.infer<typeof environmentSchema>;
 export const worldSchema = z
   .object({
@@ -169,6 +181,7 @@ export type World = z.infer<typeof worldSchema>;
 export const defaultEnvironment: Environment = {
   width: 7,
   depth: 4.5,
+  height: DEFAULT_TANK_HEIGHT,
   substrate: 0.25,
   water: 0.44,
   light: "day",

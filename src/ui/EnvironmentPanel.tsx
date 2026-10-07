@@ -3,7 +3,11 @@ import { Sun, Sunset, Moon } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import { RangeControl } from "./RangeControl";
 import { TerrainControls } from "./TerrainControls";
-import { AQUARIUM_WATER } from "../model/schema";
+import {
+  waterCeiling,
+  MIN_TANK_HEIGHT,
+  MAX_TANK_HEIGHT,
+} from "../model/terrainData";
 
 export function EnvironmentPanel({ editor }: { editor: Editor }) {
   const env = editor.world.environment;
@@ -39,9 +43,8 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
       <div className="water-options">
         {[
           { name: "Dry", water: 0 },
-          { name: "Shoreline", water: 0.44 },
-          { name: "Pool", water: 0.65 },
-          { name: "Aquarium", water: AQUARIUM_WATER },
+          { name: "Shallow", water: 0.44 },
+          { name: "Full", water: waterCeiling(env) },
         ].map(({ name, water }) => (
           <button
             key={name}
@@ -52,32 +55,32 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
           </button>
         ))}
       </div>
+      <RangeControl
+        label="Water level"
+        value={env.water}
+        min={0}
+        max={waterCeiling(env)}
+        step={0.01}
+        format={(n) => (n === 0 ? "Dry" : `${(n * 10).toFixed(1)} cm`)}
+        onPreview={(water) => {
+          // Life runs on the saved world, so while the level is only previewed
+          // fish would keep swimming in water that isn't shown. Hold it still.
+          pausedBeforeDrag.current ??= editor.paused;
+          editor.setPaused(true);
+          editor.previewEnvironment({ water });
+        }}
+        onCommit={(water) => {
+          editor.changeEnvironment({ water });
+          editor.setPaused(pausedBeforeDrag.current ?? editor.paused);
+          pausedBeforeDrag.current = null;
+        }}
+      />
       <details className="more-options landscape-options">
         <summary>Shape landscape</summary>
         <TerrainControls editor={editor} />
       </details>
       <details className="more-options">
         <summary>Fine-tune habitat</summary>
-        <RangeControl
-          label="Water level"
-          value={env.water}
-          min={0}
-          max={AQUARIUM_WATER}
-          step={0.01}
-          format={(n) => (n === 0 ? "Dry" : `${(n * 10).toFixed(1)} cm`)}
-          onPreview={(water) => {
-            // Life runs on the saved world, so while the level is only previewed
-            // fish would keep swimming in water that isn't shown. Hold it still.
-            pausedBeforeDrag.current ??= editor.paused;
-            editor.setPaused(true);
-            editor.previewEnvironment({ water });
-          }}
-          onCommit={(water) => {
-            editor.changeEnvironment({ water });
-            editor.setPaused(pausedBeforeDrag.current ?? editor.paused);
-            pausedBeforeDrag.current = null;
-          }}
-        />
         <RangeControl
           label="Light warmth"
           value={env.warmth}
@@ -117,6 +120,24 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
           format={(n) => `${Math.round(n * 10)} cm`}
           onPreview={(depth) => editor.previewEnvironment({ depth })}
           onCommit={(depth) => editor.changeEnvironment({ depth })}
+        />
+        <RangeControl
+          label="Tank height"
+          value={env.height}
+          min={MIN_TANK_HEIGHT}
+          max={MAX_TANK_HEIGHT}
+          step={0.1}
+          format={(n) => `${Math.round(n * 10)} cm`}
+          onPreview={(height) => {
+            pausedBeforeDrag.current ??= editor.paused;
+            editor.setPaused(true);
+            editor.previewEnvironment({ height });
+          }}
+          onCommit={(height) => {
+            editor.changeEnvironment({ height });
+            editor.setPaused(pausedBeforeDrag.current ?? editor.paused);
+            pausedBeforeDrag.current = null;
+          }}
         />
         <RangeControl
           label="Soil depth"

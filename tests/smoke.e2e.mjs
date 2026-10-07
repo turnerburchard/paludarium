@@ -252,7 +252,7 @@ try {
   await page
     .getByRole("button", { name: "Habitat settings", exact: true })
     .click();
-  await page.getByRole("button", { name: "Aquarium", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Full", exact: true }).waitFor();
   const habitatHeight = await page
     .locator(".sidebar")
     .evaluate((sheet) => sheet.getBoundingClientRect().height);
@@ -272,11 +272,11 @@ try {
   );
   assert.equal(
     await page
-      .getByRole("button", { name: "Aquarium", exact: true })
+      .getByRole("button", { name: "Full", exact: true })
       .getAttribute("aria-pressed"),
     "true",
   );
-  await page.getByRole("button", { name: "Shoreline", exact: true }).click();
+  await page.getByRole("button", { name: "Shallow", exact: true }).click();
   await page
     .getByRole("button", { name: "Undo (⌘/Ctrl Z)", exact: true })
     .click();
@@ -346,7 +346,7 @@ try {
       return library.worlds.find((entry) => entry.id === library.activeId)
         .world;
     }, storageKey),
-    original,
+    { ...original, environment: { ...original.environment, height: 2.9 } },
   );
   const unreadable = await browser.newPage();
   await unreadable.addInitScript((key) => {

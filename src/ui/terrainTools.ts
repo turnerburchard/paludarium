@@ -44,13 +44,6 @@ export const terrainTools: {
   {
     mode: "moss",
     label: "Paint moss",
-    description:
-      "Grow moss on dry ground. Underwater, only the green color remains.",
-  },
-  {
-    mode: "pool",
-    label: "Carve pool",
-    description:
-      "Dig below the water level. Adds water if needed. Use a small brush for narrow channels.",
+    description: "Grow a low moss carpet that follows dry ground.",
   },
 ];

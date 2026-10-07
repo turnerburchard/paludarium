@@ -15,7 +15,17 @@ import {
   restingOn,
   type Surface,
 } from "../model/stacking";
-import { boundedPosition, fitObject, placementProblem } from "../model/terrain";
+import {
+  boundedPosition,
+  fitObject,
+  placementProblem,
+  baseGroundHeight,
+} from "../model/terrain";
+import {
+  terrainPoint,
+  groundCeiling,
+  waterCeiling,
+} from "../model/terrainData";
 import { historyReducer } from "./history";
 import { TerrainStroke } from "./terrainStroke";
 import type { TerrainBrush } from "../model/terrainBrush";
@@ -442,6 +452,19 @@ export function withEnvironment(
   patch: Partial<Environment>,
 ): World {
   const environment = { ...world.environment, ...patch };
+  environment.water = Math.min(environment.water, waterCeiling(environment));
+  if (environment.height < world.environment.height && environment.terrain) {
+    environment.terrain = {
+      ...environment.terrain,
+      heights: environment.terrain.heights.map((delta, index) => {
+        const { x, z } = terrainPoint(index, environment);
+        return Math.min(
+          delta,
+          groundCeiling(environment) - baseGroundHeight(x, z, environment),
+        );
+      }),
+    };
+  }
   // Stacked objects ride along with their supports into the new bounds.
   let objects = world.objects;
   for (const object of world.objects)

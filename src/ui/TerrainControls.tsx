@@ -42,10 +42,6 @@ export function TerrainControls({ editor }: { editor: Editor }) {
           if (brush) editor.setTool({ ...brush, radius: next });
         }}
       />
-      <p className="terrain-note">
-        Drag to brush, tap for a small change. Each stroke is one undo. Done or
-        Escape finishes.
-      </p>
       <button
         className="reset-terrain"
         disabled={!editor.world.environment.terrain}

@@ -10,7 +10,7 @@ import {
 } from "../assets";
 import type { Editor } from "../editor/useEditor";
 import { loadThumbnails, type Thumbnails } from "../scene/thumbnails";
-import { MAX_GROUND_HEIGHT } from "../model/terrain";
+import { hasDryGround } from "../model/terrain";
 import { LibraryFilter, type Place } from "./LibraryFilter";
 const categories: { name: Category; icon: typeof Leaf }[] = [
   { name: "Plants", icon: Leaf },
@@ -38,10 +38,9 @@ export function Library({
   const visible = !hidden && (!mobile || sheetOpen);
   const [category, setCategory] = useState<Category>("Plants");
   const [thumbnails, setThumbnails] = useState<Thumbnails>({});
+  const dryGround = hasDryGround(editor.world.environment);
   const available = catalog.filter(
-    (asset) =>
-      editor.world.environment.water <= MAX_GROUND_HEIGHT ||
-      (asset.habitat !== "land" && !asset.soil),
+    (asset) => dryGround || (asset.habitat !== "land" && !asset.soil),
   );
   const activeCategory = available.some(
     (asset) => categoryOf(asset) === category,
@@ -96,13 +95,7 @@ export function Library({
       controller.abort();
       observer.disconnect();
     };
-  }, [
-    activeCategory,
-    editor.world.environment.water,
-    visible,
-    places,
-    chosenGroups,
-  ]);
+  }, [activeCategory, dryGround, visible, places, chosenGroups]);
   return (
     <>
       <div className="category-tabs" aria-label="Object categories">
