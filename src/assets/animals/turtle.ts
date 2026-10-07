@@ -18,22 +18,48 @@ export const turtle: AssetDefinition = {
     movement: "crawl",
     grazes: true,
   },
-  build,
+  build: () =>
+    build({
+      "895019": "#6e4a2a", // shell plates
+      "612719": "#33210f", // seams between the plates
+      baac6c: "#c8ad66", // belly
+      "507927": "#6d6b3e", // skin
+      "191919": "#2b2721", // claws
+      "303030": "#141414", // eyes
+    }),
 };
 
-/** Each source color by its role in a painted wood turtle. */
-const COLORS: Record<string, string> = {
-  "895019": "#6e4a2a", // shell plates
-  "612719": "#33210f", // seams between the plates
-  baac6c: "#c8ad66", // belly
-  "507927": "#6d6b3e", // skin
-  "191919": "#2b2721", // claws
-  "303030": "#141414", // eyes
+export const desertTortoise: AssetDefinition = {
+  kind: "desert-tortoise",
+  name: "Desert tortoise",
+  scientificName: "Gopherus agassizii",
+  category: "Animals",
+  description:
+    "A patient, sand-colored tortoise that grazes on grasses and cactus flowers and rests out the heat in the shade.",
+  radius: 0.28,
+  habitat: "land",
+  behavior: {
+    nocturnal: false,
+    climbs: false,
+    speed: 0.012,
+    movement: "crawl",
+    grazes: true,
+  },
+  build: () =>
+    build({
+      "895019": "#8a7450",
+      "612719": "#4d3e29",
+      baac6c: "#c2ab78",
+      "507927": "#8c7d62",
+      "191919": "#3a332a",
+      "303030": "#141414",
+    }),
 };
 
 /** Model: "Turtle" by Poly by Google, CC-BY 3.0, recolored.
- * scripts/prepare-turtle-model.mjs bakes it with one bone per face. */
-function build() {
+ * scripts/prepare-turtle-model.mjs bakes it with one bone per face.
+ * `colors` maps each source color to the species' own. */
+function build(colors: Record<string, string>) {
   const root = new THREE.Group();
   const bones = turtleModel.bones.map((data) => {
     const bone = new THREE.Bone();
@@ -47,7 +73,7 @@ function build() {
   root.updateMatrixWorld(true);
   const skeleton = new THREE.Skeleton(bones);
   for (const part of turtleModel.parts) {
-    const color = COLORS[part.color];
+    const color = colors[part.color];
     if (!color) throw new Error(`Unexpected turtle color ${part.color}.`);
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute(

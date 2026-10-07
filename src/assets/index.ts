@@ -8,26 +8,34 @@ import { growMoss } from "./landscape/mossCover";
 import {
   bluePoisonDartFrog,
   canyonTreeFrog,
+  chorusFrog,
   mossyFrog,
   strawberryPoisonFrog,
   treeFrog,
 } from "./animals/frogs";
 import { fish } from "./animals/fish";
 import {
+  chuckwalla,
   desertSpinyLizard,
   fenceLizard,
   gecko,
   leopardLizard,
+  tigerSalamander,
 } from "./animals/lizards";
 import { snail } from "./animals/snail";
-import { turtle } from "./animals/turtle";
+import { desertTortoise, turtle } from "./animals/turtle";
 import { cardinalTetra, emberTetra } from "./animals/tetras";
 import { tigerBarb } from "./animals/barb";
 import {
   angelfish,
+  convictCichlid,
   corydoras,
+  cutthroatTrout,
+  harlequinRasbora,
   pearlGourami,
+  pupfish,
   rainbowShark,
+  sculpin,
 } from "./animals/freshwater";
 import { anthurium } from "./plants/anthurium";
 import { philodendron } from "./plants/philodendron";
@@ -46,6 +54,21 @@ import { anubias } from "./plants/anubias";
 import { javaFern } from "./plants/javaFern";
 import { rotala } from "./plants/rotala";
 import { vallisneria } from "./plants/vallisneria";
+import { columbine } from "./plants/columbine";
+import { spruce } from "./plants/spruce";
+import { kinnikinnick } from "./plants/kinnikinnick";
+import { pricklyPear } from "./plants/pricklyPear";
+import { barrelCactus } from "./plants/barrelCactus";
+import { agave } from "./plants/agave";
+import { bunchgrass } from "./plants/bunchgrass";
+import { cryptocoryne } from "./plants/cryptocoryne";
+import { begonia } from "./plants/begonia";
+import { alocasia } from "./plants/alocasia";
+import { treePhilodendron } from "./plants/treePhilodendron";
+import { hairgrass } from "./plants/hairgrass";
+import { orchid } from "./plants/orchid";
+import { waterLily } from "./plants/waterLily";
+import { hedgehogCactus } from "./plants/hedgehogCactus";
 import { cushionMoss, fernMoss, javaMoss, sheetMoss } from "./landscape/mosses";
 import { rock } from "./landscape/rock";
 import { wood } from "./landscape/wood";
@@ -62,15 +85,21 @@ export const assets = {
   "dart-frog": strawberryPoisonFrog,
   "blue-dart-frog": bluePoisonDartFrog,
   "mossy-frog": mossyFrog,
+  "chorus-frog": chorusFrog,
   "canyon-tree-frog": canyonTreeFrog,
   gecko,
   "leopard-lizard": leopardLizard,
   "desert-spiny-lizard": desertSpinyLizard,
   "fence-lizard": fenceLizard,
+  chuckwalla,
+  "tiger-salamander": tigerSalamander,
   snail,
   turtle,
+  "desert-tortoise": desertTortoise,
   monstera,
   "swiss-cheese-plant": swissCheesePlant,
+  "tree-philodendron": treePhilodendron,
+  alocasia,
   fern,
   strawberry,
   bromeliad,
@@ -79,6 +108,17 @@ export const assets = {
   "nest-fern": nestFern,
   calathea,
   fittonia,
+  orchid,
+  begonia,
+  columbine,
+  kinnikinnick,
+  spruce,
+  "prickly-pear": pricklyPear,
+  "barrel-cactus": barrelCactus,
+  "hedgehog-cactus": hedgehogCactus,
+  agave,
+  bunchgrass,
+  hairgrass,
   cattail,
   grass,
   "amazon-sword": amazonSword,
@@ -86,6 +126,8 @@ export const assets = {
   rotala,
   anubias,
   "java-fern": javaFern,
+  cryptocoryne,
+  "water-lily": waterLily,
   moss: cushionMoss,
   "sheet-moss": sheetMoss,
   "fern-moss": fernMoss,
@@ -104,6 +146,11 @@ export const assets = {
   "pearl-gourami": pearlGourami,
   "rainbow-shark": rainbowShark,
   corydoras,
+  "convict-cichlid": convictCichlid,
+  "harlequin-rasbora": harlequinRasbora,
+  "cutthroat-trout": cutthroatTrout,
+  sculpin,
+  pupfish,
 } satisfies Record<AssetKind, AssetDefinition>;
 
 export const catalog: readonly AssetDefinition[] = Object.values(assets);

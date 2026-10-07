@@ -1,10 +1,12 @@
+import { assets } from "../assets";
 import type { Environment, HabitatObject } from "./schema";
 import { groundHeight } from "./terrain";
 
-/** Where an object's base sits: on the ground, or on the stone or wood it
- * was placed on. */
+/** Where an object's base sits: on the ground, on the stone or wood it was
+ * placed on, or on the surface for floating plants. */
 export function objectBase(object: HabitatObject, env: Environment) {
-  return groundHeight(object.x, object.z, env) + (object.lift ?? 0);
+  const base = groundHeight(object.x, object.z, env) + (object.lift ?? 0);
+  return assets[object.kind].floats ? Math.max(base, env.water) : base;
 }
 
 /** A spot the pointer found on a stone or wood piece: which one, and the

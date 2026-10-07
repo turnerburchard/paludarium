@@ -38,6 +38,8 @@ export interface AssetDefinition {
   shelter?: boolean;
   /** Plants grow well only in the soil they like. */
   soil?: Soil;
+  /** Rests on the water's surface, like a lily pad, instead of the bottom. */
+  floats?: boolean;
   /** Stone or wood: moss can grow over it and other things can rest on it. */
   hardscape?: boolean;
   behavior?: AnimalBehavior;

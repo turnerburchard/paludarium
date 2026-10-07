@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { branch, material, mesh } from "../geometry";
-import { placeLeaf } from "../leaves";
+import { placeLeaf, roundLeaf } from "../leaves";
 import type { AssetDefinition } from "../types";
 
 export const rotala: AssetDefinition = {
@@ -58,34 +58,4 @@ function build(random: () => number) {
     }
   }
   return root;
-}
-
-/** A tiny rounded leaf as four faceted triangles, along +Y facing +Z. Rotala
- * carries hundreds, so each stays as light as it can. */
-function roundLeaf(length: number, color: THREE.Color) {
-  const half = length * 0.35;
-  const tip = new THREE.Vector3(0, length, 0),
-    base = new THREE.Vector3(),
-    middle = new THREE.Vector3(0, length * 0.5, half * 0.6);
-  const left = new THREE.Vector3(-half, length * 0.45, 0),
-    right = new THREE.Vector3(half, length * 0.45, 0);
-  const geometry = new THREE.BufferGeometry().setFromPoints([
-    base,
-    middle,
-    left,
-    base,
-    right,
-    middle,
-    middle,
-    tip,
-    left,
-    middle,
-    right,
-    tip,
-  ]);
-  const colors = new Float32Array(12 * 3);
-  for (let i = 0; i < 12; i++) colors.set([color.r, color.g, color.b], i * 3);
-  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-  geometry.computeVertexNormals();
-  return geometry;
 }

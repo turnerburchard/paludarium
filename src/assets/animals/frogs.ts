@@ -14,6 +14,8 @@ interface Appearance {
   spots?: number;
   /** Moss-like light and dark patches. */
   mottled?: boolean;
+  /** Dark stripes down the back and through the eye, as on a chorus frog. */
+  striped?: boolean;
 }
 
 export const treeFrog: AssetDefinition = {
@@ -157,6 +159,32 @@ export const canyonTreeFrog: AssetDefinition = {
     ),
 };
 
+export const chorusFrog: AssetDefinition = {
+  kind: "chorus-frog",
+  name: "Boreal chorus frog",
+  scientificName: "Pseudacris maculata",
+  category: "Animals",
+  description:
+    "A tiny brown frog with dark stripes down its back. Its trilling call is one of the first sounds of a mountain spring.",
+  radius: 0.18,
+  habitat: "land",
+  behavior: { nocturnal: true, climbs: false, speed: 0.04, movement: "hop" },
+  build: (random) =>
+    buildFrog(
+      {
+        back: "#7d7350",
+        belly: "#d9d0ac",
+        iris: "#9a7a3c",
+        feet: "#6f6748",
+        height: 0.95,
+        size: 0.5,
+        roughness: 0.72,
+        striped: true,
+      },
+      random,
+    ),
+};
+
 /** The source rig's clips, shared by every frog. They animate bones by name. */
 export const frogClips = Object.fromEntries(
   Object.entries(frogModel.clips).map(([name, clip]) => [
@@ -275,6 +303,7 @@ function buildFrog(appearance: Appearance, random: () => number) {
           3;
         color.copy(back);
         if (Math.abs(x) > 0.12 && y < 0.11) color.copy(feet);
+        else if (appearance.striped && stripe(x, y, z)) color.copy(dark);
         else if (
           y > 0.1 &&
           spots.some(
@@ -304,4 +333,14 @@ function buildFrog(appearance: Appearance, random: () => number) {
     mesh.bind(skeleton);
   }
   return root;
+}
+
+/** Three broken stripes down the back, and a band from the snout through the
+ * eye along each flank. */
+function stripe(x: number, y: number, z: number) {
+  if (y > 0.17 && z > -0.13)
+    return [-0.055, 0, 0.055].some(
+      (line) => Math.abs(x - line) < 0.014 && Math.sin(z * 45) > -0.5,
+    );
+  return Math.abs(x) > 0.07 && Math.abs(y - 0.2 + (z + 0.16) * 0.3) < 0.018;
 }

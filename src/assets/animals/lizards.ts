@@ -78,12 +78,53 @@ export const fenceLizard: AssetDefinition = {
   build: (random) => buildLizard(paintFenceLizard, random),
 };
 
+export const tigerSalamander: AssetDefinition = {
+  kind: "tiger-salamander",
+  name: "Western tiger salamander",
+  scientificName: "Ambystoma mavortium",
+  category: "Animals",
+  description:
+    "A stout, slow salamander, dark olive blotched with yellow. It spends the day under logs and stones and hunts at night.",
+  radius: 0.45,
+  habitat: "land",
+  behavior: {
+    nocturnal: true,
+    climbs: false,
+    speed: 0.03,
+    movement: "crawl",
+    restsOn: ["ground", "bark", "stone"],
+  },
+  build: (random) => buildLizard(paintTigerSalamander, random),
+};
+
+export const chuckwalla: AssetDefinition = {
+  kind: "chuckwalla",
+  name: "Common chuckwalla",
+  scientificName: "Sauromalus ater",
+  category: "Animals",
+  description:
+    "A big, easygoing desert lizard with a black front and a rusty tail. It basks on rocks and grazes on flowers and leaves.",
+  radius: 0.45,
+  habitat: "land",
+  behavior: {
+    nocturnal: false,
+    climbs: false,
+    speed: 0.035,
+    movement: "crawl",
+    restsOn: ["stone"],
+    grazes: true,
+  },
+  build: (random) => buildLizard(paintChuckwalla, random),
+};
+
 /** Every species built on the lizard model, which the gecko rig animates. */
 export const lizardKinds = new Set<string>([
   gecko.kind,
   leopardLizard.kind,
   desertSpinyLizard.kind,
   fenceLizard.kind,
+  tigerSalamander.kind,
+  chuckwalla.kind,
 ]);
 
 /** Colors one face, given the source color of its part, its center in model
@@ -225,4 +266,37 @@ function paintFenceLizard(source: string, at: THREE.Vector3, flecks: number) {
   if (side < 0.035 && Math.sin(at.z * 90 + side * 60 + flecks) > 0.55)
     return new THREE.Color("#3b3229");
   return new THREE.Color("#7b7161");
+}
+
+/** Dark olive with irregular yellow blotches, and a dull yellow belly. */
+function paintTigerSalamander(
+  source: string,
+  at: THREE.Vector3,
+  flecks: number,
+) {
+  if (source === EYE) return new THREE.Color("#16130f");
+  if (source === TOES) return new THREE.Color("#5b5a3a");
+  if (source === UNDERSIDE) return new THREE.Color("#b9a650");
+  if (source !== BACK)
+    throw new Error(`Unexpected salamander color ${source}.`);
+  const blotch =
+    Math.sin(at.x * 70 + flecks) * Math.cos(at.z * 55 + flecks * 1.7) +
+    0.4 * Math.sin(at.z * 130 - at.x * 40);
+  if (blotch > 0.55) return new THREE.Color("#d2b23c");
+  return new THREE.Color("#3a3d29");
+}
+
+/** A black head, shoulders and front legs, a rusty orange body and tail
+ * flecked with grey, and a grey belly. */
+function paintChuckwalla(source: string, at: THREE.Vector3, flecks: number) {
+  if (source === EYE) return new THREE.Color("#16130f");
+  if (source === TOES) return new THREE.Color("#3a3430");
+  if (source === UNDERSIDE)
+    return new THREE.Color(at.z < -0.12 ? "#3c3833" : "#8f877a");
+  if (source !== BACK)
+    throw new Error(`Unexpected chuckwalla color ${source}.`);
+  if (at.z < -0.12) return new THREE.Color("#272421");
+  const noise = Math.sin(at.x * 240 + at.z * 210 + flecks) * 0.5 + 0.5;
+  if (noise > 0.85) return new THREE.Color("#8b8378");
+  return new THREE.Color(at.z < 0.1 ? "#9a5a33" : "#b2774a");
 }

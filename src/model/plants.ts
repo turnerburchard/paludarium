@@ -3,12 +3,13 @@ import type { Environment, HabitatObject } from "./schema";
 import { objectBase } from "./stacking";
 
 /** How wet a plant likes its roots, as height of its spot above the waterline. */
-export type Soil = "shore" | "damp" | "drained";
+export type Soil = "shore" | "damp" | "drained" | "arid";
 
 const soils: Record<Soil, { min: number; max: number; likes: string }> = {
   shore: { min: 0, max: 0.3, likes: "the water's edge" },
   damp: { min: 0, max: 0.45, likes: "damp ground near the water" },
   drained: { min: 0.25, max: 0.8, likes: "well-drained ground up the bank" },
+  arid: { min: 0.35, max: 2, likes: "dry ground well away from the water" },
 };
 
 export interface PlantCondition {
