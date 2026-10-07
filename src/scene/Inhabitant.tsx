@@ -17,6 +17,8 @@ import { FrogRig } from "./frogRig";
 import { GeckoRig } from "./geckoRig";
 import { lizardKinds } from "../assets/animals/lizards";
 import { SnailRig } from "./snailRig";
+import { ArthropodRig } from "./arthropodRig";
+import { arthropodRigs } from "../assets/animals/arthropods";
 import { TurtleRig } from "./turtleRig";
 import { SwimRig } from "./swimRig";
 import { barbSwim } from "../assets/animals/barb";
@@ -232,6 +234,8 @@ export function Inhabitant({
 function createRig(kind: AssetKind, model: THREE.Group) {
   if (lizardKinds.has(kind)) return new GeckoRig(model);
   if (kind === "snail") return new SnailRig(model);
+  const arthropod = arthropodRigs.get(kind);
+  if (arthropod) return new ArthropodRig(model, arthropod);
   if (kind === "turtle" || kind === "desert-tortoise")
     return new TurtleRig(model);
   if (isLandAnimal(kind)) return new FrogRig(model);

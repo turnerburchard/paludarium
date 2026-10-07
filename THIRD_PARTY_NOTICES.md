@@ -18,6 +18,10 @@ The tiger barb is derived from ["Fish" by Quaternius](https://poly.pizza/m/BEcU9
 
 The cattail, snail and turtle are derived from ["Cattail"](https://poly.pizza/m/9uT74BMpRrl), ["Snail"](https://poly.pizza/m/aZ_cT-AIu2y) and ["Turtle"](https://poly.pizza/m/2LCcq8vhqJ3) by Poly by Google, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). They were rescaled, turned, recolored and, for the turtle, simplified and rigged. The original GLBs are in `docs/inspiration/models/`.
 
+## Crab, scorpion and spider models
+
+The vampire crab is derived from ["Crab" by jeremy](https://poly.pizza/m/bmZ6-LnPmp0) and the stripe-tailed scorpion from ["Scorpion" by Poly by Google](https://poly.pizza/m/6Bu7d_Pkm5o), both licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). The desert blonde tarantula is derived from ["Spider" by Quaternius](https://poly.pizza/m/yRYJiAJyiM), released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/). All three were reshaped, rigged, rescaled and recolored. The original GLBs are in `docs/inspiration/models/`.
+
 ## Plant models
 
 - The monstera is derived from ["Flower Pot" by Neko](https://poly.pizza/m/A7g6zgWaCj), licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), without its pot and recolored.
