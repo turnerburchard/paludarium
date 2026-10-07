@@ -1,6 +1,7 @@
 import * as THREE from "three";
-import { assets, buildAsset, disposeAsset } from "../assets";
-import type { Environment, HabitatObject, World } from "../model/schema";
+import { assets } from "../assets";
+import { collisionShape, type CollisionFace } from "../assets/collisionShape";
+import type { Environment, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
 import { groundHeight, swimmingHeight } from "../model/terrain";
 import type { Fish } from "./fish";
@@ -8,13 +9,9 @@ import type { Fish } from "./fish";
 const CLEARANCE = 0.015;
 export const SWIM_BOB = 0.025;
 
-interface Face {
-  triangle: THREE.Triangle;
-  bounds: THREE.Box3;
-}
 interface Tree {
   bounds: THREE.Box3;
-  faces?: Face[];
+  faces?: CollisionFace[];
   children?: [Tree, Tree];
 }
 interface Crossing {
@@ -22,53 +19,7 @@ interface Crossing {
   side: number;
 }
 
-/** Only baked geometry survives; these models never enter the scene. */
-const shapes = new WeakMap<
-  HabitatObject,
-  { faces: Face[]; bounds: THREE.Box3 }
->();
-function shape(object: HabitatObject) {
-  const cached = shapes.get(object);
-  if (cached) return cached;
-  // Decorative moss painted onto hardscape is soft cover, not another wall.
-  const model = buildAsset(object.kind, object.seed);
-  model.updateMatrixWorld(true);
-  const faces: Face[] = [];
-  const bounds = new THREE.Box3();
-  model.traverse((part) => {
-    if (!(part instanceof THREE.Mesh)) return;
-    const positions = part.geometry.getAttribute("position");
-    const index = part.geometry.index;
-    const count = index?.count ?? positions.count;
-    for (let i = 0; i < count; i += 3) {
-      const points = [0, 1, 2].map((offset) =>
-        new THREE.Vector3()
-          .fromBufferAttribute(
-            positions,
-            index ? index.getX(i + offset) : i + offset,
-          )
-          .applyMatrix4(part.matrixWorld),
-      );
-      const triangle = new THREE.Triangle(points[0], points[1], points[2]);
-      const box = new THREE.Box3().setFromPoints(points);
-      faces.push({ triangle, bounds: box });
-      bounds.union(box);
-    }
-  });
-  const tail = model.getObjectByName("tail");
-  if (tail) {
-    for (const angle of [-0.35, 0.35]) {
-      tail.rotation.y = angle;
-      bounds.union(new THREE.Box3().setFromObject(model));
-    }
-  }
-  disposeAsset(model);
-  const result = { faces, bounds };
-  shapes.set(object, result);
-  return result;
-}
-
-function tree(faces: Face[]): Tree {
+function tree(faces: CollisionFace[]): Tree {
   const bounds = new THREE.Box3();
   for (const face of faces) bounds.union(face.bounds);
   if (faces.length <= 12) return { bounds, faces };
@@ -112,12 +63,12 @@ export class SwimSpace {
   private readonly normal = new THREE.Vector3();
 
   constructor(private readonly world: World) {
-    const faces: Face[] = [];
+    const faces: CollisionFace[] = [];
     for (const object of world.objects) {
       const asset = assets[object.kind];
       if (asset.category === "Animals") {
         if (!asset.swims) continue;
-        const bounds = shape(object).bounds.clone();
+        const bounds = collisionShape(object).bounds.clone();
         bounds.min.multiplyScalar(object.scale);
         bounds.max.multiplyScalar(object.scale);
         // Include the tail's sway and the renderer's vertical bob.
@@ -140,7 +91,7 @@ export class SwimSpace {
         this.rotation.setFromAxisAngle(this.up, object.rotation),
         this.unitScale.clone().multiplyScalar(object.scale),
       );
-      const geometry = shape(object);
+      const geometry = collisionShape(object);
       const submergedBounds = geometry.bounds.clone().applyMatrix4(this.matrix);
       if (submergedBounds.min.y >= world.environment.water) continue;
       const transformed = geometry.faces.map(({ triangle }) => {

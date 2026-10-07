@@ -7,7 +7,7 @@ export interface Vec3 {
   y: number;
   z: number;
 }
-export type Surface = "ground" | "glass" | "stem" | "leaf" | "bark";
+export type Surface = "ground" | "glass" | "stem" | "leaf" | "bark" | "stone";
 export interface HabitatNode {
   id: string;
   position: Vec3;
@@ -18,6 +18,7 @@ export interface HabitatNode {
   neighbors: string[];
   perchHeight?: number;
   plantId?: string;
+  supportId?: string;
 }
 export interface SpeciesProfile extends AnimalBehavior {
   id: string;

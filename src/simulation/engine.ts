@@ -1,5 +1,10 @@
 import { discoveryFor, type Discovery } from "./discoveries";
-import { HabitatGraph, copyVector, distance } from "./navigation";
+import {
+  HabitatGraph,
+  copyVector,
+  distance,
+  type HabitatRoutes,
+} from "./navigation";
 import type {
   Activity,
   AnimalSeed,
@@ -21,17 +26,34 @@ const INSECT_GROWTH = 0.01;
 const INSECT_ARRIVALS = 0.05;
 /** Frogs pivot on the spot before setting off at more than this angle (radians)
  * from where they face, at TURN_RATE radians per simulated second. */
-const TURN_START = 0.8;
-const TURN_RATE = 0.6;
+const TURN_START = 0.18;
+const TURN_RATE = 0.9;
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const validAmount = (n: number) => Number.isFinite(n) && n >= 0;
 interface Agent {
   state: AnimalState;
+  previous?: AnimalState;
+  rendered?: AnimalState;
   profile: SpeciesProfile;
   path: string[];
   arrival: Activity;
   reconsiderAt: number;
-  edge?: { from: Vec3; normal: Vec3; progress: number; distance: number };
+  restFor: number;
+  pauseUntil: number;
+  recent: string[];
+  glanceAt: number;
+  glance?: Vec3;
+  hasTravelled: boolean;
+  routes?: { start: string; navigation: HabitatRoutes };
+  edge?: {
+    from: Vec3;
+    normal: Vec3;
+    progress: number;
+    distance: number;
+    duration: number;
+    hop: boolean;
+    lift: number;
+  };
   turning?: boolean;
 }
 export interface SimulationOptions {
@@ -99,6 +121,11 @@ export class Ecosystem {
         path: [],
         arrival: "resting",
         reconsiderAt: 0,
+        restFor: 18,
+        pauseUntil: 0,
+        recent: [node.id],
+        hasTravelled: false,
+        glanceAt: this.elapsed + 3 + this.roll() * 9,
         state: {
           id: animal.id,
           speciesId: animal.species.id,
@@ -141,6 +168,33 @@ export class Ecosystem {
   observeAnimal(id: string): Readonly<AnimalState> | undefined {
     return this.agents.get(id)?.state;
   }
+  /** Interpolate the last two fixed steps for frame rendering. This adds one
+   * step of latency, without damping quick hops or inventing a second motion. */
+  observeRenderedAnimal(id: string): Readonly<AnimalState> | undefined {
+    const agent = this.agents.get(id);
+    if (!agent) return undefined;
+    const state = agent.state;
+    const previous = agent.previous ?? state;
+    const rendered = (agent.rendered ??= structuredClone(state));
+    Object.assign(rendered, state);
+    const t = this.remainder / STEP;
+    rendered.position = interpolate(previous.position, state.position, t);
+    rendered.normal = interpolate(previous.normal, state.normal, t);
+    rendered.direction = interpolate(previous.direction, state.direction, t);
+    const landing = previous.motion.hop && previous.nodeId !== state.nodeId;
+    rendered.motion = {
+      progress:
+        previous.motion.progress +
+        ((landing ? 1 : state.motion.progress) - previous.motion.progress) * t,
+      lift:
+        previous.motion.lift + (state.motion.lift - previous.motion.lift) * t,
+      tilt:
+        previous.motion.tilt + (state.motion.tilt - previous.motion.tilt) * t,
+      hop: landing || state.motion.hop,
+    };
+    if (landing) rendered.moving = true;
+    return rendered;
+  }
   snapshot(): SimulationSnapshot {
     // HUD snapshots own their data; frame rendering uses observeAnimal instead.
     return {
@@ -175,6 +229,13 @@ export class Ecosystem {
         Math.floor(this.elapsed / STEP) % Math.max(1, agents.length);
       for (let i = 0; i < agents.length; i++) {
         const agent = agents[(i + offset) % agents.length];
+        agent.previous = {
+          ...agent.state,
+          position: copyVector(agent.state.position),
+          normal: copyVector(agent.state.normal),
+          direction: copyVector(agent.state.direction),
+          motion: { ...agent.state.motion },
+        };
         if (!heldIds?.has(agent.state.id)) {
           this.update(agent);
           const kind = discoveryFor(agent.state);
@@ -217,6 +278,7 @@ export class Ecosystem {
       this.move(agent);
       return;
     }
+    if (state.activity === "resting") this.lookAround(agent);
     if (state.activity === "eating") {
       const patch = this.food.get(state.nodeId);
       const available = patch?.amount ?? 0;
@@ -240,18 +302,24 @@ export class Ecosystem {
   private decide(agent: Agent) {
     const state = agent.state,
       needs = state.needs;
-    const paths = this.graph.paths(state.nodeId, agent.profile);
+    if (agent.routes?.start !== state.nodeId)
+      agent.routes = {
+        start: state.nodeId,
+        navigation: this.graph.routes(state.nodeId, agent.profile),
+      };
+    const navigation = agent.routes.navigation;
+    const lengths = navigation.distances;
     // Frogs don't move to a spot another frog holds or is heading for.
     const taken = new Set(
       [...this.agents.values()]
         .filter((other) => other !== agent)
         .map((other) => other.path.at(-1) ?? other.state.nodeId),
     );
-    const reachable = [...paths.keys()].filter(
+    const reachable = [...lengths.keys()].filter(
       (id) => id === state.nodeId || !taken.has(id),
     );
     const nearest = (ids: string[]) =>
-      ids.sort((a, b) => paths.get(a)!.length - paths.get(b)!.length)[0];
+      ids.sort((a, b) => lengths.get(a)! - lengths.get(b)!)[0];
     const insects = (id: string) => this.food.get(id)?.amount ?? 0;
     // A meal is worth the walk; crumbs only when there's nothing better.
     const food =
@@ -268,7 +336,11 @@ export class Ecosystem {
       reason: string,
       duration = 18,
     ) => {
-      agent.path = [...paths.get(target)!];
+      agent.path = this.travelPath(state.nodeId, navigation.pathTo(target));
+      agent.restFor = duration;
+      agent.glance = undefined;
+      agent.hasTravelled = false;
+      agent.turning = false;
       agent.arrival = arrival;
       state.moving = agent.path.length > 0;
       state.activity = state.moving ? moving : arrival;
@@ -290,6 +362,16 @@ export class Ecosystem {
           ? "No insects within reach. Plants and moss give insects cover to breed."
           : "";
     if (inactive || needs.energy < 0.3) {
+      if (inactive && state.activity === "sleeping") {
+        go(
+          state.nodeId,
+          "sleeping",
+          "seeking-shelter",
+          unmet || state.reason,
+          40 + this.roll() * 35,
+        );
+        return;
+      }
       const restsOn = agent.profile.restsOn ?? ["leaf"];
       const shelters = reachable
         .map((id) => ({
@@ -297,7 +379,7 @@ export class Ecosystem {
           score:
             this.graph.node(id).shelter * 3 +
             (restsOn.includes(this.graph.node(id).surface) ? 1 : 0) -
-            paths.get(id)!.length * 0.035 +
+            lengths.get(id)! * 0.1 +
             this.roll() * 0.25,
         }))
         .sort((a, b) => b.score - a.score);
@@ -315,18 +397,41 @@ export class Ecosystem {
       );
       return;
     }
-    // Short, varied outings with pauses. Avoid cycling between distant goals every frame.
+    // Vary the reach of each outing and favor unfamiliar spots, with a mild
+    // bias toward the current heading. Needs still take precedence over curiosity.
+    const range = 0.7 + this.roll() * 2.1;
     const candidates = reachable.filter(
-      (id) => id !== state.nodeId && paths.get(id)!.length <= 7,
+      (id) => id !== state.nodeId && lengths.get(id)! <= range,
     );
-    if (candidates.length && this.roll() > 0.3) {
-      const target = candidates[Math.floor(this.roll() * candidates.length)];
+    if (candidates.length && this.roll() > 0.2) {
+      const weights = candidates.map((id) => {
+        const first = this.graph.node(navigation.firstSteps.get(id)!).position;
+        const direction = alongSurface(
+          {
+            x: first.x - state.position.x,
+            y: first.y - state.position.y,
+            z: first.z - state.position.z,
+          },
+          state.normal,
+        );
+        const facing = alongSurface(state.direction, state.normal);
+        const ahead =
+          direction && facing ? (dot(direction, facing) + 1) / 2 : 0.5;
+        const fresh = agent.recent.includes(id) ? 0.12 : 1;
+        const perch = this.graph.node(id).surface === "leaf" ? 1.5 : 1;
+        return fresh * perch * (0.5 + ahead) * (0.3 + lengths.get(id)! / range);
+      });
+      let choice =
+        this.roll() * weights.reduce((sum, weight) => sum + weight, 0);
+      let index = 0;
+      while (index < weights.length - 1 && choice >= weights[index])
+        choice -= weights[index++];
       go(
-        target,
+        candidates[index],
         "resting",
         "exploring",
         unmet || "Exploring the habitat",
-        8 + this.roll() * 18,
+        3 + this.roll() * 21,
       );
     } else
       go(
@@ -334,23 +439,124 @@ export class Ecosystem {
         "resting",
         "exploring",
         unmet || "Watching the habitat",
-        8 + this.roll() * 18,
+        5 + this.roll() * 25,
       );
+  }
+  /** Small graph cells describe the surface, not separate steps. Combine
+   * straight, gently sloping stretches without cutting across corners. */
+  private travelPath(start: string, path: readonly string[]) {
+    const result: string[] = [];
+    let previous = this.graph.node(start);
+    for (let i = 0; i < path.length; i++) {
+      let target = this.graph.node(path[i]);
+      while (i + 1 < path.length) {
+        const next = this.graph.node(path[i + 1]);
+        if (
+          previous.surface !== target.surface ||
+          target.surface !== next.surface ||
+          !["ground", "stone", "bark"].includes(target.surface) ||
+          Math.min(previous.normal.y, target.normal.y, next.normal.y) < 0.85 ||
+          distance(previous.position, next.position) > 0.48
+        )
+          break;
+        const a = {
+          x: target.position.x - previous.position.x,
+          y: target.position.y - previous.position.y,
+          z: target.position.z - previous.position.z,
+        };
+        const b = {
+          x: next.position.x - target.position.x,
+          y: next.position.y - target.position.y,
+          z: next.position.z - target.position.z,
+        };
+        if (
+          dot(a, b) /
+            Math.max(
+              distance(previous.position, target.position) *
+                distance(target.position, next.position),
+              0.001,
+            ) <
+          0.995
+        )
+          break;
+        target = next;
+        i++;
+      }
+      result.push(target.id);
+      previous = target;
+    }
+    return result;
+  }
+  private lookAround(agent: Agent) {
+    const state = agent.state;
+    if (this.elapsed >= agent.glanceAt) {
+      const forward = alongSurface(state.direction, state.normal);
+      if (forward) {
+        const side = cross(state.normal, forward);
+        const angle = (this.roll() - 0.5) * 1.8;
+        agent.glance = {
+          x:
+            state.position.x +
+            forward.x * Math.cos(angle) +
+            side.x * Math.sin(angle),
+          y:
+            state.position.y +
+            forward.y * Math.cos(angle) +
+            side.y * Math.sin(angle),
+          z:
+            state.position.z +
+            forward.z * Math.cos(angle) +
+            side.z * Math.sin(angle),
+        };
+      }
+      agent.glanceAt = this.elapsed + 4 + this.roll() * 14;
+    }
+    if (agent.glance && !this.turnToward(agent, agent.glance))
+      agent.glance = undefined;
   }
   private move(agent: Agent) {
     const state = agent.state;
+    if (this.elapsed < agent.pauseUntil) return;
     const target = this.graph.node(agent.path[0]);
-    if (!agent.edge && this.turnToward(agent, target.position)) return;
-    const edge = (agent.edge ??= {
-      from: copyVector(state.position),
-      normal: copyVector(state.normal),
-      progress: 0,
-      distance: distance(state.position, target.position),
-    });
+    const style = agent.profile.movement;
+    const leap = state.surface === "leaf" && target.surface === "leaf";
+    const walks = (surface: AnimalState["surface"]) =>
+      ["ground", "stone", "bark"].includes(surface);
+    const hopping =
+      (style === "hop" || style === "climb") &&
+      (leap ||
+        (walks(state.surface) &&
+          walks(target.surface) &&
+          Math.min(state.normal.y, target.normal.y) >= 0.85));
+    if (
+      !agent.edge &&
+      this.turnToward(
+        agent,
+        target.position,
+        agent.hasTravelled && !hopping ? 0.65 : TURN_START,
+      )
+    )
+      return;
+    if (!agent.edge) {
+      const length = distance(state.position, target.position);
+      agent.edge = {
+        from: copyVector(state.position),
+        normal: copyVector(state.normal),
+        progress: 0,
+        distance: length,
+        // Hops are bursts, independent of the slow cruising speed used to
+        // crawl up stems. At normal simulation speed a hop lasts about 0.4s.
+        duration: hopping
+          ? (1.6 + Math.sqrt(length) * 1.3) * (0.9 + this.roll() * 0.2)
+          : (length / agent.profile.speed) * (0.85 + this.roll() * 0.3),
+        hop: hopping,
+        lift: leap ? 0.2 : Math.min(0.16, 0.06 + length * 0.24),
+      };
+    }
+    const edge = agent.edge;
     edge.progress = Math.min(
       1,
-      edge.progress +
-        (agent.profile.speed * STEP) / Math.max(edge.distance, 0.001),
+      edge.progress + STEP / Math.max(edge.duration, STEP),
     );
     if (edge.progress >= 1 - 1e-9) {
       state.position = copyVector(target.position);
@@ -360,23 +566,36 @@ export class Ecosystem {
       state.motion = { progress: 0, lift: 0, tilt: 0, hop: false };
       agent.edge = undefined;
       agent.path.shift();
+      agent.hasTravelled = true;
+      agent.recent.push(target.id);
+      if (agent.recent.length > 20) agent.recent.shift();
+      if (
+        agent.path.length &&
+        ((state.needs.hydration < 0.25 && state.activity !== "seeking-water") ||
+          (state.needs.hunger > 0.8 && state.activity !== "seeking-food"))
+      ) {
+        agent.path = [];
+        agent.reconsiderAt = 0;
+        state.moving = false;
+        return;
+      }
       if (!agent.path.length) {
         state.moving = false;
         state.activity = agent.arrival;
-        agent.reconsiderAt = this.elapsed + 18;
+        agent.reconsiderAt = this.elapsed + agent.restFor;
+        agent.glanceAt = this.elapsed + 2 + this.roll() * 7;
+      } else if (edge.hop || style === "scurry") {
+        agent.pauseUntil =
+          this.elapsed +
+          (edge.hop ? 0.8 + this.roll() * 3 : 0.4 + this.roll() * 1.4);
       }
       return;
     }
-    const style = agent.profile.movement;
-    const leap = state.surface === "leaf" && target.surface === "leaf";
-    const hopping =
-      style === "hop" ||
-      (style === "climb" &&
-        (leap || (state.surface === "ground" && target.surface === "ground")));
     const flight = Math.max(0, Math.min(1, (edge.progress - 0.2) / 0.7));
-    // Scurriers dash between spots, speeding up and slowing to a stop.
-    const travel = hopping
-      ? flight * flight * (3 - 2 * flight)
+    // Constant forward velocity in flight, with a ballistic rise and fall.
+    // Easing the whole jump makes it look as though it is swimming through air.
+    const travel = edge.hop
+      ? flight
       : style === "scurry"
         ? edge.progress * edge.progress * (3 - 2 * edge.progress)
         : edge.progress;
@@ -402,12 +621,9 @@ export class Ecosystem {
         : copyVector(target.normal);
     state.motion = {
       progress: edge.progress,
-      hop: hopping,
-      lift: hopping
-        ? Math.sin(flight * Math.PI) *
-          (leap ? 0.18 : style === "hop" ? 0.11 : 0.08)
-        : 0,
-      tilt: hopping
+      hop: edge.hop,
+      lift: edge.hop ? 4 * flight * (1 - flight) * edge.lift : 0,
+      tilt: edge.hop
         ? Math.sin(flight * Math.PI * 2) * 0.13
         : style === "crawl"
           ? Math.sin(edge.progress * Math.PI * 4) * 0.025
@@ -416,7 +632,7 @@ export class Ecosystem {
   }
   /** Rotates the facing toward a point about the surface normal. Returns
    * whether the animal is still turning and should not set off yet. */
-  private turnToward(agent: Agent, point: Vec3) {
+  private turnToward(agent: Agent, point: Vec3, threshold = TURN_START) {
     const state = agent.state;
     const facing = alongSurface(state.direction, state.normal);
     const wanted = alongSurface(
@@ -432,7 +648,7 @@ export class Ecosystem {
         ? Math.acos(Math.max(-1, Math.min(1, dot(facing, wanted))))
         : 0;
     // Once started, finish the turn rather than stopping at the threshold.
-    if (angle < (agent.turning ? 0.05 : TURN_START)) {
+    if (angle < (agent.turning ? 0.05 : threshold)) {
       agent.turning = false;
       return false;
     }
@@ -457,6 +673,11 @@ const cross = (a: Vec3, b: Vec3): Vec3 => ({
   x: a.y * b.z - a.z * b.y,
   y: a.z * b.x - a.x * b.z,
   z: a.x * b.y - a.y * b.x,
+});
+const interpolate = (a: Vec3, b: Vec3, t: number): Vec3 => ({
+  x: a.x + (b.x - a.x) * t,
+  y: a.y + (b.y - a.y) * t,
+  z: a.z + (b.z - a.z) * t,
 });
 /** The unit direction of `v` within the surface, or undefined if it points along the normal. */
 function alongSurface(v: Vec3, normal: Vec3): Vec3 | undefined {

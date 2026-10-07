@@ -95,7 +95,9 @@ export function Inhabitant({
     group.position.set(object.x, baseY, object.z);
     group.rotation.set(0, object.rotation, 0);
     if (rig && !ghost && ecosystem) {
-      const state = ecosystem.live.current!.engine.observeAnimal(object.id);
+      const state = ecosystem.live.current!.engine.observeRenderedAnimal(
+        object.id,
+      );
       if (state) {
         group.position.set(
           state.position.x,
@@ -105,8 +107,9 @@ export function Inhabitant({
         const live = ecosystem.live.current!;
         if (environment !== live.world.environment) {
           const node = live.engine.graph.node(state.nodeId);
-          const plant = node.plantId
-            ? live.world.objects.find((part) => part.id === node.plantId)
+          const supportId = node.plantId ?? node.supportId;
+          const plant = supportId
+            ? live.world.objects.find((part) => part.id === supportId)
             : undefined;
           const anchor = plant ?? state.position;
           // Navigation stays committed during a stroke; keep the preview pose

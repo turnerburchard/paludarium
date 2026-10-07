@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "name": "Stacked lookout",
+  "environment": {
+    "width": 7,
+    "depth": 4.5,
+    "substrate": 0.25,
+    "water": 0.44,
+    "light": "golden",
+    "warmth": 0.45,
+    "brightness": 1
+  },
+  "objects": [
+    {
+      "id": "lookout-1",
+      "kind": "rock",
+      "x": -1.45,
+      "z": 0.45,
+      "scale": 1.05,
+      "rotation": 0.7,
+      "seed": 173,
+      "moss": "sheet"
+    },
+    {
+      "id": "lookout-2",
+      "kind": "rock",
+      "x": -1.45,
+      "z": 0.45,
+      "scale": 0.55,
+      "rotation": -0.4,
+      "seed": 346,
+      "support": "lookout-1",
+      "lift": 0.641842641367808,
+      "moss": "fern"
+    },
+    {
+      "id": "lookout-3",
+      "kind": "anthurium",
+      "x": -1.45,
+      "z": 0.45,
+      "scale": 0.55,
+      "rotation": 1.1,
+      "seed": 519,
+      "support": "lookout-2",
+      "lift": 0.9780459297033264
+    },
+    {
+      "id": "lookout-4",
+      "kind": "calathea",
+      "x": -2.7,
+      "z": -0.5,
+      "scale": 0.9,
+      "rotation": 0.6,
+      "seed": 692
+    },
+    {
+      "id": "lookout-5",
+      "kind": "fittonia",
+      "x": -2.4,
+      "z": 0.95,
+      "scale": 0.7,
+      "rotation": -0.8,
+      "seed": 865
+    },
+    {
+      "id": "lookout-6",
+      "kind": "moss",
+      "x": -2.1,
+      "z": 0.1,
+      "scale": 1.15,
+      "rotation": 0,
+      "seed": 1038
+    },
+    {
+      "id": "lookout-7",
+      "kind": "leaf-litter",
+      "x": -2.2,
+      "z": 0.4,
+      "scale": 1,
+      "rotation": 0,
+      "seed": 1211
+    },
+    {
+      "id": "lookout-8",
+      "kind": "wood",
+      "x": -0.4,
+      "z": -1,
+      "scale": 0.85,
+      "rotation": -0.8,
+      "seed": 1384
+    },
+    {
+      "id": "lookout-9",
+      "kind": "rock",
+      "x": 0.3,
+      "z": 1,
+      "scale": 0.6,
+      "rotation": 1.5,
+      "seed": 1557
+    },
+    {
+      "id": "lookout-10",
+      "kind": "java-moss",
+      "x": 1.7,
+      "z": 0.9,
+      "scale": 0.9,
+      "rotation": 0,
+      "seed": 1730
+    },
+    {
+      "id": "lookout-11",
+      "kind": "java-fern",
+      "x": 2.2,
+      "z": -0.55,
+      "scale": 0.85,
+      "rotation": 0.4,
+      "seed": 1903
+    },
+    {
+      "id": "lookout-12",
+      "kind": "tree-frog",
+      "x": -2.35,
+      "z": 0.2,
+      "scale": 1,
+      "rotation": -1.1,
+      "seed": 2076
+    },
+    {
+      "id": "lookout-13",
+      "kind": "dart-frog",
+      "x": -2.2,
+      "z": 1.2,
+      "scale": 0.95,
+      "rotation": 0.7,
+      "seed": 2249
+    },
+    {
+      "id": "lookout-14",
+      "kind": "gecko",
+      "x": -2.2,
+      "z": -0.55,
+      "scale": 0.9,
+      "rotation": -0.3,
+      "seed": 2422
+    },
+    {
+      "id": "lookout-15",
+      "kind": "cardinal-tetra",
+      "x": 1.8,
+      "z": 0.2,
+      "scale": 1,
+      "rotation": 1.1,
+      "seed": 2595
+    },
+    {
+      "id": "lookout-16",
+      "kind": "cardinal-tetra",
+      "x": 2,
+      "z": 0.45,
+      "scale": 1,
+      "rotation": 1.1,
+      "seed": 2768
+    }
+  ]
+}

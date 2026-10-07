@@ -6,6 +6,7 @@ import { objectBase } from "../model/stacking";
 import { transformPlantPoint } from "../model/plantSurfaces";
 import { FishSchool } from "./fish";
 import { SwimSpace } from "./swimSpace";
+import { LandSurfaces } from "./landSurfaces";
 import { Ecosystem } from "./engine";
 import { HabitatGraph, distance } from "./navigation";
 import type {
@@ -42,7 +43,7 @@ export function buildHabitat(world: World): HabitatGraph {
     spacing = 0.32;
   const nx = Math.ceil((env.width - 2 * margin) / spacing),
     nz = Math.ceil((env.depth - 2 * margin) / spacing);
-  const obstacles = world.objects.filter((o) => assets[o.kind].blocksMovement);
+  const surfaces = new LandSurfaces(world);
   // A struggling plant still gives some cover, just much less.
   const shelters = world.objects
     .filter((o) => assets[o.kind].shelter)
@@ -57,12 +58,7 @@ export function buildHabitat(world: World): HabitatGraph {
       const y = groundHeight(x, z, env);
       // Shallow shoreline is reachable; open/deep water is not a frog walking surface.
       if (env.water - y > 0.025) continue;
-      const solid = obstacles.some(
-        (o) =>
-          Math.hypot(x - o.x, z - o.z) <
-          assets[o.kind].radius * o.scale + clearance,
-      );
-      if (solid) continue;
+      if (surfaces.blocksGround(x, z, clearance)) continue;
       const shelter = shelters.reduce(
         (best, o) =>
           Math.max(
@@ -95,9 +91,21 @@ export function buildHabitat(world: World): HabitatGraph {
         [-1, 0],
         [0, 1],
         [0, -1],
+        [1, 1],
+        [1, -1],
+        [-1, 1],
+        [-1, -1],
       ]) {
         const neighbor = grid.get(`${ix + dx}:${iz + dz}`);
-        if (neighbor && Math.abs(node.position.y - neighbor.position.y) < 0.2)
+        if (
+          neighbor &&
+          Math.abs(node.position.y - neighbor.position.y) < 0.2 &&
+          // Diagonals cannot cut a corner around blocked or flooded cells.
+          (!dx ||
+            !dz ||
+            (grid.has(`${ix + dx}:${iz}`) && grid.has(`${ix}:${iz + dz}`))) &&
+          surfaces.clearRoute(node.position, neighbor.position)
+        )
           node.neighbors.push(neighbor.id);
       }
     }
@@ -162,27 +170,58 @@ export function buildHabitat(world: World): HabitatGraph {
     }
   }
   const groundNodes = nodes.filter((node) => node.surface === "ground");
-  /** The nearest ground node within range of a point, if the way between stays dry. */
-  const dryAnchor = (point: Vec3, range: number) => {
-    const anchor = groundNodes.reduce<HabitatNode | undefined>(
-      (best, node) =>
-        !best || distance(node.position, point) < distance(best.position, point)
-          ? node
-          : best,
-      undefined,
-    );
-    if (!anchor || distance(anchor.position, point) > range) return undefined;
-    const dry = Array.from({ length: 6 }, (_, i) => i / 5).every(
-      (t) =>
-        groundHeight(
-          anchor.position.x + (point.x - anchor.position.x) * t,
-          anchor.position.z + (point.z - anchor.position.z) * t,
-          env,
-        ) >=
-        env.water - 0.025,
-    );
-    return dry ? anchor : undefined;
+  const hardscapeNodes = surfaces.routes(margin);
+  nodes.push(...hardscapeNodes);
+  const connect = (a: HabitatNode, b: HabitatNode) => {
+    if (!surfaces.clearRoute(a.position, b.position)) return;
+    a.neighbors.push(b.id);
+    b.neighbors.push(a.id);
   };
+  // Nearby mesh surfaces can meet across a stack, while isolated or floating
+  // pieces remain disconnected. Spatial buckets avoid comparing every pair.
+  const buckets = new Map<string, HabitatNode[]>();
+  const bucketSize = 0.16;
+  for (const node of hardscapeNodes) {
+    const cell = [node.position.x, node.position.y, node.position.z].map((n) =>
+      Math.floor(n / bucketSize),
+    );
+    for (let dx = -1; dx <= 1; dx++)
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dz = -1; dz <= 1; dz++)
+          for (const other of buckets.get(
+            `${cell[0] + dx}:${cell[1] + dy}:${cell[2] + dz}`,
+          ) ?? [])
+            if (
+              node.supportId !== other.supportId &&
+              distance(node.position, other.position) <= 0.13
+            )
+              connect(node, other);
+    const key = cell.join(":");
+    buckets.set(key, [...(buckets.get(key) ?? []), node]);
+    for (const ground of groundNodes)
+      if (
+        distance(node.position, ground.position) <=
+          spacing + clearance + 0.06 &&
+        Math.abs(node.position.y - ground.position.y) <= 0.18
+      )
+        connect(node, ground);
+  }
+  const anchors = [...groundNodes, ...hardscapeNodes];
+  /** Stems and dens start on a nearby dry surface at their actual base,
+   * including the top of a support. Never bridge up through stacked stone. */
+  const dryAnchor = (point: Vec3, range: number) =>
+    anchors
+      .filter(
+        (node) =>
+          distance(node.position, point) <= range &&
+          Math.abs(node.position.y - point.y) <= 0.18,
+      )
+      .sort(
+        (a, b) =>
+          Number(a.surface !== "ground") - Number(b.surface !== "ground") ||
+          distance(a.position, point) - distance(b.position, point),
+      )
+      .find((node) => surfaces.clearRoute(node.position, point));
   const up = { x: 0, y: 1, z: 0 };
   for (const object of world.objects) {
     const baseY = objectBase(object, env);
@@ -232,7 +271,7 @@ export function buildHabitat(world: World): HabitatGraph {
             surface: barkNormals ? "bark" : "stem",
             wet: false,
             shelter: 0.3,
-            perchHeight: position.y - baseY,
+            perchHeight: position.y - groundHeight(position.x, position.z, env),
             plantId: object.id,
             neighbors: [previous.id],
           };
@@ -248,7 +287,7 @@ export function buildHabitat(world: World): HabitatGraph {
         surface: barkNormals ? "bark" : "leaf",
         wet: false,
         shelter: barkNormals ? 0.5 : 1,
-        perchHeight: route.perch.y * object.scale,
+        perchHeight: perch.y - groundHeight(perch.x, perch.z, env),
         plantId: object.id,
         neighbors: [previous.id],
       };
