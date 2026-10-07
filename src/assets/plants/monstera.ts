@@ -64,34 +64,20 @@ function build(random: () => number) {
 }
 
 /** A heart-shaped blade along +Y, cupped like the other leaves so its midrib
- * matches the perch the frogs use. Each half is a grid running from the
- * midrib (s = 0) to the edge (s = 1); leaving out narrow bands of cells cuts
- * slits that stop short of the midrib, and older leaves lose a few cells
- * beside the midrib as enclosed holes. */
+ * matches the perch the frogs use. Each half is a solid band along the
+ * midrib, then a row of lobes out to the edge. The slits between lobes open
+ * from nothing at the band to a wedge at the edge, and each lobe rounds off
+ * at its tip. Older leaves have more lobes, cut deeper. */
 function monsteraBlade(length: number, width: number, age: number) {
-  const along = 44,
-    across = 8;
   const start = -0.16;
-  const t = (i: number) => start + (i / along) * (1 - start);
-  const s = (j: number) => j / across;
-  const splits = Math.round(age * 5);
-  // Slits run between the lobes, evenly from the base lobe to near the tip.
-  const slitAt = Array.from({ length: splits }, (_, k) =>
-    Math.round(along * (0.2 + (k / Math.max(1, splits - 1)) * 0.64)),
-  );
+  const lobes = 2 + Math.round(age * 2.5);
+  // How far out from the midrib the slits begin.
+  const band = 0.75 - age * 0.45;
   // Broad and heart-shaped, with lobes either side of the notch at the base.
   const halfWidth = (at: number) =>
     (width / 2) * Math.max(0, 1 - ((at - 0.3) / 0.7) ** 2) ** 0.45;
-  // Lobes narrow toward the slits either side, so their ends are rounded.
-  const lobe = (i: number) => {
-    if (!slitAt.length) return 1;
-    const gap = Math.min(...slitAt.map((slit) => Math.abs(i + 0.5 - slit)));
-    return 1 - 0.2 * Math.exp(-(gap * gap) / 2);
-  };
-  const point = (i: number, j: number, side: number) => {
-    const u = t(i),
-      v = s(j);
-    const x = side * v * halfWidth(u) * (1 - (1 - lobe(i)) * v ** 3);
+  const point = (u: number, v: number, side: number) => {
+    const x = side * v * halfWidth(u);
     // Veins sweep back at the base and curve toward the tip at the edge.
     const y = (u + 0.2 * (u - 0.22) * v + 0.1 * v * v) * length;
     return new THREE.Vector3(
@@ -100,32 +86,58 @@ function monsteraBlade(length: number, width: number, age: number) {
       0.16 * Math.sin((y / length) * Math.PI) * length - Math.abs(x) * 0.18,
     );
   };
-  // Each slit stops short of the midrib and opens a little at the edge.
-  const cut = (i: number, j: number) =>
-    slitAt.some(
-      (slit) =>
-        (i === slit && j >= 3) ||
-        (Math.abs(i - slit) === 1 && j === across - 1),
-    );
-  // Older leaves have a long hole beside the midrib between slits, clear of
-  // the slits so the leaf stays in one piece.
-  const hole = (i: number, j: number) =>
-    age > 0.6 &&
-    j === 1 &&
-    slitAt.slice(0, -1).some((slit) => i === slit + 2 || i === slit + 3);
   const corners: THREE.Vector3[] = [];
-  for (const side of [-1, 1])
-    for (let i = 0; i < along; i++)
-      for (let j = 0; j < across; j++) {
-        // The notch where the stalk meets the blade.
-        if (t(i + 1) <= 0.02 && j < 3) continue;
-        if (cut(i, j) || hole(i, j)) continue;
-        const a = point(i, j, side),
-          b = point(i + 1, j, side),
-          c = point(i + 1, j + 1, side),
-          d = point(i, j + 1, side);
-        corners.push(a, b, c, a, c, d);
+  const quad = (
+    side: number,
+    [u0, u1]: number[],
+    [u2, u3]: number[],
+    v0: number,
+    v1: number,
+  ) => {
+    const a = point(u0, v0, side),
+      b = point(u1, v0, side),
+      c = point(u3, v1, side),
+      d = point(u2, v1, side);
+    corners.push(a, b, c, a, c, d);
+  };
+  const along = (i: number, steps: number) => start + (i / steps) * (1 - start);
+  for (const side of [-1, 1]) {
+    // The band along the midrib, leaving the notch where the stalk joins.
+    const steps = lobes * 3;
+    for (let i = 0; i < steps; i++) {
+      const u0 = along(i, steps),
+        u1 = along(i + 1, steps);
+      quad(side, [u0, u1], [u0, u1], u1 <= 0.02 ? 0.25 : 0, band);
+    }
+    for (let k = 0; k < lobes; k++) {
+      const from = along(k, lobes),
+        to = along(k + 1, lobes);
+      const middle = (from + to) / 2;
+      // The lobe's span at a fraction f of the way from the band to the edge.
+      const span = (f: number) => {
+        const half = ((to - from) / 2) * (1 - 0.06 * f - 0.3 * f ** 3);
+        return Array.from(
+          { length: 4 },
+          (_, i) => middle - half + (i / 3) * half * 2,
+        );
+      };
+      for (const [f0, f1] of [
+        [0, 0.5],
+        [0.5, 1],
+      ]) {
+        const inner = span(f0),
+          outer = span(f1);
+        for (let i = 0; i < 3; i++)
+          quad(
+            side,
+            [inner[i], inner[i + 1]],
+            [outer[i], outer[i + 1]],
+            band + (1 - band) * f0,
+            band + (1 - band) * f1,
+          );
       }
+    }
+  }
   const geometry = new THREE.BufferGeometry().setFromPoints(corners);
   geometry.computeVertexNormals();
   return geometry;
