@@ -15,7 +15,7 @@ export function EmptyInvitation({
       <p>
         Plant the first leaf, place a stone,
         <br />
-        then find a home for a frog.
+        then find a home for a creature.
       </p>
       <div>
         <button onClick={() => onPreset("tropical")}>Try a cloud forest</button>
