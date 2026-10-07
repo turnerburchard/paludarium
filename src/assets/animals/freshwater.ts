@@ -282,10 +282,13 @@ export const sculpin: AssetDefinition = {
       length: 0.15,
       depth: 0.025,
       width: 0.032,
+      // A broad, flat head that rounds to a blunt snout, then a body
+      // tapering to the tail.
       sections: [
-        [-1, 0.6, 0.8],
-        [-0.65, 1, 1],
-        [-0.2, 0.9, 0.85],
+        [-1, 0.3, 0.45],
+        [-0.85, 0.7, 1],
+        [-0.6, 0.95, 1.15],
+        [-0.25, 0.9, 0.9],
         [0.3, 0.65, 0.55],
         [0.75, 0.4, 0.3],
         [1, 0.3, 0.2],
@@ -297,6 +300,8 @@ export const sculpin: AssetDefinition = {
       },
       tail: "fan",
       fin: "#6b6247",
+      // Its eyes sit high on the flat head, looking up from the stream bed.
+      eyes: [0.45, 0.8],
       fins: (d, h) => [
         // A long, low dorsal fin and broad fanlike pectorals.
         [
@@ -462,6 +467,9 @@ interface FishSpec {
   fin: string;
   /** Fins as triangles, from the deepest half-depth and half-length. */
   fins(depth: number, half: number): Point[][];
+  /** Where the eyes sit, as fractions of the deepest half-width and
+   * half-depth. Most fish see from the sides. */
+  eyes?: [number, number];
 }
 
 /** A faceted fish body painted face by face, with a tail on its own group so
@@ -528,12 +536,13 @@ function fish(spec: FishSpec) {
   for (const points of spec.fins(spec.depth, half))
     mesh(triangles(points, [0, 1, 2]), fin, root);
   const dark = material("#141a18", 0.3);
+  const [eyeX, eyeY] = spec.eyes ?? [0.7, 0.25];
   for (const side of [-1, 1]) {
     const eye = mesh(
       new THREE.IcosahedronGeometry(spec.depth * 0.2, 0),
       dark,
       root,
-      [side * spec.width * 0.7, spec.depth * 0.25, -0.72 * half],
+      [side * spec.width * eyeX, spec.depth * eyeY, -0.72 * half],
     );
     eye.scale.x = 0.5;
   }
