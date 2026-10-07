@@ -182,6 +182,46 @@ describe("fish in a real tank", () => {
     20_000,
   );
 
+  it.each([
+    [3, 60],
+    [8, 30],
+    [19, 10],
+  ])(
+    "Cloud Forest fish escape tight starting spots and keep exploring (seed %s, %s fps)",
+    (seed, fps) => {
+      const world = makePreset("tropical");
+      const school = createFishSchool(world, undefined, randomFromSeed(seed));
+      const space = new SwimSpace(world);
+      // Check each minute independently: early movement must not hide a
+      // fish spending the rest of the run rocking back and forth in a gap.
+      for (let minute = 0; minute < 10; minute++) {
+        const ranges = school.all().map((f) => ({
+          minX: f.x,
+          maxX: f.x,
+          minZ: f.z,
+          maxZ: f.z,
+        }));
+        for (let tick = 0; tick < 60 * fps; tick++) {
+          school.advance(1 / fps);
+          school.all().forEach((f, i) => {
+            const range = ranges[i];
+            range.minX = Math.min(range.minX, f.x);
+            range.maxX = Math.max(range.maxX, f.x);
+            range.minZ = Math.min(range.minZ, f.z);
+            range.maxZ = Math.max(range.maxZ, f.z);
+            expect(space.canStart(f, f.x, f.z, f.heading)).toBe(true);
+          });
+        }
+        for (const range of ranges)
+          expect(
+            Math.hypot(range.maxX - range.minX, range.maxZ - range.minZ),
+            `exploration during minute ${minute + 1}`,
+          ).toBeGreaterThan(0.2);
+      }
+    },
+    20_000,
+  );
+
   it("keep their place through an unrelated edit", () => {
     const world = makePreset("tropical");
     const school = createFishSchool(world);

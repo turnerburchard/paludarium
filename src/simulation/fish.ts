@@ -174,28 +174,33 @@ export class FishSchool {
   private swim(f: Swimmer, dt: number) {
     if (f.retreatFor > 0) {
       f.retreatFor -= dt;
-      const previous = f.trail.at(-1);
-      if (previous) {
-        const distance = Math.hypot(previous.x - f.x, previous.z - f.z);
-        const turn = turnBetween(f.heading, previous.heading);
-        const fraction =
-          1 /
-          Math.max(
-            1,
-            distance / (f.speed * f.pace * 0.5 * dt),
-            Math.abs(turn) / (TURN_RATE * dt),
-          );
-        const x = f.x + (previous.x - f.x) * fraction;
-        const z = f.z + (previous.z - f.z) * fraction;
-        const heading = f.heading + turn * fraction;
-        if (this.pathClear(f, x, z, heading)) {
-          f.x = x;
-          f.z = z;
-          f.heading = heading;
-          f.retreatDistance += distance * fraction;
-          if (fraction === 1) f.trail.pop();
-          if (f.retreatDistance >= 0.08) f.retreatFor = 0;
-        } else f.retreatFor = 0;
+      // A newly placed fish may already face a dead end, with no earlier
+      // poses to retrace. Continue straight backward only through clear water.
+      const backward = direction(f.heading);
+      const previous = f.trail.at(-1) ?? {
+        x: f.x - backward.x * LOOK_AHEAD,
+        z: f.z - backward.z * LOOK_AHEAD,
+        heading: f.heading,
+      };
+      const distance = Math.hypot(previous.x - f.x, previous.z - f.z);
+      const turn = turnBetween(f.heading, previous.heading);
+      const fraction =
+        1 /
+        Math.max(
+          1,
+          distance / (f.speed * f.pace * 0.5 * dt),
+          Math.abs(turn) / (TURN_RATE * dt),
+        );
+      const x = f.x + (previous.x - f.x) * fraction;
+      const z = f.z + (previous.z - f.z) * fraction;
+      const heading = f.heading + turn * fraction;
+      if (this.pathClear(f, x, z, heading)) {
+        f.x = x;
+        f.z = z;
+        f.heading = heading;
+        f.retreatDistance += distance * fraction;
+        if (fraction === 1) f.trail.pop();
+        if (f.retreatDistance >= LOOK_AHEAD) f.retreatFor = 0;
       } else f.retreatFor = 0;
       f.untilProbe = 0;
       f.turnRate = 0;
@@ -404,7 +409,9 @@ export class FishSchool {
     // A tall fish can enter a gap it cannot turn around in. Retrace its
     // recent poses, including the turn, rather than backing into another
     // leaf at its current heading. Every retreat step is checked again.
-    f.retreatFor = 2;
+    // Back up through a full steering probe, not just enough to re-enter
+    // the same blocked turn. Allow time to retrace rotations along the way.
+    f.retreatFor = 2 + LOOK_AHEAD / (f.speed * f.pace * 0.5);
     f.retreatDistance = 0;
     f.stillFor = 0;
     f.avoidSide = -f.avoidSide || -1;
