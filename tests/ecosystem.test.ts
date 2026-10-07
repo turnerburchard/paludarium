@@ -378,11 +378,12 @@ describe("live ecosystem behavior", () => {
     }
   });
   it.each(["tropical", "mountain", "grotto", "desert"] as const)(
-    "lets every animal in the %s preset reach an insect colony",
+    "lets every hunter in the %s preset reach an insect colony",
     (preset) => {
       const engine = createWorldEcosystem(makePreset(preset));
       const colonies = new Set(engine.snapshot().food.map((p) => p.nodeId));
       for (const animal of engine.snapshot().animals) {
+        if (assets[animal.speciesId as AssetKind].behavior?.grazes) continue;
         const paths = engine.graph.paths(
           animal.nodeId,
           frogProfile(animal.speciesId as AssetKind),

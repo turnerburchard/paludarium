@@ -40,11 +40,59 @@ const MODELS = [
     // A tarantula's legs are short and stout next to this spider's.
     legs: { scale: 0.75, thicken: 2.2 },
   },
+  {
+    // The same crab, lower, with long thin legs and tiny claws: a Thai
+    // micro crab.
+    source: "docs/inspiration/models/crab-jeremy.glb",
+    out: "src/assets/animals/microCrab.json",
+    forward: [0, 0, 1],
+    width: 0.19,
+    squash: 0.75,
+    arms: { scale: 0.35 },
+    legs: { scale: 1.5, thicken: 0.6 },
+  },
+  {
+    // "Crayfish" by Poly by Google, poly.pizza/m/3Y2cocX0ILR, CC-BY 3.0.
+    source: "docs/inspiration/models/crayfish-poly-google.glb",
+    out: "src/assets/animals/crayfish.json",
+    forward: [0, 0, -1],
+    width: 0.26,
+    // Dwarf crayfish have small, slender claws. They and the feelers are
+    // part of the body, so everything ahead of the head is drawn in.
+    front: { beyond: 15, scale: 0.6 },
+    // Its first, smallest legs reach forward under the claws.
+    holdFront: 1,
+  },
+  {
+    // "Crayfish" by Poly by Google, poly.pizza/m/bmtxAjfrpa3, CC-BY 3.0. It
+    // is slender enough for a shrimp once its long front claws are cut down.
+    source: "docs/inspiration/models/shrimp-poly-google.glb",
+    out: "src/assets/animals/cherryShrimp.json",
+    forward: [0, 0, 1],
+    width: 0.19,
+    arms: { scale: 0.3 },
+    // Short legs keep it low to the ground.
+    legs: { scale: 0.6, thicken: 1 },
+    // It is one grey throughout, eyes included.
+    eyes: "000000",
+  },
 ];
 
 for (const model of MODELS) await bake(model);
 
-async function bake({ source, out, forward, width, drop = [], arms, legs }) {
+async function bake({
+  source,
+  out,
+  forward,
+  width,
+  squash = 1,
+  front,
+  holdFront = 0,
+  drop = [],
+  eyes,
+  arms,
+  legs,
+}) {
   const { gltf, images } = await loadGlb(readFileSync(source));
   const color = images.length ? palette(images[0]) : undefined;
   const turn = new Quaternion().setFromUnitVectors(
@@ -70,7 +118,8 @@ async function bake({ source, out, forward, width, drop = [], arms, legs }) {
         new Vector3()
           .fromBufferAttribute(position, i + k)
           .applyMatrix4(object.matrixWorld)
-          .applyQuaternion(turn),
+          .applyQuaternion(turn)
+          .multiply(new Vector3(1, squash, 1)),
       );
       faces.push({ color: key, corners });
     }
@@ -85,10 +134,38 @@ async function bake({ source, out, forward, width, drop = [], arms, legs }) {
   const lowest = Math.min(...others.map((p) => p.box.min.y));
   const bounds = new Box3().setFromPoints(faces.flatMap((f) => f.corners));
   const reach = (bounds.max.y - bounds.min.y) * 0.02;
-  const legPieces = others.filter((p) => p.box.min.y < lowest + reach);
-  const armPieces = others.filter((p) => !legPieces.includes(p));
+  const reaching = others.filter((p) => p.box.min.y < lowest + reach);
+  // The front pairs that are held still, carried forward like the claws.
+  const held = [...reaching]
+    .sort((a, b) => a.box.min.z - b.box.min.z)
+    .slice(0, holdFront * 2);
+  const legPieces = reaching.filter((p) => !held.includes(p));
+  // Small pieces such as eyes stay fixed to the body rather than moving as
+  // arms.
+  const size = (box) => box.getSize(new Vector3());
+  const small = Math.max(size(body.box).x, size(body.box).z) * 0.1;
+  const knobs = others.filter(
+    (p) =>
+      !legPieces.includes(p) &&
+      Math.max(size(p.box).x, size(p.box).y, size(p.box).z) < small,
+  );
+  if (eyes)
+    for (const piece of knobs)
+      for (const face of piece.faces) face.color = eyes;
+  knobs.push(...held);
+  const armPieces = others.filter(
+    (p) => !legPieces.includes(p) && !knobs.includes(p),
+  );
 
-  const fitted = legPieces.map((piece) => fitLeg(piece.points, body.points));
+  if (front)
+    for (const p of body.points)
+      if (-p.z > front.beyond) {
+        p.x *= front.scale;
+        p.z = -front.beyond + (p.z + front.beyond) * front.scale;
+      }
+  const fitted = legPieces.map((piece) =>
+    fitLeg(piece.points, body.points),
+  );
   const armRoots = armPieces.map((piece) => joining(piece.points, body.points));
   if (arms)
     armPieces.forEach((piece, i) =>
@@ -109,7 +186,9 @@ async function bake({ source, out, forward, width, drop = [], arms, legs }) {
   // How far the body and arms can settle before they touch the ground.
   const settle =
     (Math.min(
-      ...[body, ...armPieces].flatMap((piece) => piece.points.map((p) => p.y)),
+      ...[body, ...knobs, ...armPieces].flatMap((piece) =>
+        piece.points.map((p) => p.y),
+      ),
     ) -
       floor) *
     scale;
@@ -163,7 +242,9 @@ async function bake({ source, out, forward, width, drop = [], arms, legs }) {
   }));
 
   const weights = new Map();
-  body.points.forEach((p) => weights.set(p, [[index("body"), 1]]));
+  [body, ...knobs].forEach((piece) =>
+    piece.points.forEach((p) => weights.set(p, [[index("body"), 1]])),
+  );
   armPieces.forEach((piece, i) =>
     piece.points.forEach((p) => weights.set(p, [[index(`arm${i}`), 1]])),
   );
@@ -269,13 +350,19 @@ function connectedPieces(faces) {
 }
 
 /** The hip is where the leg meets the body, the tip is the end farthest
- * from it, and the knee is the leg's highest point. */
+ * from it, and the knee is the leg's highest point. A leg that is highest at
+ * or behind its hip, such as one sloping straight down from the body, gets
+ * its knee halfway along instead. */
 function fitLeg(points, body) {
   const hip = joining(points, body);
   const far = Math.max(...points.map((p) => p.distanceTo(hip)));
   const tip = centroid(points.filter((p) => p.distanceTo(hip) > far * 0.95));
   const top = Math.max(...points.map((p) => p.y));
-  const knee = centroid(points.filter((p) => p.y > top - far * 0.05));
+  const axis = tip.clone().sub(hip);
+  const along = (p) => p.clone().sub(hip).dot(axis) / axis.lengthSq();
+  let knee = centroid(points.filter((p) => p.y > top - far * 0.05));
+  if (along(knee) < 0.2)
+    knee = centroid(points.filter((p) => Math.abs(along(p) - 0.5) < 0.1));
   return { hip, knee, tip };
 }
 
