@@ -11,6 +11,8 @@ import { EmptyInvitation } from "./ui/EmptyInvitation";
 import { HelpDialog } from "./ui/HelpDialog";
 import { Inspector } from "./ui/Inspector";
 import { MobileDock } from "./ui/MobileDock";
+import { ShareDialog } from "./ui/ShareDialog";
+import { WorldsDialog } from "./ui/WorldsDialog";
 import { NewWorldDialog } from "./ui/NewWorldDialog";
 import { SceneBoundary } from "./ui/SceneBoundary";
 import { SceneTools } from "./ui/SceneTools";
@@ -34,14 +36,20 @@ export default function App({
   const { world, selected, tool } = editor;
   // Life follows committed edits, not intermediate brush or slider previews.
   const ecosystem = useEcosystem(editor.savedWorld, editor.updateLife);
-  const files = useWorldFiles(editor);
   const [panel, setPanel] = useState<Panel>("objects");
   // On phones the sidebar is a sheet, closed until a dock button opens it.
   const [sheetOpen, setSheetOpen] = useState(false);
   const [hasBuilt, setHasBuilt] = useState(false);
   const [resetCamera, setResetCamera] = useState(0);
   const [dialog, setDialog] = useState<
-    "new-world" | "help" | "about" | "shared-copy" | "share-error" | null
+    | "share"
+    | "worlds"
+    | "new-world"
+    | "help"
+    | "about"
+    | "shared-copy"
+    | "share-error"
+    | null
   >(shareError ? "share-error" : null);
   const [watchRequest, setWatchRequest] = useState<string | null>(null);
   // Deselecting (Escape, clicking away) also stops watching.
@@ -72,7 +80,9 @@ export default function App({
   }
 
   function startPreset(preset: Preset) {
-    editor.replaceWorld(makePreset(preset));
+    if (!editor.createWorld(makePreset(preset))) return;
+    clearWorldLink();
+    setWatchRequest(null);
     setDialog(null);
     setResetCamera((n) => n + 1);
   }
@@ -93,9 +103,22 @@ export default function App({
     setMode(next);
   }
 
+  function openWorlds() {
+    editor.finish();
+    if (editor.saved) editor.notify("");
+    setDialog("worlds");
+  }
+
   function clearWorldLink() {
     history.replaceState(null, "", location.pathname + location.search);
   }
+
+  const files = useWorldFiles(editor, () => {
+    clearWorldLink();
+    setDialog(null);
+    setWatchRequest(null);
+    setResetCamera((n) => n + 1);
+  });
 
   function activateObject(id: string) {
     const object = world.objects.find((o) => o.id === id);
@@ -123,14 +146,7 @@ export default function App({
           />
         </SceneBoundary>
       </div>
-      {!view && (
-        <TopBar
-          editor={editor}
-          onNewWorld={() => setDialog("new-world")}
-          onExport={files.exportWorld}
-          onImport={files.importWorld}
-        />
-      )}
+      {!view && <TopBar editor={editor} onWorlds={openWorlds} />}
       {files.fileInput}
       {hasBuilt && (
         <Sidebar
@@ -143,8 +159,6 @@ export default function App({
           onHelp={() => setDialog("help")}
           onWatch={watch}
           onClose={() => setSheetOpen(false)}
-          onExport={files.exportWorld}
-          onImport={files.importWorld}
         />
       )}
       {!view && !sheetOpen && !selected && tool.type === "select" && (
@@ -175,6 +189,8 @@ export default function App({
       <SceneTools
         editor={editor}
         view={view}
+        onShare={() => setDialog("share")}
+        onWorlds={openWorlds}
         onChangeMode={changeMode}
         onResetCamera={() => {
           setWatchRequest(null);
@@ -200,24 +216,43 @@ export default function App({
         </>
       )}
       {!view && <BottomHud editor={editor} />}
+      {dialog === "share" && (
+        <ShareDialog
+          world={editor.savedWorld}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === "worlds" && (
+        <WorldsDialog
+          editor={editor}
+          onClose={() => setDialog(null)}
+          onNew={() => setDialog("new-world")}
+          onImport={files.importWorld}
+          onOpen={(id) => {
+            if (!editor.openWorld(id)) return;
+            clearWorldLink();
+            setDialog(null);
+            setWatchRequest(null);
+            setResetCamera((n) => n + 1);
+          }}
+        />
+      )}
       {dialog === "new-world" && (
         <NewWorldDialog
+          error={!editor.saved ? editor.message : ""}
           onPreset={startPreset}
           onClose={() => setDialog(null)}
         />
       )}
       {dialog === "shared-copy" && (
         <SharedWorldDialog
+          error={!editor.saved ? editor.message : ""}
           onClose={() => setDialog(null)}
           onCopy={() => {
-            const saved = editor.adoptSharedWorld();
-            if (saved) clearWorldLink();
+            if (!editor.adoptSharedWorld()) return;
+            clearWorldLink();
             setDialog(null);
             setMode(false);
-            if (!saved)
-              editor.notify(
-                "Saving is unavailable. Export a backup of your copy.",
-              );
           }}
         />
       )}

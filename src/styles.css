@@ -76,9 +76,6 @@ button:hover:not(:disabled) {
 .sheet-only {
   display: none;
 }
-.file-actions {
-  display: contents;
-}
 .scene-shell canvas {
   display: block;
   touch-action: none;
@@ -173,26 +170,6 @@ button:hover:not(:disabled) {
 .icon-button.active {
   background: #334b37;
   color: var(--accent);
-}
-.divider {
-  width: 1px;
-  height: 22px;
-  background: var(--line);
-  margin: 0 7px;
-}
-.new-world {
-  background: var(--accent);
-  color: var(--ink);
-  border: 0;
-  border-radius: 7px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  height: 36px;
-  padding: 0 14px;
-  font-size: 13px;
-  font-weight: 650;
-  margin-left: 8px;
 }
 .sidebar {
   position: absolute;
@@ -780,12 +757,6 @@ button:hover:not(:disabled) {
   .brand {
     min-width: 230px;
   }
-  .new-world {
-    padding: 0 10px;
-  }
-  .new-world span {
-    display: none;
-  }
   .bottom-hud {
     padding-right: 25px;
     bottom: 90px;
@@ -811,9 +782,6 @@ button:hover:not(:disabled) {
     padding: 0 12px;
     gap: 10px;
   }
-  .file-actions {
-    display: none;
-  }
   .brand {
     min-width: 0;
     gap: 8px;
@@ -828,8 +796,7 @@ button:hover:not(:disabled) {
   .brand h1 {
     font-size: 15px;
   }
-  .world-title,
-  .divider {
+  .world-title {
     display: none;
   }
   .header-actions {
@@ -839,13 +806,6 @@ button:hover:not(:disabled) {
   /* Comfortable tap targets on phones. */
   .header-actions .icon-button {
     width: 40px;
-    height: 40px;
-  }
-  .new-world {
-    margin-left: 4px;
-    width: 40px;
-    justify-content: center;
-    padding: 0;
     height: 40px;
   }
   /* The sidebar becomes a bottom sheet, hidden until the dock opens it. */
@@ -1366,34 +1326,7 @@ button:hover:not(:disabled) {
   color: var(--muted);
   font-size: 12px;
 }
-.share-control {
-  position: relative;
-  display: flex;
-}
-.share-feedback,
-.share-fallback {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 10px);
-  padding: 10px 12px;
-  background: #192c24f5;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  font-size: 12px;
-  white-space: nowrap;
-  z-index: 8;
-}
-.share-fallback {
-  width: min(300px, calc(100vw - 24px));
-  white-space: normal;
-}
-.share-fallback > span {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-.share-fallback input {
+.world-link-input {
   width: 100%;
   min-height: 44px;
   padding: 8px;
@@ -1402,11 +1335,6 @@ button:hover:not(:disabled) {
   background: #13241c;
   color: #deedc0;
   font-size: 12px;
-}
-.app:not(.view-mode) .share-feedback,
-.app:not(.view-mode) .share-fallback {
-  top: auto;
-  bottom: calc(100% + 10px);
 }
 .placement-rotation {
   display: grid;
@@ -1563,4 +1491,70 @@ button:hover:not(:disabled) {
 .creature-options .frog-list {
   max-height: 240px;
   overflow: auto;
+}
+
+.world-list {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.saved-world {
+  border-bottom: 1px solid var(--line);
+  padding: 8px 0;
+}
+.saved-world-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.open-world {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: 10px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+}
+.open-world strong,
+.open-world span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.open-world span {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.world-options,
+.world-library-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+.world-options button,
+.world-library-actions > button:not(.intro-build-button) {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+.world-options .delete-world {
+  color: #d7a29a;
+  margin-left: auto;
+}
+.world-options > span {
+  width: 100%;
+  color: var(--muted);
+  font-size: 13px;
+}
+.world-library-actions {
+  justify-content: space-between;
+  margin-top: 16px;
 }

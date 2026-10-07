@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
-/** Keeps the toolbar (and export) usable if WebGL or the scene crashes. */
+/** Keeps the world controls usable if WebGL or the scene crashes. */
 export class SceneBoundary extends Component<
   { children: ReactNode },
   { error: boolean }
@@ -18,7 +18,7 @@ export class SceneBoundary extends Component<
         <strong>The scene could not start.</strong>
         <p>
           Try reloading in a browser with WebGL enabled. You can still export
-          your saved world from the toolbar.
+          your saved world from My worlds.
         </p>
       </div>
     ) : (

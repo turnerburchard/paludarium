@@ -115,9 +115,11 @@ The title is **Paludarium**. Keep the saved-world storage key (`little-worlds:v1
 
 ## Sharing and observation polish
 
-- [x] Share the current committed world as a compressed snapshot link; explore without replacing a recipient’s save, explicitly build a copy, and keep export/Undo available.
+- [x] Share the current committed world as a compressed snapshot link; explore without replacing a recipient’s save, build a separately saved copy, and keep file backups available in My worlds.
 - [x] Replace feed/mist buttons with a field notebook of actual behavior, a quick follow action, and tucked-away inhabitants and habitat guidance.
 - [x] Simplify Life to a list of inhabitants with Follow a creature; field notes and habitat guidance were removed from the panel (2026-10-06).
 - [ ] Consider richer interactions and ecological discoveries; avoid routine care chores.
 
 - [x] Keep View minimal: remove the title, tagline and large watch button; move the introduction and creature list behind a small info control.
+
+- [x] Multiple locally saved worlds, safe preset exploration, My worlds picker, and file controls inside world and sharing menus.

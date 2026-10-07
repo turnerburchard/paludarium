@@ -1,18 +1,29 @@
-import { Eye, Hammer, Home, Pause, Play } from "lucide-react";
+import {
+  Share2,
+  FolderOpen,
+  Eye,
+  Hammer,
+  Home,
+  Pause,
+  Play,
+} from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import { IconButton } from "./IconButton";
-import { ShareButton } from "./ShareButton";
 
 export function SceneTools({
   editor,
   view,
   onChangeMode,
   onResetCamera,
+  onWorlds,
+  onShare,
 }: {
   editor: Editor;
   view: boolean;
   onChangeMode: (view: boolean) => void;
   onResetCamera: () => void;
+  onWorlds: () => void;
+  onShare: () => void;
 }) {
   return (
     <>
@@ -25,6 +36,11 @@ export function SceneTools({
         </button>
       </nav>
       <div className="scene-tools">
+        {view && (
+          <IconButton label="My worlds" onClick={onWorlds}>
+            <FolderOpen size={19} />
+          </IconButton>
+        )}
         <IconButton
           label={editor.paused ? "Resume life (Space)" : "Pause life (Space)"}
           onClick={() => editor.setPaused((p) => !p)}
@@ -35,7 +51,9 @@ export function SceneTools({
         <IconButton label="Reset view" onClick={onResetCamera}>
           <Home size={19} />
         </IconButton>
-        <ShareButton world={editor.savedWorld} />
+        <IconButton label="Share this world" onClick={onShare}>
+          <Share2 size={19} />
+        </IconButton>
       </div>
     </>
   );

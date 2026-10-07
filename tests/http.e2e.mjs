@@ -95,12 +95,19 @@ try {
     "Limestone grotto",
     "Aquarium",
   ]) {
+    await page.getByRole("button", { name: "My worlds", exact: true }).tap();
     await page.getByRole("button", { name: "New world", exact: true }).tap();
     const dialog = page.getByRole("dialog", { name: "Start a world" });
     await dialog.getByRole("button", { name, exact: true }).tap();
     await dialog.waitFor({ state: "detached" });
     await page.waitForFunction((name) => {
-      const world = JSON.parse(localStorage.getItem("little-worlds:v1"));
+      const world = JSON.parse(
+        localStorage.getItem("little-worlds:v1"),
+        (key, value) =>
+          key === "" && value.worlds
+            ? value.worlds.find((entry) => entry.id === value.activeId).world
+            : value,
+      );
       return name === "Empty tank"
         ? world.objects.length === 0 && world.name === "My little world"
         : world.name === name && world.objects.length > 0;
@@ -125,10 +132,19 @@ try {
   );
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")).objects.length === 1,
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.length === 1,
   );
   const placed = await page.evaluate(
-    () => JSON.parse(localStorage.getItem("little-worlds:v1")).objects[0],
+    () =>
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects[0],
   );
   assert.equal(placed.kind, "tree-frog");
   assert.ok(placed.id);

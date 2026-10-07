@@ -6,9 +6,11 @@ import { Modal } from "./Modal";
 export function NewWorldDialog({
   onPreset,
   onClose,
+  error,
 }: {
   onPreset: (preset: Preset) => void;
   onClose: () => void;
+  error?: string;
 }) {
   return (
     <Modal label="Start a world" onClose={onClose}>
@@ -18,7 +20,8 @@ export function NewWorldDialog({
           <X size={20} />
         </IconButton>
       </div>
-      <p>Undo restores your previous world.</p>
+      <p>Your other worlds stay saved.</p>
+      {error && <p role="status">{error}</p>}
       <div className="preset-options">
         <button onClick={() => onPreset("empty")}>
           <span aria-hidden="true">01</span>

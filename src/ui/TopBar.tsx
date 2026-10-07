@@ -1,25 +1,13 @@
-import {
-  Check,
-  Download,
-  Leaf,
-  Plus,
-  Redo2,
-  Undo2,
-  Upload,
-} from "lucide-react";
+import { Check, FolderOpen, Leaf, Redo2, Undo2 } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import { IconButton } from "./IconButton";
 
 export function TopBar({
   editor,
-  onNewWorld,
-  onExport,
-  onImport,
+  onWorlds,
 }: {
   editor: Editor;
-  onNewWorld: () => void;
-  onExport: () => void;
-  onImport: () => void;
+  onWorlds: () => void;
 }) {
   const { world } = editor;
 
@@ -54,7 +42,7 @@ export function TopBar({
             ? "Saving…"
             : editor.saved
               ? "Saved on this device"
-              : "Save unavailable · export a copy"}
+              : "Save unavailable"}
         </span>
       </div>
       <div className="header-actions">
@@ -72,25 +60,9 @@ export function TopBar({
         >
           <Redo2 size={18} />
         </IconButton>
-        {/* On phones these move into the panel sheet. */}
-        <span className="file-actions">
-          <span className="divider" />
-          <IconButton label="Export world" onClick={onExport}>
-            <Download size={18} />
-          </IconButton>
-          <IconButton label="Import world" onClick={onImport}>
-            <Upload size={18} />
-          </IconButton>
-        </span>
-        <button
-          className="new-world"
-          onClick={onNewWorld}
-          aria-label="New world"
-          title="New world"
-        >
-          <Plus size={16} />
-          <span>New world</span>
-        </button>
+        <IconButton label="My worlds" onClick={onWorlds}>
+          <FolderOpen size={18} />
+        </IconButton>
       </div>
     </header>
   );

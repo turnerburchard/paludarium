@@ -101,7 +101,12 @@ try {
     .getByRole("button", { name: "Resume life (Space)", exact: true })
     .click();
   await page.waitForFunction(
-    (key) => JSON.parse(localStorage.getItem(key)).objects.length === 7,
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.length === 7,
     storageKey,
   );
   await page
@@ -120,13 +125,23 @@ try {
   );
   await page.screenshot({ path: "/tmp/paludarium-juvenile-desktop.png" });
   const saved = await page.evaluate(
-    (key) => JSON.parse(localStorage.getItem(key)),
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ),
     storageKey,
   );
   await page.waitForTimeout(5500);
   assert.deepEqual(
     await page.evaluate(
-      (key) => JSON.parse(localStorage.getItem(key)),
+      (key) =>
+        JSON.parse(localStorage.getItem(key), (key, value) =>
+          key === "" && value.worlds
+            ? value.worlds.find((entry) => entry.id === value.activeId).world
+            : value,
+        ),
       storageKey,
     ),
     saved,
@@ -137,7 +152,12 @@ try {
     .getByRole("button", { name: "Undo (⌘/Ctrl Z)", exact: true })
     .click();
   await page.waitForFunction(
-    (key) => JSON.parse(localStorage.getItem(key)).objects.length === 6,
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.length === 6,
     storageKey,
   );
   assert.equal(
@@ -148,7 +168,12 @@ try {
     .getByRole("button", { name: "Redo (⌘/Ctrl Shift Z)", exact: true })
     .click();
   await page.waitForFunction(
-    (key) => JSON.parse(localStorage.getItem(key)).objects.length === 7,
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.length === 7,
     storageKey,
   );
   await page.reload();
@@ -157,7 +182,12 @@ try {
     .click();
   assert.deepEqual(
     await page.evaluate(
-      (key) => JSON.parse(localStorage.getItem(key)),
+      (key) =>
+        JSON.parse(localStorage.getItem(key), (key, value) =>
+          key === "" && value.worlds
+            ? value.worlds.find((entry) => entry.id === value.activeId).world
+            : value,
+        ),
       storageKey,
     ),
     saved,
@@ -180,7 +210,12 @@ try {
   );
   await fishPage.goto(url);
   await fishPage.waitForFunction(
-    (key) => JSON.parse(localStorage.getItem(key)).objects.length === 7,
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.length === 7,
     storageKey,
   );
   await fishPage
@@ -195,9 +230,11 @@ try {
   await fishPage.screenshot({ path: "/tmp/paludarium-life-phone.png" });
   const bornFish = await fishPage.evaluate(
     (key) =>
-      JSON.parse(localStorage.getItem(key)).objects.find((o) =>
-        o.id.startsWith("born:"),
-      ),
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.find((o) => o.id.startsWith("born:")),
     storageKey,
   );
   assert.equal(bornFish.kind, "fish");
@@ -228,7 +265,12 @@ try {
     .getByRole("complementary", { name: "Watching", exact: true })
     .waitFor();
   await deathPage.waitForFunction(
-    (key) => JSON.parse(localStorage.getItem(key)).objects.length === 4,
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.length === 4,
     storageKey,
   );
   assert.equal(

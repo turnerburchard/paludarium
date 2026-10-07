@@ -38,7 +38,7 @@ Drag with one finger or the mouse to orbit when not placing. Drag with two finge
 
 ## Sharing and first visits
 
-View keeps the habitat clear of headlines and prompts. Tap a creature to follow it; the small info button holds the introduction and an optional creature list. **Share this world** sends a compressed snapshot of your committed layout in a link: name, plants, creatures, terrain, and settings. It opens the native share sheet or copies the link; a selectable link appears if sharing or clipboard access is unavailable. Recipients explore in View without overwriting their own saved habitat. **Build a copy** asks before replacing it, offers a backup export, and can be undone. Later edits don’t change links already sent. No account or server storage is needed. Text-message previews use the project image; live activity and field notes restart on opening. JSON export/import remains available for backups and worlds too large to share as links.
+View keeps the habitat clear of headlines and prompts. Tap a creature to follow it; the small info button holds the introduction and an optional creature list. **Share this world** opens sharing options. Choose **Share link** to send a compressed snapshot of your committed layout: name, plants, creatures, terrain, and settings. It opens the native share sheet or copies the link; a selectable link appears if sharing or clipboard access is unavailable. Recipients explore in View without overwriting their own saved habitat. **Build a copy** creates another saved world without replacing yours. Later edits don’t change links already sent. No account or server storage is needed. Text-message previews use the project image; live activity and field notes restart on opening. **My worlds** switches between locally saved habitats and creates worlds from presets without replacing your progress. Each world autosaves separately. Switching clears Undo history and inactive habitats stop simulating. World options contain **Export file** and deletion, with **Import file** at the bottom of My worlds. **Share** offers links or files.
 
 The static HTML provides a canonical URL, description, Open Graph and Twitter card metadata before JavaScript runs. `public/share.jpg` is a 1200 × 630 screenshot of the real demo. Regenerate it with `npm run share-image` after changing the starter habitat. Preview services may cache the old card.
 
@@ -63,11 +63,11 @@ Conventions:
 
 **Frog model:** `scripts/prepare-frog-model.mjs` bakes the original GLB (`docs/inspiration/preferred-frog-original.glb`) into `src/assets/animals/frog.json`: the reshaped mesh with its skin weights, the skeleton, and the Idle, Jump and Attack clips. `src/assets/animals/frogs.ts` defines each species: proportions, coloring, markings and behavior. `src/scene/frogRig.ts` animates it: the jump clip follows each hop's progress, the frog breathes and sleeps low, and between hops its feet stay planted on the surface and step as the body moves or turns.
 
-An importable [Stacked lookout habitat](examples/stacked-lookout.json) demonstrates two mossy stones supporting an anthurium, with a tree frog that can climb to its leaves and return to the shoreline. Use Import in Build mode to open it.
+An importable [Stacked lookout habitat](examples/stacked-lookout.json) demonstrates two mossy stones supporting an anthurium, with a tree frog that can climb to its leaves and return to the shoreline. Use Import file in My worlds to open it.
 
 ## Current behavior and limits
 
-- Saves live in browser storage, with JSON export/import for backups and moving between devices.
+- Multiple saves live in browser storage. My worlds holds JSON file backups and imports for moving between devices.
 - Undo covers the last 60 edits, including replacing a world.
 - Up to 120 objects. Dense plantings can be heavy on mobile GPUs.
 - Plants and frogs need dry ground and fish need water depth when placed. Stone, wood and cattails accept land or water placement. Raising water doesn't move or flag existing objects, but can leave terrestrial animals without reachable ground. Fully submerged tanks show aquatic life and hardscape in the Add tray.
