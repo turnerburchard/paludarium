@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { checkIdCompatibility } from "./idCompatibility.e2e.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const url = "http://127.0.0.1:5196";
@@ -56,6 +57,7 @@ try {
       "--enable-unsafe-swiftshader",
     ],
   });
+  await checkIdCompatibility(browser, url);
   const errors = [];
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
