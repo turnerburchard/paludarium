@@ -301,9 +301,12 @@ button:hover:not(:disabled) {
 .asset-name {
   font-size: 12px;
   line-height: 16px;
-  min-height: 32px;
+  height: 48px;
   font-weight: 500;
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
   padding: 0 9px;
   color: #d6e1c9;
 }
@@ -875,9 +878,11 @@ button:hover:not(:disabled) {
     background: var(--line);
   }
   .panel-tabs {
-    padding: 8px 13px 5px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 40px;
+    padding: 12px 12px 8px;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
   }
   .panel-tabs button {
     min-height: 40px;
@@ -890,14 +895,27 @@ button:hover:not(:disabled) {
     overflow-y: auto;
   }
   .category-tabs {
-    gap: 2px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 40px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    gap: 8px;
     border: 0;
-    margin: 0 12px;
+    margin: 0;
+    padding: 0 12px 8px;
+    background: var(--panel);
   }
   .category-tabs button {
-    min-height: 44px;
-    padding: 7px;
-    border-radius: 6px;
+    min-height: 40px;
+    padding: 6px 2px;
+    flex-direction: row;
+    justify-content: center;
+    gap: 4px;
+    border-radius: 9px;
+  }
+  .category-tabs > button:last-child span {
+    display: none;
   }
   .category-tabs button.active {
     background: #354b32;
@@ -915,11 +933,11 @@ button:hover:not(:disabled) {
     height: 85px;
   }
   .asset-name {
-    font-size: 11px;
+    font-size: 12px;
   }
   .sidebar-footer {
     height: 48px;
-    padding: 0 10px 0 15px;
+    padding: 0 12px;
     font-size: 10px;
   }
   .sidebar-footer button {
@@ -1058,18 +1076,6 @@ button:hover:not(:disabled) {
   color: #bccb9f !important;
   margin: 0 0 8px !important;
   font-size: 11px !important;
-}
-.asset-name {
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-}
-@media (max-width: 760px) {
-  .asset-name {
-    font-size: 12px;
-    line-height: 16px;
-    min-height: 32px;
-  }
 }
 
 .life-panel {

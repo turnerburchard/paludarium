@@ -143,6 +143,57 @@ try {
     await page.getByRole("button", { name: "All", exact: true }).count(),
     0,
   );
+  const cards = await page.locator(".asset-card").evaluateAll((cards) =>
+    cards.slice(0, 6).map((card) => ({
+      height: card.getBoundingClientRect().height,
+      labelTop:
+        card.querySelector(".asset-name").getBoundingClientRect().top -
+        card.getBoundingClientRect().top,
+    })),
+  );
+  assert.ok(
+    Math.max(...cards.map((card) => card.height)) -
+      Math.min(...cards.map((card) => card.height)) <
+      1,
+  );
+  assert.ok(
+    Math.max(...cards.map((card) => card.labelTop)) -
+      Math.min(...cards.map((card) => card.labelTop)) <
+      1,
+  );
+  const tabColumns = await page
+    .locator(".panel-tabs > button")
+    .evaluateAll((tabs) =>
+      tabs.map((tab) => ({
+        left: tab.getBoundingClientRect().left,
+        width: tab.getBoundingClientRect().width,
+      })),
+    );
+  const categoryColumns = await page
+    .locator(".category-tabs > button")
+    .evaluateAll((tabs) =>
+      tabs.slice(0, 3).map((tab) => ({
+        left: tab.getBoundingClientRect().left,
+        width: tab.getBoundingClientRect().width,
+      })),
+    );
+  categoryColumns.forEach((column, index) => {
+    assert.ok(Math.abs(column.left - tabColumns[index].left) < 1);
+    assert.ok(Math.abs(column.width - tabColumns[index].width) < 1);
+  });
+  const categoryTop = await page
+    .locator(".category-tabs")
+    .evaluate((tabs) => tabs.getBoundingClientRect().top);
+  await page.locator(".panel-content").evaluate((panel) => {
+    panel.scrollTop = 300;
+  });
+  const scrolledCategoryTop = await page
+    .locator(".category-tabs")
+    .evaluate((tabs) => tabs.getBoundingClientRect().top);
+  assert.ok(Math.abs(scrolledCategoryTop - categoryTop) < 1);
+  await page.locator(".panel-content").evaluate((panel) => {
+    panel.scrollTop = 0;
+  });
   const sheetHeight = await page
     .locator(".sidebar")
     .evaluate((sheet) => sheet.getBoundingClientRect().height);
