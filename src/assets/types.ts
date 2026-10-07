@@ -40,8 +40,9 @@ export interface AssetDefinition {
   soil?: Soil;
   /** Rests on the water's surface, like a lily pad, instead of the bottom. */
   floats?: boolean;
-  /** Stone or wood: moss can grow over it and other things can rest on it. */
-  hardscape?: boolean;
+  /** Stone or wood: moss can grow over it, other things can rest on it, and
+   * animals walk it as that surface. */
+  hardscape?: "stone" | "wood";
   behavior?: AnimalBehavior;
   perches?(random: () => number): PlantPerch[];
   /** How a fish swims: cruising speed, and how far below the surface it keeps. */

@@ -10,6 +10,7 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 - [x] Dark studio background, overhead illumination, saved warmth and brightness controls.
 - [x] Clear back glass across all habitats; removed stone/cork backdrops and their settings. Older saves and shared layouts still load.
 - [x] Separate glass from soil faces; match sidewall and surface subdivisions.
+- [x] More stone: sandstone boulders and ledges, granite boulders, slate stacks, limestone outcrops and river pebbles, placed in the desert, creek and grotto presets. Hardscape now names its material, so animals walk any stone as stone.
 - [x] Realistic biomes: Cloud forest (Costa Rica), Alpine creek (Rocky Mountains), Desert spring (Mojave) and Limestone grotto (Vietnam, built around the mossy frog), each with species that live together. New chorus frog, tiger salamander, chuckwalla, desert tortoise, cutthroat trout, sculpin, convict cichlid, harlequin rasbora and pupfish; new spruce, columbine, kinnikinnick, hairgrass, cacti, agave, bunchgrass, begonia, elephant ear, water trumpet, orchid, tree philodendron and floating water lilies; an arid soil for desert plants.
 - [x] Fully submerged Aquarium preset with driftwood, river stones, Java moss, cardinal and ember tetra schools; deep water fills below the rim and species swim at different depths.
 - [x] Fast production-build browser smoke on routine pushes; longer gesture regression suite remains available on demand.

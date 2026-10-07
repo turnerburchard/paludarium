@@ -212,13 +212,13 @@ function cloudForest(add: Add, objects: HabitatObject[]) {
 /** A Rocky Mountain creek: spruce, columbine and kinnikinnick on the bank,
  * frogs, a lizard and a salamander, and trout and sculpins in the water. */
 function alpineCreek(add: Add, objects: HabitatObject[]) {
-  add("rock", -1.65, -0.65, 1.8, 0.6, "sheet");
-  add("rock", -0.5, -1.4, 1.2, 2);
-  add("rock", -2.5, -1.25, 0.85);
+  add("granite", -1.65, -0.65, 1.6, 0.6, "sheet");
+  add("granite", -0.5, -1.4, 1.1, 2);
+  add("slate", -2.5, -1.25, 1);
   add("rock", 1.15, 0.75, 1.0, 2, "fern");
   add("rock", 0.75, 1.5, 0.55);
   add("rock", 1.7, -0.3, 0.7, 1.2);
-  add("rock", 2.4, 1.1, 0.6, 0.4);
+  add("pebbles", 2.4, 1.1, 1.2, 0.4);
   add("wood", -1.3, 0.15, 0.8, 1.2);
   add("spruce", -2.85, 1.0, 1.15, 0.3);
   add("spruce", -1.1, -1.7, 0.85, 1.2);
@@ -254,9 +254,9 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
 function limestoneGrotto(add: Add, objects: HabitatObject[]) {
   add("rock-shelter", -2.3, -1.2, 1.2, 0.3, "cushion");
   add("rock-shelter", -0.4, -1.35, 0.9, 2.2, "sheet");
-  add("rock", -1.35, -0.55, 1.5, 1, "cushion");
-  add("rock", -2.6, 0.55, 1, 2.5, "sheet");
-  add("rock", 0.2, 0.4, 0.9, 0.7, "fern");
+  add("limestone", -1.35, -0.55, 1.4, 1, "cushion");
+  add("limestone", -2.6, 0.55, 1, 2.5, "sheet");
+  add("limestone", 0.2, 0.4, 0.9, 0.7, "fern");
   add("rock", 0.6, 1.4, 0.6, 1.9, "java");
   add("rock", 1.8, -1.3, 0.8, 0.2, "java");
   add("wood", -1.1, 0.75, 0.9, 2.1, "java");
@@ -292,11 +292,11 @@ function limestoneGrotto(add: Add, objects: HabitatObject[]) {
 /** A Mojave desert spring: cacti, agave and bunchgrass on dry sand around a
  * small pool of pupfish, with three lizards and a tortoise. */
 function desertSpring(add: Add, objects: HabitatObject[]) {
-  add("rock", -2.4, -1.3, 1.6, 0.4);
-  add("rock", -1.7, -1.6, 1, 2.1);
-  add("rock", 2.3, -1.2, 1.3, 1.2);
-  add("rock", 2.75, 1.25, 0.9, 0.3);
-  add("rock", -0.8, 1.45, 0.8, 2.8);
+  add("sandstone", -2.4, -1.3, 1.6, 0.4);
+  add("sandstone-ledge", -1.55, -1.55, 1, 2.1);
+  add("sandstone", 2.3, -1.2, 1.3, 1.2);
+  add("sandstone-ledge", 2.7, 1.3, 0.9, 0.3);
+  add("sandstone", -0.8, 1.45, 0.8, 2.8);
   add("rock-shelter", -2.6, 0.75, 1.1, 1.4);
   add("rock-shelter", 1.7, -1.75, 0.9, 3.4);
   add("branch", -0.6, -1.35, 1.1, 0.9);

@@ -9,7 +9,7 @@ export const wood: AssetDefinition = {
   description: "A branching piece of wood for the forest floor.",
   radius: 0.52,
   habitat: "either",
-  hardscape: true,
+  hardscape: "wood",
   blocksMovement: true,
   build,
 };
