@@ -385,7 +385,11 @@ export function createWorldEcosystem(
             z: object.z,
           };
     const node = graph.nearest(position, species);
-    if (node)
+    // An animal that visits the water still needs dry land to live on.
+    const land =
+      behavior.water !== "visits" ||
+      graph.nearest(position, { ...species, water: undefined });
+    if (node && land)
       animals.push({
         id: object.id,
         species,
@@ -448,7 +452,8 @@ export function createFishSchool(
     !placementProblem("fish", x, z, env);
   if (!swimmers.length) return new FishSchool([], isWater);
   const space = new SwimSpace(world);
-  const fish = swimmers.map(({ object, swims }) => {
+  // A fish with no open water anywhere is stranded and left out.
+  const fish = swimmers.flatMap(({ object, swims }) => {
     const old = previous?.world.objects.find((o) => o.id === object.id);
     const swimming = previous?.fish.get(object.id);
     const unmoved =
@@ -469,7 +474,7 @@ export function createFishSchool(
     };
     const clear = (x: number, z: number, heading: number) =>
       isWater(x, z) && space.canStart(fish, x, z, heading);
-    if (clear(fish.x, fish.z, fish.heading)) return fish;
+    if (clear(fish.x, fish.z, fish.heading)) return [fish];
     // An edit may put stone or wood around a live fish. Only that fish
     // moves to the nearest available gap; the rest of the school stays put.
     const reach = Math.hypot(env.width, env.depth);
@@ -478,9 +483,9 @@ export function createFishSchool(
         const angle = (i * Math.PI * 2) / 32;
         const x = fish.x + Math.cos(angle) * radius;
         const z = fish.z + Math.sin(angle) * radius;
-        if (clear(x, z, fish.heading)) return { ...fish, x, z };
+        if (clear(x, z, fish.heading)) return [{ ...fish, x, z }];
       }
-    return fish;
+    return [];
   });
   return new FishSchool(fish, isWater, {
     random,
