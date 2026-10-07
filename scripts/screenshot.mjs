@@ -10,9 +10,9 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const outDir = process.argv[2] ?? `${root}screenshots`;
 const port = 5192;
 const presets = [
-  { name: "cloud-forest", button: /Cloud forest.*Monstera/ },
-  { name: "alpine-creek", button: /Alpine creek.*strawberries/ },
-  { name: "aquarium", button: /Aquarium.*underwater/ },
+  { name: "cloud-forest", button: /02\s*Cloud forest/ },
+  { name: "alpine-creek", button: /03\s*Alpine creek/ },
+  { name: "aquarium", button: /04\s*Aquarium/ },
 ];
 const viewports = [
   { name: "desktop", width: 1440, height: 960 },
