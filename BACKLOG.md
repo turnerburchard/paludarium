@@ -4,6 +4,8 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 
 ## Current release
 
+- [x] Category-only Add menu, visible-card thumbnail generation with caching and cancellation, and a fixed-height mobile sheet with consistent tab widths and a right-aligned close control.
+
 - [x] Species catalog: red-eyed tree frog, strawberry poison frog, blue poison dart frog, Vietnamese mossy frog; botanical names for identifiable plants.
 - [x] Continuous frog anatomy with folded legs, smaller eyes, toe pads and species markings.
 - [x] Desktop WASD camera movement, Shift for faster movement, typing/modal guards.

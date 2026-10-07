@@ -119,6 +119,7 @@ try {
     );
     await page.mouse.click(p.x, p.y, { delay: 80 });
   }
+  await page.getByRole("button", { name: "Animals", exact: true }).click();
   await page
     .getByRole("button", { name: "Red-eyed tree frog", exact: true })
     .click();
