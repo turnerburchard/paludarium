@@ -21,6 +21,7 @@ export function WorldsDialog({
 }) {
   const [menuId, setMenuId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const savedWorlds = editor.library.worlds.filter((entry) => !entry.preview);
   return (
     <Modal label="Worlds" onClose={onClose}>
       <div className="modal-heading worlds-heading">
@@ -32,7 +33,7 @@ export function WorldsDialog({
       {(editor.message || !editor.saved) && (
         <p role="status">
           {editor.message ||
-            "Saving is unavailable. Export a backup before continuing."}
+            "Saving is unavailable. Use Share to export a backup."}
         </p>
       )}
       <h3 className="world-section-heading">Presets</h3>
@@ -51,7 +52,7 @@ export function WorldsDialog({
         </button>
       </div>
       <div className="world-list">
-        {editor.library.worlds.map(({ id, world }) => (
+        {savedWorlds.map(({ id, world }) => (
           <div className="saved-world" key={id}>
             <div className="saved-world-heading">
               <button className="open-world" onClick={() => onOpen(id)}>
@@ -104,6 +105,7 @@ export function WorldsDialog({
             )}
           </div>
         ))}
+        {savedWorlds.length === 0 && <p>Edit a preset to keep it here.</p>}
       </div>
     </Modal>
   );

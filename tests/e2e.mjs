@@ -270,13 +270,17 @@ try {
     .getByRole("button", { name: "Stop watching", exact: true })
     .click();
   await page.getByRole("button", { name: "Build", exact: true }).click();
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "canShare", {
+      configurable: true,
+      value: () => false,
+    });
+  });
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page
-    .getByRole("button", { name: /^Options for/ })
-    .last()
+    .getByRole("button", { name: "Share this world", exact: true })
     .click();
-  await page.getByRole("button", { name: "Export file", exact: true }).click();
+  await page.getByRole("button", { name: "Share file", exact: true }).click();
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   const download = await downloadPromise;
   assert.equal(download.suggestedFilename(), "cloud-forest.json");

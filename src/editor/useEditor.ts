@@ -19,9 +19,11 @@ import { boundedPosition, fitObject, placementProblem } from "../model/terrain";
 import { historyReducer } from "./history";
 import { TerrainStroke } from "./terrainStroke";
 import type { TerrainBrush } from "../model/terrainBrush";
+import { makePreset, type Preset } from "../model/presets";
 import {
   activeWorld,
   loadLibrary,
+  openLibraryWorld,
   saveLibrary,
   updateLibrary,
   type WorldLibrary,
@@ -64,6 +66,8 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   const selectedId = selected?.id ?? null;
   const commit = useCallback((next: World) => {
     setPreview(null);
+    if (JSON.stringify(next) === JSON.stringify(worldRef.current)) return;
+    setLibrary((current) => updateLibrary(current, next, true));
     dispatch({ type: "commit", world: next });
   }, []);
   const updateLife = useCallback(
@@ -81,11 +85,21 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     if (isShared || (initial.warning && history.present === initialWorld))
       return;
     setSaving(true);
-    const timer = setTimeout(() => {
+    const persist = () => {
       setSaved(saveLibrary(updateLibrary(library, history.present)));
       setSaving(false);
-    }, 250);
-    return () => clearTimeout(timer);
+    };
+    const onHidden = () => {
+      if (document.visibilityState === "hidden") persist();
+    };
+    const timer = setTimeout(persist, 250);
+    window.addEventListener("pagehide", persist);
+    document.addEventListener("visibilitychange", onHidden);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("pagehide", persist);
+      document.removeEventListener("visibilitychange", onHidden);
+    };
   }, [history.present, isShared, initial, initialWorld, library]);
   useEffect(() => {
     stroke.current = null;
@@ -302,7 +316,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     if (!saveLibrary(next)) {
       setSaved(false);
       notify(
-        "Your worlds could not be saved. Export a backup from Worlds before continuing.",
+        "Your worlds could not be saved. Export a backup with Share before continuing.",
       );
       return false;
     }
@@ -318,20 +332,30 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     return true;
   }
   function createWorld(next: World): boolean {
-    const id = createObjectId();
     const current = updateLibrary(library, history.present);
-    return switchLibrary({
-      ...current,
-      activeId: id,
-      worlds: [...current.worlds, { id, world: next }],
-    });
+    return switchLibrary(
+      openLibraryWorld(current, { id: createObjectId(), world: next }),
+    );
+  }
+  function startPreset(preset: Preset): boolean {
+    const current = updateLibrary(library, history.present);
+    return switchLibrary(
+      openLibraryWorld(current, {
+        id: createObjectId(),
+        world: makePreset(preset),
+        preview: true,
+      }),
+    );
   }
   function openWorld(id: string): boolean {
     if (id === library.activeId && !isShared) return true;
-    return switchLibrary({
-      ...updateLibrary(library, history.present),
-      activeId: id,
-    });
+    const current = updateLibrary(library, history.present);
+    return switchLibrary(
+      openLibraryWorld(
+        current,
+        current.worlds.find((entry) => entry.id === id)!,
+      ),
+    );
   }
   function deleteWorld(id: string): boolean {
     const current = updateLibrary(library, history.present);
@@ -371,6 +395,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     updateLife,
     library: updateLibrary(library, history.present),
     createWorld,
+    startPreset,
     openWorld,
     deleteWorld,
     adoptSharedWorld: () => (shared ? createWorld(shared) : false),

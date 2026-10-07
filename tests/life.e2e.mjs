@@ -206,7 +206,16 @@ try {
       if (!localStorage.getItem(storageKey))
         localStorage.setItem(storageKey, JSON.stringify(world));
     },
-    { world: habitat("fish", 2.65), storageKey },
+    {
+      world: {
+        version: 1,
+        activeId: "fish-preview",
+        worlds: [
+          { id: "fish-preview", world: habitat("fish", 2.65), preview: true },
+        ],
+      },
+      storageKey,
+    },
   );
   await fishPage.goto(url);
   await fishPage.waitForFunction(
@@ -239,6 +248,32 @@ try {
   );
   assert.equal(bornFish.kind, "fish");
   assert.equal(bornFish.life.age, 0);
+  await fishPage.reload();
+  await fishPage
+    .getByRole("button", { name: "Pause life (Space)", exact: true })
+    .click();
+  const resumed = await fishPage.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    storageKey,
+  );
+  assert.equal(resumed.worlds.length, 1);
+  assert.equal(
+    resumed.worlds[0].preview,
+    true,
+    "watching and opening Build do not keep a preset",
+  );
+  assert.ok(
+    resumed.worlds[0].world.objects.some((o) => o.id === bornFish.id),
+    "offspring survive refresh in an unedited preset",
+  );
+  await fishPage.getByRole("button", { name: "Worlds", exact: true }).click();
+  assert.equal(await fishPage.locator(".world-list .saved-world").count(), 0);
+  await fishPage
+    .getByText("Edit a preset to keep it here.", { exact: true })
+    .waitFor();
+  await fishPage.screenshot({
+    path: "/tmp/paludarium-preset-resume-phone.png",
+  });
 
   // A watched animal dying must leave neither a rendered ghost nor a stale watch card.
   await fishPage.close();

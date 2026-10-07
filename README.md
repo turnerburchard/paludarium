@@ -4,6 +4,10 @@ A little habitat to build and watch, with plants, frogs and fish.
 
 [Try it](https://turnerburchard.com/paludarium/).
 
+Worlds opens fresh presets and your saved habitats. The open world autosaves
+in this browser, including animal life. Build edits keep a preset in Your worlds,
+with recently opened saves first. Switching away discards an unedited preset.
+
 To run locally with Node.js 22 or newer:
 
 ```sh

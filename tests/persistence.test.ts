@@ -3,6 +3,7 @@ import {
   activeWorld,
   createLibrary,
   loadLibrary,
+  openLibraryWorld,
   parseLibrary,
   saveLibrary,
   STORAGE_KEY,
@@ -14,6 +15,65 @@ import { historyReducer } from "../src/editor/history";
 afterEach(() => vi.unstubAllGlobals());
 
 describe("saved world collection", () => {
+  it("replaces the browsing preset 100 times without accumulating saves", () => {
+    const saved = createLibrary(makePreset("empty"));
+    let library = saved;
+    for (let i = 0; i < 100; i++)
+      library = openLibraryWorld(library, {
+        id: `preset-${i}`,
+        world: makePreset(i % 2 ? "aquarium" : "tropical"),
+        preview: true,
+      });
+    expect(library.worlds).toHaveLength(2);
+    expect(library.worlds[0].id).toBe("preset-99");
+    expect(library.worlds[1]).toEqual(saved.worlds[0]);
+    library = openLibraryWorld(library, saved.worlds[0]);
+    expect(library.worlds).toEqual(saved.worlds);
+  });
+  it("keeps a preview's life on reload and only promotes a manual edit", () => {
+    const library = createLibrary(makePreset("aquarium"), true);
+    const evolved = { ...activeWorld(library), objects: [] };
+    const watched = updateLibrary(library, evolved);
+    const reloaded = parseLibrary(JSON.stringify(watched));
+    expect(reloaded.worlds[0].preview).toBe(true);
+    expect(activeWorld(reloaded)).toEqual(evolved);
+    const edited = updateLibrary(
+      reloaded,
+      { ...evolved, name: "My aquarium" },
+      true,
+    );
+    expect(edited.worlds[0].preview).toBeUndefined();
+    const next = openLibraryWorld(edited, {
+      id: "new-preset",
+      world: makePreset("aquarium"),
+      preview: true,
+    });
+    expect(next.worlds).toHaveLength(2);
+    expect(next.worlds[1].world.name).toBe("My aquarium");
+    expect(next.worlds[0].world.objects.length).toBeGreaterThan(0);
+  });
+  it("puts recently opened worlds first without losing any saves", () => {
+    let library = createLibrary(makePreset("empty"));
+    const first = library.worlds[0];
+    const second = { id: "second", world: makePreset("aquarium") };
+    library = openLibraryWorld(library, second);
+    expect(library.worlds.map((entry) => entry.id)).toEqual([
+      second.id,
+      first.id,
+    ]);
+    library = openLibraryWorld(library, first);
+    expect(library.worlds.map((entry) => entry.id)).toEqual([
+      first.id,
+      second.id,
+    ]);
+  });
+  it("starts a first-time visitor on a resumable preset", () => {
+    vi.stubGlobal("localStorage", { getItem: () => null });
+    const loaded = loadLibrary();
+    expect(loaded.library.worlds).toHaveLength(1);
+    expect(loaded.library.worlds[0].preview).toBe(true);
+    expect(activeWorld(loaded.library).name).toBe("Aquarium");
+  });
   it("migrates an existing world without losing its layout or life", () => {
     const world = makePreset("tropical");
     const library = parseLibrary(JSON.stringify(world));
@@ -54,6 +114,21 @@ describe("saved world collection", () => {
         JSON.stringify({
           ...library,
           worlds: [{ ...library.worlds[0], world: {} }],
+        }),
+      ),
+    ).toThrow();
+    expect(() =>
+      parseLibrary(
+        JSON.stringify({
+          ...library,
+          worlds: [
+            ...library.worlds,
+            {
+              id: "inactive-preview",
+              world: makePreset("empty"),
+              preview: true,
+            },
+          ],
         }),
       ),
     ).toThrow();
