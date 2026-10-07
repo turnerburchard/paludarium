@@ -1,6 +1,7 @@
 import type { World } from "../model/schema";
 import { applyTerrainBrush, type TerrainBrush } from "../model/terrainBrush";
 import { boundedPosition } from "../model/terrain";
+import { keepStacked } from "../model/stacking";
 
 /** A stroke owns a preview; history receives only its final world on release. */
 export class TerrainStroke {
@@ -44,6 +45,14 @@ export class TerrainStroke {
       this.brush,
     );
     if (environment !== this.current.environment)
-      this.current = { ...this.current, environment };
+      this.current = {
+        ...this.current,
+        environment,
+        objects: keepStacked(
+          this.current.objects,
+          this.current.environment,
+          environment,
+        ),
+      };
   }
 }

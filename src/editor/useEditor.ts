@@ -9,6 +9,7 @@ import {
 } from "../model/schema";
 import {
   holdsUp,
+  keepStacked,
   replaceObject,
   restingOn,
   type Surface,
@@ -345,12 +346,25 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
 }
 export type Editor = ReturnType<typeof useEditor>;
 
-function withEnvironment(world: World, patch: Partial<Environment>): World {
+export function withEnvironment(
+  world: World,
+  patch: Partial<Environment>,
+): World {
   const environment = { ...world.environment, ...patch };
+  // Stacked objects ride along with their supports into the new bounds.
+  let objects = world.objects;
+  for (const object of world.objects)
+    if (!object.support)
+      objects = replaceObject(
+        objects,
+        world.environment,
+        object.id,
+        fitObject(object, environment),
+      );
   return {
     ...world,
     environment,
-    objects: world.objects.map((o) => fitObject(o, environment)),
+    objects: keepStacked(objects, world.environment, environment),
   };
 }
 
