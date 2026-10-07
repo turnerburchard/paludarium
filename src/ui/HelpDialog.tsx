@@ -18,11 +18,15 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
       <dl>
         <dt>Move the camera</dt>
         <dd>
-          WASD moves across the tank. Hold Shift to move faster. The Home button
-          returns to the starting view.
+          Drag with two fingers to pan, including while placing. Pinch to zoom.
+          WASD also moves across the tank; hold Shift to move faster. The Home
+          button returns to the starting view.
         </dd>
         <dt>Look around</dt>
-        <dd>Drag with one finger or the mouse. Pinch or scroll to zoom.</dd>
+        <dd>
+          Drag with one finger or the mouse to orbit when not placing. Scroll to
+          zoom.
+        </dd>
         <dt>Rearrange</dt>
         <dd>Select an object, choose Move, then tap its new home.</dd>
         <dt>Watch a creature</dt>

@@ -458,11 +458,14 @@ try {
       const { camera, controls } = _roots
         .get(document.querySelector("canvas"))
         .store.getState();
-      return { position: camera.position.toArray(), enabled: controls.enabled };
+      return {
+        position: camera.position.toArray(),
+        rotate: controls.enableRotate,
+      };
     }, fiberUrl);
   }
   const beforeTouch = await placementCamera();
-  assert.equal(beforeTouch.enabled, false, "placement owns the gesture");
+  assert.equal(beforeTouch.rotate, false, "one-finger placement cannot orbit");
   const finger = { x: spot.x, y: spot.y, id: 0 };
   await touch("touchStart", [finger]);
   await touch("touchMove", [{ ...finger, x: finger.x + 45 }]);
@@ -506,7 +509,7 @@ try {
   );
   await page.getByRole("button", { name: "Done", exact: true }).click();
   assert.equal(
-    (await placementCamera()).enabled,
+    (await placementCamera()).rotate,
     true,
     "Done restores camera navigation",
   );

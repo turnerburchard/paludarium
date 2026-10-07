@@ -28,7 +28,9 @@ export function BottomHud({ editor }: { editor: Editor }) {
         ? "Copying"
         : "Placing";
   return (
-    <div className="bottom-hud">
+    <div
+      className={tool.type === "select" ? "bottom-hud" : "bottom-hud placing"}
+    >
       {tool.type !== "select" ? (
         <div className="placement-bar">
           <span className="placement-icon">
@@ -51,7 +53,7 @@ export function BottomHud({ editor }: { editor: Editor }) {
             <span>
               {tool.type === "terrain"
                 ? "Drag to brush · Escape to finish"
-                : "Tap a spot to place · Finish to move the camera"}
+                : "Tap to place · Two-finger drag to pan"}
             </span>
           </div>
           {tool.type !== "terrain" && <PlacementRotation editor={editor} />}

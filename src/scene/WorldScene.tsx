@@ -23,6 +23,7 @@ import { useCameraLayout } from "./useCameraLayout";
 import { Inhabitant } from "./Inhabitant";
 import { Tank, Terrain, Water } from "./Terrain";
 import { TerrainBrushCursor } from "./TerrainBrushCursor";
+import { useSceneTouch } from "./useSceneTouch";
 
 const lighting = {
   day: { background: "#080b0d", intensity: 4.2, ambient: 0.25 },
@@ -62,16 +63,9 @@ function Scene({
     env.warmth,
   );
   const controls = useRef<OrbitControlsImpl>(null);
-  const { raycaster } = useThree();
+  const { raycaster, camera, gl } = useThree();
   const terrain = useRef<THREE.Group>(null);
   const inhabitants = useRef<THREE.Group>(null);
-  const touchPlacement = useRef<{
-    id: number;
-    x: number;
-    y: number;
-    dragged: boolean;
-  } | null>(null);
-  const touchClick = useRef(false);
   useWatchVisibility(inhabitants, ecosystem, watchingId);
   const followCamera = useFollowCamera(
     controls,
@@ -91,10 +85,30 @@ function Scene({
       : null;
   const kind = tool.type === "place" ? tool.kind : moving?.kind;
   useCameraLayout(controls, resetCamera, view);
-  useEffect(() => {
+  useEffect(() => setCursor(null), [tool]);
+  useSceneTouch(controls, !!kind, (event) => {
+    if (!inhabitants.current) return;
+    const box = gl.domElement.getBoundingClientRect();
+    // Native client coordinates stay correct when Safari resizes its browser bars.
+    raycaster.setFromCamera(
+      new THREE.Vector2(
+        ((event.clientX - box.left) / box.width) * 2 - 1,
+        1 - ((event.clientY - box.top) / box.height) * 2,
+      ),
+      camera,
+    );
+    const intersections = raycaster.intersectObject(inhabitants.current, true);
+    if (!intersections.length) {
+      editor.notify("Tap the ground or a stone inside the tank.");
+      return;
+    }
+    const { point, surface } = spotUnder({
+      point: intersections[0].point,
+      intersections,
+    });
+    editor.placeAt(point.x, point.z, surface);
     setCursor(null);
-    touchPlacement.current = null;
-  }, [tool]);
+  });
   const point =
     cursor && (kind || tool.type === "terrain")
       ? boundedPosition(
@@ -111,7 +125,10 @@ function Scene({
     point && kind ? placementProblem(kind, point.x, point.z, env, lift) : null;
   /** The ground, or the stone or wood, under the pointer. Plants and animals
    * in the way are looked past, and animals always go on the ground. */
-  function spotUnder(e: ThreeEvent<PointerEvent | MouseEvent>) {
+  function spotUnder(e: {
+    point: THREE.Vector3;
+    intersections: THREE.Intersection[];
+  }) {
     if (!kind || assets[kind].category === "Animals") return { point: e.point };
     for (const hit of e.intersections) {
       const object = world.objects.find((o) => o.id === objectIdOf(hit.object));
@@ -127,12 +144,7 @@ function Scene({
   function track(e: ThreeEvent<PointerEvent>) {
     if (!kind && tool.type !== "terrain") return;
     e.stopPropagation();
-    if (kind && e.pointerType === "touch") {
-      const touch = touchPlacement.current;
-      if (touch && Math.hypot(e.clientX - touch.x, e.clientY - touch.y) > 12)
-        touch.dragged = true;
-      return;
-    }
+    if (kind && e.nativeEvent.pointerType === "touch") return;
     if (tool.type === "terrain") {
       const point =
         terrain.current &&
@@ -146,8 +158,6 @@ function Scene({
     setCursor({ x: point.x, z: point.z, surface });
   }
   function place(e: ThreeEvent<MouseEvent>) {
-    // Touch commits on pointer-up; its compatibility click must not add another.
-    if (touchClick.current) return;
     if (e.delta > 6) return;
     e.stopPropagation();
     if (tool.type === "terrain") return;
@@ -197,21 +207,6 @@ function Scene({
         onPointerMove={track}
         onClick={place}
         onPointerDown={(e) => {
-          touchClick.current = !!kind && e.pointerType === "touch";
-          if (kind && e.pointerType === "touch") {
-            e.stopPropagation();
-            if (!e.isPrimary) {
-              if (touchPlacement.current) touchPlacement.current.dragged = true;
-              return;
-            }
-            touchPlacement.current = {
-              id: e.pointerId,
-              x: e.clientX,
-              y: e.clientY,
-              dragged: false,
-            };
-            return;
-          }
           if (tool.type !== "terrain" || e.button !== 0) return;
           const point =
             terrain.current &&
@@ -229,21 +224,6 @@ function Scene({
           editor.beginTerrainStroke(point.x, point.z);
         }}
         onPointerUp={(e) => {
-          if (kind && e.pointerType === "touch") {
-            e.stopPropagation();
-            const touch = touchPlacement.current;
-            if (!touch || touch.id !== e.pointerId) return;
-            touchPlacement.current = null;
-            if (
-              touch.dragged ||
-              Math.hypot(e.clientX - touch.x, e.clientY - touch.y) > 12
-            )
-              return;
-            const { point, surface } = spotUnder(e);
-            editor.placeAt(point.x, point.z, surface);
-            setCursor(null);
-            return;
-          }
           if (tool.type !== "terrain") return;
           e.stopPropagation();
           editor.endTerrainStroke();
@@ -254,14 +234,8 @@ function Scene({
           )
             e.target.releasePointerCapture(e.pointerId);
         }}
-        onPointerCancel={() => {
-          touchPlacement.current = null;
-          editor.cancelTerrainStroke();
-        }}
-        onLostPointerCapture={() => {
-          touchPlacement.current = null;
-          editor.cancelTerrainStroke();
-        }}
+        onPointerCancel={editor.cancelTerrainStroke}
+        onLostPointerCapture={editor.cancelTerrainStroke}
       >
         <group ref={terrain}>
           <Terrain environment={env} />
@@ -361,15 +335,16 @@ function Scene({
 
       <OrbitControls
         ref={controls}
-        enabled={!kind}
         makeDefault
         target={[0, 0.8, 0]}
         minDistance={4}
         maxDistance={30}
         maxPolarAngle={Math.PI / 2.05}
         minPolarAngle={0.16}
-        enablePan={false}
-        enableRotate={tool.type !== "terrain"}
+        enablePan
+        screenSpacePanning={false}
+        touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
+        enableRotate={!kind && tool.type !== "terrain"}
         enableDamping
         dampingFactor={0.09}
         autoRotate={view && !editor.paused && !followCamera.active}
