@@ -17,7 +17,7 @@ export function useWorldFiles(editor: Editor) {
       if (file.size > MAX_WORLD_SIZE)
         throw new Error("This file is too large for a terrarium.");
       editor.replaceWorld(parseWorld(await file.text()));
-      editor.notify("Your world is ready.");
+      editor.notify("World imported.");
     } catch (error) {
       editor.notify(
         error instanceof Error ? error.message : "Could not import this file.",

@@ -4,6 +4,8 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 
 ## Current release
 
+- [x] Remove filler menu and status text; use direct dialog headings and instructions.
+
 - [x] Category-only Add menu, visible-card thumbnail generation with caching and cancellation, and a fixed-height mobile sheet with consistent tab widths and a right-aligned close control.
 
 - [x] Species catalog: red-eyed tree frog, strawberry poison frog, blue poison dart frog, Vietnamese mossy frog; botanical names for identifiable plants.
@@ -115,7 +117,7 @@ The title is **Paludarium**. Keep the saved-world storage key (`little-worlds:v1
 
 - [x] Share the current committed world as a compressed snapshot link; explore without replacing a recipient’s save, explicitly build a copy, and keep export/Undo available.
 - [x] Replace feed/mist buttons with a field notebook of actual behavior, a quick follow action, and tucked-away inhabitants and habitat guidance.
-- [x] Simplify Life to a list of inhabitants with Follow someone; field notes and habitat guidance were removed from the panel (2026-10-06).
+- [x] Simplify Life to a list of inhabitants with Follow a creature; field notes and habitat guidance were removed from the panel (2026-10-06).
 - [ ] Consider richer interactions and ecological discoveries; avoid routine care chores.
 
 - [x] Keep View minimal: remove the title, tagline and large watch button; move the introduction and creature list behind a small info control.

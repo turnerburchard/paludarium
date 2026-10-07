@@ -327,12 +327,6 @@ button:hover:not(:disabled) {
   padding: 0 9px;
   color: #d6e1c9;
 }
-.library-note {
-  font-size: 12px;
-  text-align: center;
-  color: #849a82;
-  margin: 23px 8px;
-}
 .sidebar-footer {
   flex-shrink: 0;
   height: 43px;
@@ -901,10 +895,6 @@ button:hover:not(:disabled) {
     height: 85px;
   }
   .asset-name {
-    font-size: 11px;
-  }
-  .library-note {
-    margin: 3px 8px;
     font-size: 11px;
   }
   .sidebar-footer {

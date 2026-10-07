@@ -113,7 +113,6 @@ export function Library({
             </button>
           ))}
       </div>
-      <p className="library-note">Choose something. Find its little place.</p>
     </>
   );
 }
