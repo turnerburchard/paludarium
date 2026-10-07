@@ -166,7 +166,7 @@ function cloudForest(add: Add, objects: HabitatObject[]) {
   add("fern", -0.9, 0.55, 0.8, 3);
   add("bromeliad", -2.6, -0.1, 0.9);
   add("bromeliad", -0.8, -0.6, 0.75, 2);
-  add("wood", -1.45, -0.3, 1.05, -0.4);
+  add("fungus-log", -1.45, -0.3, 1, -0.4);
   add("rock-shelter", 0.1, -1.2, 0.95, 0.4, "sheet");
   add("rock", 0.2, 0.35, 0.8, 1.6, "cushion");
   add("rock", 0.55, 1.25, 0.6, 1);
@@ -220,7 +220,7 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
   add("rock", 0.75, 1.5, 0.55);
   add("rock", 1.7, -0.3, 0.7, 1.2);
   add("pebbles", 2.4, 1.1, 1.2, 0.4);
-  add("wood", -1.3, 0.15, 0.8, 1.2);
+  add("snag", -1.3, 0.15, 0.8, 1.2);
   add("spruce", -2.85, 1.0, 1.15, 0.3);
   add("spruce", -1.1, -1.7, 0.85, 1.2);
   add("fern", -2.6, -0.3, 1.1);
@@ -247,6 +247,8 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
   add("cutthroat-trout", 1.5, 0.6, 0.9, 1);
   add("sculpin", 2.2, 0.5, 1, 3);
   add("sculpin", 2.55, -1.1, 1, 0.5);
+  add("scree", 0.3, 0.55, 1, 0.8);
+  add("flagstone", 0.6, -0.15, 1, 2.1);
   return objects;
 }
 
@@ -287,6 +289,7 @@ function limestoneGrotto(add: Add, objects: HabitatObject[]) {
       1,
       4.5,
     );
+  add("limestone-pinnacle", 1.0, -1.2, 0.9, 0.6, "java");
   return objects;
 }
 
@@ -297,7 +300,7 @@ function desertSpring(add: Add, objects: HabitatObject[]) {
   add("sandstone-ledge", -1.55, -1.55, 1, 2.1);
   add("sandstone", 2.3, -1.2, 1.3, 1.2);
   add("sandstone-ledge", 2.7, 1.3, 0.9, 0.3);
-  add("sandstone", -0.8, 1.45, 0.8, 2.8);
+  add("sandstone-pillar", -0.8, 1.45, 1, 2.8);
   add("rock-shelter", -2.6, 0.75, 1.1, 1.4);
   add("rock-shelter", 1.7, -1.75, 0.9, 3.4);
   add("branch", -0.6, -1.35, 1.1, 0.9);
@@ -327,6 +330,7 @@ function desertSpring(add: Add, objects: HabitatObject[]) {
     [0.75, -0.1, 4],
   ])
     add("pupfish", x, z, 1, turn);
+  add("flagstone", 1.3, -0.55, 0.9, 1.3);
   return objects;
 }
 
