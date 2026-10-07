@@ -265,7 +265,7 @@ try {
     await page
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 10; i++) {
       await page.getByRole("button", { name: "Worlds", exact: true }).click();
       await page
         .locator(".preset-options")

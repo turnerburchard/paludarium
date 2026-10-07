@@ -87,6 +87,27 @@ try {
   await page.getByRole("button", { name: "About Paludarium" }).waitFor();
   assert.equal(await page.getByRole("heading").count(), 0);
   assert.equal(await page.getByRole("slider").count(), 0);
+  for (const width of [320, 360, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    const controls = await page.evaluate(() => {
+      const mode = document
+        .querySelector(".mode-switch")
+        .getBoundingClientRect();
+      const tools = document
+        .querySelector(".scene-tools")
+        .getBoundingClientRect();
+      return {
+        modeTop: mode.top,
+        modeRight: mode.right,
+        toolsTop: tools.top,
+        toolsLeft: tools.left,
+        toolsRight: tools.right,
+      };
+    });
+    assert.ok(Math.abs(controls.modeTop - controls.toolsTop) <= 2);
+    assert.ok(controls.modeRight <= controls.toolsLeft);
+    assert.ok(controls.toolsRight <= width - 12);
+  }
   assert.equal(
     await page
       .getByRole("button", { name: /Watch a frog|Watch a creature/ })

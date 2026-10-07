@@ -1564,6 +1564,25 @@ button:hover:not(:disabled) {
     top: 12px;
     left: 12px;
     right: 12px;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .view-mode .mode-switch button {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+  .view-mode .mode-switch button span,
+  .view-mode .worlds-button span,
+  .view-mode .scene-tools .icon-button[aria-label="Reset view"] {
+    display: none;
+  }
+  .view-mode .scene-tools .icon-button {
+    width: 44px;
+  }
+  .view-mode .worlds-button {
+    width: 44px;
+    padding: 0;
   }
   .worlds-button {
     height: 44px;

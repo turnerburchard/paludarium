@@ -20,17 +20,32 @@ export function SceneTools({
   return (
     <div className="scene-controls">
       <nav className="mode-switch" aria-label="World mode">
-        <button aria-pressed={view} onClick={() => onChangeMode(true)}>
-          <Eye size={16} /> View
+        <button
+          aria-label="View"
+          title="View"
+          aria-pressed={view}
+          onClick={() => onChangeMode(true)}
+        >
+          <Eye size={16} /> <span>View</span>
         </button>
-        <button aria-pressed={!view} onClick={() => onChangeMode(false)}>
-          <Hammer size={16} /> Build
+        <button
+          aria-label="Build"
+          title="Build"
+          aria-pressed={!view}
+          onClick={() => onChangeMode(false)}
+        >
+          <Hammer size={16} /> <span>Build</span>
         </button>
       </nav>
       <div className="scene-tools">
         {view && (
-          <button className="worlds-button" onClick={onWorlds}>
-            <Globe2 size={18} aria-hidden="true" /> Worlds
+          <button
+            className="worlds-button"
+            aria-label="Worlds"
+            title="Worlds"
+            onClick={onWorlds}
+          >
+            <Globe2 size={18} aria-hidden="true" /> <span>Worlds</span>
           </button>
         )}
         <IconButton
