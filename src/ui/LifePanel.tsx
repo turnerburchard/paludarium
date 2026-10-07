@@ -76,7 +76,7 @@ export function LifePanel({
       {animals.length + fishCount > 0 && (
         <button className="life-follow" onClick={surpriseMe}>
           <Binoculars size={19} />
-          Follow someone
+          Follow a creature
         </button>
       )}
       {animals.length > 0 && (

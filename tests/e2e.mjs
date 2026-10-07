@@ -221,7 +221,7 @@ try {
     .click();
   await page.getByRole("button", { name: "Habitat life", exact: true }).click();
   const life = page.getByRole("region", { name: "Habitat life", exact: true });
-  await life.getByRole("button", { name: /Follow someone/ }).waitFor();
+  await life.getByRole("button", { name: /Follow a creature/ }).waitFor();
   assert.equal(
     await life
       .getByRole("button", { name: "Scatter insects", exact: true })
@@ -255,7 +255,7 @@ try {
     ).length,
   );
   await life.locator(".fish-list li", { hasText: "Convict cichlid" }).waitFor();
-  await life.getByRole("button", { name: /Follow someone/ }).click();
+  await life.getByRole("button", { name: /Follow a creature/ }).click();
   await page
     .getByRole("complementary", { name: "Watching", exact: true })
     .waitFor();

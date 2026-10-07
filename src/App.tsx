@@ -74,11 +74,6 @@ export default function App({
   function startPreset(preset: Preset) {
     editor.replaceWorld(makePreset(preset));
     setDialog(null);
-    editor.notify(
-      preset === "empty"
-        ? "A fresh start."
-        : "Make it yours. Every object can be moved or changed.",
-    );
     setResetCamera((n) => n + 1);
   }
 
