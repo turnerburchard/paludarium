@@ -340,8 +340,11 @@ export class Ecosystem {
     const food =
       nearest(reachable.filter((id) => insects(id) >= 0.5)) ??
       nearest(reachable.filter((id) => insects(id) > 0.001));
-    const shoreline = [...lengths.keys()].filter(
-      (id) => this.graph.node(id).wet,
+    // Animals that visit the water soak in it rather than on the shore.
+    const shoreline = [...lengths.keys()].filter((id) =>
+      agent.profile.water === "visits"
+        ? this.graph.node(id).submerged
+        : this.graph.node(id).wet,
     );
     const water = nearest(shoreline.filter((id) => reachable.includes(id)));
     const inactive = agent.profile.nocturnal
@@ -377,7 +380,15 @@ export class Ecosystem {
           : 0,
       );
     if (thirsty && water) {
-      go(water, "bathing", "seeking-water", "Finding a damp shoreline", 30);
+      go(
+        water,
+        "bathing",
+        "seeking-water",
+        agent.profile.water === "visits"
+          ? "Heading into the water"
+          : "Finding a damp shoreline",
+        30,
+      );
       return;
     }
     // Shoreline is scarce. Rather than give up while another animal soaks,
@@ -464,8 +475,13 @@ export class Ecosystem {
         const ahead =
           direction && facing ? (dot(direction, facing) + 1) / 2 : 0.5;
         const fresh = agent.recent.includes(id) ? 0.12 : 1;
-        const perch = this.graph.node(id).surface === "leaf" ? 1.5 : 1;
-        return fresh * perch * (0.5 + ahead) * (0.3 + lengths.get(id)! / range);
+        const node = this.graph.node(id);
+        const perch = node.surface === "leaf" ? 1.5 : 1;
+        // Animals that visit the water like to poke around underwater.
+        const dip = agent.profile.water === "visits" && node.submerged ? 3 : 1;
+        return (
+          fresh * perch * dip * (0.5 + ahead) * (0.3 + lengths.get(id)! / range)
+        );
       });
       let choice =
         this.roll() * weights.reduce((sum, weight) => sum + weight, 0);

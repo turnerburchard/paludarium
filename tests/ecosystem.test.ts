@@ -839,3 +839,31 @@ describe("field notebook", () => {
     ).toEqual([]);
   });
 });
+
+describe("animals and water", () => {
+  it("sends a thirsty vampire crab to soak underwater, not on the shore", () => {
+    const world = emptyWorld();
+    const graph = buildHabitat(world);
+    const crab = frogProfile("vampire-crab");
+    const start = graph.nearest(
+      { x: -2.5, y: groundHeight(-2.5, 0, world.environment), z: 0 },
+      crab,
+    )!;
+    const engine = new Ecosystem(graph, [
+      {
+        id: "crab",
+        species: crab,
+        nodeId: start.id,
+        needs: { hunger: 0, hydration: 0.1, energy: 1 },
+      },
+    ]);
+    let soaked = false;
+    for (let i = 0; i < 600 && !soaked; i++) {
+      engine.advance(1);
+      const state = engine.observeAnimal("crab")!;
+      soaked =
+        state.activity === "bathing" && !!graph.node(state.nodeId).submerged;
+    }
+    expect(soaked).toBe(true);
+  });
+});
