@@ -9,7 +9,8 @@ export const bromeliad: AssetDefinition = {
   scientificName: "Guzmania lingulata",
   group: "Leafy plants",
   biomes: ["Tropical"],
-  description: "A splash of coral among deep green leaves.",
+  description:
+    "A bromeliad native to Central America, the Caribbean and South America. Its glossy leaves form a rosette, with red bracts surrounding small flowers.",
   radius: 0.32,
   habitat: "land",
   shelter: true,

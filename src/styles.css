@@ -425,35 +425,11 @@ button:hover:not(:disabled) {
   font-size: 13px;
   font-weight: 600;
 }
-.empty-invitation {
-  position: absolute;
-  left: 340px;
-  top: 160px;
-  z-index: 3;
-  pointer-events: none;
-}
 .eyebrow {
   font-size: 10px;
   letter-spacing: 1.7px;
   color: #b5c79d;
   font-weight: 550;
-}
-.empty-invitation button {
-  pointer-events: auto;
-  border: 1px solid #657950;
-  background: #4c623b;
-  color: #e4efd3;
-  border-radius: 6px;
-  padding: 10px 14px;
-  font-size: 12px;
-  display: block;
-  margin: 8px 0;
-}
-.empty-invitation .text-button {
-  background: transparent;
-  border-color: transparent;
-  color: #becea9;
-  padding-left: 0;
 }
 .inspector {
   position: absolute;
@@ -737,9 +713,6 @@ button:hover:not(:disabled) {
   .asset-picture {
     height: 100px;
   }
-  .empty-invitation {
-    left: 360px;
-  }
 }
 @media (max-width: 1100px) {
   .topbar {
@@ -756,9 +729,6 @@ button:hover:not(:disabled) {
   .navigation-hint {
     font-size: 10px;
     gap: 7px;
-  }
-  .empty-invitation {
-    left: 325px;
   }
   .inspector {
     width: 245px;
@@ -991,15 +961,6 @@ button:hover:not(:disabled) {
   }
   .placement-bar .icon-button {
     width: 30px;
-  }
-  .empty-invitation {
-    left: 18px;
-    top: 124px;
-  }
-  .empty-invitation button {
-    font-size: 11px;
-    padding: 7px 10px;
-    margin: 5px 0;
   }
   /* On phones the inspector is a bottom card, in place of the dock. */
   .inspector {

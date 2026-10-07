@@ -110,10 +110,16 @@ try {
         .fill("My creek");
     // Clicking the picker blurs rename and must flush the pending autosave before switching.
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
+    await page.waitForFunction(
+      () => document.title === "paludarium · My creek",
+    );
     await page
       .locator(".preset-options")
       .getByRole("button", { name: "Aquarium", exact: true })
       .click();
+    await page.waitForFunction(
+      () => document.title === "paludarium · Aquarium",
+    );
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     await page.getByRole("button", { name: "My creek", exact: true }).click();
     assert.equal(
@@ -280,6 +286,22 @@ try {
       2,
     );
     await page.getByRole("button", { name: "Build", exact: true }).click();
+    await page.waitForFunction(
+      () => document.title === "paludarium · Untitled",
+    );
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Cloud forest", exact: true })
+        .count(),
+      0,
+    );
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Alpine creek", exact: true })
+        .count(),
+      0,
+    );
+    await page.screenshot({ path: `/tmp/paludarium-empty-${size}.png` });
     if (viewport.width > 760)
       await page
         .getByRole("button", { name: "Habitat settings", exact: true })
@@ -320,7 +342,7 @@ try {
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     assert.equal(
       await page.locator(".world-list .open-world").first().innerText(),
-      "My little world\nCurrent",
+      "Untitled\nCurrent",
       "an edited preset stays kept even after Undo",
     );
     await page
@@ -333,7 +355,7 @@ try {
     );
     assert.equal(current.worlds.length, 3);
     assert.equal(current.worlds[0].preview, true);
-    assert.equal(current.worlds[1].world.name, "My little world");
+    assert.equal(current.worlds[1].world.name, "Untitled");
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     await page
       .locator(".world-list")

@@ -61,7 +61,7 @@ try {
         .getAttribute("content")
     ).includes("Build a planted terrarium"),
   );
-  await crawler.getByRole("heading", { name: /Paludarium/ }).waitFor();
+  await crawler.getByRole("heading", { name: /paludarium/i }).waitFor();
   await crawler.close();
 
   const page = await browser.newPage({
@@ -199,6 +199,7 @@ try {
     sharedLink,
   );
   assert.equal(await page.evaluate(() => window.sharedWithActivation), true);
+  assert.equal(await page.evaluate(() => window.sharedProject.text), undefined);
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   assert.equal(
     (await page.evaluate(() => window.sharedProject)).title,
