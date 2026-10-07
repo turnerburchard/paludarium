@@ -7,7 +7,7 @@ import { terrainSamples } from "../model/terrainData";
 import { groundHeight, MAX_GROUND_HEIGHT } from "../model/terrain";
 import { makeWaterMaterial } from "./waterMaterial";
 import { MOSS_COLORS, mossMaterial } from "../assets/landscape/mosses";
-import { mossCarpet } from "../assets/landscape/mossCover";
+import { mossCarpet, mossCushions } from "../assets/landscape/mossCover";
 import { TERRAIN_POINTS, terrainPoint } from "../model/terrainData";
 
 function makeTerrain(env: Environment) {
@@ -116,19 +116,22 @@ export function Terrain({ environment: env }: { environment: Environment }) {
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     mesh.computeBoundingSphere();
   }, [stones, env.width, env.depth, env.substrate, env.terrain]);
-  const carpet = useMemo(() => {
+  const moss = useMemo(() => {
     const paint = env.terrain?.paint;
-    if (!paint) return undefined;
+    if (!paint) return [];
     const points = [];
     for (let index = 0; index < TERRAIN_POINTS; index++) {
       if (paint[index] !== "moss") continue;
       const { x, z } = terrainPoint(index, env);
-      const y = groundHeight(x, z, env);
-      // Underwater, the painted color stays but the cushions don't grow.
-      if (y > env.water) points.push(new THREE.Vector3(x, y, z));
+      points.push(new THREE.Vector3(x, groundHeight(x, z, env), z));
     }
-    return mossCarpet(points, randomFromSeed(31));
-  }, [env.width, env.depth, env.substrate, env.terrain, env.water]);
+    return mossCushions(points, randomFromSeed(31));
+  }, [env.width, env.depth, env.substrate, env.terrain]);
+  // Underwater, the painted color stays but the cushions don't grow. Water
+  // covers cushions from the lowest up, so how many stay dry names the set,
+  // and dragging the water level only remerges when the waterline crosses one.
+  const dry = moss.filter((cushion) => cushion.point.y > env.water);
+  const carpet = useMemo(() => mossCarpet(dry), [moss, dry.length]);
   const carpetSkin = useMemo(() => mossMaterial(), []);
   useEffect(
     () => () => {
@@ -137,6 +140,11 @@ export function Terrain({ environment: env }: { environment: Environment }) {
       carpet?.dispose();
     },
     [surface, skirt, carpet],
+  );
+  useEffect(
+    () => () =>
+      moss.forEach((cushion) => cushion.lumps.forEach((l) => l.dispose())),
+    [moss],
   );
   useEffect(() => () => carpetSkin.dispose(), [carpetSkin]);
   return (
@@ -180,9 +188,12 @@ export function Water({
         <group key={side}>
           <mesh
             position={[0, env.water / 2, side * (env.depth / 2 - 0.008)]}
+            // Unit-high planes scaled to the level, so dragging it doesn't
+            // rebuild their geometry every step.
+            scale={[1, env.water, 1]}
             renderOrder={3}
           >
-            <planeGeometry args={[env.width - 0.015, env.water]} />
+            <planeGeometry args={[env.width - 0.015, 1]} />
             <meshBasicMaterial
               color="#60adab"
               transparent
@@ -194,9 +205,10 @@ export function Water({
           <mesh
             position={[side * (env.width / 2 - 0.008), env.water / 2, 0]}
             rotation={[0, Math.PI / 2, 0]}
+            scale={[1, env.water, 1]}
             renderOrder={3}
           >
-            <planeGeometry args={[env.depth - 0.015, env.water]} />
+            <planeGeometry args={[env.depth - 0.015, 1]} />
             <meshBasicMaterial
               color="#60adab"
               transparent
