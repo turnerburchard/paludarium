@@ -12,6 +12,8 @@ const port = 5192;
 const presets = [
   { name: "cloud-forest", button: "Cloud forest" },
   { name: "alpine-creek", button: "Alpine creek" },
+  { name: "desert-spring", button: "Desert spring" },
+  { name: "limestone-grotto", button: "Limestone grotto" },
   { name: "aquarium", button: "Aquarium" },
 ];
 const viewports = [

@@ -253,7 +253,7 @@ try {
       ].includes(object.kind),
     ).length,
   );
-  await life.locator(".fish-list li", { hasText: "Cardinal tetra" }).waitFor();
+  await life.locator(".fish-list li", { hasText: "Convict cichlid" }).waitFor();
   await life.getByRole("button", { name: /Follow someone/ }).click();
   await page
     .getByRole("complementary", { name: "Watching", exact: true })
