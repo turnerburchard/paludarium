@@ -375,8 +375,8 @@ describe("live ecosystem behavior", () => {
       );
     }
   });
-  it.each(["tropical", "mountain"] as const)(
-    "lets every frog in the %s preset reach an insect colony",
+  it.each(["tropical", "mountain", "grotto", "desert"] as const)(
+    "lets every animal in the %s preset reach an insect colony",
     (preset) => {
       const engine = createWorldEcosystem(makePreset(preset));
       const colonies = new Set(engine.snapshot().food.map((p) => p.nodeId));
@@ -453,7 +453,12 @@ describe("insect colonies", () => {
 
 describe("preset habitats", () => {
   it("let every land animal reach the water", () => {
-    for (const preset of ["tropical", "mountain"] as const) {
+    for (const preset of [
+      "tropical",
+      "mountain",
+      "grotto",
+      "desert",
+    ] as const) {
       const engine = createWorldEcosystem(makePreset(preset));
       for (const animal of engine.snapshot().animals) {
         const routes = engine.graph.paths(

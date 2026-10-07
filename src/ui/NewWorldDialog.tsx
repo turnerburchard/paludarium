@@ -35,8 +35,16 @@ export function NewWorldDialog({
           <span aria-hidden="true">03</span>
           <strong>Alpine creek</strong>
         </button>
-        <button onClick={() => onPreset("aquarium")}>
+        <button onClick={() => onPreset("desert")}>
           <span aria-hidden="true">04</span>
+          <strong>Desert spring</strong>
+        </button>
+        <button onClick={() => onPreset("grotto")}>
+          <span aria-hidden="true">05</span>
+          <strong>Limestone grotto</strong>
+        </button>
+        <button onClick={() => onPreset("aquarium")}>
+          <span aria-hidden="true">06</span>
           <strong>Aquarium</strong>
         </button>
       </div>
