@@ -440,7 +440,8 @@ describe("insect colonies", () => {
     for (const patch of food) expect(patch.amount).toBe(patch.capacity);
   });
 
-  // This covers six simulated hours; allow for concurrent CI workers.
+  // Six simulated hours include body clearance against terrain and hardscape.
+  // Leave room for concurrent CI workers.
   it("can keep a frog fed without help in a planted tank", () => {
     const engine = createWorldEcosystem(makePreset("mountain"));
     run(engine, 3600);
@@ -449,7 +450,7 @@ describe("insect colonies", () => {
       .animals.filter((animal) => animal.speciesId === "canyon-tree-frog");
     expect(frogs).toHaveLength(1);
     expect(frogs[0].needs.hunger).toBeLessThan(0.8);
-  }, 20_000);
+  }, 120_000);
 });
 
 describe("preset habitats", () => {
@@ -628,9 +629,9 @@ describe("plant perches and species movement", () => {
     )!;
     expect(dropped.surface).toBe("ground");
     expect(dropped.needs).toEqual(animal.needs);
-    expect(dropped.position.y).toBeCloseTo(
-      groundHeight(dropped.position.x, dropped.position.z, removed.environment),
-    );
+    const ground = groundHeight(dropped.position.x, dropped.position.z, removed.environment);
+    expect(dropped.position.y).toBeGreaterThanOrEqual(ground);
+    expect(dropped.position.y).toBeLessThan(ground + 0.1);
     const moved = structuredClone(world);
     moved.objects[0].x = -2.5;
     const rerouted = createWorldEcosystem(moved, { world, engine });

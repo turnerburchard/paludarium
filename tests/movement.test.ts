@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Ecosystem } from "../src/simulation/engine";
 import { HabitatGraph } from "../src/simulation/navigation";
 import type {
@@ -48,6 +48,156 @@ function random(seed: number) {
 }
 
 describe("animal movement", () => {
+  it("keeps its backing direction while turning to leave a cramped spot", () => {
+    const graph = new HabitatGraph([
+      node("a", 0, 0, ["b"]),
+      node("b", 0.32, 0, ["a"]),
+    ]);
+    vi.spyOn(graph, "canTurn").mockImplementation(
+      (_node, facing, wanted) => wanted.x < 0 || facing.x < -0.5,
+    );
+    const animal = seed({ ...species, movement: "crawl", speed: 1 });
+    animal.direction = { x: 0, y: 0, z: 1 };
+    const engine = new Ecosystem(graph, [animal], {
+      speed: 1,
+      elapsed: 950,
+      random: () => 0.5,
+      food,
+    });
+    for (let i = 0; i < 80; i++) engine.advance(0.1);
+    expect(engine.getAnimal("frog")!.nodeId).toBe("b");
+    expect(engine.getAnimal("frog")!.needs.hunger).toBeLessThan(0.8);
+  });
+
+  it("rejects a transition that only fits while lifted above its landing spot", () => {
+    const graph = new HabitatGraph(
+      [
+        { ...node("a", 0, 0, ["b"]), surface: "stone", supportId: "rock" },
+        node("b", -0.32, 0, ["a"]),
+      ],
+      {
+        groundPose: (position) => ({
+          position: { ...position, y: 0 },
+          normal: { x: 0, y: 1, z: 0 },
+        }),
+        aboveGround: (position, normal) => ({
+          position: { ...position },
+          normal: { ...normal },
+        }),
+        onSurface: (position, normal) => ({
+          position: { ...position, y: 0.1 },
+          normal: { ...normal },
+        }),
+        fits: (position, _normal, direction) =>
+          position.y > 0.05 || direction.x > 0,
+      },
+    );
+    const profile = {
+      ...species,
+      body: {
+        min: { x: -0.01, y: 0, z: -0.01 },
+        max: { x: 0.01, y: 0.01, z: 0.01 },
+      },
+    };
+    expect(graph.canTravel(graph.node("a"), graph.node("b"), profile)).toBe(
+      false,
+    );
+    expect(
+      graph.canTravel(graph.node("a"), graph.node("b"), profile, false, true),
+    ).toBe(true);
+  });
+
+  it("lands a short step facing the direction that passed clearance", () => {
+    const geometry = {
+      groundPose: (position: { x: number; y: number; z: number }) => ({
+        position: { ...position },
+        normal: { x: 0, y: 1, z: 0 },
+      }),
+      aboveGround: (
+        position: { x: number; y: number; z: number },
+        normal: { x: number; y: number; z: number },
+      ) => ({ position: { ...position }, normal: { ...normal } }),
+      fits: (
+        position: { z: number },
+        _normal: unknown,
+        direction: { x: number; z: number },
+      ) =>
+        position.z > -0.0009 ||
+        (direction.z < 0 && Math.abs(direction.x) < 0.001),
+    };
+    const graph = new HabitatGraph(
+      [node("a", 0, 0, ["b"]), node("b", 0, -0.001, ["a"])],
+      geometry,
+    );
+    const animal = seed({
+      ...species,
+      movement: "crawl",
+      speed: 1,
+      body: {
+        min: { x: -0.01, y: 0, z: -0.01 },
+        max: { x: 0.01, y: 0.01, z: 0.01 },
+      },
+    });
+    animal.direction = { x: Math.sin(0.1), y: 0, z: -Math.cos(0.1) };
+    const engine = new Ecosystem(graph, [animal], {
+      speed: 1,
+      elapsed: 950,
+      random: () => 0.5,
+      food,
+    });
+    engine.advance(0.1);
+    const state = engine.getAnimal("frog")!;
+    expect(state.nodeId).toBe("b");
+    expect(geometry.fits(state.position, state.normal, state.direction)).toBe(
+      true,
+    );
+  });
+  it("backs out of a narrow passage instead of turning through its walls", () => {
+    const corridor = new HabitatGraph(
+      [node("a", 0, 0, ["b"]), { ...node("b", 0.32, 0, ["a"]), shelter: 1 }],
+      {
+        groundPose: (position, _direction, _body) => ({
+          position: { ...position },
+          normal: { x: 0, y: 1, z: 0 },
+        }),
+        aboveGround: (position, normal) => ({
+          position: { ...position },
+          normal: { ...normal },
+        }),
+        fits: (_position, _normal, direction) => Math.abs(direction.z) < 0.08,
+      },
+    );
+    const animal = {
+      ...seed({
+        ...species,
+        movement: "crawl",
+        speed: 0.2,
+        body: {
+          min: { x: -0.05, y: 0, z: -0.2 },
+          max: { x: 0.05, y: 0.1, z: 0.2 },
+        },
+      }),
+      nodeId: "b",
+    };
+    const engine = new Ecosystem(corridor, [animal], {
+      speed: 1,
+      elapsed: 950,
+      random: () => 0.5,
+      food: [{ nodeId: "a", amount: 5, capacity: 0 }],
+    });
+    let moved = false;
+    for (let i = 0; i < 200; i++) {
+      engine.advance(0.1);
+      const state = engine.getAnimal("frog")!;
+      expect(state.direction.x).toBeGreaterThan(0.99);
+      expect(Math.abs(state.direction.z)).toBeLessThan(0.08);
+      if (state.position.x < 0.3) moved = true;
+      if (state.nodeId === "a") break;
+    }
+    expect(moved).toBe(true);
+    expect(engine.getAnimal("frog")!.nodeId).toBe("a");
+  });
+
   it("does not abandon a route on an occupied shelter when no food is reachable", () => {
     const graph = new HabitatGraph([
       node("a", 0, 0, ["b"]),

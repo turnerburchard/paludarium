@@ -1,6 +1,11 @@
 import * as THREE from "three";
 import { assets, isAnimal } from "../assets";
-import { collisionShape, type CollisionFace } from "../assets/collisionShape";
+import {
+  collisionShape,
+  collisionTree as tree,
+  type CollisionFace,
+  type CollisionTree as Tree,
+} from "../assets/collisionShape";
 import type { Environment, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
 import { groundHeight, swimmingHeight } from "../model/terrain";
@@ -9,35 +14,9 @@ import type { Fish } from "./fish";
 const CLEARANCE = 0.015;
 export const SWIM_BOB = 0.025;
 
-interface Tree {
-  bounds: THREE.Box3;
-  faces?: CollisionFace[];
-  children?: [Tree, Tree];
-}
 interface Crossing {
   distance: number;
   side: number;
-}
-
-function tree(faces: CollisionFace[]): Tree {
-  const bounds = new THREE.Box3();
-  for (const face of faces) bounds.union(face.bounds);
-  if (faces.length <= 12) return { bounds, faces };
-  const size = bounds.getSize(new THREE.Vector3());
-  const axis =
-    size.x > size.y && size.x > size.z ? "x" : size.y > size.z ? "y" : "z";
-  faces.sort(
-    (a, b) =>
-      a.bounds.min[axis] +
-      a.bounds.max[axis] -
-      b.bounds.min[axis] -
-      b.bounds.max[axis],
-  );
-  const middle = Math.floor(faces.length / 2);
-  return {
-    bounds,
-    children: [tree(faces.slice(0, middle)), tree(faces.slice(middle))],
-  };
 }
 
 /** Fish-sized, oriented clearance against the actual leaves, branches and

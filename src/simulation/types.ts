@@ -19,9 +19,17 @@ export interface HabitatNode {
   perchHeight?: number;
   plantId?: string;
   supportId?: string;
+  shelterId?: string;
+}
+export interface BodyBounds {
+  min: Vec3;
+  max: Vec3;
+  parts?: readonly { min: Vec3; max: Vec3 }[];
 }
 export interface SpeciesProfile extends AnimalBehavior {
   id: string;
+  /** Adult-sized clearance remains safe as juveniles grow between habitat edits. */
+  body?: BodyBounds;
 }
 export interface Needs {
   hunger: number;
