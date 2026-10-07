@@ -342,11 +342,31 @@ try {
     .getByRole("complementary", { name: "Selected object" })
     .getByRole("heading", { name: "River stone", exact: true })
     .waitFor();
-  await page.locator("summary", { hasText: "Adjust size" }).waitFor();
+  await page.getByRole("button", { name: "New world", exact: true }).click();
+  await page.getByRole("dialog", { name: "Start a world" }).waitFor();
+  await page.keyboard.press("Backspace");
+  await page.keyboard.press("r");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(400);
+  assert.deepEqual(
+    await page.evaluate(
+      () => JSON.parse(localStorage.getItem("little-worlds:v1")).objects,
+    ),
+    world.objects,
+    "shortcuts don't edit the world behind an open dialog",
+  );
+  await page.locator("summary", { hasText: "Adjust size" }).focus();
+  await page.keyboard.press("Space");
+  assert.equal(
+    await page.getByRole("slider", { name: "Size", exact: true }).count(),
+    1,
+    "Space opens a focused disclosure",
+  );
+  await page.locator("summary", { hasText: "Adjust size" }).click();
   assert.equal(
     await page.getByRole("slider", { name: "Size", exact: true }).count(),
     0,
-    "rock size starts hidden",
+    "a second press closes it",
   );
   await page.locator("summary", { hasText: "Adjust size" }).click();
   const size = page.getByRole("slider", { name: "Size", exact: true });

@@ -112,7 +112,10 @@ try {
   await page.getByRole("button", { name: "Pause life (Space)" }).click();
   await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.getByRole("button", { name: "New world", exact: true }).click();
-  await page.getByRole("button", { name: /04\s*Aquarium/ }).click();
+  await page
+    .getByRole("dialog", { name: "Start a world" })
+    .getByRole("button", { name: "Aquarium", exact: true })
+    .click();
   await page.waitForFunction((key) => {
     const world = JSON.parse(localStorage.getItem(key));
     return world?.name === "Aquarium" && world.environment.water > 2;
@@ -216,13 +219,28 @@ try {
     ),
     original,
   );
+  const unreadable = await browser.newPage();
+  await unreadable.addInitScript((key) => {
+    // Seed once, so a reload can't hide an overwrite.
+    if (sessionStorage.getItem("seeded")) return;
+    sessionStorage.setItem("seeded", "yes");
+    localStorage.setItem(key, '{"version":1,"name":"Broken"');
+  }, storageKey);
+  await unreadable.goto(url);
+  await unreadable.waitForFunction(() => document.querySelector("canvas"));
+  await unreadable.waitForTimeout(600);
+  assert.equal(
+    await unreadable.evaluate((key) => localStorage.getItem(key), storageKey),
+    '{"version":1,"name":"Broken"',
+    "an unreadable save is not overwritten before the user edits",
+  );
   assert.deepEqual(
     errors,
     [],
     "production rendering and interactions have no runtime errors",
   );
   console.log(
-    `PASS (${Math.round((Date.now() - started) / 1000)}s): production bundle, minimal mobile View, aquarium, water Undo, persistent scene, preview image, share snapshot, safe adoption and Undo`,
+    `PASS (${Math.round((Date.now() - started) / 1000)}s): production bundle, minimal mobile View, aquarium, water Undo, persistent scene, preview image, share snapshot, safe adoption and Undo, unreadable save kept`,
   );
 } finally {
   await browser?.close();

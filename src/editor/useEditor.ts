@@ -9,6 +9,7 @@ import {
 } from "../model/schema";
 import {
   holdsUp,
+  keepStacked,
   replaceObject,
   restingOn,
   type Surface,
@@ -40,7 +41,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   const shown = preview?.base === world ? preview.world : world;
   const stroke = useRef<TerrainStroke | null>(null);
   const [tool, setTool] = useState<Tool>({ type: "select" });
-  const [selectedId, select] = useState<string | null>(null);
+  const [chosenId, select] = useState<string | null>(null);
   const [message, notify] = useState(initial.warning ?? "");
   const [saved, setSaved] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,20 +49,24 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   const [placementRotation, setPlacementRotation] = useState(0);
   const worldRef = useRef(world);
   worldRef.current = world;
-  const selected = world.objects.find((o) => o.id === selectedId) ?? null;
+  // Undo can take away the selected object.
+  const selected = world.objects.find((o) => o.id === chosenId) ?? null;
+  const selectedId = selected?.id ?? null;
   const commit = useCallback((next: World) => {
     setPreview(null);
     dispatch({ type: "commit", world: next });
   }, []);
   useEffect(() => {
-    if (isShared) return;
+    // An unreadable save stays in storage until the user starts over for real.
+    if (isShared || (initial.warning && history.present === initial.world))
+      return;
     setSaving(true);
     const timer = setTimeout(() => {
       setSaved(saveWorld(history.present));
       setSaving(false);
     }, 250);
     return () => clearTimeout(timer);
-  }, [history.present, isShared]);
+  }, [history.present, isShared, initial]);
   useEffect(() => {
     stroke.current = null;
     setPreview(null);
@@ -78,6 +83,10 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       stroke.current = null;
       return;
     }
+    // Moving or copying an object that undo may take away ends here.
+    setTool((tool) =>
+      tool.type === "move" || tool.type === "copy" ? { type: "select" } : tool,
+    );
     dispatch({ type });
   }, []);
   function beginTerrainStroke(x: number, z: number) {
@@ -140,11 +149,15 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   useEffect(() => {
     const keydown = (e: KeyboardEvent) => {
       const target = e.target instanceof Element ? e.target : null;
-      if (target?.closest("input,textarea,select,[contenteditable=true]"))
+      // An open dialog owns the keyboard; the world behind it stays as it is.
+      if (
+        target?.closest("input,textarea,select,[contenteditable=true]") ||
+        document.querySelector('[role="dialog"]')
+      )
         return;
       if (readOnly) {
         if (e.key === "Escape") select(null);
-        else if (e.code === "Space" && !target?.closest("button,a")) {
+        else if (e.code === "Space" && !target?.closest("button,a,summary")) {
           e.preventDefault();
           setPaused((p) => !p);
         }
@@ -166,8 +179,8 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
         !e.altKey
       )
         rotate(e.shiftKey ? -Math.PI / 6 : Math.PI / 6);
-      // Space on a focused button presses it; elsewhere it pauses life.
-      else if (e.code === "Space" && !target?.closest("button,a")) {
+      // Space on a focused control presses it; elsewhere it pauses life.
+      else if (e.code === "Space" && !target?.closest("button,a,summary")) {
         e.preventDefault();
         setPaused((p) => !p);
       }
@@ -333,12 +346,25 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
 }
 export type Editor = ReturnType<typeof useEditor>;
 
-function withEnvironment(world: World, patch: Partial<Environment>): World {
+export function withEnvironment(
+  world: World,
+  patch: Partial<Environment>,
+): World {
   const environment = { ...world.environment, ...patch };
+  // Stacked objects ride along with their supports into the new bounds.
+  let objects = world.objects;
+  for (const object of world.objects)
+    if (!object.support)
+      objects = replaceObject(
+        objects,
+        world.environment,
+        object.id,
+        fitObject(object, environment),
+      );
   return {
     ...world,
     environment,
-    objects: world.objects.map((o) => fitObject(o, environment)),
+    objects: keepStacked(objects, world.environment, environment),
   };
 }
 
