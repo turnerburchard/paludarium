@@ -21,13 +21,13 @@ export function makePreset(preset: Preset): World {
     moss?: MossSpecies,
   ) =>
     objects.push({
-      id: `preset-${++serial}`,
+      id: crypto.randomUUID(),
       kind,
       x,
       z,
       scale,
       rotation,
-      seed: serial * 173,
+      seed: ++serial * 173,
       ...(moss && { moss }),
     });
   if (preset === "aquarium") {
