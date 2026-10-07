@@ -170,7 +170,7 @@ try {
         if (type === "pointerup" || type === "pointercancel")
           captureTarget.releasePointerCapture = () => {};
         try {
-          canvas.dispatchEvent(event);
+          (wrongOffsets ? captureTarget : canvas).dispatchEvent(event);
         } finally {
           captureTarget.releasePointerCapture = release;
         }
@@ -194,8 +194,36 @@ try {
   }
   await bottomBar();
   let point = await spot(1.5, 0.8);
-  stage = "real aquarium tap";
+  stage = "real aquarium tap with container pointer capture";
+  await page.evaluate(async (url) => {
+    const { _roots } = await import(url);
+    const canvas = document.querySelector("canvas");
+    const surface = _roots.get(canvas).store.getState().controls.domElement;
+    surface.addEventListener(
+      "pointerup",
+      (event) => {
+        window.touchReleaseTarget =
+          event.target === surface ? "container" : "canvas";
+      },
+      { once: true },
+    );
+    canvas.addEventListener(
+      "pointerdown",
+      (event) => {
+        surface.setPointerCapture(event.pointerId);
+      },
+      { once: true },
+    );
+  }, fiberUrl);
   await page.touchscreen.tap(point.x, point.y);
+  // WebKit's tap driver retains the original target; its container routing is
+  // exercised explicitly by the next pointer sequence.
+  if (!safari)
+    assert.equal(
+      await page.evaluate(() => window.touchReleaseTarget),
+      "container",
+      "the real browser retargets the captured release to the scene container",
+    );
   await page.waitForFunction(
     () =>
       JSON.parse(localStorage.getItem("little-worlds:v1")).objects.length === 3,
@@ -204,7 +232,7 @@ try {
   assert.equal(
     (await saved()).objects.length,
     3,
-    "a real browser tap plants once in the aquarium",
+    "a real browser tap plants once even when the container captures its release",
   );
   assert.equal((await saved()).objects.at(-1).kind, "rotala");
   await bottomBar();
@@ -270,23 +298,12 @@ try {
         );
         await new Promise((resolve) => requestAnimationFrame(resolve));
       }
-      const touches = points.map(
-        (point) =>
-          new Touch({
-            identifier: point.id,
-            target: canvas,
-            clientX: point.x,
-            clientY: point.y,
-          }),
-      );
-      canvas.dispatchEvent(
-        new TouchEvent("touchmove", {
-          bubbles: true,
-          touches,
-          targetTouches: touches,
-          changedTouches: touches,
-        }),
-      );
+      // Safari exposes touch samples but does not allow constructing Touch.
+      const event = new Event("touchmove", { bubbles: true });
+      Object.defineProperty(event, "touches", {
+        value: points.map((point) => ({ clientX: point.x, clientY: point.y })),
+      });
+      canvas.dispatchEvent(event);
     }, points);
   }
 
