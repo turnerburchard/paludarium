@@ -103,14 +103,10 @@ try {
       .first()
       .waitFor({ state: "attached", timeout: 90000 });
     for (const preset of presets) {
+      await page.getByRole("button", { name: "Worlds", exact: true }).click();
       await page
-        .getByRole("button", { name: "My worlds", exact: true })
-        .click();
-      await page
-        .getByRole("button", { name: "New world", exact: true })
-        .click();
-      await page
-        .getByRole("dialog", { name: "Start a world" })
+        .getByRole("dialog", { name: "Worlds" })
+        .locator(".preset-options")
         .getByRole("button", { name: preset.button, exact: true })
         .click();
       await page.waitForTimeout(1500);

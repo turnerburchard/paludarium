@@ -644,12 +644,10 @@ try {
   await receiver.locator(".topbar").waitFor();
   assert.deepEqual(await receiverSaved(), sharedWorld);
   assert.equal(new URL(receiver.url()).hash, "");
-  await receiver
-    .getByRole("button", { name: "My worlds", exact: true })
-    .click();
+  await receiver.getByRole("button", { name: "Worlds", exact: true }).click();
   await receiver
     .getByRole("button", {
-      name: "My original habitat Open world",
+      name: "My original habitat",
       exact: true,
     })
     .click();

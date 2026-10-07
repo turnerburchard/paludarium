@@ -84,9 +84,20 @@ try {
     );
     await page.goto(url);
     await page.getByRole("button", { name: "Pause life (Space)" }).click();
+    await page.getByRole("button", { name: "Worlds", exact: true }).click();
+    assert.equal(await page.locator(".preset-options button").count(), 6);
+    await page
+      .getByRole("button", { name: "Close dialog", exact: true })
+      .click();
     const size = viewport.width > 760 ? "desktop" : "phone";
     await page.screenshot({ path: `/tmp/paludarium-worlds-${size}-view.png` });
     await page.getByRole("button", { name: "Build", exact: true }).click();
+    assert.equal(
+      await page
+        .getByRole("button", { name: /Redo/, includeHidden: true })
+        .isVisible(),
+      viewport.width > 760,
+    );
     assert.equal(
       await page
         .getByRole("button", { name: /Export|Import|New world/ })
@@ -98,13 +109,13 @@ try {
         .getByRole("textbox", { name: "World name", includeHidden: true })
         .fill("My creek");
     // Clicking the picker blurs rename and must flush the pending autosave before switching.
-    await page.getByRole("button", { name: "My worlds", exact: true }).click();
-    await page.getByRole("button", { name: "New world", exact: true }).click();
-    await page.getByRole("button", { name: "Aquarium", exact: true }).click();
-    await page.getByRole("button", { name: "My worlds", exact: true }).click();
+    await page.getByRole("button", { name: "Worlds", exact: true }).click();
     await page
-      .getByRole("button", { name: "My creek Open world", exact: true })
+      .locator(".preset-options")
+      .getByRole("button", { name: "Aquarium", exact: true })
       .click();
+    await page.getByRole("button", { name: "Worlds", exact: true }).click();
+    await page.getByRole("button", { name: "My creek", exact: true }).click();
     assert.equal(
       await page
         .getByRole("textbox", { name: "World name", includeHidden: true })
@@ -125,7 +136,7 @@ try {
       "My creek",
     );
     await page.screenshot({ path: `/tmp/paludarium-worlds-${size}-build.png` });
-    await page.getByRole("button", { name: "My worlds", exact: true }).click();
+    await page.getByRole("button", { name: "Worlds", exact: true }).click();
     await page.screenshot({
       path: `/tmp/paludarium-worlds-${size}-picker.png`,
     });
@@ -141,9 +152,7 @@ try {
       .click();
     const download = await downloadPromise;
     assert.equal(download.suggestedFilename(), "my-creek.json");
-    await page
-      .getByRole("button", { name: "Import file", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Import", exact: true }).click();
     await page.locator("input[type=file]").setInputFiles({
       name: "creek.json",
       mimeType: "application/json",
@@ -155,7 +164,7 @@ try {
       (key) => JSON.parse(localStorage.getItem(key)).worlds.length === 3,
       storageKey,
     );
-    await page.getByRole("button", { name: "My worlds", exact: true }).click();
+    await page.getByRole("button", { name: "Worlds", exact: true }).click();
     // A failed write must keep the current world and all saved entries intact.
     const before = await page.evaluate(
       (key) => localStorage.getItem(key),
@@ -168,12 +177,10 @@ try {
       };
     });
     await page
-      .getByRole("button", { name: "Aquarium Open world", exact: true })
+      .locator(".world-list")
+      .getByRole("button", { name: "Aquarium", exact: true })
       .click();
-    assert.equal(
-      await page.getByRole("dialog", { name: "My worlds" }).count(),
-      1,
-    );
+    assert.equal(await page.getByRole("dialog", { name: "Worlds" }).count(), 1);
     assert.equal(
       await page.evaluate((key) => localStorage.getItem(key), storageKey),
       before,
@@ -208,6 +215,26 @@ try {
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await page.getByRole("button", { name: "View", exact: true }).click();
+    await page.getByRole("button", { name: "Worlds", exact: true }).click();
+    await page
+      .locator(".world-list")
+      .getByRole("button", { name: "Aquarium", exact: true })
+      .click();
+    await page.getByRole("button", { name: "Worlds", exact: true }).click();
+    await page
+      .locator(".preset-options")
+      .getByRole("button", { name: "Cloud forest", exact: true })
+      .click();
+    await page.getByRole("button", { name: "Worlds", exact: true }).click();
+    assert.equal(await page.locator(".world-list .saved-world").count(), 3);
+    assert.equal(
+      await page
+        .locator(".world-list")
+        .getByRole("button", { name: "Aquarium", exact: true })
+        .count(),
+      1,
+    );
+    await page.getByRole("button", { name: "My creek", exact: true }).click();
     await page
       .getByRole("button", { name: "Share this world", exact: true })
       .click();

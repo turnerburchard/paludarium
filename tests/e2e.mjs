@@ -59,10 +59,10 @@ try {
     "Aquarium",
     "first visit opens on a finished habitat",
   );
-  await page.getByRole("button", { name: "My worlds", exact: true }).click();
-  await page.getByRole("button", { name: "New world", exact: true }).click();
+  await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "Start a world" })
+    .getByRole("dialog", { name: "Worlds" })
+    .locator(".preset-options")
     .getByRole("button", { name: "Empty tank", exact: true })
     .click();
   await page
@@ -206,10 +206,10 @@ try {
     .getByRole("complementary", { name: "Watching" })
     .waitFor({ state: "detached" });
   await page.getByRole("button", { name: "Build", exact: true }).click();
-  await page.getByRole("button", { name: "My worlds", exact: true }).click();
-  await page.getByRole("button", { name: "New world", exact: true }).click();
+  await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "Start a world" })
+    .getByRole("dialog", { name: "Worlds" })
+    .locator(".preset-options")
     .getByRole("button", { name: "Cloud forest", exact: true })
     .click();
   world = await saved();
@@ -271,7 +271,7 @@ try {
     .click();
   await page.getByRole("button", { name: "Build", exact: true }).click();
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "My worlds", exact: true }).click();
+  await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page
     .getByRole("button", { name: /^Options for/ })
     .last()

@@ -18,7 +18,7 @@ export class SceneBoundary extends Component<
         <strong>The scene could not start.</strong>
         <p>
           Try reloading in a browser with WebGL enabled. You can still export
-          your saved world from My worlds.
+          your saved world from Worlds.
         </p>
       </div>
     ) : (
