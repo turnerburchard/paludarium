@@ -38,7 +38,7 @@ function build(random: () => number) {
 
 /** A thin strap that rises nearly straight, leaning more the higher it gets,
  * with a slow twist so the faces catch the light differently. */
-function ribbon(
+export function ribbon(
   base: THREE.Vector3,
   heading: number,
   length: number,
