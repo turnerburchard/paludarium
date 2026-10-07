@@ -451,6 +451,21 @@ try {
     .getByRole("button", { name: "Stop watching", exact: true })
     .click();
   console.log("Checking watch return, auto-orbit and manual navigation");
+  async function watchFrog() {
+    // Life is running here, so the frog can move behind foliage between
+    // projecting its position and clicking. Scene picking is covered above;
+    // use the stable creature picker to set up the camera-return checks.
+    await page
+      .getByRole("button", { name: "About Paludarium", exact: true })
+      .click();
+    await page.locator("summary", { hasText: "Follow a creature" }).click();
+    await page
+      .getByRole("dialog", { name: "About Paludarium" })
+      .getByRole("button", { name: /Red-eyed tree frog/ })
+      .click();
+    await page.getByRole("complementary", { name: "Watching" }).waitFor();
+  }
+
   async function cameraState() {
     return page.evaluate(async (url) => {
       const { _roots } = await import(url);
@@ -458,11 +473,24 @@ try {
         .get(document.querySelector("canvas"))
         .store.getState();
       return {
+        position: controls.object.position.toArray(),
         minDistance: controls.minDistance,
         target: controls.target.toArray(),
         angle: controls.getAzimuthalAngle(),
         autoRotate: controls.autoRotate,
       };
+    }, fiberUrl);
+  }
+  async function waitForCloseUp() {
+    await waitForScene(async (url) => {
+      const { _roots } = await import(url);
+      const { controls } = _roots
+        .get(document.querySelector("canvas"))
+        .store.getState();
+      return (
+        controls.minDistance === 1 &&
+        controls.object.position.distanceTo(controls.target) < 2.5
+      );
     }, fiberUrl);
   }
   async function waitForCameraReturn(autoRotate = false) {
@@ -492,14 +520,13 @@ try {
     "View auto-orbits again",
   );
   const home = await cameraState();
-  await clickObject("frog");
-  await page.getByRole("complementary", { name: "Watching" }).waitFor();
+  await watchFrog();
   assert.equal(
     (await cameraState()).autoRotate,
     false,
     "following suspends auto-orbit",
   );
-  await page.waitForTimeout(1200);
+  await waitForCloseUp();
   // Clicking empty space ends a watch, just like the reported sequence.
   await page.mouse.click(15, 400);
   await page
@@ -561,9 +588,8 @@ try {
     "the finished return no longer pulls against panning",
   );
 
-  await clickObject("frog");
-  await page.getByRole("complementary", { name: "Watching" }).waitFor();
-  await page.waitForTimeout(800);
+  await watchFrog();
+  await waitForCloseUp();
   await page.keyboard.press("Escape");
   await page.keyboard.down("d");
   await waitForCameraReturn(true);
@@ -582,27 +608,43 @@ try {
     ),
     "interrupting the return leaves the user in control",
   );
-  await clickObject("frog");
-  await page.getByRole("complementary", { name: "Watching" }).waitFor();
-  await page.waitForTimeout(800);
+  await watchFrog();
+  await waitForCloseUp();
+  // Hold the short return animation between browser commands so even a
+  // slow renderer tests a drag during the return, not after it has finished.
+  await page.evaluate(async (url) => {
+    const { _roots } = await import(url);
+    _roots
+      .get(document.querySelector("canvas"))
+      .store.getState()
+      .setFrameloop("never");
+  }, fiberUrl);
   const beforeDrag = await cameraState();
   await page
     .getByRole("button", { name: "Stop watching", exact: true })
     .click();
+  await page.evaluate(async (url) => {
+    const { _roots } = await import(url);
+    const state = _roots.get(document.querySelector("canvas")).store.getState();
+    for (let frame = 1; frame <= 4; frame++) state.advance(frame / 60);
+  }, fiberUrl);
   await waitForScene(
-    async ({ url, target }) => {
+    async ({ url, target, position }) => {
       const { _roots } = await import(url);
       const { controls } = _roots
         .get(document.querySelector("canvas"))
         .store.getState();
       return (
         controls.minDistance === 1 &&
-        controls.target
+        (controls.target
           .toArray()
-          .some((value, i) => Math.abs(value - target[i]) > 0.02)
+          .some((value, i) => Math.abs(value - target[i]) > 0.02) ||
+          controls.object.position
+            .toArray()
+            .some((value, i) => Math.abs(value - position[i]) > 0.02))
       );
     },
-    { url: fiberUrl, target: beforeDrag.target },
+    { url: fiberUrl, target: beforeDrag.target, position: beforeDrag.position },
   );
   await page.mouse.move(330, 360);
   await page.mouse.down();
@@ -614,6 +656,13 @@ try {
     4,
     "dragging also releases a returning camera",
   );
+  await page.evaluate(async (url) => {
+    const { _roots } = await import(url);
+    _roots
+      .get(document.querySelector("canvas"))
+      .store.getState()
+      .setFrameloop("always");
+  }, fiberUrl);
   await page.waitForTimeout(500);
   assert.ok(
     (await cameraState()).target.every(
