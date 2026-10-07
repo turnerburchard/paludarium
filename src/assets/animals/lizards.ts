@@ -103,7 +103,7 @@ export const chuckwalla: AssetDefinition = {
   scientificName: "Sauromalus ater",
   category: "Animals",
   description:
-    "A big, easygoing desert lizard with a black front and a rusty tail. It basks on rocks and grazes on flowers and leaves.",
+    "A big, easygoing desert lizard with a dark body and a rusty tail. It basks on rocks and grazes on flowers and leaves.",
   radius: 0.45,
   habitat: "land",
   behavior: {
@@ -286,26 +286,26 @@ function paintTigerSalamander(
   return new THREE.Color("#3a3d29");
 }
 
-/** A black head and shoulders that fade through a ragged, speckled band
- * into a rusty body, paling to tan down the tail, and a grey belly. */
+/** A dark body from head to hips, flecked with grey, and a rusty orange
+ * tail that pales toward the tip, as on a male. */
 function paintChuckwalla(source: string, at: THREE.Vector3, flecks: number) {
   if (source === EYE) return new THREE.Color("#16130f");
   if (source === TOES) return new THREE.Color("#3a3430");
   const noise = Math.sin(at.x * 240 + at.z * 210 + flecks) * 0.5 + 0.5;
-  // How far back from the dark forequarters, with a ragged edge.
-  const fade = THREE.MathUtils.smoothstep(
-    at.z + (noise - 0.5) * 0.16,
-    -0.3,
-    0.22,
+  // Where the tail begins behind the hips, with a ragged edge.
+  const tail = THREE.MathUtils.smoothstep(
+    at.z + (noise - 0.5) * 0.06,
+    0.08,
+    0.17,
   );
   if (source === UNDERSIDE)
-    return new THREE.Color("#3c3833").lerp(new THREE.Color("#8f877a"), fade);
+    return new THREE.Color("#3c3833").lerp(new THREE.Color("#a08a6c"), tail);
   if (source !== BACK)
     throw new Error(`Unexpected chuckwalla color ${source}.`);
-  const body = new THREE.Color("#9a5a33").lerp(
-    new THREE.Color("#b89a72"),
-    THREE.MathUtils.smoothstep(at.z, 0.1, 0.38),
+  const orange = new THREE.Color("#a8653a").lerp(
+    new THREE.Color("#c4a074"),
+    THREE.MathUtils.smoothstep(at.z, 0.2, 0.4),
   );
-  const tone = new THREE.Color("#2e2925").lerp(body, fade);
-  return noise > 0.9 ? tone.lerp(new THREE.Color("#c9b99c"), 0.35) : tone;
+  const tone = new THREE.Color("#2e2925").lerp(orange, tail);
+  return noise > 0.9 ? tone.lerp(new THREE.Color("#8b8378"), 0.4) : tone;
 }
