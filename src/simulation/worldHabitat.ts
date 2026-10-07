@@ -56,8 +56,6 @@ export function buildHabitat(world: World): HabitatGraph {
       const x = -env.width / 2 + margin + (ix * (env.width - 2 * margin)) / nx;
       const z = -env.depth / 2 + margin + (iz * (env.depth - 2 * margin)) / nz;
       const y = groundHeight(x, z, env);
-      // Shallow shoreline is reachable; open/deep water is not a frog walking surface.
-      if (env.water - y > 0.025) continue;
       if (surfaces.blocksGround(x, z, clearance)) continue;
       const shelter = shelters.reduce(
         (best, o) =>
@@ -76,6 +74,8 @@ export function buildHabitat(world: World): HabitatGraph {
         normal: { x: 0, y: 1, z: 0 },
         surface: "ground",
         wet: env.water > 0 && y <= env.water + 0.065,
+        // Shallow shoreline is dry enough for land animals.
+        submerged: env.water - y > 0.025,
         shelter,
         neighbors: [],
       };
@@ -112,6 +112,7 @@ export function buildHabitat(world: World): HabitatGraph {
   // Wall ladders start on dry boundary cells, with an explicit bridge to the glass.
   // No ladder crosses a pond; non-climbing species cannot enter these nodes.
   for (const ground of [...nodes]) {
+    if (ground.submerged) continue;
     const [ix, iz] = ground.id.split(":").slice(1).map(Number);
     const sides: Array<{
       tag: string;
@@ -213,6 +214,7 @@ export function buildHabitat(world: World): HabitatGraph {
     anchors
       .filter(
         (node) =>
+          !node.submerged &&
           distance(node.position, point) <= range &&
           Math.abs(node.position.y - point.y) <= 0.18,
       )

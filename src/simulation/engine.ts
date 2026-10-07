@@ -274,10 +274,12 @@ export class Ecosystem {
     if (!agent.profile.grazes)
       needs.hunger = clamp(needs.hunger + STEP * HUNGER_RATE);
     // Cover holds in humidity, so a sheltered animal dries out more slowly.
+    // Animals that live underwater never dry out.
     const cover = this.graph.node(state.nodeId).shelter;
-    needs.hydration = clamp(
-      needs.hydration - STEP * HYDRATION_RATE * (1 - 0.6 * cover),
-    );
+    if (agent.profile.water !== "lives")
+      needs.hydration = clamp(
+        needs.hydration - STEP * HYDRATION_RATE * (1 - 0.6 * cover),
+      );
     // Walking costs energy by distance, so slow walkers aren't worn out by
     // the time a trip takes.
     needs.energy = clamp(

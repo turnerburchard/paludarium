@@ -15,7 +15,7 @@ export const vampireCrab: AssetDefinition = {
   group: "Invertebrates",
   biomes: ["Tropical"],
   description:
-    "A tiny purple land crab with bright yellow eyes that hides by day and picks at the ground at night.",
+    "A tiny purple land crab with bright yellow eyes that hides by day, picks at the ground at night, and wanders into shallow water.",
   radius: 0.21,
   habitat: "land",
   behavior: {
@@ -24,6 +24,7 @@ export const vampireCrab: AssetDefinition = {
     speed: 0.05,
     movement: "scurry",
     restsOn: ["stone", "bark"],
+    water: "visits",
   },
   build: (random) =>
     buildSkinned(crabModel, paintVampireCrab, random, CRAB_EYE),
