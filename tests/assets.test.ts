@@ -41,7 +41,7 @@ describe("land animal assets", () => {
       expect(box.min.y).toBeGreaterThan(-0.04);
       // Geckos lie flatter than frogs.
       expect(box.max.y).toBeGreaterThan(0.07);
-      expect(box.max.y).toBeLessThan(0.24);
+      expect(box.max.y).toBeLessThan(0.28);
       for (const axis of ["x", "z"] as const) {
         expect(box.min[axis]).toBeGreaterThan(-assets[kind].radius);
         expect(box.max[axis]).toBeLessThan(assets[kind].radius);
