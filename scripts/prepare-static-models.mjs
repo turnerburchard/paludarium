@@ -162,6 +162,25 @@ const MODELS = [
     solid: true,
   },
   {
+    // "Mushroom" by Сергей Тиньков, poly.pizza/m/1CZoDfdfHl_, CC-BY 3.0.
+    source: "docs/inspiration/models/mushroom-tinkov.glb",
+    out: "src/assets/landscape/bolete.json",
+    height: 0.24,
+  },
+  {
+    // "Mushroom" by jeremy, poly.pizza/m/2DAaKHD48ZP, CC-BY 3.0.
+    source: "docs/inspiration/models/mushroom-jeremy.glb",
+    out: "src/assets/landscape/flyAgaric.json",
+    height: 0.3,
+  },
+  {
+    // "Mushroom" by Quaternius, poly.pizza/m/aOW08oSrd4, CC0.
+    source: "docs/inspiration/models/mushroom-quaternius.glb",
+    out: "src/assets/landscape/bonnetMushrooms.json",
+    width: 0.42,
+    roles: { clump: "a38f80" },
+  },
+  {
     // "Dead Tree Trunk" by Zsky, poly.pizza/m/HdJ7JoEvKR, CC-BY 3.0.
     source: "docs/inspiration/models/dead-tree-zsky.glb",
     out: "src/assets/landscape/deadTree.json",

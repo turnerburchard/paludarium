@@ -90,6 +90,9 @@ export const assetKinds = [
   "dead-tree",
   "ludwigia",
   "dwarf-sagittaria",
+  "bolete",
+  "fly-agaric",
+  "bonnet-mushrooms",
 ] as const;
 export type AssetKind = (typeof assetKinds)[number];
 export const MAX_OBJECTS = 120;
