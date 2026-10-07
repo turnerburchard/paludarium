@@ -445,10 +445,55 @@ try {
       y: box.y + ((1 - point.y) * box.height) / 2,
     };
   }, fiberUrl);
-  await page.mouse.click(spot.x, spot.y);
+  const touchSession = await page.context().newCDPSession(page);
+  async function touch(type, points) {
+    await touchSession.send("Input.dispatchTouchEvent", {
+      type,
+      touchPoints: points,
+    });
+  }
+  async function placementCamera() {
+    return page.evaluate(async (url) => {
+      const { _roots } = await import(url);
+      const { camera, controls } = _roots
+        .get(document.querySelector("canvas"))
+        .store.getState();
+      return { position: camera.position.toArray(), enabled: controls.enabled };
+    }, fiberUrl);
+  }
+  const beforeTouch = await placementCamera();
+  assert.equal(beforeTouch.enabled, false, "placement owns the gesture");
+  const finger = { x: spot.x, y: spot.y, id: 0 };
+  await touch("touchStart", [finger]);
+  await touch("touchMove", [{ ...finger, x: finger.x + 45 }]);
+  await touch("touchMove", [finger]);
+  await touch("touchEnd", []);
+  assert.equal(
+    await page.evaluate(
+      () => JSON.parse(localStorage.getItem("little-worlds:v1")).objects.length,
+    ),
+    1,
+    "a drag returning to its start does not place anything",
+  );
+  assert.deepEqual(
+    (await placementCamera()).position,
+    beforeTouch.position,
+    "dragging during placement leaves the camera still",
+  );
+  await touch("touchStart", [finger]);
+  await touch("touchCancel", []);
+  await page.touchscreen.tap(spot.x, spot.y);
   await page.waitForFunction(
     () =>
       JSON.parse(localStorage.getItem("little-worlds:v1")).objects.length === 2,
+  );
+  await page.waitForTimeout(200);
+  assert.equal(
+    await page.evaluate(
+      () => JSON.parse(localStorage.getItem("little-worlds:v1")).objects.length,
+    ),
+    2,
+    "a tap after cancellation places exactly once, including its compatibility click",
   );
   const rotation = await page.evaluate(
     () =>
@@ -460,6 +505,11 @@ try {
     "the placed object saves the chosen angle",
   );
   await page.getByRole("button", { name: "Done", exact: true }).click();
+  assert.equal(
+    (await placementCamera()).enabled,
+    true,
+    "Done restores camera navigation",
+  );
   await page.getByRole("button", { name: "View", exact: true }).click();
   await page.screenshot({ path: "/tmp/paludarium-view-phone.png" });
   await page.close();

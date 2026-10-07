@@ -51,7 +51,7 @@ export function BottomHud({ editor }: { editor: Editor }) {
             <span>
               {tool.type === "terrain"
                 ? "Drag to brush · Escape to finish"
-                : "Tap a spot in the tank · drag to orbit"}
+                : "Tap a spot to place · Finish to move the camera"}
             </span>
           </div>
           {tool.type !== "terrain" && <PlacementRotation editor={editor} />}
