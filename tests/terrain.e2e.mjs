@@ -179,15 +179,6 @@ try {
   );
 
   await page.getByRole("button", { name: "Paint sand", exact: true }).click();
-  assert.ok(
-    await page
-      .getByText(
-        "Cover the ground with sand color without changing its height.",
-        { exact: true },
-      )
-      .isVisible(),
-    "the selected brush explains its effect",
-  );
   const sand = await point(-1.75, 0);
   await page.mouse.click(sand.x, sand.y);
   const painted = await saved();

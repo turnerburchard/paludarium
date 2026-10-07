@@ -7,7 +7,6 @@ import "./TerrainControls.css";
 export function TerrainControls({ editor }: { editor: Editor }) {
   const [radius, setRadius] = useState(0.65);
   const brush = editor.tool.type === "terrain" ? editor.tool : null;
-  const selected = terrainTools.find(({ mode }) => mode === brush?.mode);
   return (
     <section className="terrain-controls" aria-label="Landscape brushes">
       <div className="section-label">SHAPE YOUR LANDSCAPE</div>
@@ -25,17 +24,13 @@ export function TerrainControls({ editor }: { editor: Editor }) {
                 mode,
                 radius,
               });
-              editor.notify(`${label}. ${description}`);
+              editor.notify(label);
             }}
           >
             {label}
           </button>
         ))}
       </div>
-      <p className="terrain-note" aria-live="polite">
-        {selected?.description ??
-          "Choose a brush to shape or paint the ground."}
-      </p>
       <RangeControl
         label="Brush size"
         value={brush?.radius ?? radius}
