@@ -1,3 +1,4 @@
+import { createObjectId } from "./objectId";
 import {
   defaultEnvironment,
   AQUARIUM_WATER,
@@ -21,7 +22,7 @@ export function makePreset(preset: Preset): World {
     moss?: MossSpecies,
   ) =>
     objects.push({
-      id: crypto.randomUUID(),
+      id: createObjectId(),
       kind,
       x,
       z,
