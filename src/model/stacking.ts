@@ -83,6 +83,35 @@ function carried(
   };
 }
 
+/** Keeps stacked objects at their height on their supports when the ground
+ * under them changes, as it does when sculpting or resizing the tank. */
+export function keepStacked(
+  objects: HabitatObject[],
+  before: Environment,
+  after: Environment,
+): HabitatObject[] {
+  const byId = new Map(objects.map((o) => [o.id, o]));
+  const settled = new Map<string, HabitatObject>();
+  // Supports settle first, so a whole stack keeps its shape.
+  const settle = (object: HabitatObject): HabitatObject => {
+    const done = settled.get(object.id);
+    if (done) return done;
+    const support = object.support && byId.get(object.support);
+    let result = object;
+    if (support) {
+      const height = objectBase(object, before) - objectBase(support, before);
+      const base = objectBase(settle(support), after) + height;
+      result = {
+        ...object,
+        lift: Math.max(0, base - groundHeight(object.x, object.z, after)),
+      };
+    }
+    settled.set(object.id, result);
+    return result;
+  };
+  return objects.map(settle);
+}
+
 /** Whether `lower` holds up `upper`, directly or through things stacked
  * between them. */
 export function holdsUp(

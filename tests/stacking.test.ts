@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { defaultEnvironment, type HabitatObject } from "../src/model/schema";
+import {
+  defaultEnvironment,
+  emptyWorld,
+  type HabitatObject,
+} from "../src/model/schema";
 import { objectBase, replaceObject } from "../src/model/stacking";
+import { groundHeight } from "../src/model/terrain";
+import { TerrainStroke } from "../src/editor/terrainStroke";
+import { withEnvironment } from "../src/editor/useEditor";
 
 const env = { ...defaultEnvironment, water: 0 };
 const object = (
@@ -82,5 +89,53 @@ describe("stacked objects", () => {
     const b = object("b", 0.1, 0, { support: "a", lift: 0.2 });
     const moved = replaceObject([a, b], env, "a", { ...a, x: 0.5 });
     expect(find(moved, "b").x).toBeCloseTo(0.6);
+  });
+});
+
+describe("stacked objects when the ground changes", () => {
+  it("stay on their support through a sculpting stroke", () => {
+    const base = { ...emptyWorld(), environment: env };
+    const stack = [
+      object("rock", 1, 0, { scale: 1.5 }),
+      {
+        ...object("fern", 1.3, 0, { kind: "fern" }),
+        support: "rock",
+        lift: 0.3,
+      },
+    ];
+    const stroke = new TerrainStroke(
+      { ...base, objects: stack },
+      { mode: "raise", radius: 0.5 },
+    );
+    stroke.dab(1.5, 0);
+    const result = stroke.dab(1.7, 0);
+    const height = (objects: HabitatObject[], e: typeof env) =>
+      objectBase(find(objects, "fern"), e) -
+      objectBase(find(objects, "rock"), e);
+    expect(groundHeight(1.3, 0, result.environment)).not.toBeCloseTo(
+      groundHeight(1, 0, result.environment),
+    );
+    expect(height(result.objects, result.environment)).toBeCloseTo(
+      height(stack, env),
+    );
+  });
+  it("move with their support when a smaller tank pulls it in", () => {
+    const log = object("log", 3.2, 0, { kind: "log" });
+    const fern = object("fern", 3.3, 0, {
+      kind: "fern",
+      support: "log",
+      lift: 0.2,
+    });
+    const world = { ...emptyWorld(), environment: env, objects: [log, fern] };
+    const smaller = withEnvironment(world, { width: 5 });
+    const [newLog, newFern] = ["log", "fern"].map((id) =>
+      find(smaller.objects, id),
+    );
+    expect(newLog.x).toBeLessThan(2.5);
+    expect(newFern.x - newLog.x).toBeCloseTo(0.1);
+    expect(
+      objectBase(newFern, smaller.environment) -
+        objectBase(newLog, smaller.environment),
+    ).toBeCloseTo(objectBase(fern, env) - objectBase(log, env));
   });
 });
