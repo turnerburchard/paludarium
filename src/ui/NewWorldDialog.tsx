@@ -26,17 +26,14 @@ export function NewWorldDialog({
         <button onClick={() => onPreset("empty")}>
           <span>01</span>
           <strong>Empty tank</strong>
-          <small>A blank canvas, a bank, and a pond.</small>
         </button>
         <button onClick={() => onPreset("tropical")}>
           <span>02</span>
           <strong>Cloud forest</strong>
-          <small>Monstera, bromeliads, and curious frogs.</small>
         </button>
         <button onClick={() => onPreset("mountain")}>
           <span>03</span>
           <strong>Alpine creek</strong>
-          <small>Weathered stone and wild strawberries.</small>
         </button>
         <button onClick={() => onPreset("aquarium")}>
           <span>04</span>
