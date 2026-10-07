@@ -6,6 +6,7 @@ import {
   TANK_HEIGHT,
   emptyWorld,
   MAX_OBJECTS,
+  type World,
 } from "../src/model/schema";
 import { makePreset } from "../src/model/presets";
 import {
@@ -73,6 +74,15 @@ describe("safe files and valid habitat", () => {
         ).toBeNull();
     },
   );
+  it("gives every new preset its own objects, so life starts fresh", () => {
+    const ids = (world: World) => world.objects.map((o) => o.id);
+    const first = ids(makePreset("tropical"));
+    for (const id of [
+      ...ids(makePreset("tropical")),
+      ...ids(makePreset("mountain")),
+    ])
+      expect(first).not.toContain(id);
+  });
   it("explains files that aren't JSON at all", () => {
     expect(() => parseWorld("hello")).toThrow(
       "This file isn't a Paludarium terrarium.",
