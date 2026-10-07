@@ -7,7 +7,8 @@ export const cryptocoryne: AssetDefinition = {
   kind: "cryptocoryne",
   name: "Water trumpet",
   scientificName: "Cryptocoryne cordata",
-  category: "Plants",
+  group: "Aquatic plants",
+  biomes: ["Tropical"],
   description:
     "Wavy bronze-green leaves with rosy undersides, from the slow forest streams of Southeast Asia. Grows above or below water.",
   radius: 0.24,

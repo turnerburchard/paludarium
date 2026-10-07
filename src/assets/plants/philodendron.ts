@@ -12,7 +12,8 @@ export const philodendron: AssetDefinition = {
   kind: "philodendron",
   name: "Climbing philodendron",
   scientificName: "Philodendron hederaceum",
-  category: "Plants",
+  group: "Leafy plants",
+  biomes: ["Tropical"],
   description:
     "A heartleaf vine on a cork pole. Frogs climb it to the big upper leaves.",
   radius: 0.3,

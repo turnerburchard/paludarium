@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { assets } from "../assets";
+import { assets, isAnimal } from "../assets";
 import { collisionShape, type CollisionFace } from "../assets/collisionShape";
 import type { Environment, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
@@ -66,7 +66,7 @@ export class SwimSpace {
     const faces: CollisionFace[] = [];
     for (const object of world.objects) {
       const asset = assets[object.kind];
-      if (asset.category === "Animals") {
+      if (isAnimal(object.kind)) {
         if (!asset.swims) continue;
         const bounds = collisionShape(object).bounds.clone();
         bounds.min.multiplyScalar(object.scale);

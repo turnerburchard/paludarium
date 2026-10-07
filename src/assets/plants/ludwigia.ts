@@ -5,7 +5,8 @@ export const ludwigia: AssetDefinition = {
   kind: "ludwigia",
   name: "Red ludwigia",
   scientificName: "Ludwigia repens",
-  category: "Plants",
+  group: "Aquatic plants",
+  biomes: ["Tropical", "Temperate"],
   description:
     "Sturdy stems of broad, glossy leaves, olive below and deep coppery red toward the light.",
   radius: 0.24,

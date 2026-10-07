@@ -7,7 +7,8 @@ export const spruce: AssetDefinition = {
   kind: "spruce",
   name: "Blue spruce seedling",
   scientificName: "Picea pungens",
-  category: "Plants",
+  group: "Leafy plants",
+  biomes: ["Temperate"],
   description:
     "A young spruce, stiff and silvery blue-green, growing in tiers along a mountain stream.",
   radius: 0.3,

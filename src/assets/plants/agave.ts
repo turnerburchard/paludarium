@@ -7,7 +7,8 @@ export const agave: AssetDefinition = {
   kind: "agave",
   name: "Desert agave",
   scientificName: "Agave deserti",
-  category: "Plants",
+  group: "Cacti & succulents",
+  biomes: ["Desert"],
   description:
     "A tight rosette of thick, blue-grey leaves, each tipped with a dark spine.",
   radius: 0.32,

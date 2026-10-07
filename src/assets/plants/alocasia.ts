@@ -6,7 +6,8 @@ export const alocasia: AssetDefinition = {
   kind: "alocasia",
   name: "Elephant ear",
   scientificName: "Alocasia odora",
-  category: "Plants",
+  group: "Leafy plants",
+  biomes: ["Tropical"],
   description:
     "Tall stalks holding up huge, dark arrow-shaped leaves along shady Asian forest streams.",
   radius: 0.4,

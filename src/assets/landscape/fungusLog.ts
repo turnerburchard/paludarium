@@ -5,7 +5,8 @@ import fungusLogModel from "./fungusLog.json";
 export const fungusLog: AssetDefinition = {
   kind: "fungus-log",
   name: "Fungus log",
-  category: "Landscape",
+  group: "Wood",
+  biomes: ["Tropical", "Temperate"],
   description:
     "A solid fallen log, slowly rotting, with shelf fungus stepping up its side. Insects breed beneath it.",
   radius: 0.58,

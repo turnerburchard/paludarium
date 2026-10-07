@@ -8,7 +8,8 @@ export const bolete: AssetDefinition = {
   kind: "bolete",
   name: "King bolete",
   scientificName: "Boletus edulis",
-  category: "Plants",
+  group: "Mushrooms",
+  biomes: ["Temperate"],
   description:
     "A stout mushroom with a glossy brown cap on a fat white stem, pushing up through the needles under conifers.",
   radius: 0.13,
@@ -24,7 +25,8 @@ export const flyAgaric: AssetDefinition = {
   kind: "fly-agaric",
   name: "Fly agaric",
   scientificName: "Amanita muscaria",
-  category: "Plants",
+  group: "Mushrooms",
+  biomes: ["Temperate"],
   description:
     "The classic toadstool: a scarlet cap flecked with white, on a pale stem. Beautiful and poisonous.",
   radius: 0.16,
@@ -45,7 +47,8 @@ export const bonnetMushrooms: AssetDefinition = {
   kind: "bonnet-mushrooms",
   name: "Bonnet mushrooms",
   scientificName: "Mycena galericulata",
-  category: "Plants",
+  group: "Mushrooms",
+  biomes: ["Tropical", "Temperate"],
   description:
     "A damp clump of slender grey-brown mushrooms with little bell-shaped caps, growing from rotting wood and leaf litter.",
   radius: 0.21,

@@ -6,7 +6,8 @@ import type { AssetDefinition } from "../types";
 export const fish: AssetDefinition = {
   kind: "fish",
   name: "Pond fish",
-  category: "Animals",
+  group: "Fish",
+  biomes: ["Tropical", "Temperate"],
   description: "A small golden fish that cruises the open water.",
   radius: 0.18,
   habitat: "water",

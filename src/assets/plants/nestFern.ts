@@ -8,7 +8,8 @@ export const nestFern: AssetDefinition = {
   kind: "nest-fern",
   name: "Bird's nest fern",
   scientificName: "Asplenium nidus",
-  category: "Plants",
+  group: "Leafy plants",
+  biomes: ["Tropical"],
   description:
     "Glossy, wavy fronds rising from a central nest. Frogs climb out along them.",
   radius: 0.45,

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { AssetKind } from "../model/schema";
-import { buildAsset, catalog, disposeAsset } from "../assets";
+import { buildAsset, catalog, disposeAsset, isAnimal } from "../assets";
 
 export type Thumbnails = Partial<Record<AssetKind, string>>;
 
@@ -66,7 +66,7 @@ async function renderThumbnails(
           new THREE.Vector3(
             radius * 0.65,
             radius * 0.5,
-            asset.category === "Animals" ? -radius : radius,
+            isAnimal(asset.kind) ? -radius : radius,
           ),
         );
       camera.lookAt(center);

@@ -9,7 +9,7 @@ import {
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import type { Editor } from "../editor/useEditor";
-import { assets } from "../assets";
+import { assets, isAnimal } from "../assets";
 import { useWatchVisibility } from "./useWatchVisibility";
 import {
   boundedPosition,
@@ -129,7 +129,7 @@ function Scene({
     point: THREE.Vector3;
     intersections: THREE.Intersection[];
   }) {
-    if (!kind || assets[kind].category === "Animals") return { point: e.point };
+    if (!kind || isAnimal(kind)) return { point: e.point };
     for (const hit of e.intersections) {
       const object = world.objects.find((o) => o.id === objectIdOf(hit.object));
       if (!object) return { point: hit.point };

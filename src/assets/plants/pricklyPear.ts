@@ -6,7 +6,8 @@ export const pricklyPear: AssetDefinition = {
   kind: "prickly-pear",
   name: "Prickly pear",
   scientificName: "Opuntia engelmannii",
-  category: "Plants",
+  group: "Cacti & succulents",
+  biomes: ["Desert"],
   description:
     "Flat, spiny pads stacked on one another, edged with yellow flowers and purple fruit.",
   radius: 0.34,

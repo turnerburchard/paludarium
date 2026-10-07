@@ -5,7 +5,8 @@ import type { AssetDefinition } from "../types";
 export const grass: AssetDefinition = {
   kind: "grass",
   name: "Sedge",
-  category: "Plants",
+  group: "Grasses",
+  biomes: ["Tropical", "Temperate", "Desert"],
   description: "Soft grassy tufts for the edge of the water.",
   radius: 0.24,
   habitat: "land",

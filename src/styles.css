@@ -267,6 +267,9 @@ button:hover:not(:disabled) {
   color: var(--accent);
   border-bottom-color: var(--accent);
 }
+.category-tabs button.filtered {
+  color: var(--accent);
+}
 .asset-grid {
   padding: 0 18px;
   display: grid;
@@ -686,6 +689,63 @@ button:hover:not(:disabled) {
 .preset-options small {
   font-size: 12px;
   color: #a8bd99;
+}
+.filter-heading {
+  font-size: 12px;
+  font-weight: 600;
+  color: #a8bd99;
+  margin: 22px 0 10px;
+}
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.filter-chips button {
+  background: #2b4330;
+  border: 1px solid #455f3c;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: #d6e1c9;
+}
+.filter-chips button.active {
+  background: #d1e6a5;
+  border-color: #d1e6a5;
+  color: var(--ink);
+}
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 26px;
+}
+.filter-actions button {
+  border: 1px solid #455f3c;
+  background: transparent;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 13px;
+  color: #d6e1c9;
+}
+.filter-actions button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--ink);
+}
+.library-empty {
+  font-size: 12px;
+  text-align: center;
+  color: #99ae91;
+  margin: 12px 18px;
+}
+.library-empty button {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  text-decoration: underline;
+  padding: 0;
+  font-size: inherit;
 }
 .modal dl {
   margin: 25px 0;

@@ -1,9 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Leaf, Mountain, Bird, Plus } from "lucide-react";
-import { catalog, type Category } from "../assets";
+import { Leaf, Mountain, Bird, Plus, ListFilter } from "lucide-react";
+import {
+  catalog,
+  categoryOf,
+  groupCategories,
+  livesIn,
+  type Category,
+  type Group,
+} from "../assets";
 import type { Editor } from "../editor/useEditor";
 import { loadThumbnails, type Thumbnails } from "../scene/thumbnails";
 import { MAX_GROUND_HEIGHT } from "../model/terrain";
+import { LibraryFilter, type Place } from "./LibraryFilter";
 const categories: { name: Category; icon: typeof Leaf }[] = [
   { name: "Plants", icon: Leaf },
   { name: "Landscape", icon: Mountain },
@@ -35,9 +43,30 @@ export function Library({
       editor.world.environment.water <= MAX_GROUND_HEIGHT ||
       (asset.habitat !== "land" && !asset.soil),
   );
-  const activeCategory = available.some((asset) => asset.category === category)
+  const activeCategory = available.some(
+    (asset) => categoryOf(asset) === category,
+  )
     ? category
-    : available[0]?.category;
+    : available[0] && categoryOf(available[0]);
+  const [filtering, setFiltering] = useState(false);
+  const [places, setPlaces] = useState<Place[]>([]);
+  // Chosen groups from other tabs are kept for when the person comes back.
+  const [chosenGroups, setChosenGroups] = useState<Group[]>([]);
+  const groups = [...new Set(available.map((asset) => asset.group))].filter(
+    (group) => groupCategories[group] === activeCategory,
+  );
+  const activeGroups = chosenGroups.filter((group) => groups.includes(group));
+  const shown = available.filter(
+    (asset) =>
+      categoryOf(asset) === activeCategory &&
+      (places.length === 0 || places.some((place) => livesIn(asset, place))) &&
+      (activeGroups.length === 0 || activeGroups.includes(asset.group)),
+  );
+  const filterCount = places.length + activeGroups.length;
+  const clearFilters = () => {
+    setPlaces([]);
+    setChosenGroups([]);
+  };
   const grid = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!visible) return;
@@ -67,13 +96,19 @@ export function Library({
       controller.abort();
       observer.disconnect();
     };
-  }, [activeCategory, editor.world.environment.water, visible]);
+  }, [
+    activeCategory,
+    editor.world.environment.water,
+    visible,
+    places,
+    chosenGroups,
+  ]);
   return (
     <>
       <div className="category-tabs" aria-label="Object categories">
         {categories
           .filter(({ name }) =>
-            available.some((asset) => asset.category === name),
+            available.some((asset) => categoryOf(asset) === name),
           )
           .map(({ name, icon: Icon }) => (
             <button
@@ -86,33 +121,64 @@ export function Library({
               <span>{name}</span>
             </button>
           ))}
+        <button
+          className={filterCount ? "filtered" : ""}
+          onClick={() => setFiltering(true)}
+          aria-label="Filter objects"
+        >
+          <ListFilter size={17} />
+          <span>{filterCount ? `Filter · ${filterCount}` : "Filter"}</span>
+        </button>
       </div>
+      {filtering && (
+        <LibraryFilter
+          groups={groups}
+          chosenPlaces={places}
+          chosenGroups={activeGroups}
+          onTogglePlace={(place) => setPlaces(toggle(places, place))}
+          onToggleGroup={(group) =>
+            setChosenGroups(toggle(chosenGroups, group))
+          }
+          onClear={clearFilters}
+          onClose={() => setFiltering(false)}
+        />
+      )}
+      {shown.length === 0 && (
+        <p className="library-empty">
+          Nothing here matches.{" "}
+          <button onClick={clearFilters}>Clear filters</button>
+        </p>
+      )}
       <div className="asset-grid" ref={grid}>
-        {available
-          .filter((a) => a.category === activeCategory)
-          .map((asset) => (
-            <button
-              key={asset.kind}
-              data-kind={asset.kind}
-              className={`asset-card ${editor.tool.type === "place" && editor.tool.kind === asset.kind ? "chosen" : ""}`}
-              onClick={() => editor.choose(asset.kind)}
-              title={asset.description}
-              aria-pressed={
-                editor.tool.type === "place" && editor.tool.kind === asset.kind
-              }
-            >
-              <span className="asset-picture">
-                {thumbnails[asset.kind] && (
-                  <img src={thumbnails[asset.kind]} alt="" draggable={false} />
-                )}
-                <span className="asset-add">
-                  <Plus size={13} />
-                </span>
+        {shown.map((asset) => (
+          <button
+            key={asset.kind}
+            data-kind={asset.kind}
+            className={`asset-card ${editor.tool.type === "place" && editor.tool.kind === asset.kind ? "chosen" : ""}`}
+            onClick={() => editor.choose(asset.kind)}
+            title={asset.description}
+            aria-pressed={
+              editor.tool.type === "place" && editor.tool.kind === asset.kind
+            }
+          >
+            <span className="asset-picture">
+              {thumbnails[asset.kind] && (
+                <img src={thumbnails[asset.kind]} alt="" draggable={false} />
+              )}
+              <span className="asset-add">
+                <Plus size={13} />
               </span>
-              <span className="asset-name">{asset.name}</span>
-            </button>
-          ))}
+            </span>
+            <span className="asset-name">{asset.name}</span>
+          </button>
+        ))}
       </div>
     </>
   );
+}
+
+function toggle<T>(items: T[], item: T): T[] {
+  return items.includes(item)
+    ? items.filter((other) => other !== item)
+    : [...items, item];
 }

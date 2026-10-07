@@ -6,7 +6,8 @@ import type { AssetDefinition } from "../types";
 export const leafLitter: AssetDefinition = {
   kind: "leaf-litter",
   name: "Leaf litter",
-  category: "Landscape",
+  group: "Wood",
+  biomes: ["Tropical", "Temperate"],
   description:
     "A drift of fallen leaves. Insects breed beneath it and frogs hunt over it.",
   radius: 0.45,

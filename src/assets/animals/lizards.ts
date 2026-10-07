@@ -6,7 +6,8 @@ export const gecko: AssetDefinition = {
   kind: "gecko",
   name: "Gold dust day gecko",
   scientificName: "Phelsuma laticauda",
-  category: "Animals",
+  group: "Reptiles",
+  biomes: ["Tropical"],
   description:
     "A bright green day gecko flecked with gold, quick on glass and broad leaves.",
   radius: 0.45,
@@ -25,7 +26,8 @@ export const leopardLizard: AssetDefinition = {
   kind: "leopard-lizard",
   name: "Long-nosed leopard lizard",
   scientificName: "Gambelia wislizenii",
-  category: "Animals",
+  group: "Reptiles",
+  biomes: ["Desert"],
   description:
     "A sandy desert lizard dotted with dark spots, a fast sprinter that hunts in the open.",
   radius: 0.45,
@@ -44,7 +46,8 @@ export const desertSpinyLizard: AssetDefinition = {
   kind: "desert-spiny-lizard",
   name: "Desert spiny lizard",
   scientificName: "Sceloporus magister",
-  category: "Animals",
+  group: "Reptiles",
+  biomes: ["Desert"],
   description:
     "A heavy, spiny-scaled lizard, dark with yellow bands and a black collar, that climbs rock and wood to bask.",
   radius: 0.45,
@@ -63,7 +66,8 @@ export const fenceLizard: AssetDefinition = {
   kind: "fence-lizard",
   name: "Plateau fence lizard",
   scientificName: "Sceloporus tristichus",
-  category: "Animals",
+  group: "Reptiles",
+  biomes: ["Temperate", "Desert"],
   description:
     "A grey-brown mountain lizard with pale side stripes, dark chevrons and a blue-washed belly, quick up rock and bark.",
   radius: 0.45,
@@ -82,7 +86,8 @@ export const tigerSalamander: AssetDefinition = {
   kind: "tiger-salamander",
   name: "Western tiger salamander",
   scientificName: "Ambystoma mavortium",
-  category: "Animals",
+  group: "Amphibians",
+  biomes: ["Temperate"],
   description:
     "A stout, slow salamander, dark olive blotched with yellow. It spends the day under logs and stones and hunts at night.",
   radius: 0.45,
@@ -101,7 +106,8 @@ export const chuckwalla: AssetDefinition = {
   kind: "chuckwalla",
   name: "Common chuckwalla",
   scientificName: "Sauromalus ater",
-  category: "Animals",
+  group: "Reptiles",
+  biomes: ["Desert"],
   description:
     "A big, easygoing desert lizard with a dark body and a rusty tail. It basks on rocks and grazes on flowers and leaves.",
   radius: 0.45,

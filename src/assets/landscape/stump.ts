@@ -8,7 +8,8 @@ import stumpModel from "./stump.json";
 export const stump: AssetDefinition = {
   kind: "stump",
   name: "Mossy stump",
-  category: "Landscape",
+  group: "Wood",
+  biomes: ["Tropical", "Temperate"],
   description:
     "The rotting stump of a fallen tree, its hollow top filled with moss. Insects breed in the soft wood.",
   radius: 0.4,

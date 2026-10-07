@@ -5,7 +5,8 @@ import treeRootsModel from "./treeRoots.json";
 export const treeRoots: AssetDefinition = {
   kind: "tree-roots",
   name: "Tree roots",
-  category: "Landscape",
+  group: "Wood",
+  biomes: ["Tropical"],
   description:
     "The fallen base of a sunken tree, its dark roots spread over the bottom where small fish weave between them.",
   radius: 0.55,

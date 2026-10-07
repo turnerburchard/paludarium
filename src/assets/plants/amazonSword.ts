@@ -7,7 +7,8 @@ export const amazonSword: AssetDefinition = {
   kind: "amazon-sword",
   name: "Amazon sword",
   scientificName: "Echinodorus grisebachii",
-  category: "Plants",
+  group: "Aquatic plants",
+  biomes: ["Tropical"],
   description:
     "A broad rosette of long, sword-shaped leaves that anchors a planted pool.",
   radius: 0.4,

@@ -7,7 +7,8 @@ export const begonia: AssetDefinition = {
   kind: "begonia",
   name: "Painted begonia",
   scientificName: "Begonia rex",
-  category: "Plants",
+  group: "Leafy plants",
+  biomes: ["Tropical"],
   description:
     "Broad, lopsided leaves splashed with silver and edged in deep red, from shady limestone forests.",
   radius: 0.3,

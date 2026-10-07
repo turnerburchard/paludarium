@@ -6,7 +6,8 @@ export const waterLily: AssetDefinition = {
   kind: "water-lily",
   name: "Water lily",
   scientificName: "Nymphaea",
-  category: "Plants",
+  group: "Aquatic plants",
+  biomes: ["Tropical", "Temperate"],
   description:
     "A round pad and a pink flower that float on still water, giving fish shade below.",
   radius: 0.3,

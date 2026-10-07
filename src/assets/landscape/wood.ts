@@ -5,7 +5,8 @@ import type { AssetDefinition } from "../types";
 export const wood: AssetDefinition = {
   kind: "wood",
   name: "Driftwood",
-  category: "Landscape",
+  group: "Wood",
+  biomes: ["Tropical", "Temperate"],
   description: "A branching piece of wood for the forest floor.",
   radius: 0.52,
   habitat: "either",

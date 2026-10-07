@@ -7,7 +7,8 @@ export const anubias: AssetDefinition = {
   kind: "anubias",
   name: "Anubias",
   scientificName: "Anubias barteri",
-  category: "Plants",
+  group: "Aquatic plants",
+  biomes: ["Tropical"],
   description:
     "Tough, dark leaves on a creeping rhizome. Grows above or below water, and is happiest tied onto wood or stone.",
   radius: 0.28,

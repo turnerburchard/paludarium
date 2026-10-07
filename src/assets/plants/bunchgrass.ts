@@ -6,7 +6,8 @@ export const bunchgrass: AssetDefinition = {
   kind: "bunchgrass",
   name: "Indian ricegrass",
   scientificName: "Achnatherum hymenoides",
-  category: "Plants",
+  group: "Grasses",
+  biomes: ["Desert"],
   description:
     "A dry, wiry bunchgrass whose airy seed heads catch the light over sand.",
   radius: 0.22,

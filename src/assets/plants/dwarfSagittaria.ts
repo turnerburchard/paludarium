@@ -7,7 +7,8 @@ export const dwarfSagittaria: AssetDefinition = {
   kind: "dwarf-sagittaria",
   name: "Dwarf sagittaria",
   scientificName: "Sagittaria subulata",
-  category: "Plants",
+  group: "Aquatic plants",
+  biomes: ["Tropical", "Temperate"],
   description:
     "Little grassy rosettes that spread by runners into a low carpet across the pool floor.",
   radius: 0.34,

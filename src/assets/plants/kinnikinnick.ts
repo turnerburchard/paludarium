@@ -7,7 +7,8 @@ export const kinnikinnick: AssetDefinition = {
   kind: "kinnikinnick",
   name: "Kinnikinnick",
   scientificName: "Arctostaphylos uva-ursi",
-  category: "Plants",
+  group: "Leafy plants",
+  biomes: ["Temperate"],
   description:
     "A low, trailing mat of small glossy leaves and red berries that covers rocky mountain ground.",
   radius: 0.34,

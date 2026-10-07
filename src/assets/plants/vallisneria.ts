@@ -6,7 +6,8 @@ export const vallisneria: AssetDefinition = {
   kind: "vallisneria",
   name: "Eelgrass",
   scientificName: "Vallisneria spiralis",
-  category: "Plants",
+  group: "Aquatic plants",
+  biomes: ["Tropical", "Temperate"],
   description:
     "Tall ribbon leaves that rise from the pool floor and bend over near the surface.",
   radius: 0.26,

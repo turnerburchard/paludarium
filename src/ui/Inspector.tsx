@@ -31,7 +31,7 @@ export function Inspector({
       </div>
       <details className="more-options object-about">
         <summary>
-          About this {asset.category === "Animals" ? "animal" : "object"}
+          About this {isAnimal(asset.kind) ? "animal" : "object"}
         </summary>
         {asset.scientificName && (
           <p className="species-name">{asset.scientificName}</p>

@@ -5,7 +5,8 @@ import type { AssetDefinition } from "../types";
 export const rock: AssetDefinition = {
   kind: "rock",
   name: "River stone",
-  category: "Landscape",
+  group: "Stone",
+  biomes: ["Tropical", "Temperate", "Desert"],
   description:
     "Weathered stone. Vary its size and turn for a natural arrangement.",
   radius: 0.42,

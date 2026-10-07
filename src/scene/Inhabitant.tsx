@@ -2,7 +2,14 @@ import type { EcosystemController } from "../simulation/useEcosystem";
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
-import { assets, buildAsset, disposeAsset, isLandAnimal } from "../assets";
+import {
+  assets,
+  buildAsset,
+  categoryOf,
+  disposeAsset,
+  isAnimal,
+  isLandAnimal,
+} from "../assets";
 import type { AssetKind, Environment, HabitatObject } from "../model/schema";
 import { groundHeight, swimmingHeight } from "../model/terrain";
 import { objectBase } from "../model/stacking";
@@ -174,7 +181,7 @@ export function Inhabitant({
       const tail = model.getObjectByName("tail");
       if (tail) tail.rotation.y = Math.sin(t * swims.speed * 40) * 0.35;
       swimming?.update(undefined, paused ? 0 : dt);
-    } else if (assets[object.kind].category === "Plants") {
+    } else if (categoryOf(assets[object.kind]) === "Plants") {
       group.rotation.z = Math.sin(t * 0.7 + object.seed) * 0.012;
     }
   });
@@ -182,7 +189,7 @@ export function Inhabitant({
     <group
       ref={root}
       userData={{
-        plant: assets[object.kind].category === "Plants",
+        plant: categoryOf(assets[object.kind]) === "Plants",
         objectId: object.id,
       }}
       position={[object.x, baseY, object.z]}
@@ -191,7 +198,7 @@ export function Inhabitant({
       onClick={onSelect}
     >
       <primitive object={model} />
-      {assets[object.kind].category === "Animals" && !ghost && (
+      {isAnimal(object.kind) && !ghost && (
         <mesh position={[0, 0.15, 0]}>
           <sphereGeometry args={[0.29, 10, 8]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />

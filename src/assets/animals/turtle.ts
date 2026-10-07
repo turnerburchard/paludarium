@@ -6,7 +6,8 @@ export const turtle: AssetDefinition = {
   kind: "turtle",
   name: "Painted wood turtle",
   scientificName: "Rhinoclemmys pulcherrima",
-  category: "Animals",
+  group: "Reptiles",
+  biomes: ["Tropical"],
   description:
     "A slow, domed forest turtle that browses fallen fruit and leaves on the ground.",
   radius: 0.28,
@@ -33,7 +34,8 @@ export const desertTortoise: AssetDefinition = {
   kind: "desert-tortoise",
   name: "Desert tortoise",
   scientificName: "Gopherus agassizii",
-  category: "Animals",
+  group: "Reptiles",
+  biomes: ["Desert"],
   description:
     "A patient, sand-colored tortoise that grazes on grasses and cactus flowers and rests out the heat in the shade.",
   radius: 0.28,

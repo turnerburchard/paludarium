@@ -63,9 +63,7 @@ describe("slow animal life cycles", () => {
     expect(habitatSupport(world).plants).toBe(0);
   });
   it.each(
-    catalog
-      .filter((asset) => asset.category === "Animals")
-      .map((asset) => asset.kind),
+    catalog.filter((asset) => isAnimal(asset.kind)).map((asset) => asset.kind),
   )("lets a healthy %s pair have a juvenile of their own species", (kind) => {
     const world = habitat([kind, kind]);
     const next = advanceLife(world, 5, () => 0.5);

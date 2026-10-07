@@ -1,4 +1,4 @@
-import { assets, isAnimal } from "../assets";
+import { assets, categoryOf, isAnimal } from "../assets";
 import { plantCondition } from "../model/plants";
 import { randomFromSeed } from "../model/random";
 import { placementProblem } from "../model/terrain";
@@ -35,7 +35,7 @@ export function habitatSupport(world: World) {
   const plants = world.objects.filter((o) => {
     const asset = assets[o.kind];
     const planted =
-      asset.category === "Plants" ||
+      categoryOf(asset) === "Plants" ||
       asset.soil !== undefined ||
       o.kind === "java-moss";
     return (
