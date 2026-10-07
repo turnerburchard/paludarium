@@ -137,6 +137,101 @@ describe("live ecosystem behavior", () => {
     expect(engine.getAnimal("frog")!.needs.hydration).toBeGreaterThan(0.4);
     expect(engine.snapshot().food[0].amount).toBe(5);
   });
+  it("waits beside a busy shoreline for its turn", () => {
+    const graph = new HabitatGraph([
+      node("a", 0, ["b"]),
+      node("b", 0.2, ["a", "shore"]),
+      node("shore", 0.4, ["b"], { wet: true }),
+    ]);
+    const thirsty = { hunger: 0.1, hydration: 0.1, energy: 0.8 };
+    const engine = new Ecosystem(
+      graph,
+      [
+        { ...seed("soaking", thirsty), nodeId: "shore" },
+        seed("waiting", thirsty),
+      ],
+      { speed: 1, elapsed: 0, random: () => 0.5 },
+    );
+    run(engine, 3);
+    expect(engine.getAnimal("soaking")!.activity).toBe("bathing");
+    expect(engine.getAnimal("waiting")!.nodeId).toBe("b");
+    expect(engine.getAnimal("waiting")!.reason).toBe(
+      "Waiting for a turn at the water",
+    );
+    run(engine, 60);
+    expect(engine.getAnimal("waiting")!.needs.hydration).toBeGreaterThan(0.4);
+  });
+  it("sets off for distant water early enough to arrive before drying out", () => {
+    const graph = new HabitatGraph([
+      node("a", 0, ["b"]),
+      node("b", 1.5, ["a", "shore"]),
+      node("shore", 3, ["b"], { wet: true }),
+    ]);
+    const needs = { hunger: 0.1, hydration: 0.5, energy: 0.8 };
+    const animal = (speed: number) => {
+      const engine = new Ecosystem(
+        graph,
+        [{ ...seed("frog", needs), species: { ...species, speed } }],
+        { speed: 1, elapsed: 0, random: () => 0.5 },
+      );
+      run(engine, 1);
+      return engine.getAnimal("frog")!.activity;
+    };
+    expect(animal(0.012)).toBe("seeking-water");
+    expect(animal(0.2)).not.toBe("seeking-water");
+  });
+  it("dries out more slowly under cover", () => {
+    const loss = (shelter: number) => {
+      const graph = new HabitatGraph([node("a", 0, [], { shelter })]);
+      const engine = new Ecosystem(graph, [seed()], { speed: 1, elapsed: 0 });
+      run(engine, 100);
+      return 0.8 - engine.getAnimal("frog")!.needs.hydration;
+    };
+    expect(loss(1)).toBeCloseTo(loss(0) * 0.4, 6);
+  });
+  it("spends the same energy on a walk however slowly it goes", () => {
+    const walk = (speed: number) => {
+      const graph = new HabitatGraph([
+        node("a", 0, ["b"]),
+        node("b", 1, ["a"]),
+      ]);
+      const engine = new Ecosystem(
+        graph,
+        [{ ...seed(), species: { ...species, speed } }],
+        {
+          speed: 1,
+          elapsed: 0,
+          food: [{ nodeId: "b", amount: 5, capacity: 0 }],
+        },
+      );
+      let seconds = 0;
+      while (engine.getAnimal("frog")!.nodeId !== "b") {
+        run(engine, 0.1);
+        seconds += 0.1;
+      }
+      // Leave out what any waking second costs.
+      return 0.8 - engine.getAnimal("frog")!.needs.energy - seconds * 0.0007;
+    };
+    // Starting and stopping blur the comparison a little.
+    expect(walk(0.05)).toBeCloseTo(walk(0.2), 2);
+  });
+  it("stays in its shelter once settled rather than shuffling between spots", () => {
+    const graph = new HabitatGraph([
+      node("a", 0, ["b"], { shelter: 1 }),
+      node("b", 0.2, ["a"], { shelter: 1 }),
+    ]);
+    // Each decision rolls high for the other shelter.
+    let flip = 0.99;
+    const engine = new Ecosystem(
+      graph,
+      [{ ...seed(), species: { ...species, nocturnal: true } }],
+      { speed: 1, elapsed: 0, random: () => (flip = 0.99 - flip) },
+    );
+    for (let i = 0; i < 300; i++) {
+      run(engine, 1);
+      expect(engine.getAnimal("frog")!.nodeId).toBe("a");
+    }
+  });
   it("rests nocturnal frogs during day and diurnal frogs during night", () => {
     const graph = new HabitatGraph([node("a", 0, [], { shelter: 1 })]);
     const animal = seed("frog", { hunger: 0.1, hydration: 0.8, energy: 0.7 });
@@ -354,6 +449,24 @@ describe("insect colonies", () => {
     expect(frogs).toHaveLength(1);
     expect(frogs[0].needs.hunger).toBeLessThan(0.8);
   }, 20_000);
+});
+
+describe("preset habitats", () => {
+  it("let every land animal reach the water", () => {
+    for (const preset of ["tropical", "mountain"] as const) {
+      const engine = createWorldEcosystem(makePreset(preset));
+      for (const animal of engine.snapshot().animals) {
+        const routes = engine.graph.paths(
+          animal.nodeId,
+          frogProfile(animal.speciesId as AssetKind),
+        );
+        const shore = [...routes.keys()].filter(
+          (id) => engine.graph.node(id).wet,
+        );
+        expect(shore, `${preset} ${animal.speciesId}`).not.toHaveLength(0);
+      }
+    }
+  });
 });
 
 describe("insects across edits", () => {
