@@ -217,6 +217,8 @@ function cloudForest(add: Add, objects: HabitatObject[]) {
     [2.4, 0.55, 1.25],
   ])
     add("convict-cichlid", x, z, 1, turn);
+  add("bonnet-mushrooms", -0.4, 0.5, 1, 0.6);
+  add("bonnet-mushrooms", -2.75, 1.75, 0.9, 2);
   return objects;
 }
 
@@ -259,6 +261,9 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
   add("sculpin", 2.55, -1.1, 1, 0.5);
   add("scree", 0.3, 0.55, 1, 0.8);
   add("flagstone", 0.6, -0.15, 1, 2.1);
+  // A fly agaric under the spruce and a bolete out on the bank.
+  add("fly-agaric", -2.6, 1.75, 1, 0.4);
+  add("bolete", -0.4, 0.85, 1, 1.8);
   return objects;
 }
 
@@ -300,6 +305,8 @@ function limestoneGrotto(add: Add, objects: HabitatObject[]) {
       4.5,
     );
   add("limestone-pinnacle", 1.0, -1.2, 0.9, 0.6, "java");
+  add("bonnet-mushrooms", -2.75, 1.45, 1, 1.1);
+  add("bonnet-mushrooms", -1.25, 1.75, 0.85, 2.7);
   return objects;
 }
 
