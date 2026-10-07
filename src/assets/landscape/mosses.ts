@@ -154,7 +154,7 @@ export function dome(
   roughness = 0.12,
   detail = 2,
 ) {
-  const geometry = new THREE.IcosahedronGeometry(1, detail).toNonIndexed();
+  const geometry = new THREE.IcosahedronGeometry(1, detail);
   const position = geometry.getAttribute("position");
   const phase = random() * 10;
   for (let i = 0; i < position.count; i++) {
