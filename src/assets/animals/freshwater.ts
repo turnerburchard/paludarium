@@ -213,6 +213,239 @@ export const corydoras: AssetDefinition = {
     }),
 };
 
+export const cutthroatTrout: AssetDefinition = {
+  kind: "cutthroat-trout",
+  name: "Cutthroat trout",
+  scientificName: "Oncorhynchus clarkii",
+  category: "Animals",
+  description:
+    "A young mountain trout, olive and black-spotted with a red slash under the jaw. It holds in the current and darts after drifting insects.",
+  radius: 0.25,
+  habitat: "water",
+  swims: { speed: 0.32, depth: 0.3 },
+  build: () =>
+    fish({
+      length: 0.32,
+      depth: 0.04,
+      width: 0.026,
+      sections: [
+        [-1, 0.35, 0.45],
+        [-0.7, 0.8, 0.8],
+        [-0.25, 1, 1],
+        [0.25, 0.9, 0.85],
+        [0.7, 0.5, 0.5],
+        [1, 0.28, 0.3],
+      ],
+      paint: (y, z, speck) => {
+        if (y < -0.45 && z < -0.6) return "#c8392b";
+        if (y < -0.4) return "#e6dcc4";
+        // Black spots crowd toward the tail.
+        if (speck < 0.04 + Math.max(0, z) * 0.12) return "#1f2120";
+        if (y > 0.3) return "#5a6236";
+        return y > -0.1 ? "#9a9a64" : "#c99a86";
+      },
+      tail: "forked",
+      fin: "#8a8458",
+      fins: (d, h) => [
+        [
+          [0, d * 0.9, -0.3 * h],
+          [0, d * 2, -0.05 * h],
+          [0, d * 0.9, 0.1 * h],
+        ],
+        // The small fleshy adipose fin of trout and salmon.
+        [
+          [0, d * 0.6, 0.55 * h],
+          [0, d * 1.1, 0.68 * h],
+          [0, d * 0.5, 0.75 * h],
+        ],
+        [
+          [0, -d * 0.8, 0.3 * h],
+          [0, -d * 1.7, 0.5 * h],
+          [0, -d * 0.7, 0.6 * h],
+        ],
+      ],
+    }),
+};
+
+export const sculpin: AssetDefinition = {
+  kind: "sculpin",
+  name: "Mottled sculpin",
+  scientificName: "Cottus bairdii",
+  category: "Animals",
+  description:
+    "A big-headed, mottled little fish that hugs the stream bed and hides among the stones.",
+  radius: 0.14,
+  habitat: "water",
+  swims: { speed: 0.08, depth: 4 },
+  build: () =>
+    fish({
+      length: 0.15,
+      depth: 0.025,
+      width: 0.032,
+      sections: [
+        [-1, 0.6, 0.8],
+        [-0.65, 1, 1],
+        [-0.2, 0.9, 0.85],
+        [0.3, 0.65, 0.55],
+        [0.75, 0.4, 0.3],
+        [1, 0.3, 0.2],
+      ],
+      paint: (y, z, speck) => {
+        if (y < -0.4) return "#cdbf9a";
+        const blotch = Math.sin(z * 9 + speck * 2) > 0.3;
+        return blotch ? "#3f3a2c" : "#7d7152";
+      },
+      tail: "fan",
+      fin: "#6b6247",
+      fins: (d, h) => [
+        // A long, low dorsal fin and broad fanlike pectorals.
+        [
+          [0, d * 0.85, -0.4 * h],
+          [0, d * 1.8, 0.1 * h],
+          [0, d * 0.7, 0.7 * h],
+        ],
+        [
+          [0.025, -d * 0.4, -0.5 * h],
+          [0.075, -d * 0.6, -0.2 * h],
+          [0.025, -d * 0.5, -0.1 * h],
+        ],
+        [
+          [-0.025, -d * 0.4, -0.5 * h],
+          [-0.075, -d * 0.6, -0.2 * h],
+          [-0.025, -d * 0.5, -0.1 * h],
+        ],
+      ],
+    }),
+};
+
+export const convictCichlid: AssetDefinition = {
+  kind: "convict-cichlid",
+  name: "Convict cichlid",
+  scientificName: "Amatitlania nigrofasciata",
+  category: "Animals",
+  description:
+    "A bold little Central American cichlid, pale grey crossed with black bars. Pairs guard their patch of stream bed.",
+  radius: 0.18,
+  habitat: "water",
+  swims: { speed: 0.2, depth: 0.8 },
+  build: () =>
+    fish({
+      length: 0.17,
+      depth: 0.05,
+      width: 0.022,
+      // One ring per bar, so each bar is a clean band around the body.
+      sections: [
+        [-1, 0.35, 0.45],
+        [-0.8, 0.65, 0.7],
+        [-0.6, 0.85, 0.88],
+        [-0.4, 0.97, 0.97],
+        [-0.2, 1, 1],
+        [0, 0.98, 0.97],
+        [0.2, 0.9, 0.88],
+        [0.4, 0.76, 0.74],
+        [0.6, 0.58, 0.56],
+        [0.8, 0.42, 0.4],
+        [1, 0.3, 0.3],
+      ],
+      paint: (y, z) => {
+        if (y < -0.6) return "#c9c9bf";
+        return Math.floor((z + 1) / 0.2) % 2 ? "#262626" : "#b8bab3";
+      },
+      tail: "fan",
+      fin: "#8f9089",
+      fins: (d, h) => [
+        [
+          [0, d * 0.95, -0.4 * h],
+          [0, d * 1.7, 0.4 * h],
+          [0, d * 0.7, 0.85 * h],
+        ],
+        [
+          [0, -d * 0.85, 0.05 * h],
+          [0, -d * 1.6, 0.55 * h],
+          [0, -d * 0.6, 0.8 * h],
+        ],
+      ],
+    }),
+};
+
+export const harlequinRasbora: AssetDefinition = {
+  kind: "harlequin-rasbora",
+  name: "Harlequin rasbora",
+  scientificName: "Trigonostigma heteromorpha",
+  category: "Animals",
+  description:
+    "A small copper-pink fish with a black wedge on its side. Schools through the shaded streams of Southeast Asia.",
+  radius: 0.1,
+  habitat: "water",
+  swims: { speed: 0.22, depth: 0.15 },
+  build: () =>
+    fish({
+      length: 0.1,
+      depth: 0.025,
+      width: 0.012,
+      sections: [
+        [-1, 0.35, 0.45],
+        [-0.65, 0.85, 0.85],
+        [-0.15, 1, 1],
+        [0.35, 0.8, 0.8],
+        [0.8, 0.4, 0.4],
+        [1, 0.25, 0.25],
+      ],
+      paint: (y, z) => {
+        // The black wedge narrows from mid-body back to the tail.
+        if (z > -0.15 && Math.abs(y) < 0.9 - (z + 0.15) * 0.75)
+          return "#1d1a1c";
+        return y < -0.3 ? "#e8b9a0" : "#d9805a";
+      },
+      tail: "forked",
+      fin: "#d47a52",
+      fins: (d, h) => [
+        [
+          [0, d * 0.9, -0.15 * h],
+          [0, d * 2, 0.05 * h],
+          [0, d * 0.85, 0.25 * h],
+        ],
+      ],
+    }),
+};
+
+export const pupfish: AssetDefinition = {
+  kind: "pupfish",
+  name: "Amargosa pupfish",
+  scientificName: "Cyprinodon nevadensis",
+  category: "Animals",
+  description:
+    "A chunky little fish from desert springs. Breeding males turn bright blue and chase each other around the pool.",
+  radius: 0.1,
+  habitat: "water",
+  swims: { speed: 0.18, depth: 0.5 },
+  build: () =>
+    fish({
+      length: 0.09,
+      depth: 0.026,
+      width: 0.016,
+      sections: [
+        [-1, 0.45, 0.5],
+        [-0.65, 0.9, 0.9],
+        [-0.15, 1, 1],
+        [0.35, 0.85, 0.8],
+        [0.8, 0.5, 0.45],
+        [1, 0.35, 0.3],
+      ],
+      paint: (y) => (y < -0.4 ? "#c7cfd6" : "#4a7fc0"),
+      tail: "fan",
+      // The tail fin ends in a dark band.
+      fin: "#2b3f66",
+      fins: (d, h) => [
+        [
+          [0, d * 0.95, -0.2 * h],
+          [0, d * 1.9, 0.15 * h],
+          [0, d * 0.85, 0.4 * h],
+        ],
+      ],
+    }),
+};
+
 interface FishSpec {
   /** Snout to the base of the tail, facing -Z. */
   length: number;

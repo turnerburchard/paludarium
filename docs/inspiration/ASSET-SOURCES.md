@@ -22,6 +22,12 @@ Every imported model needs a retained source, license, attribution if required, 
 | Turtle (`models/turtle-poly-google.glb`) | ["Turtle" by Poly by Google](https://poly.pizza/m/2LCcq8vhqJ3), CC BY 3.0 | Simplified and given a simple skeleton by `scripts/prepare-turtle-model.mjs`, recolored as a painted wood turtle. |
 | Cattail (`models/cattail-poly-google.glb`) | ["Cattail" by Poly by Google](https://poly.pizza/m/9uT74BMpRrl), CC BY 3.0 | Baked by `scripts/prepare-static-models.mjs`; a shoreline plant. |
 | Snail (`models/snail-poly-google.glb`) | ["Snail" by Poly by Google](https://poly.pizza/m/aZ_cT-AIu2y), CC BY 3.0 | Baked by `scripts/prepare-static-models.mjs`; shell and body are separate parts for `SnailRig`. |
+| Elephant ear (`models/alocasia-zsky.glb`) | ["Flower Pot" by Zsky](https://poly.pizza/m/Kgt363WkKd), CC BY 3.0 | Baked by `scripts/prepare-static-models.mjs` without its pot, recolored. |
+| Lacy tree philodendron (`models/houseplant-quaternius.glb`) | ["Houseplant" by Quaternius](https://poly.pizza/m/bfLOqIV5uP), CC0 | Baked without its pot, darkened. |
+| Tufted hairgrass (`models/grass-quaternius.glb`) | ["Grass" by Quaternius](https://poly.pizza/m/UGTOzcO3P2), CC0 | The larger clump, its gradient texture snapped to three greens. |
+| Reed-stem orchid (`models/flowers-creativetrio.glb`) | ["Flowers" by CreativeTrio](https://poly.pizza/m/RP8p3h7JHJ), CC0 | Baked as is. |
+| Water lily (`models/lilypad-poly-google.glb`) | ["Lily pad" by Poly by Google](https://poly.pizza/m/0-_GjMekeob), CC BY 3.0 | Texture snapped to six colors; floats on the water surface. |
+| Hedgehog cactus (`models/cactus-poly-google.glb`) | ["Cactus" by Poly by Google](https://poly.pizza/m/9UCcl_W0Xq3), CC BY 3.0 | Texture snapped to six colors, recolored. |
 | Gecko (`models/gecko-poly-google.glb`) | ["Salamander" by Poly by Google](https://poly.pizza/m/eqjMAgmr-pM), CC BY 3.0; its texture is named Tex_Gecko | Baked by `scripts/prepare-gecko-model.mjs` into the gold dust day gecko: turned to face -Z, scaled, fitted with the gecko skeleton and skin weights, and recolored from its four-color palette. Credited in THIRD_PARTY_NOTICES.md. |
 
 Owner-preferred look (October 6, 2026): Quaternius-style chunky low poly, as in the Animated Animal Pack and Animated Dinosaur Bundle on Poly Pizza. Candidates the owner suggested for later: hummingbird and parrot (see issue #27), black caiman, seahorse (Poly by Google, CC BY 3.0) and fish and spider (Quaternius, CC0).

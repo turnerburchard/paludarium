@@ -139,3 +139,15 @@ describe("stacked objects when the ground changes", () => {
     ).toBeCloseTo(objectBase(fern, env) - objectBase(log, env));
   });
 });
+
+describe("floating plants", () => {
+  it("rest on the water's surface, not the bottom", () => {
+    const pond = { ...defaultEnvironment, water: 0.44 };
+    const lily = object("lily", 2.6, 0, { kind: "water-lily" });
+    expect(groundHeight(2.6, 0, pond)).toBeLessThan(0.44);
+    expect(objectBase(lily, pond)).toBe(0.44);
+    expect(objectBase({ ...lily, kind: "anubias" }, pond)).toBe(
+      groundHeight(2.6, 0, pond),
+    );
+  });
+});
