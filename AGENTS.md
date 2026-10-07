@@ -56,4 +56,4 @@ Rules that keep this working:
 - Art direction (how frogs, plants, and terrain *look*) is decided with the owner. Agents can make art easier to work on, but don't change the look of existing assets on your own. Issues labeled `art` need the owner.
 - Write real tests in `tests/` for logic you add or change.
 - For visual or layout changes, run `npm run screenshot` and look at the images before committing.
-- Keep `README.md` and `BACKLOG.md` accurate when behavior or plans change.
+- Keep `README.md` short. Track planned work in GitHub issues.
