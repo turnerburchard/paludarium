@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { historyReducer, type History } from "../src/editor/history";
 import { parseWorld } from "../src/editor/persistence";
 import {
@@ -74,6 +74,22 @@ describe("safe files and valid habitat", () => {
         ).toBeNull();
     },
   );
+  it("creates distinct preset objects without randomUUID", () => {
+    vi.stubGlobal("crypto", {
+      getRandomValues: crypto.getRandomValues.bind(crypto),
+    });
+    try {
+      const first = makePreset("tropical");
+      const second = makePreset("tropical");
+      const ids = [...first.objects, ...second.objects].map(
+        (object) => object.id,
+      );
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(parseWorld(JSON.stringify(first))).toEqual(first);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
   it("gives every new preset its own objects, so life starts fresh", () => {
     const ids = (world: World) => world.objects.map((o) => o.id);
     const first = ids(makePreset("tropical"));
