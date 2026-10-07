@@ -7,7 +7,6 @@ import type { Preset } from "./model/presets";
 import { WorldScene } from "./scene/WorldScene";
 import { useEcosystem } from "./simulation/useEcosystem";
 import { BottomHud } from "./ui/BottomHud";
-import { EmptyInvitation } from "./ui/EmptyInvitation";
 import { HelpDialog } from "./ui/HelpDialog";
 import { Inspector } from "./ui/Inspector";
 import { MobileDock } from "./ui/MobileDock";
@@ -33,6 +32,9 @@ export default function App({
   const [view, setView] = useState(true);
   const editor = useEditor(view, sharedWorld);
   const { world, selected, tool } = editor;
+  useEffect(() => {
+    document.title = `paludarium · ${world.name}`;
+  }, [world.name]);
   // Life follows committed edits, not intermediate brush or slider previews.
   const ecosystem = useEcosystem(editor.savedWorld, editor.updateLife);
   const [panel, setPanel] = useState<Panel>("objects");
@@ -159,9 +161,6 @@ export default function App({
           onOpen={openPanel}
           onWatchWorld={() => changeMode(true)}
         />
-      )}
-      {!view && world.objects.length === 0 && tool.type === "select" && (
-        <EmptyInvitation onPreset={startPreset} />
       )}
       {!view && selected && tool.type === "select" && !watchingId && (
         <Inspector

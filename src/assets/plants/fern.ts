@@ -9,7 +9,8 @@ export const fern: AssetDefinition = {
   name: "Forest fern",
   group: "Leafy plants",
   biomes: ["Tropical", "Temperate"],
-  description: "Arching fronds, at home beside a shady pond.",
+  description:
+    "Arching green fronds with rows of narrow leaflets. Provides low cover in damp, shaded parts of the habitat.",
   radius: 0.36,
   habitat: "land",
   shelter: true,

@@ -111,7 +111,7 @@ try {
             : value,
       );
       return name === "Empty tank"
-        ? world.objects.length === 0 && world.name === "My little world"
+        ? world.objects.length === 0 && world.name === "Untitled"
         : world.name === name && world.objects.length > 0;
     }, name);
   }

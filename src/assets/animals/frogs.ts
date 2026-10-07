@@ -175,7 +175,7 @@ export const chorusFrog: AssetDefinition = {
   group: "Amphibians",
   biomes: ["Temperate"],
   description:
-    "A tiny brown frog with dark stripes down its back. Its trilling call is one of the first sounds of a mountain spring.",
+    "A small brown frog with dark stripes down its back. Lives in moist meadows and forests near wetlands, breeding in shallow pools and ponds. Its call sounds like a thumb running over the teeth of a comb.",
   radius: 0.16,
   habitat: "land",
   behavior: { nocturnal: true, climbs: false, speed: 0.04, movement: "hop" },

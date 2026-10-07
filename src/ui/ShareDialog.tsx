@@ -54,7 +54,6 @@ export function ShareDialog({
       try {
         await navigator.share({
           title: `${world.name} · Paludarium`,
-          text: "Explore this tiny living world, then build your own copy.",
           url,
         });
       } catch (error) {

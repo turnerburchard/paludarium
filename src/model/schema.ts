@@ -178,7 +178,7 @@ export const defaultEnvironment: Environment = {
 export function emptyWorld(): World {
   return {
     version: 1,
-    name: "My little world",
+    name: "Untitled",
     environment: { ...defaultEnvironment },
     objects: [],
   };

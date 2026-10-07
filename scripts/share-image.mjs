@@ -58,8 +58,7 @@ try {
   await page.evaluate(() => {
     const caption = document.createElement("div");
     caption.className = "preview-caption";
-    caption.innerHTML =
-      "<h1>Paludarium</h1>A tiny living world. Yours to shape.";
+    caption.innerHTML = "<h1>Paludarium</h1>";
     document.body.append(caption);
     const url = document.createElement("div");
     url.className = "preview-url";
