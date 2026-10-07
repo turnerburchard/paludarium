@@ -51,19 +51,18 @@ try {
       fiberUrl = response.url();
   });
   await page.goto("http://127.0.0.1:5191");
-  await page.getByRole("button", { name: "Build", exact: true }).click();
-  await page.locator(".asset-picture img").first().waitFor({ timeout: 90000 });
-  // A first visit opens on the aquarium; start from an empty tank.
-  assert.equal(
-    await page.getByRole("textbox", { name: "World name" }).inputValue(),
-    "Aquarium",
-    "first visit opens on a finished habitat",
-  );
-  await page.getByRole("button", { name: "New world", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "Start a world" })
+    .getByRole("dialog", { name: "New world" })
     .getByRole("button", { name: "Empty tank", exact: true })
     .click();
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Build", exact: true })
+      .getAttribute("aria-pressed"),
+    "true",
+    "an empty first-visit choice enters Build",
+  );
+  await page.locator(".asset-picture img").first().waitFor({ timeout: 90000 });
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
@@ -201,7 +200,7 @@ try {
   await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.getByRole("button", { name: "New world", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "Start a world" })
+    .getByRole("dialog", { name: "New world" })
     .getByRole("button", { name: "Cloud forest", exact: true })
     .click();
   world = await saved();

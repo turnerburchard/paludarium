@@ -96,7 +96,7 @@ try {
     "Aquarium",
   ]) {
     await page.getByRole("button", { name: "New world", exact: true }).tap();
-    const dialog = page.getByRole("dialog", { name: "Start a world" });
+    const dialog = page.getByRole("dialog", { name: "New world" });
     await dialog.getByRole("button", { name, exact: true }).tap();
     await dialog.waitFor({ state: "detached" });
     await page.waitForFunction((name) => {

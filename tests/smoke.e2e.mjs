@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { checkFirstVisit } from "./firstVisit.e2e.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const url = "http://127.0.0.1:5196";
@@ -113,7 +114,7 @@ try {
   await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.getByRole("button", { name: "New world", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "Start a world" })
+    .getByRole("dialog", { name: "New world" })
     .getByRole("button", { name: "Aquarium", exact: true })
     .click();
   await page.waitForFunction((key) => {
@@ -239,6 +240,15 @@ try {
     [],
     "production rendering and interactions have no runtime errors",
   );
+  assert.equal(
+    await unreadable
+      .getByRole("dialog", { name: "New world", exact: true })
+      .count(),
+    0,
+  );
+  await context.close();
+  await unreadable.close();
+  await checkFirstVisit(browser, url, hash);
   console.log(
     `PASS (${Math.round((Date.now() - started) / 1000)}s): production bundle, minimal mobile View, aquarium, water Undo, persistent scene, preview image, share snapshot, safe adoption and Undo, unreadable save kept`,
   );

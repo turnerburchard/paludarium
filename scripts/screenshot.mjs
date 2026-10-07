@@ -59,6 +59,11 @@ try {
     page.on("pageerror", (error) => console.error(error.message));
     await page.goto(`http://127.0.0.1:${port}`);
     await page
+      .getByRole("dialog", { name: "New world" })
+      .getByRole("button", { name: "Empty tank", exact: true })
+      .click();
+    await page.getByRole("button", { name: "View", exact: true }).click();
+    await page
       .getByRole("button", { name: "Pause life (Space)", exact: true })
       .click();
     await page.getByRole("button", { name: "Build", exact: true }).click();
@@ -72,7 +77,7 @@ try {
         .getByRole("button", { name: "New world", exact: true })
         .click();
       await page
-        .getByRole("dialog", { name: "Start a world" })
+        .getByRole("dialog", { name: "New world" })
         .getByRole("button", { name: preset.button, exact: true })
         .click();
       await page.waitForTimeout(1500);

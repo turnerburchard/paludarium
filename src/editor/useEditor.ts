@@ -309,6 +309,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   }
   return {
     world: shown,
+    firstVisit: initial.firstVisit,
     isShared,
     updateLife,
     adoptSharedWorld: () => {

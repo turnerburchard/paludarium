@@ -11,17 +11,13 @@ export function NewWorldDialog({
   onClose: () => void;
 }) {
   return (
-    <Modal label="Start a world" onClose={onClose}>
+    <Modal label="New world" onClose={onClose}>
       <div className="modal-heading">
-        <h2>A new little world</h2>
+        <h2>New world</h2>
         <IconButton label="Close dialog" onClick={onClose}>
           <X size={20} />
         </IconButton>
       </div>
-      <p>
-        Start from scratch or settle into a ready-made habitat. Undo can bring
-        your previous world back.
-      </p>
       <div className="preset-options">
         <button onClick={() => onPreset("empty")}>
           <span aria-hidden="true">01</span>

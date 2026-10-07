@@ -22,17 +22,23 @@ export function parseWorld(text: string): World {
     ),
   };
 }
-export function loadWorld(): { world: World; warning: string | null } {
+export function loadWorld(): {
+  world: World;
+  warning: string | null;
+  firstVisit: boolean;
+} {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    // First visit opens on a finished habitat rather than an empty tank.
+    // Keep a usable habitat underneath the first-visit picker.
     return {
       world: saved ? parseWorld(saved) : makePreset("aquarium"),
       warning: null,
+      firstVisit: saved === null,
     };
   } catch {
     return {
       world: emptyWorld(),
+      firstVisit: false,
       warning:
         "Your saved world could not be opened. It stays saved until you edit this one.",
     };

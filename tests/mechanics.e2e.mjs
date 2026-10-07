@@ -345,7 +345,7 @@ try {
     .getByRole("heading", { name: "River stone", exact: true })
     .waitFor();
   await page.getByRole("button", { name: "New world", exact: true }).click();
-  await page.getByRole("dialog", { name: "Start a world" }).waitFor();
+  await page.getByRole("dialog", { name: "New world" }).waitFor();
   await page.keyboard.press("Backspace");
   await page.keyboard.press("r");
   await page.keyboard.press("Escape");

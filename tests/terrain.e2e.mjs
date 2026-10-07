@@ -55,15 +55,13 @@ try {
   });
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(url);
-  await page.getByRole("button", { name: "Build", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "New world" })
+    .getByRole("button", { name: "Empty tank", exact: true })
+    .click();
   await page.locator(".asset-picture img").first().waitFor({ timeout: 90000 });
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
-    .click();
-  await page.getByRole("button", { name: "New world", exact: true }).click();
-  await page
-    .getByRole("dialog", { name: "Start a world" })
-    .getByRole("button", { name: "Empty tank", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Habitat settings", exact: true })

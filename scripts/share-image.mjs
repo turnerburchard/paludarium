@@ -42,6 +42,10 @@ try {
   });
   await page.goto(url);
   await page
+    .getByRole("dialog", { name: "New world" })
+    .getByRole("button", { name: "Close dialog" })
+    .click();
+  await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
   await page.waitForTimeout(2500);

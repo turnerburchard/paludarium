@@ -7,7 +7,6 @@ import { makePreset, type Preset } from "./model/presets";
 import { WorldScene } from "./scene/WorldScene";
 import { useEcosystem } from "./simulation/useEcosystem";
 import { BottomHud } from "./ui/BottomHud";
-import { EmptyInvitation } from "./ui/EmptyInvitation";
 import { HelpDialog } from "./ui/HelpDialog";
 import { Inspector } from "./ui/Inspector";
 import { MobileDock } from "./ui/MobileDock";
@@ -42,7 +41,13 @@ export default function App({
   const [resetCamera, setResetCamera] = useState(0);
   const [dialog, setDialog] = useState<
     "new-world" | "help" | "about" | "shared-copy" | "share-error" | null
-  >(shareError ? "share-error" : null);
+  >(
+    shareError
+      ? "share-error"
+      : !sharedWorld && editor.firstVisit
+        ? "new-world"
+        : null,
+  );
   const [watchRequest, setWatchRequest] = useState<string | null>(null);
   // Deselecting (Escape, clicking away) also stops watching.
   const watchingId =
@@ -74,11 +79,8 @@ export default function App({
   function startPreset(preset: Preset) {
     editor.replaceWorld(makePreset(preset));
     setDialog(null);
-    editor.notify(
-      preset === "empty"
-        ? "A fresh start."
-        : "Make it yours. Every object can be moved or changed.",
-    );
+    editor.notify("");
+    if (preset === "empty") setMode(false);
     setResetCamera((n) => n + 1);
   }
 
@@ -157,9 +159,6 @@ export default function App({
           onOpen={openPanel}
           onWatchWorld={() => changeMode(true)}
         />
-      )}
-      {!view && world.objects.length === 0 && tool.type === "select" && (
-        <EmptyInvitation onPreset={startPreset} />
       )}
       {!view && selected && tool.type === "select" && !watchingId && (
         <Inspector
