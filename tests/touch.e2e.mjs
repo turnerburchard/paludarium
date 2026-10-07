@@ -250,12 +250,52 @@ try {
     "a cancelled touch cannot plant on release",
   );
 
-  async function pan() {
+  // WebKit's test driver has no native multi-touch command. Supply the same
+  // pointer events and complete touch snapshot the browser produces.
+  async function moveTouches(points) {
+    await page.evaluate(async (points) => {
+      const canvas = document.querySelector("canvas");
+      // Deliberately split the fingers across frames, with the outer finger
+      // first: a partial sample must not clamp a fake pinch at minimum zoom.
+      for (const point of [...points].reverse()) {
+        canvas.dispatchEvent(
+          new PointerEvent("pointermove", {
+            bubbles: true,
+            pointerType: "touch",
+            pointerId: point.id,
+            clientX: point.x,
+            clientY: point.y,
+            buttons: 1,
+          }),
+        );
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      }
+      const touches = points.map(
+        (point) =>
+          new Touch({
+            identifier: point.id,
+            target: canvas,
+            clientX: point.x,
+            clientY: point.y,
+          }),
+      );
+      canvas.dispatchEvent(
+        new TouchEvent("touchmove", {
+          bubbles: true,
+          touches,
+          targetTouches: touches,
+          changedTouches: touches,
+        }),
+      );
+    }, points);
+  }
+
+  async function pan(synthetic = false) {
     const before = await cameraState();
     // Start one finger over empty canvas, so the gesture cannot depend on mesh hits.
     const first = { x: 100, y: 180 },
       second = { x: 170, y: 180 };
-    if (touchSession)
+    if (touchSession && !synthetic)
       await touchSession.send("Input.dispatchTouchEvent", {
         type: "touchStart",
         touchPoints: [
@@ -268,7 +308,7 @@ try {
       await pointer("pointerdown", second, 2);
     }
     for (let step = 1; step <= 5; step++) {
-      if (touchSession)
+      if (touchSession && !synthetic)
         await touchSession.send("Input.dispatchTouchEvent", {
           type: "touchMove",
           touchPoints: [
@@ -276,27 +316,13 @@ try {
             { x: second.x + step * 8, y: second.y, id: 2 },
           ],
         });
-      // Both pointers in a touchmove update in the same browser task.
       else
-        await page.evaluate(
-          ({ first, second, step }) => {
-            [first, second].forEach((point, index) => {
-              document.querySelector("canvas").dispatchEvent(
-                new PointerEvent("pointermove", {
-                  bubbles: true,
-                  pointerType: "touch",
-                  pointerId: index + 1,
-                  clientX: point.x + step * 8,
-                  clientY: point.y,
-                  buttons: 1,
-                }),
-              );
-            });
-          },
-          { first, second, step },
-        );
+        await moveTouches([
+          { x: first.x + step * 8, y: first.y, id: 1 },
+          { x: second.x + step * 8, y: second.y, id: 2 },
+        ]);
     }
-    if (touchSession)
+    if (touchSession && !synthetic)
       await touchSession.send("Input.dispatchTouchEvent", {
         type: "touchEnd",
         touchPoints: [],
@@ -325,6 +351,8 @@ try {
   }
   stage = "placement pan";
   await pan();
+  stage = "pan with pointer moves split across frames";
+  await pan(true);
   assert.equal(
     (await saved()).objects.length,
     4,
@@ -356,19 +384,7 @@ try {
   } else {
     await pointer("pointerdown", pinchStart[0]);
     await pointer("pointerdown", pinchStart[1], 2);
-    await page.evaluate((points) => {
-      for (const point of points)
-        document.querySelector("canvas").dispatchEvent(
-          new PointerEvent("pointermove", {
-            bubbles: true,
-            pointerType: "touch",
-            pointerId: point.id,
-            clientX: point.x,
-            clientY: point.y,
-            buttons: 1,
-          }),
-        );
-    }, pinchEnd);
+    await moveTouches(pinchEnd);
     await pointer("pointerup", pinchEnd[0]);
     await pointer("pointerup", pinchEnd[1], 2);
   }
