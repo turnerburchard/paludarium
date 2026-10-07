@@ -1,7 +1,13 @@
 import * as THREE from "three";
+import { bakedGeometry, type BakedModel } from "../baked";
 import { mesh } from "../geometry";
-import { ringVolume, type Point } from "../faceted";
 import type { AssetDefinition } from "../types";
+import flagstoneModel from "./flagstone.json";
+import graniteModel from "./granite.json";
+import limestonePinnacleModel from "./limestonePinnacle.json";
+import sandstoneModel from "./sandstone.json";
+import sandstonePillarModel from "./sandstonePillar.json";
+import screeModel from "./scree.json";
 
 /** Sandstone's banded reds and creams, from the darkest layer to the palest. */
 const SANDSTONE = ["#8e4a2c", "#a85a33", "#b9703f", "#c98c56", "#d8aa77"];
@@ -11,55 +17,12 @@ export const sandstone: AssetDefinition = {
   name: "Sandstone boulder",
   category: "Landscape",
   description:
-    "A rounded desert boulder banded in red and cream, its softer layers worn into ledges.",
-  radius: 0.45,
+    "A rounded desert boulder banded in red and cream, weathered smooth by wind and sand.",
+  radius: 0.5,
   habitat: "either",
   hardscape: "stone",
   blocksMovement: true,
-  build: (random) => {
-    const root = new THREE.Group();
-    // The boulder is a stack of cross sections from base to crown. Softer
-    // layers wear back into sloping grooves between the harder bands, and the
-    // crown rounds off, so the sides step without any square edges.
-    const height = 0.5 + random() * 0.14;
-    const bands = 3 + Math.floor(random() * 2);
-    const phase = random() * Math.PI;
-    // Bedding planes tilt a little, as they do in real outcrops.
-    const tiltX = (random() - 0.5) * 0.12,
-      tiltZ = (random() - 0.5) * 0.12;
-    const outline = Array.from({ length: 12 }, () => 0.85 + random() * 0.3);
-    const groove = (t: number) =>
-      Math.max(0, Math.sin(t * bands * Math.PI * 2 + phase)) ** 2;
-    const levels = 22;
-    const rings = Array.from({ length: levels + 1 }, (_, level) => {
-      const t = level / levels;
-      const crown = Math.max(0.3, (1 - t ** 4) ** 0.4);
-      const radius = 0.45 * crown * (1 - 0.08 * groove(t));
-      return outline.map((r, side): Point => {
-        const a = (side / outline.length) * Math.PI * 2;
-        // The outline wanders a little with height, so the sides bulge and
-        // lean instead of rising straight.
-        const wander = 1 + 0.07 * Math.sin(t * 4 + side * 1.7 + phase);
-        const x = Math.cos(a) * radius * r * wander * 1.15,
-          z = -Math.sin(a) * radius * r * wander * 0.85;
-        return [x, t * height + (x * tiltX + z * tiltZ) * t, z];
-      });
-    });
-    const tones = Array.from({ length: bands }, () => Math.floor(random() * 3));
-    const geo = ringVolume(rings);
-    paint(geo, (center, normal) => {
-      // The crown's rings crowd together, so banding there turns into a
-      // star. Color the whole top as one weathered surface instead.
-      if (normal.y > 0.7) return SANDSTONE[tones[bands - 1] + 1];
-      const rise = height + center.x * tiltX + center.z * tiltZ;
-      const t = Math.min(1, Math.max(0, center.y / rise));
-      const tone = tones[Math.min(bands - 1, Math.floor(t * bands))];
-      // The worn-back grooves are the softer, darker layers.
-      return SANDSTONE[groove(t) > 0.3 ? tone : tone + 2];
-    });
-    mesh(geo, stoneSkin(), root);
-    return root;
-  },
+  build: (random) => bakedStone(sandstoneModel, random, sandstoneBands(random)),
 };
 
 export const sandstoneLedge: AssetDefinition = {
@@ -106,30 +69,22 @@ export const granite: AssetDefinition = {
   name: "Granite boulder",
   category: "Landscape",
   description:
-    "A big, smooth mountain boulder, pale grey flecked with pink and black.",
+    "A big mountain boulder, pale grey flecked with pink and black, with tufts of grass in its cracks.",
   radius: 0.5,
   habitat: "either",
   hardscape: "stone",
   blocksMovement: true,
   build: (random) => {
-    const root = new THREE.Group();
     const phase = random() * 10;
-    const geo = shapedStone(0.5, 2, (x, y, z) => {
-      const rough = 1 + 0.08 * Math.sin(x * 7 + z * 5 + phase);
-      return [x * rough * 1.1, Math.max(-0.24, y * rough * 0.9), z * rough];
+    return bakedStone(graniteModel, random, (center, _, source) => {
+      if (source === "grass") return "#7d8f4a";
+      if (source === "grassDark") return "#56662f";
+      const n = fleck(center, phase);
+      // Faint flecks of dark mica and pink feldspar in grey stone.
+      if (n > 0.94) return "#8a8884";
+      if (n > 0.88) return "#aca09a";
+      return n > 0.4 ? "#a7a5a0" : "#9f9d98";
     });
-    paint(geo, (center) => {
-      // A hash of the face's position, spread evenly between 0 and 1.
-      const n =
-        Math.sin(center.x * 91.7 + center.y * 57.3 + center.z * 73.1 + phase) *
-        43758.5453;
-      const fleck = n - Math.floor(n);
-      if (fleck > 0.94) return "#4a4848";
-      if (fleck > 0.88) return "#b8948a";
-      return fleck > 0.4 ? "#a7a5a0" : "#9a9893";
-    });
-    mesh(geo, stoneSkin(), root, [0, 0.24, 0]);
-    return root;
   },
 };
 
@@ -241,6 +196,134 @@ export const pebbles: AssetDefinition = {
     return root;
   },
 };
+
+export const sandstonePillar: AssetDefinition = {
+  kind: "sandstone-pillar",
+  name: "Sandstone pillar",
+  category: "Landscape",
+  description:
+    "A tall, banded spire of red sandstone left standing after the softer rock around it wore away.",
+  radius: 0.3,
+  habitat: "either",
+  hardscape: "stone",
+  blocksMovement: true,
+  build: (random) =>
+    bakedStone(sandstonePillarModel, random, sandstoneBands(random)),
+};
+
+export const limestonePinnacle: AssetDefinition = {
+  kind: "limestone-pinnacle",
+  name: "Limestone pinnacle",
+  category: "Landscape",
+  description:
+    "A pale karst spire, streaked darker where rain runs down it and damp at its base.",
+  radius: 0.34,
+  habitat: "either",
+  hardscape: "stone",
+  blocksMovement: true,
+  build: (random) => {
+    const phase = random() * 10;
+    return bakedStone(limestonePinnacleModel, random, (center, normal) => {
+      if (normal.y > 0.6) return "#cdc9b6";
+      if (center.y < 0.12) return "#8f8d80";
+      return fleck(center, phase) > 0.7 ? "#a29f8e" : "#b3af9d";
+    });
+  },
+};
+
+export const flagstone: AssetDefinition = {
+  kind: "flagstone",
+  name: "Flat stone",
+  category: "Landscape",
+  description:
+    "A broad, flat stone set into the ground, for stepping across wet soil or basking on.",
+  radius: 0.35,
+  habitat: "either",
+  hardscape: "stone",
+  build: (random) => {
+    const phase = random() * 10;
+    return bakedStone(flagstoneModel, random, (center, normal) => {
+      if (normal.y < 0.6) return "#6c6152";
+      return fleck(center, phase) > 0.6 ? "#93897a" : "#857b6c";
+    });
+  },
+};
+
+export const scree: AssetDefinition = {
+  kind: "scree",
+  name: "Scree",
+  category: "Landscape",
+  description:
+    "Sharp, broken rocks shed from a mountainside, crusted here and there with pale lichen.",
+  radius: 0.3,
+  habitat: "either",
+  hardscape: "stone",
+  build: (random) => {
+    const phase = random() * 10;
+    return bakedStone(screeModel, random, (center, normal) => {
+      const n = fleck(center, phase);
+      if (normal.y > 0.5 && n > 0.85) return "#8a8f7c";
+      if (normal.y < 0) return "#4f545b";
+      return n > 0.4 ? "#6d737a" : "#5f656c";
+    });
+  },
+};
+
+/** A baked rock model painted face by face. Each placement stretches it a
+ * little differently, so repeats of the same model don't match exactly. */
+function bakedStone(
+  model: BakedModel,
+  random: () => number,
+  colorOf: (
+    center: THREE.Vector3,
+    normal: THREE.Vector3,
+    source: string,
+  ) => string,
+) {
+  const root = new THREE.Group();
+  for (const part of model.parts) {
+    const geo = bakedGeometry(part);
+    paint(geo, (center, normal) => colorOf(center, normal, part.color));
+    mesh(geo, stoneSkin(), root);
+  }
+  root.scale.set(
+    0.9 + random() * 0.2,
+    0.9 + random() * 0.2,
+    0.9 + random() * 0.2,
+  );
+  return root;
+}
+
+/** Red and cream layers by height, each a different shade, with the bedding
+ * tilted a little as it is in real outcrops. Upward faces bleach paler. */
+function sandstoneBands(random: () => number) {
+  const thickness = 0.12 + random() * 0.05;
+  // Neighboring layers differ by a shade at most, so the bands read as soft
+  // stripes rather than a patchwork.
+  let tone = 1 + Math.floor(random() * 2);
+  const tones = Array.from({ length: 16 }, () => {
+    tone = Math.min(3, Math.max(1, tone + Math.floor(random() * 3) - 1));
+    return tone;
+  });
+  const tilt = (random() - 0.5) * 0.2;
+  return (center: THREE.Vector3, normal: THREE.Vector3) => {
+    if (normal.y > 0.75) return SANDSTONE[4];
+    const band = Math.max(
+      0,
+      Math.floor((center.y + center.x * tilt) / thickness),
+    );
+    return SANDSTONE[tones[band % tones.length]];
+  };
+}
+
+/** A hash of a face's position, spread evenly between 0 and 1, for speckling
+ * faces without any pattern. */
+function fleck(center: THREE.Vector3, phase: number) {
+  const n =
+    Math.sin(center.x * 91.7 + center.y * 57.3 + center.z * 73.1 + phase) *
+    43758.5453;
+  return n - Math.floor(n);
+}
 
 /** An icosahedron stone reshaped vertex by vertex. The shape depends only on
  * each corner's position, so the faces stay closed. */

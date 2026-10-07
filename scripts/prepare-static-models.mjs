@@ -78,6 +78,68 @@ const MODELS = [
       petalDark: "b55084",
     },
   },
+  {
+    // "Rock Large" by Quaternius, poly.pizza/m/54jZKTAt5p, CC0.
+    source: "docs/inspiration/models/rock-large-quaternius.glb",
+    out: "src/assets/landscape/sandstone.json",
+    width: 1.05,
+    sink: 0.08,
+  },
+  {
+    // "Rock" by Poly by Google, poly.pizza/m/dmRuyy1VXEv, CC-BY 3.0.
+    source: "docs/inspiration/models/rock-poly-google.glb",
+    out: "src/assets/landscape/granite.json",
+    width: 1,
+    sink: 0.25,
+    roles: {
+      rock: "c08048",
+      rockDark: "5a3820",
+      grass: "b0c048",
+      grassDark: "4a5018",
+    },
+  },
+  {
+    // "Rock Flat" by Kenney, poly.pizza/m/CrSoV13mCU, CC0.
+    source: "docs/inspiration/models/rock-flat-kenney.glb",
+    out: "src/assets/landscape/flagstone.json",
+    width: 0.7,
+    sink: 0.3,
+  },
+  {
+    // "Rocks" by Quaternius, poly.pizza/m/OQvi8PIZ40, CC0.
+    source: "docs/inspiration/models/rocks-quaternius.glb",
+    out: "src/assets/landscape/scree.json",
+    width: 0.6,
+  },
+  {
+    // "Rock" by Quaternius, poly.pizza/m/R2UjZAX3By, CC0.
+    source: "docs/inspiration/models/rock-spire-quaternius.glb",
+    out: "src/assets/landscape/sandstonePillar.json",
+    height: 0.9,
+    sink: 0.08,
+  },
+  {
+    // "Rock Large" by Quaternius, poly.pizza/m/d2VWOdthtR, CC0.
+    source: "docs/inspiration/models/rock-large-spire-quaternius.glb",
+    out: "src/assets/landscape/limestonePinnacle.json",
+    height: 0.95,
+    sink: 0.03,
+  },
+  {
+    // "log with fungus" by sirkitree, poly.pizza/m/32czhZtc7oY, CC-BY 3.0.
+    source: "docs/inspiration/models/log-fungus-sirkitree.glb",
+    out: "src/assets/landscape/fungusLog.json",
+    length: 1.15,
+    sink: 0.1,
+  },
+  {
+    // "Log" by Poly by Google, poly.pizza/m/dkRLlPSdgdR, CC-BY 3.0.
+    source: "docs/inspiration/models/log-poly-google.glb",
+    out: "src/assets/landscape/snag.json",
+    width: 1.2,
+    sink: 0.12,
+    roles: { bark: "75522f", barkLight: "9e6a3a", cut: "d98d4a" },
+  },
 ];
 
 for (const model of MODELS) {
@@ -121,6 +183,8 @@ for (const model of MODELS) {
       ? model.width / Math.max(size.x, size.z)
       : model.length / size.z;
   const flip = model.turn ? -1 : 1;
+  // Rocks and logs settle part of their height into the ground.
+  const floor = bounds.min.y + (model.sink ?? 0) * size.y;
   const parts = new Map();
   for (const face of faces) {
     const part = parts.get(face.key) ?? { color: face.key, positions: [] };
@@ -128,7 +192,7 @@ for (const model of MODELS) {
       part.positions.push(
         ...[
           flip * (p.x - center.x) * scale,
-          (p.y - bounds.min.y) * scale,
+          (p.y - floor) * scale,
           flip * (p.z - center.z) * scale,
         ].map((v) => Number(v.toFixed(5))),
       );

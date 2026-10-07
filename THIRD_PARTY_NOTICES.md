@@ -26,6 +26,14 @@ The cattail, snail and turtle are derived from ["Cattail"](https://poly.pizza/m/
 
 The original GLBs are in `docs/inspiration/models/`.
 
+## Rock and wood models
+
+- The sandstone boulder, sandstone pillar and limestone pinnacle are derived from ["Rock Large"](https://poly.pizza/m/54jZKTAt5p), ["Rock"](https://poly.pizza/m/R2UjZAX3By) and ["Rock Large"](https://poly.pizza/m/d2VWOdthtR) by Quaternius, and the scree from ["Rocks"](https://poly.pizza/m/OQvi8PIZ40) by Quaternius, all released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/), rescaled and repainted.
+- The flat stone is derived from ["Rock Flat" by Kenney](https://poly.pizza/m/CrSoV13mCU), released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/), rescaled and repainted.
+- The granite boulder and spruce snag are derived from ["Rock"](https://poly.pizza/m/dmRuyy1VXEv) and ["Log"](https://poly.pizza/m/dkRLlPSdgdR) by Poly by Google, and the fungus log from ["log with fungus" by sirkitree](https://poly.pizza/m/32czhZtc7oY), all licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), rescaled and recolored.
+
+The original GLBs are in `docs/inspiration/models/`.
+
 ## npm dependencies
 
 Dependencies are installed from `package-lock.json` and keep their own copyright notices and licenses, which are included in each package under `node_modules/` after `npm ci`. Runtime dependencies are permissively licensed: React, Three.js, React Three Fiber, drei and Zod under MIT; lucide-react under ISC.
