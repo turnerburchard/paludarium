@@ -5,6 +5,7 @@ import {
   emptyWorld,
   type AssetKind,
   type HabitatObject,
+  type World,
 } from "../src/model/schema";
 import { groundHeight } from "../src/model/terrain";
 import { LandSurfaces } from "../src/simulation/landSurfaces";
@@ -177,5 +178,37 @@ describe("exposed hardscape routes", () => {
       }
     }
     expect(diagonals).toBeGreaterThan(0);
+  });
+
+  it("keeps land animals dry, water dwellers under the water, and lets visitors cross the shore", () => {
+    const reached = (world: World, species: SpeciesProfile, x: number) => {
+      const graph = buildHabitat(world);
+      const start = graph.nearest(
+        { x, y: groundHeight(x, 0, world.environment), z: 0 },
+        species,
+      )!;
+      return [...graph.paths(start.id, species).keys()].map((id) =>
+        graph.node(id),
+      );
+    };
+    const land = profile("dart-frog");
+    const visitor = profile("vampire-crab");
+    const dweller: SpeciesProfile = { ...visitor, water: "lives" };
+    const pond = emptyWorld();
+    const landRoutes = reached(pond, land, -2.5);
+    const visitorRoutes = reached(pond, visitor, -2.5);
+    expect(landRoutes.every((node) => !node.submerged)).toBe(true);
+    expect(reached(pond, dweller, 2.5).every((node) => node.submerged)).toBe(
+      true,
+    );
+    expect(visitorRoutes.some((node) => node.submerged)).toBe(true);
+    expect(visitorRoutes.some((node) => !node.submerged)).toBe(true);
+    // The top of a sunken stone is walkable too.
+    const deep = emptyWorld();
+    deep.environment.water = 0.8;
+    deep.objects = [object("rock", "rock", { x: 2, scale: 0.4 })];
+    expect(
+      reached(deep, dweller, 2.5).some((node) => node.supportId === "rock"),
+    ).toBe(true);
   });
 });

@@ -43,6 +43,9 @@ export interface AnimalBehavior {
   /** Feeds on algae and film wherever it goes, so it never goes hungry and
    * leaves the insects to others. */
   grazes?: boolean;
+  /** Whether it walks underwater: animals that visit still need dry land,
+   * and those that live there never leave it or dry out. */
+  water?: "visits" | "lives";
 }
 
 /** Everything the app knows about one kind of placeable thing. */

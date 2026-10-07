@@ -41,6 +41,8 @@ export class HabitatGraph {
   }
   allowed(id: string, species: SpeciesProfile) {
     const node = this.node(id);
+    if (node.submerged ? !species.water : species.water === "lives")
+      return false;
     if (node.surface === "ground") return true;
     // Gently sloping bark is walkable by any frog; steeper bark needs a climber.
     const walkable =
