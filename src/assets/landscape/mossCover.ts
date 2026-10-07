@@ -146,11 +146,13 @@ function growTuft(species: MossSpecies, random: () => number) {
   return tuft;
 }
 
-/** Low sheet moss cushions crowding the given ground points, for ground
- * painted with moss. */
-export function mossCarpet(points: THREE.Vector3[], random: () => number) {
-  const lumps = points.flatMap((point) =>
-    [0, 1, 2, 3].map(() => {
+/** Low sheet moss cushions crowding each given ground point, for ground
+ * painted with moss. Kept per point so water can cover some cushions without
+ * reshaping the rest. */
+export function mossCushions(points: THREE.Vector3[], random: () => number) {
+  return points.map((point) => ({
+    point,
+    lumps: [0, 1, 2, 3].map(() => {
       const size = 0.04 + random() * 0.04;
       const lump = dome(size, size * 0.4, "sheet", random, 0.3, 1);
       lump.deleteAttribute("uv");
@@ -161,9 +163,14 @@ export function mossCarpet(points: THREE.Vector3[], random: () => number) {
         point.z + (random() - 0.5) * 0.24,
       );
     }),
-  );
+  }));
+}
+
+type MossCushion = ReturnType<typeof mossCushions>[number];
+
+/** Joins cushions into one mesh, so a whole carpet draws at once. */
+export function mossCarpet(cushions: MossCushion[]) {
+  const lumps = cushions.flatMap((cushion) => cushion.lumps);
   if (lumps.length === 0) return undefined;
-  const merged = mergeGeometries(lumps);
-  lumps.forEach((lump) => lump.dispose());
-  return merged ?? undefined;
+  return mergeGeometries(lumps) ?? undefined;
 }

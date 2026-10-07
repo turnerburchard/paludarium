@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Sun, Sunset, Moon } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import { RangeControl } from "./RangeControl";
@@ -6,6 +7,7 @@ import { AQUARIUM_WATER } from "../model/schema";
 
 export function EnvironmentPanel({ editor }: { editor: Editor }) {
   const env = editor.world.environment;
+  const pausedBeforeDrag = useRef<boolean | null>(null);
   return (
     <div className="environment-panel">
       <div className="section-label">LIGHT & ATMOSPHERE</div>
@@ -63,8 +65,18 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
           max={AQUARIUM_WATER}
           step={0.01}
           format={(n) => (n === 0 ? "Dry" : `${(n * 10).toFixed(1)} cm`)}
-          onPreview={(water) => editor.previewEnvironment({ water })}
-          onCommit={(water) => editor.changeEnvironment({ water })}
+          onPreview={(water) => {
+            // Life runs on the saved world, so while the level is only previewed
+            // fish would keep swimming in water that isn't shown. Hold it still.
+            pausedBeforeDrag.current ??= editor.paused;
+            editor.setPaused(true);
+            editor.previewEnvironment({ water });
+          }}
+          onCommit={(water) => {
+            editor.changeEnvironment({ water });
+            editor.setPaused(pausedBeforeDrag.current ?? editor.paused);
+            pausedBeforeDrag.current = null;
+          }}
         />
         <RangeControl
           label="Light warmth"
