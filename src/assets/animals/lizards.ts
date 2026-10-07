@@ -46,12 +46,12 @@ export const desertSpinyLizard: AssetDefinition = {
   scientificName: "Sceloporus magister",
   category: "Animals",
   description:
-    "A heavy, spiny-scaled lizard, dark with yellow bands and a black collar, that basks on rock and wood.",
+    "A heavy, spiny-scaled lizard, dark with yellow bands and a black collar, that climbs rock and wood to bask.",
   radius: 0.45,
   habitat: "land",
   behavior: {
     nocturnal: false,
-    climbs: false,
+    climbs: true,
     speed: 0.075,
     movement: "scurry",
     restsOn: ["stone", "bark"],
@@ -65,12 +65,12 @@ export const fenceLizard: AssetDefinition = {
   scientificName: "Sceloporus tristichus",
   category: "Animals",
   description:
-    "A grey-brown mountain lizard with pale side stripes, dark chevrons and a blue-washed belly.",
+    "A grey-brown mountain lizard with pale side stripes, dark chevrons and a blue-washed belly, quick up rock and bark.",
   radius: 0.45,
   habitat: "land",
   behavior: {
     nocturnal: false,
-    climbs: false,
+    climbs: true,
     speed: 0.08,
     movement: "scurry",
     restsOn: ["stone", "bark"],
