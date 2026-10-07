@@ -22,7 +22,7 @@ gltf.scene.traverse((object) => {
     );
 });
 const center = bounds.getCenter(new Vector3());
-const LENGTH = 0.19;
+const LENGTH = 0.29;
 const scale = LENGTH / (bounds.max.z - bounds.min.z);
 // The source swims toward +Z; the habitat's fish face -Z, centred on their
 // body so they swim at the depth the school sets.

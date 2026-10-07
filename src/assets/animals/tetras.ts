@@ -36,14 +36,14 @@ export const emberTetra: AssetDefinition = {
   biomes: ["Tropical"],
   description:
     "A tiny glowing orange fish that drifts in loose groups near the surface.",
-  radius: 0.1,
+  radius: 0.08,
   habitat: "water",
   swims: { speed: 0.24, depth: 0.09 },
   build: () =>
     tetra({
-      length: 0.13,
-      depth: 0.04,
-      width: 0.016,
+      length: 0.107,
+      depth: 0.033,
+      width: 0.013,
       back: "#c4542c",
       stripe: "#ec7240",
       belly: "#f08a4e",
