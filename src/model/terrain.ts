@@ -30,6 +30,14 @@ export function groundHeight(x: number, z: number, env: Environment): number {
   );
   return clamp(base + delta, 0.08, MAX_GROUND_HEIGHT);
 }
+/** The upward surface normal of the ground, from its slope. */
+export function groundNormal(x: number, z: number, env: Environment) {
+  const step = 0.01;
+  const dx = groundHeight(x + step, z, env) - groundHeight(x - step, z, env);
+  const dz = groundHeight(x, z + step, env) - groundHeight(x, z - step, env);
+  const length = Math.hypot(dx, 2 * step, dz);
+  return { x: -dx / length, y: (2 * step) / length, z: -dz / length };
+}
 /** Stretch each species' preferred depth in a deep tank, keeping shallow
  * pond behavior unchanged and enough clearance above the substrate. */
 export function swimmingHeight(

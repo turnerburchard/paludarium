@@ -11,7 +11,7 @@ import {
   isLandAnimal,
 } from "../assets";
 import type { AssetKind, Environment, HabitatObject } from "../model/schema";
-import { groundHeight, swimmingHeight } from "../model/terrain";
+import { groundHeight, groundNormal, swimmingHeight } from "../model/terrain";
 import { objectBase } from "../model/stacking";
 import { FrogRig } from "./frogRig";
 import { GeckoRig } from "./geckoRig";
@@ -116,7 +116,18 @@ export function Inhabitant({
           state.position.z,
         );
         const live = ecosystem.live.current!;
-        if (environment !== live.world.environment) {
+        // On the ground, follow the terrain under the animal rather than the
+        // straight line between nodes, and lean with its slope.
+        const slope = state.grounded
+          ? groundNormal(state.position.x, state.position.z, environment)
+          : undefined;
+        if (slope)
+          group.position.y = groundHeight(
+            state.position.x,
+            state.position.z,
+            environment,
+          );
+        else if (environment !== live.world.environment) {
           const node = live.engine.graph.node(state.nodeId);
           const supportId = node.plantId ?? node.supportId;
           const plant = supportId
@@ -129,9 +140,8 @@ export function Inhabitant({
             groundHeight(anchor.x, anchor.z, environment) -
             groundHeight(anchor.x, anchor.z, live.world.environment);
         }
-        pose.normal
-          .set(state.normal.x, state.normal.y, state.normal.z)
-          .normalize();
+        const normal = slope ?? state.normal;
+        pose.normal.set(normal.x, normal.y, normal.z).normalize();
         pose.forward.set(
           state.direction.x,
           state.direction.y,

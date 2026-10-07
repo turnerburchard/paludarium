@@ -3,6 +3,7 @@ import { emptyWorld } from "../src/model/schema";
 import {
   baseGroundHeight,
   groundHeight,
+  groundNormal,
   placementProblem,
 } from "../src/model/terrain";
 import { applyTerrainBrush } from "../src/model/terrainBrush";
@@ -143,5 +144,18 @@ describe("saved landscape brushes", () => {
       x: world.environment.width / 2,
       z: world.environment.depth / 2,
     });
+  });
+});
+
+describe("ground normal", () => {
+  it("leans away from a slope", () => {
+    const raised = new TerrainStroke(emptyWorld(), {
+      mode: "raise",
+      radius: 0.65,
+    }).dab(0, 0).environment;
+    // East of the raised mound the ground falls away to the east.
+    const side = groundNormal(0.4, 0, raised);
+    expect(side.x).toBeGreaterThan(0.05);
+    expect(Math.hypot(side.x, side.y, side.z)).toBeCloseTo(1, 6);
   });
 });
