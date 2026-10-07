@@ -653,9 +653,9 @@ button:hover:not(:disabled) {
   gap: 15px;
 }
 .modal-footer {
-    display: flex;
-    align-items: center;
-    gap: 3px
+  display: flex;
+  align-items: center;
+  gap: 3px;
 }
 .modal h2 {
   font-family: ui-sans-serif, system-ui, sans-serif;

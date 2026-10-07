@@ -243,10 +243,6 @@ export default function App({
             watch(id);
           }}
           onClose={() => setDialog(null)}
-          onBuild={() => {
-            setDialog(null);
-            changeMode(false);
-          }}
         />
       )}
     </main>

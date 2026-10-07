@@ -112,7 +112,7 @@ try {
   await page.getByRole("button", { name: "Pause life (Space)" }).click();
   await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.getByRole("button", { name: "New world", exact: true }).click();
-  await page.getByRole("button", { name: /Aquarium.*underwater/ }).click();
+  await page.getByRole("button", { name: /04\s*Aquarium/ }).click();
   await page.waitForFunction((key) => {
     const world = JSON.parse(localStorage.getItem(key));
     return world?.name === "Aquarium" && world.environment.water > 2;
