@@ -14,12 +14,12 @@ npm run build      # static site in dist/
 
 # Browser checks at desktop and phone sizes
 npx playwright install chromium
-npm run test:e2e       # production smoke and mobile placement/navigation checks
+npm run test:e2e       # production, mobile gesture and HTTP-origin checks
 npm run test:e2e:touch # focused mobile gestures and viewport resizing
 npm run test:e2e:full  # longer desktop, terrain, touch and sharing flows
 ```
 
-Routine CI runs format, unit tests, typecheck/build, a browser smoke against the built site, and mobile placement/navigation regressions. The four deeper browser flows remain available locally and through the CI workflow’s manual **full_browser_checks** option. To check the Safari engine, install WebKit with `npx playwright install --with-deps webkit`, then run `TOUCH_BROWSER=webkit npm run test:e2e:touch`.
+Routine CI runs format, unit tests, typecheck/build, a browser smoke against the built site, mobile placement/navigation regressions, and menu/placement checks on an HTTP origin where secure-only browser APIs are unavailable. The four deeper browser flows remain available locally and through the CI workflow’s manual **full_browser_checks** option. To check the Safari engine, install WebKit with `npx playwright install --with-deps webkit`, then run `TOUCH_BROWSER=webkit npm run test:e2e:touch`.
 
 `dist/` is a self-contained static site with relative asset paths, so it can be served from any subdirectory.
 
