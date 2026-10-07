@@ -109,6 +109,19 @@ describe("slow animal life cycles", () => {
       world = advanceLife(world, 5);
     expect(world.objects).toHaveLength(0);
   });
+  it("loses a stranded animal within minutes and keeps it from breeding", () => {
+    let world = habitat(["tree-frog", "tree-frog"]);
+    const stranded = new Set(["animal-0"]);
+    world = advanceLife(world, 60, Math.random, stranded);
+    const [frog, other] = world.objects;
+    expect(frog.life!.condition).toBeLessThan(0.7);
+    expect(frog.life!.breeding).toBe(0);
+    expect(other.life!.condition).toBe(1);
+    for (let i = 0; i < 30; i++)
+      world = advanceLife(world, 5, Math.random, stranded);
+    expect(world.objects.some((o) => o.id === "animal-0")).toBe(false);
+    expect(world.objects.some((o) => o.id === "animal-1")).toBe(true);
+  });
   it("ages juveniles into adults and removes an animal at the end of its life", () => {
     const world = habitat(["fish"]);
     world.objects[0].life!.age = MATURITY_AGE - 5;

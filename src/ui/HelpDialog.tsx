@@ -51,9 +51,11 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
         <dd>
           Planting and tank space support your animals. Healthy adults of the
           same species can have young, which slowly grow up. Crowding and too
-          little planting gradually lower condition. Follow a creature to see
-          its age and condition. Life pauses while the tab is hidden; age,
-          condition and offspring stay saved when you return.
+          little planting gradually lower condition. An animal with nowhere it
+          can live, like a frog in a flooded tank or a fish in a drained one,
+          declines within minutes. Follow a creature to see its age and
+          condition. Life pauses while the tab is hidden; age, condition and
+          offspring stay saved when you return.
         </dd>
         <dt>Saving and sharing</dt>
         <dd>

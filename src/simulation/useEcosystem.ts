@@ -51,12 +51,28 @@ export function useEcosystem(
     );
     return () => clearInterval(timer);
   }, []);
+  /** Whether the animal has anywhere it can live: ground it can walk, or
+   * water it can swim. */
+  function canLive(id: string) {
+    const { engine, fish } = live.current!;
+    return !!engine.observeAnimal(id) || !!fish.get(id);
+  }
   function advanceLife(seconds: number, paused: boolean) {
     const current = live.current!;
     if (paused) return;
     current.lifeRemainder += Math.min(seconds, 0.25);
     if (current.lifeRemainder < 5) return;
-    const next = evolveLife(current.world, current.lifeRemainder);
+    const stranded = new Set(
+      current.world.objects
+        .filter((o) => isAnimal(o.kind) && !canLive(o.id))
+        .map((o) => o.id),
+    );
+    const next = evolveLife(
+      current.world,
+      current.lifeRemainder,
+      Math.random,
+      stranded,
+    );
     current.lifeRemainder = 0;
     if (next === current.world) return;
     const previous = current.world;
@@ -70,6 +86,12 @@ export function useEcosystem(
     current.world = next;
     onLifeChange(previous, next);
   }
-  return { live, snapshot, advanceLife, habitat: habitatSupport(world) };
+  return {
+    live,
+    snapshot,
+    canLive,
+    advanceLife,
+    habitat: habitatSupport(world),
+  };
 }
 export type EcosystemController = ReturnType<typeof useEcosystem>;

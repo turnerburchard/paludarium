@@ -11,6 +11,9 @@ const PLANTS_PER_ANIMAL = 1;
 const SPACE_PER_ANIMAL = 1;
 const SHORTAGE_TOLERANCE = 2 * 60 * 60;
 const RECOVERY_TIME = 30 * 60;
+/** How long an animal lasts with nowhere it can live, such as a frog in a
+ * flooded tank or a fish in a drained one. */
+const STRANDED_TOLERANCE = 3 * 60;
 
 export function animalLife(object: HabitatObject) {
   if (object.life) return object.life;
@@ -56,10 +59,12 @@ export function habitatSupport(world: World) {
   };
 }
 
+/** `stranded` lists the animals with nowhere they can live. */
 export function advanceLife(
   world: World,
   seconds: number,
   random = Math.random,
+  stranded: ReadonlySet<string> = new Set(),
 ): World {
   if (seconds === 0 || !world.objects.some((o) => isAnimal(o.kind)))
     return world;
@@ -68,23 +73,20 @@ export function advanceLife(
   const objects = world.objects.flatMap((object) => {
     if (!isAnimal(object.kind)) return [object];
     const previous = animalLife(object);
+    const homeless = stranded.has(object.id);
+    let change = 1 / RECOVERY_TIME;
+    if (homeless) change = -1 / STRANDED_TOLERANCE;
+    else if (support < 1) change = -(1 - support) / SHORTAGE_TOLERANCE;
     const condition = Math.max(
       0,
-      Math.min(
-        1,
-        previous.condition +
-          seconds *
-            (support >= 1
-              ? 1 / RECOVERY_TIME
-              : -(1 - support) / SHORTAGE_TOLERANCE),
-      ),
+      Math.min(1, previous.condition + seconds * change),
     );
     const life = {
       ...previous,
       age: previous.age + seconds,
       condition,
       breeding:
-        condition >= 0.6 && support >= 1
+        condition >= 0.6 && support >= 1 && !homeless
           ? Math.min(BREEDING_INTERVAL, previous.breeding + seconds)
           : 0,
     };
