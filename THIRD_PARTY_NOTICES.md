@@ -20,7 +20,7 @@ The cattail, snail and turtle are derived from ["Cattail"](https://poly.pizza/m/
 
 ## Crab, scorpion and spider models
 
-The vampire crab is derived from ["Crab" by jeremy](https://poly.pizza/m/bmZ6-LnPmp0) and the stripe-tailed scorpion from ["Scorpion" by Poly by Google](https://poly.pizza/m/6Bu7d_Pkm5o), both licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). The desert blonde tarantula is derived from ["Spider" by Quaternius](https://poly.pizza/m/yRYJiAJyiM), released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/). All three were reshaped, rigged, rescaled and recolored. The original GLBs are in `docs/inspiration/models/`.
+The vampire crab is derived from ["Crab" by jeremy](https://poly.pizza/m/bmZ6-LnPmp0) and the stripe-tailed scorpion from ["Scorpion" by Poly by Google](https://poly.pizza/m/6Bu7d_Pkm5o), both licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). The desert blonde tarantula is derived from ["Spider" by Quaternius](https://poly.pizza/m/yRYJiAJyiM), released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/). The Thai micro crab is a second, smaller version of the same crab. The Mexican dwarf crayfish and the cherry shrimp are derived from two "Crayfish" models by Poly by Google ([crayfish](https://poly.pizza/m/3Y2cocX0ILR), [shrimp](https://poly.pizza/m/bmtxAjfrpa3)), licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). All were reshaped, rigged, rescaled and recolored. The original GLBs are in `docs/inspiration/models/`.
 
 ## Plant models
 

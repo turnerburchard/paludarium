@@ -58,7 +58,8 @@ describe.each([...arthropodRigs.keys()] as AssetKind[])("%s rig", (kind) => {
             ),
         );
     }
-    expect(reach).toBeGreaterThan(0.3);
+    // The crayfish's claws are baked into its body, so it has no arms to lift.
+    if (spec.arms.length) expect(reach).toBeGreaterThan(0.3);
     for (let frame = 0; frame < 300; frame++) rig.update(sleeping, FRAME);
     expect(body.position.y).toBeLessThanOrEqual(standing);
     expect(body.position.y).toBeGreaterThanOrEqual(standing - spec.settle);

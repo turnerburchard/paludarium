@@ -28,7 +28,14 @@ import {
   tigerSalamander,
 } from "./animals/lizards";
 import { snail } from "./animals/snail";
-import { scorpion, tarantula, vampireCrab } from "./animals/arthropods";
+import {
+  scorpion,
+  tarantula,
+  vampireCrab,
+  microCrab,
+  dwarfCrayfish,
+  cherryShrimp,
+} from "./animals/arthropods";
 import { desertTortoise, turtle } from "./animals/turtle";
 import { cardinalTetra, emberTetra } from "./animals/tetras";
 import { tigerBarb } from "./animals/barb";
@@ -207,6 +214,9 @@ export const assets = {
   "vampire-crab": vampireCrab,
   "stripe-tailed-scorpion": scorpion,
   "desert-tarantula": tarantula,
+  "micro-crab": microCrab,
+  "dwarf-crayfish": dwarfCrayfish,
+  "cherry-shrimp": cherryShrimp,
 } satisfies Record<AssetKind, AssetDefinition>;
 
 export const catalog: readonly AssetDefinition[] = Object.values(assets);

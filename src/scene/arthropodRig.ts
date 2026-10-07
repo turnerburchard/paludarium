@@ -5,13 +5,14 @@ import { PlantedLegs, type LegSpec } from "./legs";
 export type ArthropodActivity = Pick<AnimalState, "activity" | "moving">;
 
 /** Which legs to plant, for each arm the axis that lowers it, how far the
- * body can sink before it touches the ground, and how high the arms wave
- * (radians). */
+ * body can sink before it touches the ground, how high the arms wave
+ * (radians), and how far each step reaches and lifts. */
 export interface ArthropodRigSpec {
   settle: number;
   legs: readonly LegSpec[];
   arms: readonly { bone: string; lowers: number[] }[];
   wave: number;
+  stride?: number;
 }
 
 /** Animates crabs, scorpions and spiders: feet planted as the body moves,
@@ -33,7 +34,7 @@ export class ArthropodRig {
 
   constructor(
     private readonly model: THREE.Object3D,
-    { settle, legs, arms, wave }: ArthropodRigSpec,
+    { settle, legs, arms, wave, stride = 0.018 }: ArthropodRigSpec,
   ) {
     this.settle = settle;
     this.wave = wave;
@@ -51,8 +52,8 @@ export class ArthropodRig {
     });
     // Model-space distances; these animals are a few tenths across.
     this.legs = new PlantedLegs(model, legs, {
-      stride: 0.018,
-      stepHeight: 0.018,
+      stride,
+      stepHeight: stride,
       stepSeconds: 0.07,
     });
   }

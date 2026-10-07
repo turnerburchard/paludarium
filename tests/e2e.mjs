@@ -241,7 +241,7 @@ try {
       .count(),
     0,
   );
-  // Every land animal is listed to watch; fish are counted by species.
+  // Every walking animal is listed to watch; fish are counted by species.
   const lifeWorld = await saved();
   assert.equal(
     await life.locator(".frog-list:not(.fish-list) button").count(),
@@ -258,6 +258,9 @@ try {
         "canyon-tree-frog",
         "snail",
         "turtle",
+        "micro-crab",
+        "dwarf-crayfish",
+        "cherry-shrimp",
       ].includes(object.kind),
     ).length,
   );

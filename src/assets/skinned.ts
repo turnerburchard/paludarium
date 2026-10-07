@@ -21,12 +21,14 @@ export type Painter = (
 ) => THREE.Color;
 
 /** Builds a skinned, flat-shaded model painted face by face. Parts in the
- * `glossy` source color, such as eyes, get a shinier material. */
+ * `glossy` source color, such as eyes, get a shinier material, and an
+ * `opacity` below 1 makes the rest see-through. */
 export function buildSkinned(
   model: SkinnedModel,
   paint: Painter,
   random: () => number,
   glossy?: string,
+  opacity = 1,
 ) {
   const root = new THREE.Group();
   const bones = model.bones.map((data) => {
@@ -45,6 +47,8 @@ export function buildSkinned(
     vertexColors: true,
     flatShading: true,
     roughness: 0.55,
+    transparent: opacity < 1,
+    opacity,
   });
   const shiny = new THREE.MeshStandardMaterial({
     vertexColors: true,

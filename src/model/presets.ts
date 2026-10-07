@@ -101,6 +101,13 @@ export function makePreset(preset: Preset): World {
         1,
         2,
       );
+    // Cherry shrimp graze the stones and driftwood.
+    for (const [x, z, heading] of [
+      [-2.0, 0.0, 0.4],
+      [1.0, -0.4, 2.2],
+      [-1.3, 1.0, 5.1],
+    ])
+      add("cherry-shrimp", x, z, 1, heading);
     // A sunken root behind the open middle, red ludwigia for color at the side
     // and a carpet of dwarf sagittaria across the front.
     add("tree-roots", 1.3, -0.3, 1, 0.8);
@@ -216,7 +223,8 @@ function cloudForest(add: Add, objects: HabitatObject[]) {
   add("fittonia", 2.5, 1.95, 0.9);
   add("bromeliad", 3.5, 1.85, 0.8, 2.6);
   add("grass", 1.9, 1.5, 0.8, 1.4);
-  // The pool: lilies, java moss and a pair of convict cichlids.
+  // The pool: lilies, java moss, a pair of convict cichlids and two micro
+  // crabs on the bottom.
   add("water-lily", 1.25, 0.6, 1, 0.4);
   add("water-lily", 0.35, 1.35, 0.8, 2);
   add("java-moss", 1.3, 1.5, 1);
@@ -227,6 +235,8 @@ function cloudForest(add: Add, objects: HabitatObject[]) {
     [1.0, 1.0, 3.1],
   ])
     add("convict-cichlid", x, z, 0.8, turn);
+  add("micro-crab", 0.9, 1.45, 1, 0.6);
+  add("micro-crab", 0.2, 1.1, 1, 2.5);
   return objects;
 }
 
@@ -284,6 +294,8 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
   add("cutthroat-trout", 2.7, 0.4, 0.75, 3);
   add("sculpin", 2.4, -0.1, 1, 3);
   add("sculpin", 1.9, 0.6, 1, 0.5);
+  add("dwarf-crayfish", 2.2, 0.9, 1, 1.1);
+  add("dwarf-crayfish", 2.6, 0.75, 1, 4);
   return objects;
 }
 
