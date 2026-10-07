@@ -179,7 +179,7 @@ try {
     .waitFor({ state: "detached" });
   await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.getByRole("button", { name: "New world", exact: true }).click();
-  await page.getByRole("button", { name: /Cloud forest.*Monstera/ }).click();
+  await page.getByRole("button", { name: /02\s*Cloud forest/ }).click();
   world = await saved();
   assert.equal(world.name, "Cloud forest");
   assert.ok(world.objects.length > 20);
