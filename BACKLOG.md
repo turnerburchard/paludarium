@@ -4,6 +4,8 @@ Keep completed work separate from proposed work; an idea is not automatically pa
 
 ## Current release
 
+- [x] Consistent mobile menu gutters and grid-based header, sticky category controls, and equal card heights with top-aligned labels.
+
 - [x] Remove filler menu and status text; use direct dialog headings and instructions.
 
 - [x] Category-only Add menu, visible-card thumbnail generation with caching and cancellation, and a fixed-height mobile sheet with consistent tab widths and a right-aligned close control.
