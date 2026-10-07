@@ -182,6 +182,17 @@ describe("fish in a real tank", () => {
     20_000,
   );
 
+  it.each(["aquarium", "tropical", "mountain", "grotto", "desert"] as const)(
+    "start in open water where the %s preset places them",
+    (preset) => {
+      const world = makePreset(preset);
+      for (const fish of createFishSchool(world).all()) {
+        const placed = world.objects.find((o) => o.id === fish.id)!;
+        expect([fish.x, fish.z], fish.species).toEqual([placed.x, placed.z]);
+      }
+    },
+  );
+
   it("keep their place through an unrelated edit", () => {
     const world = makePreset("tropical");
     const school = createFishSchool(world);
