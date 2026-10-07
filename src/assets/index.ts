@@ -75,6 +75,14 @@ import { wood } from "./landscape/wood";
 import { branch } from "./landscape/branch";
 import { log } from "./landscape/log";
 import { rockShelter } from "./landscape/rockShelter";
+import {
+  granite,
+  limestone,
+  pebbles,
+  sandstone,
+  sandstoneLedge,
+  slate,
+} from "./landscape/stones";
 import { leafLitter } from "./landscape/leafLitter";
 
 export type { AssetDefinition, Category, AnimalBehavior } from "./types";
@@ -133,6 +141,12 @@ export const assets = {
   "fern-moss": fernMoss,
   "java-moss": javaMoss,
   rock,
+  granite,
+  sandstone,
+  "sandstone-ledge": sandstoneLedge,
+  limestone,
+  slate,
+  pebbles,
   wood,
   branch,
   log,

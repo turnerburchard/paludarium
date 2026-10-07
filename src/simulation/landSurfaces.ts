@@ -122,8 +122,7 @@ export class LandSurfaces {
         string,
         { point: THREE.Vector3; normal: THREE.Vector3; node: HabitatNode }
       >();
-      const stone =
-        solid.object.kind === "rock" || solid.object.kind === "rock-shelter";
+      const stone = assets[solid.object.kind].hardscape === "stone";
       const sample = (point: THREE.Vector3, normal: THREE.Vector3) => {
         const key = [point.x, point.y, point.z]
           .map((value) => Math.round(value * 100000))
