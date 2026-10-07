@@ -1,6 +1,7 @@
 export const TERRAIN_COLUMNS = 32;
 export const TERRAIN_ROWS = 24;
 export const TERRAIN_POINTS = (TERRAIN_COLUMNS + 1) * (TERRAIN_ROWS + 1);
+export const MAX_GROUND_HEIGHT = 2.4;
 export const groundMaterials = [
   "natural",
   "soil",

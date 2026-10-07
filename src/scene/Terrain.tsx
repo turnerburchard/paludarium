@@ -131,7 +131,7 @@ export function Terrain({ environment: env }: { environment: Environment }) {
   // covers cushions from the lowest up, so how many stay dry names the set,
   // and dragging the water level only remerges when the waterline crosses one.
   const dry = moss.filter((cushion) => cushion.point.y > env.water);
-  const carpet = useMemo(() => mossCarpet(dry), [moss, dry.length]);
+  const carpet = useMemo(() => mossCarpet(dry, env), [moss, dry.length]);
   const carpetSkin = useMemo(() => mossMaterial(), []);
   useEffect(
     () => () => {

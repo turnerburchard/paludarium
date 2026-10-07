@@ -169,8 +169,36 @@ export function mossCushions(points: THREE.Vector3[], random: () => number) {
 type MossCushion = ReturnType<typeof mossCushions>[number];
 
 /** Joins cushions into one mesh, so a whole carpet draws at once. */
-export function mossCarpet(cushions: MossCushion[]) {
+export function mossCarpet(
+  cushions: MossCushion[],
+  bounds?: { width: number; depth: number },
+) {
   const lumps = cushions.flatMap((cushion) => cushion.lumps);
   if (lumps.length === 0) return undefined;
-  return mergeGeometries(lumps) ?? undefined;
+  const carpet = mergeGeometries(lumps);
+  if (!carpet) return undefined;
+  if (bounds) {
+    const positions = carpet.getAttribute("position");
+    // Edge grid points grow tufts past the glass. Trim only the rendered cover.
+    for (let i = 0; i < positions.count; i++) {
+      positions.setX(
+        i,
+        THREE.MathUtils.clamp(
+          positions.getX(i),
+          -bounds.width / 2,
+          bounds.width / 2,
+        ),
+      );
+      positions.setZ(
+        i,
+        THREE.MathUtils.clamp(
+          positions.getZ(i),
+          -bounds.depth / 2,
+          bounds.depth / 2,
+        ),
+      );
+    }
+    carpet.computeVertexNormals();
+  }
+  return carpet;
 }
