@@ -20,8 +20,8 @@ export function SharedWorldDialog({
         </IconButton>
       </div>
       <p>
-        Make your own copy to build and save in My worlds. Your other worlds
-        stay saved, and your changes won’t affect the original.
+        Make your own copy to build and save in Worlds. Your other worlds stay
+        saved, and your changes won’t affect the original.
       </p>
       {error && <p role="status">{error}</p>}
       <div className="shared-world-actions">

@@ -13,7 +13,6 @@ import { Inspector } from "./ui/Inspector";
 import { MobileDock } from "./ui/MobileDock";
 import { ShareDialog } from "./ui/ShareDialog";
 import { WorldsDialog } from "./ui/WorldsDialog";
-import { NewWorldDialog } from "./ui/NewWorldDialog";
 import { SceneBoundary } from "./ui/SceneBoundary";
 import { SceneTools } from "./ui/SceneTools";
 import { Sidebar, type Panel } from "./ui/Sidebar";
@@ -42,14 +41,7 @@ export default function App({
   const [hasBuilt, setHasBuilt] = useState(false);
   const [resetCamera, setResetCamera] = useState(0);
   const [dialog, setDialog] = useState<
-    | "share"
-    | "worlds"
-    | "new-world"
-    | "help"
-    | "about"
-    | "shared-copy"
-    | "share-error"
-    | null
+    "share" | "worlds" | "help" | "about" | "shared-copy" | "share-error" | null
   >(shareError ? "share-error" : null);
   const [watchRequest, setWatchRequest] = useState<string | null>(null);
   // Deselecting (Escape, clicking away) also stops watching.
@@ -226,7 +218,7 @@ export default function App({
         <WorldsDialog
           editor={editor}
           onClose={() => setDialog(null)}
-          onNew={() => setDialog("new-world")}
+          onPreset={startPreset}
           onImport={files.importWorld}
           onOpen={(id) => {
             if (!editor.openWorld(id)) return;
@@ -235,13 +227,6 @@ export default function App({
             setWatchRequest(null);
             setResetCamera((n) => n + 1);
           }}
-        />
-      )}
-      {dialog === "new-world" && (
-        <NewWorldDialog
-          error={!editor.saved ? editor.message : ""}
-          onPreset={startPreset}
-          onClose={() => setDialog(null)}
         />
       )}
       {dialog === "shared-copy" && (

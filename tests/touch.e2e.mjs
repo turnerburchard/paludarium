@@ -497,8 +497,7 @@ try {
   );
   stage = "frog placement after an interrupted zoom gesture";
   await page.getByRole("button", { name: "Build", exact: true }).tap();
-  await page.getByRole("button", { name: "My worlds", exact: true }).tap();
-  await page.getByRole("button", { name: "New world", exact: true }).tap();
+  await page.getByRole("button", { name: "Worlds", exact: true }).tap();
   await page.getByRole("button", { name: "Empty tank", exact: true }).tap();
   await page.getByRole("button", { name: "Build", exact: true }).tap();
   await page

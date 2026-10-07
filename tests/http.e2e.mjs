@@ -95,10 +95,12 @@ try {
     "Limestone grotto",
     "Aquarium",
   ]) {
-    await page.getByRole("button", { name: "My worlds", exact: true }).tap();
-    await page.getByRole("button", { name: "New world", exact: true }).tap();
-    const dialog = page.getByRole("dialog", { name: "Start a world" });
-    await dialog.getByRole("button", { name, exact: true }).tap();
+    await page.getByRole("button", { name: "Worlds", exact: true }).tap();
+    const dialog = page.getByRole("dialog", { name: "Worlds" });
+    await dialog
+      .locator(".preset-options")
+      .getByRole("button", { name, exact: true })
+      .tap();
     await dialog.waitFor({ state: "detached" });
     await page.waitForFunction((name) => {
       const world = JSON.parse(

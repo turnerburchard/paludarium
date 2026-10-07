@@ -1,12 +1,4 @@
-import {
-  Share2,
-  FolderOpen,
-  Eye,
-  Hammer,
-  Home,
-  Pause,
-  Play,
-} from "lucide-react";
+import { Share2, Globe2, Eye, Hammer, Home, Pause, Play } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import { IconButton } from "./IconButton";
 
@@ -26,7 +18,7 @@ export function SceneTools({
   onShare: () => void;
 }) {
   return (
-    <>
+    <div className="scene-controls">
       <nav className="mode-switch" aria-label="World mode">
         <button aria-pressed={view} onClick={() => onChangeMode(true)}>
           <Eye size={16} /> View
@@ -37,9 +29,9 @@ export function SceneTools({
       </nav>
       <div className="scene-tools">
         {view && (
-          <IconButton label="My worlds" onClick={onWorlds}>
-            <FolderOpen size={19} />
-          </IconButton>
+          <button className="worlds-button" onClick={onWorlds}>
+            <Globe2 size={18} aria-hidden="true" /> Worlds
+          </button>
         )}
         <IconButton
           label={editor.paused ? "Resume life (Space)" : "Pause life (Space)"}
@@ -55,6 +47,6 @@ export function SceneTools({
           <Share2 size={19} />
         </IconButton>
       </div>
-    </>
+    </div>
   );
 }

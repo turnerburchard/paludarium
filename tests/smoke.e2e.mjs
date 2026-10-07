@@ -111,10 +111,10 @@ try {
   assert.deepEqual(image, [1200, 630]);
   await page.getByRole("button", { name: "Pause life (Space)" }).click();
   await page.getByRole("button", { name: "Build", exact: true }).click();
-  await page.getByRole("button", { name: "My worlds", exact: true }).click();
-  await page.getByRole("button", { name: "New world", exact: true }).click();
+  await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "Start a world" })
+    .getByRole("dialog", { name: "Worlds" })
+    .locator(".preset-options")
     .getByRole("button", { name: "Aquarium", exact: true })
     .click();
   await page.waitForFunction((key) => {
@@ -313,10 +313,8 @@ try {
       ).name === "Aquarium",
     storageKey,
   );
-  await page.getByRole("button", { name: "My worlds", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Smoke check Open world", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Worlds", exact: true }).click();
+  await page.getByRole("button", { name: "Smoke check", exact: true }).click();
   await page.waitForFunction(
     (key) => JSON.parse(localStorage.getItem(key)).worlds.length === 2,
     storageKey,

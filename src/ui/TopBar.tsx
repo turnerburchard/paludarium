@@ -1,4 +1,4 @@
-import { Check, FolderOpen, Leaf, Redo2, Undo2 } from "lucide-react";
+import { Check, Globe2, Leaf, Redo2, Undo2 } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import { IconButton } from "./IconButton";
 
@@ -53,16 +53,18 @@ export function TopBar({
         >
           <Undo2 size={18} />
         </IconButton>
-        <IconButton
-          label="Redo (⌘/Ctrl Shift Z)"
-          onClick={editor.redo}
-          disabled={!editor.canRedo}
-        >
-          <Redo2 size={18} />
-        </IconButton>
-        <IconButton label="My worlds" onClick={onWorlds}>
-          <FolderOpen size={18} />
-        </IconButton>
+        <span className="desktop-redo">
+          <IconButton
+            label="Redo (⌘/Ctrl Shift Z)"
+            onClick={editor.redo}
+            disabled={!editor.canRedo}
+          >
+            <Redo2 size={18} />
+          </IconButton>
+        </span>
+        <button className="worlds-button" onClick={onWorlds}>
+          <Globe2 size={18} aria-hidden="true" /> Worlds
+        </button>
       </div>
     </header>
   );

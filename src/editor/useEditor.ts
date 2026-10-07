@@ -302,7 +302,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     if (!saveLibrary(next)) {
       setSaved(false);
       notify(
-        "Your worlds could not be saved. Export a backup from My worlds before continuing.",
+        "Your worlds could not be saved. Export a backup from Worlds before continuing.",
       );
       return false;
     }

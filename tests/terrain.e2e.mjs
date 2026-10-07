@@ -60,10 +60,10 @@ try {
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
-  await page.getByRole("button", { name: "My worlds", exact: true }).click();
-  await page.getByRole("button", { name: "New world", exact: true }).click();
+  await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "Start a world" })
+    .getByRole("dialog", { name: "Worlds" })
+    .locator(".preset-options")
     .getByRole("button", { name: "Empty tank", exact: true })
     .click();
   await page
@@ -205,7 +205,7 @@ try {
   await page.getByRole("button", { name: "Done", exact: true }).click();
   await page.screenshot({ path: "/tmp/paludarium-terrain-desktop.png" });
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "My worlds", exact: true }).click();
+  await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page
     .getByRole("button", { name: /^Options for/ })
     .last()

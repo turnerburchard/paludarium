@@ -1,58 +1,64 @@
 import { useState } from "react";
-import {
-  Download,
-  MoreHorizontal,
-  Plus,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
+import { Download, MoreHorizontal, Trash2, Upload, X } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import { downloadWorld } from "../editor/persistence";
+import type { Preset } from "../model/presets";
 import { IconButton } from "./IconButton";
 import { Modal } from "./Modal";
 
 export function WorldsDialog({
   editor,
   onOpen,
-  onNew,
+  onPreset,
   onImport,
   onClose,
 }: {
   editor: Editor;
   onOpen: (id: string) => void;
-  onNew: () => void;
+  onPreset: (preset: Preset) => void;
   onImport: () => void;
   onClose: () => void;
 }) {
   const [menuId, setMenuId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   return (
-    <Modal label="My worlds" onClose={onClose}>
-      <div className="modal-heading">
-        <h2>My worlds</h2>
+    <Modal label="Worlds" onClose={onClose}>
+      <div className="modal-heading worlds-heading">
+        <h2>Worlds</h2>
         <IconButton label="Close dialog" onClick={onClose}>
           <X size={20} />
         </IconButton>
       </div>
-      <p>Saved automatically in this browser.</p>
       {(editor.message || !editor.saved) && (
         <p role="status">
           {editor.message ||
             "Saving is unavailable. Export a backup before continuing."}
         </p>
       )}
+      <h3 className="world-section-heading">Presets</h3>
+      <div className="preset-options">
+        <button onClick={() => onPreset("tropical")}>Cloud forest</button>
+        <button onClick={() => onPreset("aquarium")}>Aquarium</button>
+        <button onClick={() => onPreset("mountain")}>Alpine creek</button>
+        <button onClick={() => onPreset("desert")}>Desert spring</button>
+        <button onClick={() => onPreset("grotto")}>Limestone grotto</button>
+        <button onClick={() => onPreset("empty")}>Empty tank</button>
+      </div>
+      <div className="world-library-actions">
+        <h3 className="world-section-heading">Your worlds</h3>
+        <button onClick={onImport}>
+          <Upload size={15} aria-hidden="true" /> Import
+        </button>
+      </div>
       <div className="world-list">
         {editor.library.worlds.map(({ id, world }) => (
           <div className="saved-world" key={id}>
             <div className="saved-world-heading">
               <button className="open-world" onClick={() => onOpen(id)}>
                 <strong>{world.name}</strong>
-                <span>
-                  {id === editor.library.activeId && !editor.isShared
-                    ? "Current world"
-                    : "Open world"}
-                </span>
+                {id === editor.library.activeId && !editor.isShared && (
+                  <span>Current</span>
+                )}
               </button>
               <IconButton
                 label={`Options for ${world.name}`}
@@ -98,14 +104,6 @@ export function WorldsDialog({
             )}
           </div>
         ))}
-      </div>
-      <div className="world-library-actions">
-        <button className="intro-build-button" onClick={onNew}>
-          <Plus size={16} /> New world
-        </button>
-        <button onClick={onImport}>
-          <Upload size={15} aria-hidden="true" /> Import file
-        </button>
       </div>
     </Modal>
   );
