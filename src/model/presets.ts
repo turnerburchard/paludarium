@@ -100,6 +100,16 @@ export function makePreset(preset: Preset): World {
         1,
         2,
       );
+    // A sunken root behind the open middle, red ludwigia for color at the side
+    // and a carpet of dwarf sagittaria across the front.
+    add("tree-roots", 1.3, -0.3, 1, 0.8);
+    add("ludwigia", -2.85, 1.4, 1);
+    for (const [x, z] of [
+      [0.35, 1.65],
+      [-0.8, 1.7],
+      [2.7, 1.7],
+    ])
+      add("dwarf-sagittaria", x, z, 1.1);
     return {
       version: 1,
       name: "Aquarium",
@@ -331,6 +341,7 @@ function desertSpring(add: Add, objects: HabitatObject[]) {
   ])
     add("pupfish", x, z, 1, turn);
   add("flagstone", 1.3, -0.55, 0.9, 1.3);
+  add("dead-tree", -1.1, 0.65, 1, 0.9);
   return objects;
 }
 
