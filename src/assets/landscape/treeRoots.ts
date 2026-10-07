@@ -7,8 +7,8 @@ export const treeRoots: AssetDefinition = {
   name: "Tree roots",
   category: "Landscape",
   description:
-    "The base of a sunken tree, its tangle of dark roots spread over the bottom where small fish weave between them.",
-  radius: 0.34,
+    "The fallen base of a sunken tree, its dark roots spread over the bottom where small fish weave between them.",
+  radius: 0.55,
   habitat: "either",
   hardscape: "wood",
   blocksMovement: true,

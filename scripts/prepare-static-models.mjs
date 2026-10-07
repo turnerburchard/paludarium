@@ -146,8 +146,10 @@ const MODELS = [
     // "Tree roots" by Poly by Google, poly.pizza/m/eYfjQLsebfA, CC-BY 3.0.
     source: "docs/inspiration/models/tree-roots-poly-google.glb",
     out: "src/assets/landscape/treeRoots.json",
-    height: 0.8,
-    sink: 0.04,
+    // Laid on its side, so the roots fan out over the bottom.
+    layDown: true,
+    length: 1.1,
+    sink: 0.3,
     solid: true,
     roles: { wood: "7d5b32", cut: "c08444", dark: "130701" },
   },
@@ -190,11 +192,15 @@ for (const model of MODELS) {
         : material.color.getHexString();
       faces.push({
         key: roles ? nearestRole(source, roles) : source,
-        corners: [0, 1, 2].map((k) =>
-          new Vector3()
+        corners: [0, 1, 2].map((k) => {
+          const corner = new Vector3()
             .fromBufferAttribute(position, i + k)
-            .applyMatrix4(object.matrixWorld),
-        ),
+            .applyMatrix4(object.matrixWorld);
+          // Tips an upright model onto its back: up becomes forward.
+          return model.layDown
+            ? corner.set(corner.x, -corner.z, corner.y)
+            : corner;
+        }),
       });
     }
   });
