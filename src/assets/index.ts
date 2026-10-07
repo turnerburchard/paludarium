@@ -76,13 +76,19 @@ import { branch } from "./landscape/branch";
 import { log } from "./landscape/log";
 import { rockShelter } from "./landscape/rockShelter";
 import {
+  flagstone,
   granite,
   limestone,
+  limestonePinnacle,
   pebbles,
   sandstone,
   sandstoneLedge,
+  sandstonePillar,
+  scree,
   slate,
 } from "./landscape/stones";
+import { fungusLog } from "./landscape/fungusLog";
+import { snag } from "./landscape/snag";
 import { leafLitter } from "./landscape/leafLitter";
 
 export type { AssetDefinition, Category, AnimalBehavior } from "./types";
@@ -143,13 +149,19 @@ export const assets = {
   rock,
   granite,
   sandstone,
+  "sandstone-pillar": sandstonePillar,
   "sandstone-ledge": sandstoneLedge,
   limestone,
+  "limestone-pinnacle": limestonePinnacle,
   slate,
+  flagstone,
+  scree,
   pebbles,
   wood,
   branch,
   log,
+  "fungus-log": fungusLog,
+  snag,
   "rock-shelter": rockShelter,
   "leaf-litter": leafLitter,
   fish,

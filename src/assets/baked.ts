@@ -15,15 +15,19 @@ export function buildBaked(
 ) {
   const root = new THREE.Group();
   for (const part of model.parts) {
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(part.positions, 3),
-    );
-    geometry.computeVertexNormals();
     const { color, name } = colorOf(part.color);
-    const object = mesh(geometry, material(color, 0.75), root);
+    const object = mesh(bakedGeometry(part), material(color, 0.75), root);
     if (name) object.name = name;
   }
   return root;
+}
+
+export function bakedGeometry(part: BakedModel["parts"][number]) {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(part.positions, 3),
+  );
+  geometry.computeVertexNormals();
+  return geometry;
 }
