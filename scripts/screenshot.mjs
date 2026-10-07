@@ -10,9 +10,9 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const outDir = process.argv[2] ?? `${root}screenshots`;
 const port = 5192;
 const presets = [
-  { name: "cloud-forest", button: /02\s*Cloud forest/ },
-  { name: "alpine-creek", button: /03\s*Alpine creek/ },
-  { name: "aquarium", button: /04\s*Aquarium/ },
+  { name: "cloud-forest", button: "Cloud forest" },
+  { name: "alpine-creek", button: "Alpine creek" },
+  { name: "aquarium", button: "Aquarium" },
 ];
 const viewports = [
   { name: "desktop", width: 1440, height: 960 },
@@ -69,7 +69,10 @@ try {
       await page
         .getByRole("button", { name: "New world", exact: true })
         .click();
-      await page.getByRole("button", { name: preset.button }).click();
+      await page
+        .getByRole("dialog", { name: "Start a world" })
+        .getByRole("button", { name: preset.button, exact: true })
+        .click();
       await page.waitForTimeout(1500);
       const path = `${outDir}/${preset.name}-${viewport.name}.png`;
       await page.screenshot({ path });

@@ -60,7 +60,10 @@ try {
     "first visit opens on a finished habitat",
   );
   await page.getByRole("button", { name: "New world", exact: true }).click();
-  await page.getByRole("button", { name: /Empty tank/ }).click();
+  await page
+    .getByRole("dialog", { name: "Start a world" })
+    .getByRole("button", { name: "Empty tank", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
@@ -179,7 +182,10 @@ try {
     .waitFor({ state: "detached" });
   await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.getByRole("button", { name: "New world", exact: true }).click();
-  await page.getByRole("button", { name: /02\s*Cloud forest/ }).click();
+  await page
+    .getByRole("dialog", { name: "Start a world" })
+    .getByRole("button", { name: "Cloud forest", exact: true })
+    .click();
   world = await saved();
   assert.equal(world.name, "Cloud forest");
   assert.ok(world.objects.length > 20);

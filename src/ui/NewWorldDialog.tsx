@@ -24,19 +24,19 @@ export function NewWorldDialog({
       </p>
       <div className="preset-options">
         <button onClick={() => onPreset("empty")}>
-          <span>01</span>
+          <span aria-hidden="true">01</span>
           <strong>Empty tank</strong>
         </button>
         <button onClick={() => onPreset("tropical")}>
-          <span>02</span>
+          <span aria-hidden="true">02</span>
           <strong>Cloud forest</strong>
         </button>
         <button onClick={() => onPreset("mountain")}>
-          <span>03</span>
+          <span aria-hidden="true">03</span>
           <strong>Alpine creek</strong>
         </button>
         <button onClick={() => onPreset("aquarium")}>
-          <span>04</span>
+          <span aria-hidden="true">04</span>
           <strong>Aquarium</strong>
         </button>
       </div>
