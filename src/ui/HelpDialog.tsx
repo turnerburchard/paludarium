@@ -6,7 +6,7 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
   return (
     <Modal label="How to build" onClose={onClose}>
       <div className="modal-heading">
-        <h2>Make yourself at home</h2>
+        <h2>How to build</h2>
         <IconButton label="Close dialog" onClick={onClose}>
           <X size={20} />
         </IconButton>
@@ -28,7 +28,7 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
           zoom.
         </dd>
         <dt>Rearrange</dt>
-        <dd>Select an object, choose Move, then tap its new home.</dd>
+        <dd>Select an object, choose Move, then tap its new position.</dd>
         <dt>Watch a creature</dt>
         <dd>
           In View mode, tap a creature or open the info button’s creature list.
@@ -47,15 +47,15 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
           Space pauses the inhabitants. View hides editing tools; Build reveals
           them.
         </dd>
-        <dt>See what unfolds</dt>
+        <dt>Animal life</dt>
         <dd>
           Planting and tank space support your animals. Healthy adults of the
           same species can have young, which slowly grow up. Crowding and too
-          little planting gradually lower condition. Follow someone to see their
-          age and condition. Life pauses while the tab is hidden; age, condition
-          and offspring stay saved when you return.
+          little planting gradually lower condition. Follow a creature to see
+          its age and condition. Life pauses while the tab is hidden; age,
+          condition and offspring stay saved when you return.
         </dd>
-        <dt>Keep your world</dt>
+        <dt>Saving and sharing</dt>
         <dd>
           Autosaves stay in this browser. Share sends your current layout as a
           link others can explore and copy. Export keeps a file backup.

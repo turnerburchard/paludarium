@@ -130,6 +130,21 @@ try {
     .click();
   await page.getByRole("button", { name: "Java moss", exact: true }).waitFor();
   assert.equal(
+    await page.getByRole("button", { name: "All", exact: true }).count(),
+    0,
+  );
+  const sheetHeight = await page
+    .locator(".sidebar")
+    .evaluate((sheet) => sheet.getBoundingClientRect().height);
+  await page.getByRole("button", { name: "Animals", exact: true }).click();
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Amazon sword", exact: true })
+      .count(),
+    0,
+  );
+  await page.getByRole("button", { name: "Plants", exact: true }).click();
+  assert.equal(
     await page
       .getByRole("button", { name: "Red-eyed tree frog", exact: true })
       .count(),
@@ -156,6 +171,23 @@ try {
     .getByRole("button", { name: "Habitat settings", exact: true })
     .click();
   await page.getByRole("button", { name: "Aquarium", exact: true }).waitFor();
+  const habitatHeight = await page
+    .locator(".sidebar")
+    .evaluate((sheet) => sheet.getBoundingClientRect().height);
+  assert.ok(Math.abs(habitatHeight - sheetHeight) < 1);
+  const tabs = await page
+    .locator(".panel-tabs > button")
+    .evaluateAll((tabs) =>
+      tabs.map((tab) => tab.getBoundingClientRect().width),
+    );
+  assert.ok(Math.max(...tabs) - Math.min(...tabs) < 1);
+  assert.ok(
+    await page
+      .getByRole("button", { name: "Close panel" })
+      .evaluate(
+        (button) => button.getBoundingClientRect().right > innerWidth - 60,
+      ),
+  );
   assert.equal(
     await page
       .getByRole("button", { name: "Aquarium", exact: true })

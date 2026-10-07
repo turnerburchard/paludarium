@@ -187,9 +187,23 @@ describe("fish in a real tank", () => {
     [8, 30],
     [19, 10],
   ])(
-    "Cloud Forest fish escape tight starting spots and keep exploring (seed %s, %s fps)",
+    "Fish from older Cloud Forest saves escape tight starting spots and keep exploring (seed %s, %s fps)",
     (seed, fps) => {
       const world = makePreset("tropical");
+      // Preserve the full-size fish and placements from older saved worlds,
+      // before the preset was changed to start smaller fish in open water.
+      const poses = [
+        [1.75, 0.95, 1.2],
+        [2.1, 0.75, 1.1],
+        [1.95, 0.2, 1.3],
+        [2.4, 0.55, 1.25],
+      ];
+      world.objects
+        .filter((o) => o.kind === "convict-cichlid")
+        .forEach((o, i) => {
+          const [x, z, rotation] = poses[i];
+          Object.assign(o, { x, z, rotation, scale: 1 });
+        });
       const school = createFishSchool(world, undefined, randomFromSeed(seed));
       const space = new SwimSpace(world);
       // Check each minute independently: early movement must not hide a
@@ -220,6 +234,17 @@ describe("fish in a real tank", () => {
       }
     },
     20_000,
+  );
+
+  it.each(["aquarium", "tropical", "mountain", "grotto", "desert"] as const)(
+    "start in open water where the %s preset places them",
+    (preset) => {
+      const world = makePreset(preset);
+      for (const fish of createFishSchool(world).all()) {
+        const placed = world.objects.find((o) => o.id === fish.id)!;
+        expect([fish.x, fish.z], fish.species).toEqual([placed.x, placed.z]);
+      }
+    },
   );
 
   it("keep their place through an unrelated edit", () => {

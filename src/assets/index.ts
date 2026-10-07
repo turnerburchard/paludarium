@@ -92,6 +92,7 @@ import { snag } from "./landscape/snag";
 import { treeRoots } from "./landscape/treeRoots";
 import { stump } from "./landscape/stump";
 import { deadTree } from "./landscape/deadTree";
+import { bolete, bonnetMushrooms, flyAgaric } from "./landscape/mushrooms";
 import { ludwigia } from "./plants/ludwigia";
 import { dwarfSagittaria } from "./plants/dwarfSagittaria";
 import { leafLitter } from "./landscape/leafLitter";
@@ -174,6 +175,9 @@ export const assets = {
   "tree-roots": treeRoots,
   "rock-shelter": rockShelter,
   "leaf-litter": leafLitter,
+  "fly-agaric": flyAgaric,
+  bolete,
+  "bonnet-mushrooms": bonnetMushrooms,
   fish,
   "cardinal-tetra": cardinalTetra,
   "ember-tetra": emberTetra,

@@ -31,10 +31,7 @@ export function AboutDialog({
           get closer.
         </dd>
         <dt>Build</dt>
-        <dd>
-          Switch to Build to plant a forest, arrange logs and rocks, or shape a
-          pool and its shoreline.
-        </dd>
+        <dd>Switch to Build to add objects or edit the terrain.</dd>
       </dl>
       {ecosystem.snapshot.animals.length > 0 && (
         <details className="more-options creature-options">
@@ -47,8 +44,8 @@ export function AboutDialog({
         </details>
       )}
       <p className="panel-note">
-        No account or download. Your layout saves on this device. Share sends a
-        snapshot others can explore and copy; Export keeps a backup.
+        Your layout saves on this device. Share sends a snapshot others can
+        explore and copy; Export keeps a backup.
       </p>
       <div className="modal-footer">
         <a
