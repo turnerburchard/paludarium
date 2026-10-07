@@ -54,14 +54,16 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     dispatch({ type: "commit", world: next });
   }, []);
   useEffect(() => {
-    if (isShared) return;
+    // An unreadable save stays in storage until the user starts over for real.
+    if (isShared || (initial.warning && history.present === initial.world))
+      return;
     setSaving(true);
     const timer = setTimeout(() => {
       setSaved(saveWorld(history.present));
       setSaving(false);
     }, 250);
     return () => clearTimeout(timer);
-  }, [history.present, isShared]);
+  }, [history.present, isShared, initial]);
   useEffect(() => {
     stroke.current = null;
     setPreview(null);

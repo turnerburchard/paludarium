@@ -34,7 +34,7 @@ export function loadWorld(): { world: World; warning: string | null } {
     return {
       world: emptyWorld(),
       warning:
-        "Your saved world could not be opened. Export a backup after editing.",
+        "Your saved world could not be opened. It stays saved until you edit this one.",
     };
   }
 }
