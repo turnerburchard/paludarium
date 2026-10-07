@@ -24,7 +24,7 @@ export const groupCategories = {
   Amphibians: "Animals",
   Reptiles: "Animals",
   Fish: "Animals",
-  "Other animals": "Animals",
+  Invertebrates: "Animals",
 } as const satisfies Record<string, Category>;
 
 export type Group = keyof typeof groupCategories;

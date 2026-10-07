@@ -69,7 +69,7 @@ Direction agreed with Turner on 2026-10-07: default breeding and slow mortality,
 - [x] Saved age, condition and offspring, with no offline advancement or automatic Undo steps. Undo can restore an earlier population.
 - [x] Bounded close-up springtail visuals and life-stage/condition feedback.
 - [ ] Longer-term life stages: eggs and tadpoles, researched per species ([#34](https://github.com/turnerburchard/paludarium/issues/34)).
-- [ ] Cherry shrimp populations and fish predation ([#35](https://github.com/turnerburchard/paludarium/issues/35)); tiny crabs and other invertebrates ([#36](https://github.com/turnerburchard/paludarium/issues/36)).
+- [ ] Cherry shrimp populations and fish predation ([#35](https://github.com/turnerburchard/paludarium/issues/35)); tiny crabs and other invertebrates ([#36](https://github.com/turnerburchard/paludarium/issues/36)). A vampire crab, stripe-tailed scorpion and desert blonde tarantula walk the land; shoreline and underwater invertebrates are still to come.
 - [ ] Higher habitat capacity, with physical-phone profiling before raising the limit ([#37](https://github.com/turnerburchard/paludarium/issues/37)). Temperature and water type remain separate ([#31](https://github.com/turnerburchard/paludarium/issues/31)).
 
 ## Art direction and scale

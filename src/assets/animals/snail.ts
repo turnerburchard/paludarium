@@ -6,7 +6,7 @@ export const snail: AssetDefinition = {
   kind: "snail",
   name: "Garden snail",
   scientificName: "Cornu aspersum",
-  group: "Other animals",
+  group: "Invertebrates",
   biomes: ["Tropical", "Temperate"],
   description:
     "A slow grazer that wanders the glass and leaves at night, cleaning as it goes.",

@@ -339,7 +339,8 @@ function limestoneGrotto(add: Add, objects: HabitatObject[]) {
 }
 
 /** A Mojave desert spring: cacti, agave and bunchgrass on dry sand around a
- * small pool of pupfish, with three lizards and a tortoise. */
+ * small pool of pupfish, with three lizards, a tortoise, a scorpion and a
+ * tarantula. */
 function desertSpring(add: Add, objects: HabitatObject[]) {
   add("sandstone", -2.4, -1.3, 1.6, 0.4);
   add("sandstone-ledge", -1.55, -1.55, 1, 2.1);
@@ -379,6 +380,8 @@ function desertSpring(add: Add, objects: HabitatObject[]) {
   add("dead-tree", -1.1, 0.65, 1, 0.9);
   // Chuckwallas live in small colonies, and a second one lets them breed.
   add("chuckwalla", 1.85, 1.3, 0.95, 3.2);
+  add("stripe-tailed-scorpion", 1.2, -1.3, 1, 2.4);
+  add("desert-tarantula", -0.3, 0.95, 1, 0.7);
   return objects;
 }
 

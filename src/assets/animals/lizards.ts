@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { AssetDefinition } from "../types";
+import { buildSkinned, type Painter } from "../skinned";
 import geckoModel from "./gecko.json";
 
 export const gecko: AssetDefinition = {
@@ -133,14 +134,6 @@ export const lizardKinds = new Set<string>([
   chuckwalla.kind,
 ]);
 
-/** Colors one face, given the source color of its part, its center in model
- * space, and a per-animal offset so no two animals share a pattern. */
-type Painter = (
-  source: string,
-  at: THREE.Vector3,
-  flecks: number,
-) => THREE.Color;
-
 /** The source model's palette, by role. */
 const BACK = "98e043",
   UNDERSIDE = "ddcec7",
@@ -150,68 +143,7 @@ const BACK = "98e043",
 /** Model: "Salamander" by Poly by Google, CC-BY 3.0, recolored per species.
  * scripts/prepare-gecko-model.mjs bakes the mesh, skeleton and skin weights. */
 function buildLizard(paint: Painter, random: () => number) {
-  const root = new THREE.Group();
-  const bones = geckoModel.bones.map((data) => {
-    const bone = new THREE.Bone();
-    bone.name = data.name;
-    bone.position.fromArray(data.position);
-    return bone;
-  });
-  geckoModel.bones.forEach((data, i) =>
-    (data.parent < 0 ? root : bones[data.parent]).add(bones[i]),
-  );
-  root.updateMatrixWorld(true);
-  const skeleton = new THREE.Skeleton(bones);
-  const flecks = random() * 100;
-  const skin = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    flatShading: true,
-    roughness: 0.55,
-  });
-  const eyes = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    flatShading: true,
-    roughness: 0.15,
-  });
-  for (const part of geckoModel.parts) {
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(part.positions, 3),
-    );
-    geometry.setAttribute(
-      "skinIndex",
-      new THREE.Uint16BufferAttribute(part.skinIndex, 4),
-    );
-    geometry.setAttribute(
-      "skinWeight",
-      new THREE.Float32BufferAttribute(part.skinWeight, 4),
-    );
-    geometry.computeVertexNormals();
-    const position = geometry.getAttribute("position");
-    const colors = new Float32Array(position.count * 3);
-    const center = new THREE.Vector3();
-    const corner = new THREE.Vector3();
-    for (let i = 0; i < position.count; i += 3) {
-      center.set(0, 0, 0);
-      for (let k = 0; k < 3; k++)
-        center.add(corner.fromBufferAttribute(position, i + k));
-      center.divideScalar(3);
-      const tone = paint(part.color, center, flecks);
-      for (let k = 0; k < 3; k++)
-        colors.set([tone.r, tone.g, tone.b], (i + k) * 3);
-    }
-    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-    const mesh = new THREE.SkinnedMesh(
-      geometry,
-      part.color === EYE ? eyes : skin,
-    );
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    root.add(mesh);
-    mesh.bind(skeleton);
-  }
-  return root;
+  return buildSkinned(geckoModel, paint, random, EYE);
 }
 
 /** Bright green above with gold flecks across the neck and shoulders and red
