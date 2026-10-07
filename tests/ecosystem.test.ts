@@ -344,6 +344,7 @@ describe("insect colonies", () => {
     for (const patch of food) expect(patch.amount).toBe(patch.capacity);
   });
 
+  // This covers six simulated hours; allow for concurrent CI workers.
   it("can keep a frog fed without help in a planted tank", () => {
     const engine = createWorldEcosystem(makePreset("mountain"));
     run(engine, 3600);
@@ -352,7 +353,7 @@ describe("insect colonies", () => {
       .animals.filter((animal) => animal.speciesId === "tree-frog");
     expect(frogs).toHaveLength(1);
     expect(frogs[0].needs.hunger).toBeLessThan(0.8);
-  });
+  }, 20_000);
 });
 
 describe("insects across edits", () => {
