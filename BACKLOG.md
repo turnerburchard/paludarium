@@ -37,6 +37,7 @@ Implemented now: accelerated hunger/hydration/energy, self-renewing insect colon
 - [x] Species-specific hops, climbs, crawls, and leaf leaps come from the simulation, without a separate renderer movement fallback.
 - [x] Rigged frog animation: breathing, crouch and landing, turning on the spot, feet planted while crawling and climbing.
 - [x] A gold dust day gecko (rigged CC BY model) with a dash-and-pause gait and resting surfaces.
+- [x] A long-nosed leopard lizard, recolored from the gecko, for drier habitats.
 - [x] Fish steer around actual submerged hardscape and plant geometry, including narrow passages, hollow logs, body size and preferred depth.
 - [x] Connected routes over exposed stone and wood meshes, including stacked ledges and plants resting on supports; steep approaches require a climber and mossy frogs keep to low surfaces.
 - [x] Quick ballistic hops with separate crouch/flight/landing timing, varied outings and pauses, recent-visit memory, safe ground diagonals, and fixed-step render interpolation.
