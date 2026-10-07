@@ -1,3 +1,4 @@
+import { createObjectId } from "../model/objectId";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { assets } from "../assets";
 import {
@@ -256,7 +257,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       return;
     }
     const object: HabitatObject = {
-      id: crypto.randomUUID(),
+      id: createObjectId(),
       kind,
       ...position,
       ...(resting.support && resting),
