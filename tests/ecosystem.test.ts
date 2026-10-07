@@ -201,6 +201,7 @@ describe("live ecosystem behavior", () => {
         {
           speed: 1,
           elapsed: 0,
+          random: () => 0.5,
           food: [{ nodeId: "b", amount: 5, capacity: 0 }],
         },
       );
