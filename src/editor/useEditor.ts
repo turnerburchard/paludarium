@@ -40,7 +40,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   const shown = preview?.base === world ? preview.world : world;
   const stroke = useRef<TerrainStroke | null>(null);
   const [tool, setTool] = useState<Tool>({ type: "select" });
-  const [selectedId, select] = useState<string | null>(null);
+  const [chosenId, select] = useState<string | null>(null);
   const [message, notify] = useState(initial.warning ?? "");
   const [saved, setSaved] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,7 +48,9 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   const [placementRotation, setPlacementRotation] = useState(0);
   const worldRef = useRef(world);
   worldRef.current = world;
-  const selected = world.objects.find((o) => o.id === selectedId) ?? null;
+  // Undo can take away the selected object.
+  const selected = world.objects.find((o) => o.id === chosenId) ?? null;
+  const selectedId = selected?.id ?? null;
   const commit = useCallback((next: World) => {
     setPreview(null);
     dispatch({ type: "commit", world: next });
@@ -80,6 +82,10 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       stroke.current = null;
       return;
     }
+    // Moving or copying an object that undo may take away ends here.
+    setTool((tool) =>
+      tool.type === "move" || tool.type === "copy" ? { type: "select" } : tool,
+    );
     dispatch({ type });
   }, []);
   function beginTerrainStroke(x: number, z: number) {
