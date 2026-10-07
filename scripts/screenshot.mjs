@@ -56,12 +56,18 @@ try {
   });
   for (const viewport of viewports) {
     const page = await browser.newPage({ viewport });
+    page.setDefaultTimeout(90000);
     page.on("pageerror", (error) => console.error(error.message));
     await page.goto(`http://127.0.0.1:${port}`);
     await page
       .getByRole("button", { name: "Pause life (Space)", exact: true })
       .click();
     await page.getByRole("button", { name: "Build", exact: true }).click();
+    if (viewport.name === "phone")
+      await page
+        .getByRole("navigation", { name: "Tools" })
+        .getByRole("button", { name: "Add", exact: true })
+        .click();
     // Thumbnails finish after the scene has started drawing.
     await page
       .locator(".asset-picture img")

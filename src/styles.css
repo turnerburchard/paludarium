@@ -212,7 +212,8 @@ button:hover:not(:disabled) {
   gap: 8px;
 }
 .panel-tabs button {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   border: 1px solid var(--line);
   background: #1d3227;
   color: #a9bd9f;
@@ -235,6 +236,8 @@ button:hover:not(:disabled) {
   color: #e3edcc;
 }
 .panel-content {
+  min-height: 0;
+  overscroll-behavior: contain;
   overflow-y: auto;
   flex: 1;
   scrollbar-width: thin;
@@ -247,6 +250,8 @@ button:hover:not(:disabled) {
   justify-content: space-between;
 }
 .category-tabs button {
+  flex: 1 1 0;
+  min-width: 0;
   border: 0;
   border-bottom: 2px solid transparent;
   background: transparent;
@@ -316,6 +321,7 @@ button:hover:not(:disabled) {
 .asset-name {
   font-size: 12px;
   line-height: 16px;
+  min-height: 32px;
   font-weight: 500;
   display: block;
   padding: 0 9px;
@@ -328,6 +334,7 @@ button:hover:not(:disabled) {
   margin: 23px 8px;
 }
 .sidebar-footer {
+  flex-shrink: 0;
   height: 43px;
   display: flex;
   align-items: center;
@@ -791,8 +798,7 @@ button:hover:not(:disabled) {
   .sidebar {
     top: auto;
     bottom: 0;
-    height: auto;
-    max-height: min(60vh, 520px);
+    height: min(60svh, 520px);
     width: 100%;
     border-top: 1px solid #43533c;
     border-right: 0;
@@ -815,6 +821,7 @@ button:hover:not(:disabled) {
     gap: 2px;
   }
   .sheet-close {
+    flex: 0 0 40px;
     margin-left: auto;
   }
   .mobile-dock {
@@ -1142,21 +1149,6 @@ button:hover:not(:disabled) {
   }
   .life-needs {
     display: none;
-  }
-}
-
-@media (max-width: 760px) {
-  .panel-tabs {
-    padding-right: 140px;
-    gap: 1px;
-  }
-  .panel-tabs button {
-    padding-left: 7px;
-    padding-right: 7px;
-  }
-  .panel-tabs button:first-child {
-    font-size: 11px;
-    gap: 4px;
   }
 }
 

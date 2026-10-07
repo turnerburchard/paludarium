@@ -140,6 +140,7 @@ export default function App({
       {hasBuilt && (
         <Sidebar
           hidden={view}
+          sheetOpen={sheetOpen}
           editor={editor}
           ecosystem={ecosystem}
           panel={panel}
