@@ -441,7 +441,7 @@ button:hover:not(:disabled) {
 .empty-invitation {
   position: absolute;
   left: 340px;
-  top: 113px;
+  top: 160px;
   z-index: 3;
   pointer-events: none;
 }
@@ -450,20 +450,6 @@ button:hover:not(:disabled) {
   letter-spacing: 1.7px;
   color: #b5c79d;
   font-weight: 550;
-}
-.empty-invitation h2 {
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: 32px;
-  font-weight: 450;
-  letter-spacing: -1.3px;
-  line-height: 1.2;
-  margin: 13px 0;
-}
-.empty-invitation p {
-  font-size: 13px;
-  line-height: 1.7;
-  color: #b4c4af;
-  margin-bottom: 20px;
 }
 .empty-invitation button {
   pointer-events: auto;
@@ -722,11 +708,7 @@ button:hover:not(:disabled) {
     height: 100px;
   }
   .empty-invitation {
-    top: 135px;
     left: 360px;
-  }
-  .empty-invitation h2 {
-    font-size: 40px;
   }
 }
 @media (max-width: 1100px) {
@@ -753,9 +735,6 @@ button:hover:not(:disabled) {
   }
   .empty-invitation {
     left: 325px;
-  }
-  .empty-invitation h2 {
-    font-size: 26px;
   }
   .inspector {
     width: 245px;
@@ -988,19 +967,7 @@ button:hover:not(:disabled) {
   }
   .empty-invitation {
     left: 18px;
-    top: 85px;
-  }
-  .empty-invitation .eyebrow {
-    font-size: 9px;
-  }
-  .empty-invitation h2 {
-    font-size: 22px;
-    margin: 8px 0;
-  }
-  .empty-invitation p {
-    font-size: 11px;
-    margin: 0 0 8px;
-    line-height: 1.5;
+    top: 124px;
   }
   .empty-invitation button {
     font-size: 11px;
