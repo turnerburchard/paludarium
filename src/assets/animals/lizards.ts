@@ -286,17 +286,26 @@ function paintTigerSalamander(
   return new THREE.Color("#3a3d29");
 }
 
-/** A black head, shoulders and front legs, a rusty orange body and tail
- * flecked with grey, and a grey belly. */
+/** A black head and shoulders that fade through a ragged, speckled band
+ * into a rusty body, paling to tan down the tail, and a grey belly. */
 function paintChuckwalla(source: string, at: THREE.Vector3, flecks: number) {
   if (source === EYE) return new THREE.Color("#16130f");
   if (source === TOES) return new THREE.Color("#3a3430");
+  const noise = Math.sin(at.x * 240 + at.z * 210 + flecks) * 0.5 + 0.5;
+  // How far back from the dark forequarters, with a ragged edge.
+  const fade = THREE.MathUtils.smoothstep(
+    at.z + (noise - 0.5) * 0.16,
+    -0.3,
+    0.22,
+  );
   if (source === UNDERSIDE)
-    return new THREE.Color(at.z < -0.12 ? "#3c3833" : "#8f877a");
+    return new THREE.Color("#3c3833").lerp(new THREE.Color("#8f877a"), fade);
   if (source !== BACK)
     throw new Error(`Unexpected chuckwalla color ${source}.`);
-  if (at.z < -0.12) return new THREE.Color("#272421");
-  const noise = Math.sin(at.x * 240 + at.z * 210 + flecks) * 0.5 + 0.5;
-  if (noise > 0.85) return new THREE.Color("#8b8378");
-  return new THREE.Color(at.z < 0.1 ? "#9a5a33" : "#b2774a");
+  const body = new THREE.Color("#9a5a33").lerp(
+    new THREE.Color("#b89a72"),
+    THREE.MathUtils.smoothstep(at.z, 0.1, 0.38),
+  );
+  const tone = new THREE.Color("#2e2925").lerp(body, fade);
+  return noise > 0.9 ? tone.lerp(new THREE.Color("#c9b99c"), 0.35) : tone;
 }
