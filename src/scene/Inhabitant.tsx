@@ -221,7 +221,7 @@ export function Inhabitant({
 }
 
 function createRig(kind: AssetKind, model: THREE.Group) {
-  if (kind === "gecko") return new GeckoRig(model);
+  if (kind === "gecko" || kind === "leopard-lizard") return new GeckoRig(model);
   if (kind === "snail") return new SnailRig(model);
   if (kind === "turtle") return new TurtleRig(model);
   if (isLandAnimal(kind)) return new FrogRig(model);

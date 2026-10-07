@@ -12,7 +12,7 @@ import {
   treeFrog,
 } from "./animals/frogs";
 import { fish } from "./animals/fish";
-import { gecko } from "./animals/gecko";
+import { gecko, leopardLizard } from "./animals/lizards";
 import { snail } from "./animals/snail";
 import { turtle } from "./animals/turtle";
 import { cardinalTetra, emberTetra } from "./animals/tetras";
@@ -57,6 +57,7 @@ export const assets = {
   "blue-dart-frog": bluePoisonDartFrog,
   "mossy-frog": mossyFrog,
   gecko,
+  "leopard-lizard": leopardLizard,
   snail,
   turtle,
   monstera,

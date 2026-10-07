@@ -226,6 +226,7 @@ try {
         "blue-dart-frog",
         "mossy-frog",
         "gecko",
+        "leopard-lizard",
         "snail",
         "turtle",
       ].includes(object.kind),

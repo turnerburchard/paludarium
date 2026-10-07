@@ -18,8 +18,35 @@ export const gecko: AssetDefinition = {
     movement: "scurry",
     restsOn: ["glass", "bark", "leaf"],
   },
-  build,
+  build: (random) => buildLizard(paintGecko, random),
 };
+
+export const leopardLizard: AssetDefinition = {
+  kind: "leopard-lizard",
+  name: "Long-nosed leopard lizard",
+  scientificName: "Gambelia wislizenii",
+  category: "Animals",
+  description:
+    "A sandy desert lizard dotted with dark spots, a fast sprinter that hunts in the open.",
+  radius: 0.45,
+  habitat: "land",
+  behavior: {
+    nocturnal: false,
+    climbs: false,
+    speed: 0.09,
+    movement: "scurry",
+    restsOn: ["stone", "ground"],
+  },
+  build: (random) => buildLizard(paintLeopardLizard, random),
+};
+
+/** Colors one face, given the source color of its part, its center in model
+ * space, and a per-animal offset so no two animals share a pattern. */
+type Painter = (
+  source: string,
+  at: THREE.Vector3,
+  flecks: number,
+) => THREE.Color;
 
 /** The source model's palette, by role. */
 const BACK = "98e043",
@@ -27,9 +54,9 @@ const BACK = "98e043",
   TOES = "d3bfb4",
   EYE = "d69f8a";
 
-/** Model: "Salamander" by Poly by Google, CC-BY 3.0, recolored as a day gecko.
+/** Model: "Salamander" by Poly by Google, CC-BY 3.0, recolored per species.
  * scripts/prepare-gecko-model.mjs bakes the mesh, skeleton and skin weights. */
-function build(random: () => number) {
+function buildLizard(paint: Painter, random: () => number) {
   const root = new THREE.Group();
   const bones = geckoModel.bones.map((data) => {
     const bone = new THREE.Bone();
@@ -77,7 +104,7 @@ function build(random: () => number) {
       for (let k = 0; k < 3; k++)
         center.add(corner.fromBufferAttribute(position, i + k));
       center.divideScalar(3);
-      const tone = faceColor(part.color, center, flecks);
+      const tone = paint(part.color, center, flecks);
       for (let k = 0; k < 3; k++)
         colors.set([tone.r, tone.g, tone.b], (i + k) * 3);
     }
@@ -96,7 +123,7 @@ function build(random: () => number) {
 
 /** Bright green above with gold flecks across the neck and shoulders and red
  * bars on the lower back, a pale yellow belly, and glossy dark eyes. */
-function faceColor(source: string, at: THREE.Vector3, flecks: number) {
+function paintGecko(source: string, at: THREE.Vector3, flecks: number) {
   if (source === EYE) return new THREE.Color("#16130f");
   if (source === TOES) return new THREE.Color("#9fbd63");
   if (source === UNDERSIDE) return new THREE.Color("#d8dc9a");
@@ -108,4 +135,16 @@ function faceColor(source: string, at: THREE.Vector3, flecks: number) {
   if (midline && at.z > -0.02 && at.z < 0.13 && Math.sin(at.z * 80) > 0.4)
     return new THREE.Color("#cf4a2c");
   return new THREE.Color("#56b93a");
+}
+
+/** Sandy tan above, scattered with dark brown spots that run down the tail,
+ * a cream belly and throat, and yellowish toes. */
+function paintLeopardLizard(source: string, at: THREE.Vector3, flecks: number) {
+  if (source === EYE) return new THREE.Color("#16130f");
+  if (source === TOES) return new THREE.Color("#c9a35c");
+  if (source === UNDERSIDE) return new THREE.Color("#e6dcc4");
+  if (source !== BACK) throw new Error(`Unexpected lizard color ${source}.`);
+  const noise = Math.sin(at.x * 260 + at.z * 190 + flecks) * 0.5 + 0.5;
+  if (noise > 0.8) return new THREE.Color("#4a3523");
+  return new THREE.Color("#b99a6b");
 }
