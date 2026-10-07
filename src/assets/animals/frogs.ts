@@ -16,6 +16,9 @@ interface Appearance {
   mottled?: boolean;
   /** Dark stripes down the back and through the eye, as on a chorus frog. */
   striped?: boolean;
+  /** How much deeper and thicker than the slim base model the body and legs
+   * are. Defaults to 1. */
+  stout?: number;
 }
 
 export const treeFrog: AssetDefinition = {
@@ -26,7 +29,7 @@ export const treeFrog: AssetDefinition = {
   biomes: ["Tropical"],
   description:
     "A green canopy frog with scarlet eyes, striped flanks, and orange toe pads.",
-  radius: 0.24,
+  radius: 0.26,
   habitat: "land",
   behavior: { nocturnal: true, climbs: true, speed: 0.045, movement: "climb" },
   build: (random) =>
@@ -37,7 +40,7 @@ export const treeFrog: AssetDefinition = {
         iris: "#b73519",
         feet: "#dc852b",
         height: 1.08,
-        size: 0.75,
+        size: 0.8,
         roughness: 0.68,
       },
       random,
@@ -52,7 +55,7 @@ export const strawberryPoisonFrog: AssetDefinition = {
   biomes: ["Tropical"],
   description:
     "A small Central American frog, shown in a red and blue-legged color form.",
-  radius: 0.2,
+  radius: 0.14,
   habitat: "land",
   behavior: { nocturnal: false, climbs: false, speed: 0.04, movement: "hop" },
   build: (random) =>
@@ -63,7 +66,7 @@ export const strawberryPoisonFrog: AssetDefinition = {
         iris: "#191b18",
         feet: "#245b78",
         height: 0.88,
-        size: 0.6,
+        size: 0.42,
         roughness: 0.7,
         spots: 14,
       },
@@ -79,7 +82,7 @@ export const bluePoisonDartFrog: AssetDefinition = {
   biomes: ["Tropical"],
   description:
     "Cobalt skin with individual dark spots. A striking forest-floor frog.",
-  radius: 0.26,
+  radius: 0.21,
   habitat: "land",
   behavior: { nocturnal: false, climbs: false, speed: 0.035, movement: "hop" },
   build: (random) =>
@@ -90,7 +93,7 @@ export const bluePoisonDartFrog: AssetDefinition = {
         iris: "#10171e",
         feet: "#143c83",
         height: 0.88,
-        size: 0.75,
+        size: 0.62,
         roughness: 0.65,
         spots: 28,
       },
@@ -106,7 +109,7 @@ export const mossyFrog: AssetDefinition = {
   biomes: ["Tropical"],
   description:
     "A squat, rough-skinned frog with moss-like green and brown camouflage.",
-  radius: 0.28,
+  radius: 0.32,
   habitat: "land",
   behavior: {
     nocturnal: true,
@@ -123,9 +126,10 @@ export const mossyFrog: AssetDefinition = {
         iris: "#7a6a3c",
         feet: "#2b3620",
         height: 0.9,
-        size: 0.84,
+        size: 0.95,
         roughness: 0.86,
         mottled: true,
+        stout: 1.1,
       },
       random,
     ),
@@ -139,7 +143,7 @@ export const canyonTreeFrog: AssetDefinition = {
   biomes: ["Temperate", "Desert"],
   description:
     "A small, granite-grey frog with dark blotches that clings to boulders beside desert streams.",
-  radius: 0.22,
+  radius: 0.21,
   habitat: "land",
   behavior: {
     nocturnal: true,
@@ -156,7 +160,7 @@ export const canyonTreeFrog: AssetDefinition = {
         iris: "#8f7d4f",
         feet: "#a08b62",
         height: 0.95,
-        size: 0.62,
+        size: 0.6,
         roughness: 0.82,
         spots: 30,
       },
@@ -172,7 +176,7 @@ export const chorusFrog: AssetDefinition = {
   biomes: ["Temperate"],
   description:
     "A tiny brown frog with dark stripes down its back. Its trilling call is one of the first sounds of a mountain spring.",
-  radius: 0.18,
+  radius: 0.16,
   habitat: "land",
   behavior: { nocturnal: true, climbs: false, speed: 0.04, movement: "hop" },
   build: (random) =>
@@ -183,7 +187,7 @@ export const chorusFrog: AssetDefinition = {
         iris: "#9a7a3c",
         feet: "#6f6748",
         height: 0.95,
-        size: 0.5,
+        size: 0.45,
         roughness: 0.72,
         striped: true,
       },
@@ -240,6 +244,8 @@ function buildFrog(appearance: Appearance, random: () => number) {
   );
   root.updateMatrixWorld(true);
   const skeleton = new THREE.Skeleton(bones);
+  const stout = appearance.stout ?? 1;
+  const legs = limbs(root, bones);
   const back = new THREE.Color(appearance.back);
   const belly = new THREE.Color(appearance.belly);
   const feet = new THREE.Color(appearance.feet);
@@ -268,6 +274,9 @@ function buildFrog(appearance: Appearance, random: () => number) {
       new THREE.Float32BufferAttribute(part.skinWeight, 4),
     );
     indexed.setIndex(part.index);
+    if (part.material === "Red" || part.material === "Black")
+      moveEyes(indexed, stout);
+    else reshape(indexed, part.skinIndex, part.skinWeight, stout, legs);
     // Separate faces so markings can paint whole facets.
     const geometry = indexed.toNonIndexed();
     indexed.dispose();
@@ -349,4 +358,96 @@ function stripe(x: number, y: number, z: number) {
       (line) => Math.abs(x - line) < 0.014 && Math.sin(z * 45) > -0.5,
     );
   return Math.abs(x) > 0.07 && Math.abs(y - 0.2 + (z + 0.16) * 0.3) < 0.018;
+}
+
+/** Bones of the head and body, as opposed to the legs and feet. */
+const TRUNK = new Set(
+  ["Body", "Back", "Shoulders", "Neck", "Head", "Hips", "Torso"].map((name) =>
+    frogModel.bones.findIndex((bone) => bone.name === name),
+  ),
+);
+
+/** Deepens the body and thickens the legs before the mesh binds, so the rig
+ * and clips still fit. */
+function reshape(
+  geometry: THREE.BufferGeometry,
+  skinIndex: number[],
+  skinWeight: number[],
+  stout: number,
+  limbs: THREE.Line3[],
+) {
+  const point = new THREE.Vector3();
+  const closest = new THREE.Vector3();
+  const positions = geometry.getAttribute("position");
+  for (let v = 0; v < positions.count; v++) {
+    let trunk = 0;
+    for (let k = 0; k < 4; k++)
+      if (TRUNK.has(skinIndex[v * 4 + k])) trunk += skinWeight[v * 4 + k];
+    fatten(point.fromBufferAttribute(positions, v), trunk * stout);
+    if (trunk < 0.5) {
+      let nearest = { distance: Infinity, along: 0, at: new THREE.Vector3() };
+      for (const limb of limbs) {
+        const along = limb.closestPointToPointParameter(point, true);
+        const distance = point.distanceTo(limb.at(along, closest));
+        if (distance < nearest.distance)
+          nearest = { distance, along, at: closest.clone() };
+      }
+      // Thicken along each bone but leave the toes and joints slender.
+      if (nearest.distance < 0.05)
+        point.lerp(
+          nearest.at,
+          -0.4 * stout * (1 - trunk) * Math.sin(nearest.along * Math.PI),
+        );
+    }
+    positions.setXYZ(v, point.x, point.y, point.z);
+  }
+}
+
+/** Upper and lower leg bones as segments in the frog's own space. */
+function limbs(root: THREE.Object3D, bones: THREE.Bone[]) {
+  const toRoot = root.matrixWorld.clone().invert();
+  const at = (bone: THREE.Bone) =>
+    new THREE.Vector3()
+      .setFromMatrixPosition(bone.matrixWorld)
+      .applyMatrix4(toRoot);
+  return bones
+    .filter(
+      (bone) => /(Up|Low)Leg/.test(bone.name) && !bone.name.endsWith("_end"),
+    )
+    .map(
+      (bone) => new THREE.Line3(at(bone), at(bone.children[0] as THREE.Bone)),
+    );
+}
+
+/** Deepens and slightly broadens the trunk, most just behind the shoulders
+ * and tapering toward the snout. */
+function fatten(point: THREE.Vector3, amount: number) {
+  const girth = amount * Math.max(0, 1 - ((point.z - 0.02) / 0.32) ** 2);
+  return point.set(
+    point.x * (1 + 0.3 * girth),
+    point.y + (point.y - 0.15) * 0.6 * girth,
+    point.z,
+  );
+}
+
+/** Carries each eye with the reshaped head without stretching it. */
+function moveEyes(geometry: THREE.BufferGeometry, stout: number) {
+  const positions = geometry.getAttribute("position");
+  for (const side of [-1, 1]) {
+    const eye = [];
+    for (let v = 0; v < positions.count; v++)
+      if (Math.sign(positions.getX(v)) === side) eye.push(v);
+    const center = new THREE.Vector3();
+    for (const v of eye)
+      center.add(new THREE.Vector3().fromBufferAttribute(positions, v));
+    center.divideScalar(eye.length);
+    const offset = fatten(center.clone(), stout).sub(center);
+    for (const v of eye)
+      positions.setXYZ(
+        v,
+        positions.getX(v) + offset.x,
+        positions.getY(v) + offset.y,
+        positions.getZ(v) + offset.z,
+      );
+  }
 }
