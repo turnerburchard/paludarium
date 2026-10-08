@@ -67,18 +67,20 @@ function build(random: () => number) {
       spathe,
       root,
     );
-    const up = out.clone().multiplyScalar(0.25).setY(1);
+    const up = out.clone().multiplyScalar(0.25).setY(1).normalize();
     placeLeaf(hood, top, up, out);
+    // The spike leans with the hood so its tip stays in front of it.
+    const face = out.clone().addScaledVector(up, -out.dot(up)).normalize();
     const spike = mesh(
       new THREE.CylinderGeometry(0.011, 0.014, length * 0.4, 6),
       spadix,
       root,
       top
         .clone()
-        .addScaledVector(out, 0.03)
-        .setY(top.y + length * 0.25),
+        .addScaledVector(up, length * 0.25)
+        .addScaledVector(face, 0.035),
     );
-    spike.rotation.set(0, 0, 0);
+    spike.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), up);
   }
   return root;
 }
