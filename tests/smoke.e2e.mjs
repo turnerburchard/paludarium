@@ -203,9 +203,11 @@ try {
     assert.ok(Math.abs(column.width - tabColumns[index].width) < 1);
   });
   // The opening sheet moves the tabs too. Measure scrolling after it settles.
-  await page.locator(".sidebar").evaluate((sheet) =>
-    Promise.all(sheet.getAnimations().map((animation) => animation.finished)),
-  );
+  await page
+    .locator(".sidebar")
+    .evaluate((sheet) =>
+      Promise.all(sheet.getAnimations().map((animation) => animation.finished)),
+    );
   const categoryTop = await page
     .locator(".category-tabs")
     .evaluate((tabs) => tabs.getBoundingClientRect().top);
