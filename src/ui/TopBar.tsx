@@ -1,4 +1,4 @@
-import { Check, Globe2, Leaf, Redo2, Undo2 } from "lucide-react";
+import { Check, Globe2, Redo2, Undo2 } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import { IconButton } from "./IconButton";
 
@@ -15,11 +15,9 @@ export function TopBar({
     <header className="topbar">
       <div className="brand">
         <span className="brand-mark">
-          <Leaf size={23} />
+          <img src="./paludarium-mark-light.svg" alt="" />
         </span>
-        <div>
-          <h1>paludarium</h1>
-        </div>
+        <h1>paludarium</h1>
       </div>
       <div className="world-title">
         <input
