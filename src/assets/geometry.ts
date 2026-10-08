@@ -78,14 +78,23 @@ export function curvedStem(
     parent,
   );
 }
-/** Leaf blades have actual curvature; holes, as in a Swiss cheese plant,
- * are geometry rather than a texture. */
-function leafGeometry(
-  length: number,
-  width: number,
-  serrated = false,
-  holes = false,
-) {
+/** A flat leaf outline along +Y, given real curvature: the midrib arches
+ * and the halves fold back from it by `fold`. */
+export function bentLeaf(shape: THREE.Shape, length: number, fold = 0.18) {
+  const geo = new THREE.ShapeGeometry(shape, 3);
+  const p = geo.getAttribute("position");
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i),
+      y = p.getY(i);
+    p.setZ(
+      i,
+      0.16 * Math.sin((y / length) * Math.PI) * length - Math.abs(x) * fold,
+    );
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+function leafGeometry(length: number, width: number, serrated = false) {
   const shape = new THREE.Shape();
   shape.moveTo(0, 0);
   if (serrated) {
@@ -121,34 +130,7 @@ function leafGeometry(
       0,
     );
   }
-  if (holes)
-    for (const sign of [-1, 1])
-      for (let i = 0; i < 3; i++) {
-        const hole = new THREE.Path();
-        hole.absellipse(
-          sign * width * (0.16 - i * 0.023),
-          length * (0.3 + i * 0.17),
-          width * (0.058 - i * 0.008),
-          length * 0.067,
-          0,
-          Math.PI * 2,
-          true,
-          sign * -0.5,
-        );
-        shape.holes.push(hole);
-      }
-  const geo = new THREE.ShapeGeometry(shape, 3);
-  const p = geo.getAttribute("position");
-  for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i),
-      y = p.getY(i);
-    p.setZ(
-      i,
-      0.16 * Math.sin((y / length) * Math.PI) * length - Math.abs(x) * 0.18,
-    );
-  }
-  geo.computeVertexNormals();
-  return geo;
+  return bentLeaf(shape, length);
 }
 export function blade(
   parent: THREE.Object3D,
@@ -158,10 +140,9 @@ export function blade(
   width: number,
   mat: THREE.Material,
   serrated = false,
-  holes = false,
 ) {
   const object = mesh(
-    leafGeometry(length, width, serrated, holes),
+    leafGeometry(length, width, serrated),
     mat,
     parent,
     origin,
