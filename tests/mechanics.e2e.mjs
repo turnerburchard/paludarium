@@ -111,6 +111,10 @@ try {
     world,
   );
   await page.goto(url);
+  await page
+    .getByRole("dialog", { name: "How to build" })
+    .getByRole("button", { name: "Close dialog" })
+    .click();
   await page.waitForFunction(() => document.querySelector("canvas"));
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
@@ -202,7 +206,7 @@ try {
         .normalize(),
       0.1,
     );
-    const mesh = plant.children[0].children[0];
+    const mesh = plant.getObjectByProperty("isMesh", true);
     const positions = mesh.geometry.getAttribute("position");
     const point = camera.position.clone().set(0, 0, 0);
     for (let i = 0; i < 3; i++)
@@ -751,6 +755,10 @@ try {
     fishWorld,
   );
   await fishPage.goto(url);
+  await fishPage
+    .getByRole("dialog", { name: "How to build" })
+    .getByRole("button", { name: "Close dialog" })
+    .click();
   await fishPage.bringToFront();
   await fishPage.getByRole("button", { name: "About Paludarium" }).waitFor();
   assert.ok(fishFiberUrl);
