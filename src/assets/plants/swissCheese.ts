@@ -11,6 +11,7 @@ export const swissCheesePlant: AssetDefinition = {
   biomes: ["Tropical"],
   description: "Pointed leaves full of oval holes, on long arching stalks.",
   radius: 0.48,
+  size: 0.6,
   habitat: "land",
   shelter: true,
   soil: "damp",

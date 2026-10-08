@@ -1,5 +1,6 @@
 import type { World } from "../model/schema";
 import {
+  assetRadius,
   assets,
   isAnimal,
   isLandAnimal,
@@ -40,7 +41,7 @@ function habitatClearance(world: World) {
     0.16,
     ...world.objects
       .filter((o) => isLandAnimal(o.kind))
-      .map((o) => assets[o.kind].radius * o.scale),
+      .map((o) => assetRadius(o.kind) * o.scale),
   );
 }
 
@@ -90,7 +91,7 @@ export function buildHabitat(world: World): HabitatGraph {
             o.vigor *
               (1 -
                 Math.hypot(x - o.x, z - o.z) /
-                  (assets[o.kind].radius * o.scale + 0.4)),
+                  (assetRadius(o.kind) * o.scale + 0.4)),
           ),
         0,
       );

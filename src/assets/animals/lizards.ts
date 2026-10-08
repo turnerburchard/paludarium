@@ -12,6 +12,7 @@ export const gecko: AssetDefinition = {
   description:
     "A bright green day gecko flecked with gold, quick on glass and broad leaves.",
   radius: 0.45,
+  size: 0.9,
   habitat: "land",
   behavior: {
     nocturnal: false,
@@ -32,6 +33,7 @@ export const leopardLizard: AssetDefinition = {
   description:
     "A sandy desert lizard dotted with dark spots, a fast sprinter that hunts in the open.",
   radius: 0.45,
+  size: 1.15,
   habitat: "land",
   behavior: {
     nocturnal: false,
@@ -72,6 +74,7 @@ export const fenceLizard: AssetDefinition = {
   description:
     "A grey-brown mountain lizard with pale side stripes, dark chevrons and a blue-washed belly, quick up rock and bark.",
   radius: 0.45,
+  size: 0.75,
   habitat: "land",
   behavior: {
     nocturnal: false,
@@ -92,6 +95,7 @@ export const tigerSalamander: AssetDefinition = {
   description:
     "A stout, slow salamander, dark olive blotched with yellow. It spends the day under logs and stones and hunts at night.",
   radius: 0.45,
+  size: 0.9,
   habitat: "land",
   behavior: {
     nocturnal: true,
@@ -112,6 +116,7 @@ export const chuckwalla: AssetDefinition = {
   description:
     "A big, easygoing desert lizard with a dark body and a rusty tail. It basks on rocks and grazes on flowers and leaves.",
   radius: 0.45,
+  size: 1.4,
   habitat: "land",
   behavior: {
     nocturnal: false,

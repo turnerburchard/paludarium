@@ -12,6 +12,7 @@ export const bromeliad: AssetDefinition = {
   description:
     "A bromeliad native to Central America, the Caribbean and South America. Its glossy leaves form a rosette, with red bracts surrounding small flowers.",
   radius: 0.32,
+  size: 1.4,
   habitat: "land",
   shelter: true,
   soil: "damp",

@@ -12,6 +12,7 @@ export const agave: AssetDefinition = {
   description:
     "A tight rosette of thick, blue-grey leaves, each tipped with a dark spine.",
   radius: 0.32,
+  size: 2,
   habitat: "land",
   shelter: true,
   soil: "arid",

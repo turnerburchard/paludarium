@@ -1,5 +1,5 @@
 import type { Environment, HabitatObject, AssetKind } from "./schema";
-import { assets } from "../assets";
+import { assetRadius, assets } from "../assets";
 import {
   terrainSamples,
   terrainPoint,
@@ -100,7 +100,7 @@ export function fitObject(
       object.x,
       object.z,
       env,
-      assets[object.kind].radius * object.scale,
+      assetRadius(object.kind) * object.scale,
     ),
   };
 }

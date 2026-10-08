@@ -9,7 +9,7 @@ import {
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import type { Editor } from "../editor/useEditor";
-import { assets, isAnimal } from "../assets";
+import { assetRadius, assets, isAnimal } from "../assets";
 import { useWatchVisibility } from "./useWatchVisibility";
 import {
   boundedPosition,
@@ -116,7 +116,7 @@ function Scene({
           cursor.x,
           cursor.z,
           env,
-          kind ? assets[kind].radius * (moving?.scale ?? 1) : 0,
+          kind ? assetRadius(kind) * (moving?.scale ?? 1) : 0,
         )
       : null;
   const lift = point

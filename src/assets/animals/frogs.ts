@@ -30,6 +30,7 @@ export const treeFrog: AssetDefinition = {
   description:
     "A green canopy frog with scarlet eyes, striped flanks, and orange toe pads.",
   radius: 0.26,
+  size: 0.7,
   habitat: "land",
   behavior: { nocturnal: true, climbs: true, speed: 0.045, movement: "climb" },
   build: (random) =>
@@ -56,6 +57,7 @@ export const strawberryPoisonFrog: AssetDefinition = {
   description:
     "A small Central American frog, shown in a red and blue-legged color form.",
   radius: 0.14,
+  size: 0.8,
   habitat: "land",
   behavior: { nocturnal: false, climbs: false, speed: 0.04, movement: "hop" },
   build: (random) =>
@@ -83,6 +85,7 @@ export const bluePoisonDartFrog: AssetDefinition = {
   description:
     "Cobalt skin with individual dark spots. A striking forest-floor frog.",
   radius: 0.21,
+  size: 0.85,
   habitat: "land",
   behavior: { nocturnal: false, climbs: false, speed: 0.035, movement: "hop" },
   build: (random) =>
@@ -110,6 +113,7 @@ export const mossyFrog: AssetDefinition = {
   description:
     "A squat, rough-skinned frog with moss-like green and brown camouflage.",
   radius: 0.32,
+  size: 0.75,
   habitat: "land",
   behavior: {
     nocturnal: true,
@@ -144,6 +148,7 @@ export const canyonTreeFrog: AssetDefinition = {
   description:
     "A small, granite-grey frog with dark blotches that clings to boulders beside desert streams.",
   radius: 0.21,
+  size: 0.85,
   habitat: "land",
   behavior: {
     nocturnal: true,
@@ -177,6 +182,7 @@ export const chorusFrog: AssetDefinition = {
   description:
     "A small brown frog with dark stripes down its back. Lives in moist meadows and forests near wetlands, breeding in shallow pools and ponds. Its call sounds like a thumb running over the teeth of a comb.",
   radius: 0.16,
+  size: 0.9,
   habitat: "land",
   behavior: { nocturnal: true, climbs: false, speed: 0.04, movement: "hop" },
   build: (random) =>

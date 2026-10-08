@@ -56,8 +56,12 @@ export interface AssetDefinition {
   group: Group;
   biomes: readonly [Biome, ...Biome[]];
   description: string;
-  /** Footprint at scale 1, used for placement bounds and selection rings. */
+  /** Footprint of the model as built, used for placement bounds and
+   * selection rings. */
   radius: number;
+  /** Brings the model to the shared world scale, about 10 cm a unit, without
+   * reworking its geometry. Scales the model, footprint, perches and dens. */
+  size?: number;
   habitat: "land" | "water" | "either";
   /** Frogs route around it. */
   blocksMovement?: boolean;
