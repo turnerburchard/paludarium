@@ -230,7 +230,7 @@ button:hover:not(:disabled) {
   flex-direction: column;
   align-items: center;
   gap: 5px;
-  font-size: var(--text-body);
+  font-size: var(--text-small);
   cursor: pointer;
 }
 .panel-tabs button:hover {
@@ -257,7 +257,7 @@ button:hover:not(:disabled) {
   justify-content: space-between;
 }
 .category-tabs button {
-  flex: 1 1 0;
+  flex: 1 1 auto;
   min-width: 0;
   border: 0;
   border-bottom: 2px solid transparent;
@@ -267,8 +267,12 @@ button:hover:not(:disabled) {
   flex-direction: column;
   gap: 7px;
   align-items: center;
-  padding: 5px 6px 12px;
-  font-size: var(--text-body);
+  padding: 5px 4px 12px;
+  font-size: var(--text-small);
+}
+.panel-tabs button svg,
+.category-tabs button svg {
+  flex-shrink: 0;
 }
 .category-tabs button.active {
   color: var(--accent);
@@ -871,7 +875,7 @@ button:hover:not(:disabled) {
   }
   .panel-tabs button {
     min-height: 40px;
-    padding: 6px 8px;
+    padding: 6px 4px;
     flex-direction: row;
     justify-content: center;
   }
@@ -1016,6 +1020,11 @@ button:hover:not(:disabled) {
   }
   .modal {
     padding: 20px;
+  }
+}
+@media (max-width: 360px) {
+  .category-tabs button {
+    flex-direction: column;
   }
 }
 @media (prefers-reduced-motion: reduce) {
