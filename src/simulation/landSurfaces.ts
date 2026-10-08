@@ -63,7 +63,7 @@ export class LandSurfaces {
         object,
         bounds: shape.bounds.clone().applyMatrix4(matrix),
         faces,
-        tree: buildCollisionTree([...faces]),
+        tree: buildCollisionTree(faces),
         faceOrder: new Map(faces.map((face, index) => [face, index])),
       });
     }
