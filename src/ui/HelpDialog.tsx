@@ -12,8 +12,8 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
         </IconButton>
       </div>
       <p>
-        Choose an object, then click or tap the tank to place it. Keep placing
-        to make a cluster. Done or Escape returns to selection.
+        Switch to Build, choose an object, then click or tap the tank to place
+        it. Keep placing to make a cluster. Done or Escape returns to selection.
       </p>
       <dl>
         <dt>Move the camera</dt>

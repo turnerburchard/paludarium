@@ -90,6 +90,10 @@ try {
   );
   await page.goto(url);
   await page
+    .getByRole("dialog", { name: "How to build" })
+    .getByRole("button", { name: "Close dialog" })
+    .click();
+  await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
   await page.getByRole("button", { name: "Build", exact: true }).click();
@@ -218,6 +222,10 @@ try {
     },
   );
   await fishPage.goto(url);
+  await fishPage
+    .getByRole("dialog", { name: "How to build" })
+    .getByRole("button", { name: "Close dialog" })
+    .click();
   await fishPage.waitForFunction(
     (key) =>
       JSON.parse(localStorage.getItem(key), (key, value) =>
@@ -293,6 +301,10 @@ try {
     { world: dying, storageKey },
   );
   await deathPage.goto(url);
+  await deathPage
+    .getByRole("dialog", { name: "How to build" })
+    .getByRole("button", { name: "Close dialog" })
+    .click();
   await deathPage.getByRole("button", { name: "About Paludarium" }).click();
   await deathPage.getByText("Follow a creature", { exact: true }).click();
   await deathPage.getByRole("button", { name: /Red-eyed tree frog/ }).click();

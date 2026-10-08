@@ -84,6 +84,10 @@ try {
   );
   const page = await context.newPage();
   await page.goto(url);
+  await page
+    .getByRole("dialog", { name: "How to build" })
+    .getByRole("button", { name: "Close dialog" })
+    .click();
   await page.getByRole("button", { name: "About Paludarium" }).waitFor();
   assert.equal(await page.getByRole("heading").count(), 0);
   assert.equal(await page.getByRole("slider").count(), 0);
