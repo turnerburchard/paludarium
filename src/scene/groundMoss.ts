@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { Environment } from "../model/schema";
 import { randomFromSeed } from "../model/random";
 import { groundHeight } from "../model/terrain";
-import { surfaceGrid, terrainSamples } from "../model/terrainData";
+import { paintSamples, surfaceGrid } from "../model/terrainData";
 
 export function makeGroundMoss(env: Environment) {
   const paint = env.terrain?.paint;
@@ -19,7 +19,7 @@ export function makeGroundMoss(env: Environment) {
         row = Math.floor(index / (columns + 1));
       const x = (col / columns - 0.5) * env.width;
       const z = (row / rows - 0.5) * env.depth;
-      const coverage = terrainSamples(x, z, env).reduce(
+      const coverage = paintSamples(x, z, env).reduce(
         (sum, sample) =>
           sum + (paint[sample.index] === "moss" ? sample.weight : 0),
         0,

@@ -118,6 +118,10 @@ describe("stacked objects when the ground changes", () => {
     expect(height(result.objects, result.environment)).toBeCloseTo(
       height(stack, env),
     );
+    // Paint leaves every object where it is, so the simulation keeps running.
+    const paint = new TerrainStroke(result, { mode: "sand", radius: 0.5 });
+    paint.dab(1.5, 0);
+    expect(paint.dab(1.7, 0).objects).toBe(result.objects);
   });
   it("move with their support when a smaller tank pulls it in", () => {
     const log = object("log", 3.2, 0, { kind: "log" });

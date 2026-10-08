@@ -37,6 +37,18 @@ export function groundHeight(x: number, z: number, env: Environment): number {
     : 0;
   return clamp(base + delta, 0.08, groundCeiling(env));
 }
+/** Whether two environments differ at most in ground paint, which only
+ * the renderer reads. */
+export function onlyPaintDiffers(a: Environment, b: Environment): boolean {
+  const { terrain: before, ...restA } = a,
+    { terrain: after, ...restB } = b;
+  const keys = Object.keys(restA) as (keyof typeof restA)[];
+  return (
+    before?.heights === after?.heights &&
+    keys.length === Object.keys(restB).length &&
+    keys.every((key) => restA[key] === restB[key])
+  );
+}
 export function hasDryGround(env: Environment): boolean {
   const points = terrainPointCount(terrainGrid(env));
   for (let index = 0; index < points; index++) {

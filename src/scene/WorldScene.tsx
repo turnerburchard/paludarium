@@ -147,14 +147,17 @@ function Scene({
     }
     return { point: e.point };
   }
+  /** Where the pointer meets the ground, looking through anything in front.
+   * The event already carries every hit, so this needs no second raycast. */
+  function groundUnder(e: ThreeEvent<PointerEvent>) {
+    return e.intersections.find((hit) => hit.object === terrain.current)?.point;
+  }
   function track(e: ThreeEvent<PointerEvent>) {
     if (!kind && tool.type !== "terrain") return;
     e.stopPropagation();
     if (kind && e.nativeEvent.pointerType === "touch") return;
     if (tool.type === "terrain") {
-      const point =
-        terrain.current &&
-        raycaster.intersectObject(terrain.current, true)[0]?.point;
+      const point = groundUnder(e);
       if (!point) return;
       setCursor({ x: point.x, z: point.z });
       editor.continueTerrainStroke(point.x, point.z);
@@ -214,9 +217,7 @@ function Scene({
         onClick={place}
         onPointerDown={(e) => {
           if (tool.type !== "terrain" || e.button !== 0) return;
-          const point =
-            terrain.current &&
-            raycaster.intersectObject(terrain.current, true)[0]?.point;
+          const point = groundUnder(e);
           if (!point) return;
           e.stopPropagation();
           // R3F supplies a capture target, but its published event type omits it.

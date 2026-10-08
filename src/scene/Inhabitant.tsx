@@ -65,16 +65,7 @@ export function Inhabitant({
   const plant = categoryOf(assets[object.kind]) === "Plants";
   const foliageMotion = useMemo(
     () => (plant ? new FoliageMotion(object.seed, object.id) : undefined),
-    [
-      plant,
-      object.id,
-      object.seed,
-      object.x,
-      object.z,
-      object.scale,
-      environment,
-      model,
-    ],
+    [plant, object.id, object.seed],
   );
   const plantHeight = useMemo(
     () => (plant ? new THREE.Box3().setFromObject(model).max.y : 0),
@@ -99,7 +90,7 @@ export function Inhabitant({
   }, [plant, ghost, object.id, foliagePlants]);
   useEffect(() => {
     clock.current = 0;
-  }, [object.x, object.z, environment]);
+  }, [object.x, object.z]);
   useEffect(() => {
     model.traverse((o) => {
       if (o instanceof THREE.Mesh) {
