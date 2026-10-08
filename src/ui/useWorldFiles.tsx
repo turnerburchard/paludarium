@@ -1,9 +1,10 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { Editor } from "../editor/useEditor";
 import { MAX_WORLD_SIZE, parseWorld } from "../editor/persistence";
 
 /** Render the input once so importing creates a saved world from any menu. */
 export function useWorldFiles(editor: Editor, onCreated: () => void) {
+  const [importError, setImportError] = useState("");
   const input = useRef<HTMLInputElement>(null);
 
   async function importFile(file: File | undefined) {
@@ -13,10 +14,9 @@ export function useWorldFiles(editor: Editor, onCreated: () => void) {
         throw new Error("This file is too large for a terrarium.");
       if (editor.createWorld(parseWorld(await file.text()))) {
         onCreated();
-        editor.notify("World imported.");
       }
     } catch (error) {
-      editor.notify(
+      setImportError(
         error instanceof Error ? error.message : "Could not import this file.",
       );
     }
@@ -24,7 +24,11 @@ export function useWorldFiles(editor: Editor, onCreated: () => void) {
   }
 
   return {
-    importWorld: () => input.current?.click(),
+    importError,
+    importWorld: () => {
+      setImportError("");
+      input.current?.click();
+    },
     fileInput: (
       <input
         ref={input}

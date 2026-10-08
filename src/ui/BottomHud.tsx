@@ -50,10 +50,11 @@ export function BottomHud({ editor }: { editor: Editor }) {
                 ? terrainTools.find((brush) => brush.mode === tool.mode)?.label
                 : `${verb} ${kind ? assets[kind].name.toLowerCase() : ""}`}
             </strong>
-            <span>
-              {tool.type === "terrain"
-                ? "Drag to brush · Escape to finish"
-                : "Tap to place · Two-finger drag to pan"}
+            <span role="status" aria-live="polite">
+              {editor.placementError ||
+                (tool.type === "terrain"
+                  ? "Drag to brush · Escape to finish"
+                  : "Tap to place · Two-finger drag to pan")}
             </span>
           </div>
           {tool.type !== "terrain" && <PlacementRotation editor={editor} />}
@@ -80,9 +81,6 @@ export function BottomHud({ editor }: { editor: Editor }) {
           <span>Click to select</span>
         </div>
       )}
-      <div className="status-message" role="status" aria-live="polite">
-        {editor.message}
-      </div>
     </div>
   );
 }

@@ -108,7 +108,6 @@ export default function App({
 
   function openWorlds() {
     editor.finish();
-    if (editor.saved) editor.notify("");
     setDialog("worlds");
   }
 
@@ -230,6 +229,7 @@ export default function App({
           onClose={() => setDialog(null)}
           onPreset={startPreset}
           onImport={files.importWorld}
+          importError={files.importError}
           onOpen={(id) => {
             if (!editor.openWorld(id)) return;
             clearWorldLink();
@@ -241,7 +241,7 @@ export default function App({
       )}
       {dialog === "shared-copy" && (
         <SharedWorldDialog
-          error={!editor.saved ? editor.message : ""}
+          error={!editor.saved ? editor.saveError : ""}
           onClose={() => setDialog(null)}
           onCopy={() => {
             if (!editor.adoptSharedWorld()) return;

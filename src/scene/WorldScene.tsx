@@ -105,7 +105,7 @@ function Scene({
     );
     const intersections = raycaster.intersectObject(inhabitants.current, true);
     if (!intersections.length) {
-      editor.notify("Tap the ground or a stone inside the tank.");
+      editor.setPlacementError("Tap the ground or a stone inside the tank.");
       return;
     }
     const { point, surface } = spotUnder({
