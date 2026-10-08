@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { describe, expect, it } from "vitest";
 import { assets } from "../src/assets";
 import { emptyWorld, type HabitatObject } from "../src/model/schema";
+import { makePreset } from "../src/model/presets";
 import { groundHeight } from "../src/model/terrain";
 import {
   createWorldEcosystem,
@@ -32,6 +33,49 @@ function profile(animal: HabitatObject): SpeciesProfile {
 }
 
 describe("land animal clearance", () => {
+  it("keeps a shrimp close to driftwood while retaining clearance", () => {
+    const world = makePreset("aquarium");
+    const log = world.objects.find((object) => object.kind === "wood")!;
+    const animal = profile(object("cherry-shrimp", "shrimp"));
+    const graph = buildHabitat(world);
+    const surfaces = new LandSurfaces(world);
+    const node = [...graph.nodes.values()].find(
+      (node) =>
+        node.supportId === log.id &&
+        node.normal.y > 0.95 &&
+        graph.allowed(node.id, animal),
+    )!;
+    expect(node).toBeDefined();
+    const direction = graph.startingDirection(node, animal, {
+      x: 1,
+      y: 0,
+      z: 0,
+    });
+    const pose = graph.place(
+      node.position,
+      node.normal,
+      direction,
+      node.surface,
+      animal,
+      false,
+      log.id,
+    );
+    const ray = new THREE.Ray(
+      new THREE.Vector3(pose.position.x, pose.position.y, pose.position.z),
+      new THREE.Vector3(-pose.normal.x, -pose.normal.y, -pose.normal.z),
+    );
+    const hit = new THREE.Vector3();
+    const gaps = surfaces.solids[0].faces.flatMap(({ triangle }) =>
+      ray.intersectTriangle(triangle.a, triangle.b, triangle.c, false, hit)
+        ? [ray.origin.distanceTo(hit)]
+        : [],
+    );
+    expect(Math.min(...gaps)).toBeLessThan(0.008);
+    expect(
+      surfaces.fits(pose.position, pose.normal, direction, animal.body!),
+    ).toBe(true);
+  });
+
   it("checks a conservative body envelope and normalizes short headings", () => {
     const world = emptyWorld();
     world.environment.water = 0;

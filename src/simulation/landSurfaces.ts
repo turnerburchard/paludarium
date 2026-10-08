@@ -386,7 +386,7 @@ export class LandSurfaces {
       }
       for (const { point, normal, node } of samples.values()) {
         normal.normalize();
-        const lifted = point.clone().addScaledVector(normal, 0.018);
+        const lifted = point.clone().addScaledVector(normal, 0.003);
         node.position = { x: lifted.x, y: lifted.y, z: lifted.z };
         node.normal = { x: normal.x, y: normal.y, z: normal.z };
         if (
