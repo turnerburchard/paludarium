@@ -314,9 +314,20 @@ try {
       .count(),
     0,
   );
+  await deathPage.getByRole("button", { name: "Build", exact: true }).click();
+  await deathPage
+    .getByRole("button", { name: "Habitat life", exact: true })
+    .click();
+  await deathPage
+    .getByRole("button", { name: "Life log", exact: true })
+    .click();
+  await deathPage
+    .getByRole("list", { name: "Life log", exact: true })
+    .getByText("Red-eyed tree frog died of old age.")
+    .waitFor();
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: land and fish births, juvenile watching, pause, save/reload, Undo/Redo, and watched animal death on desktop and phone",
+    "PASS: land and fish births, juvenile watching, pause, save/reload, Undo/Redo, watched animal death and the life log on desktop and phone",
   );
 } finally {
   await browser?.close();

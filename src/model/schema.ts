@@ -163,12 +163,26 @@ export const environmentSchema = z
     path: ["water"],
   });
 export type Environment = z.infer<typeof environmentSchema>;
+/** Births and deaths, oldest first. Only the most recent are kept. */
+export const LOG_LENGTH = 100;
+const logEntrySchema = z.object({
+  /** Epoch milliseconds. */
+  at: finite.min(0),
+  event: z.enum(["born", "died"]),
+  kind: z.enum(assetKinds),
+  cause: z
+    .enum(["age", "starved", "crowded", "drowned", "stranded"])
+    .optional(),
+});
+export type LogEntry = z.infer<typeof logEntrySchema>;
 export const worldSchema = z
   .object({
     version: z.literal(1),
     name: z.string().trim().min(1).max(60),
     environment: environmentSchema,
     objects: z.array(objectSchema).max(MAX_OBJECTS),
+    // Additive version-1 data.
+    log: z.array(logEntrySchema).max(LOG_LENGTH).optional(),
   })
   .superRefine((world, ctx) => {
     if (new Set(world.objects.map((o) => o.id)).size !== world.objects.length)

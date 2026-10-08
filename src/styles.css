@@ -1386,6 +1386,36 @@ button:hover:not(:disabled) {
 .life-panel li small {
   margin-top: 0;
 }
+.life-log-toggle {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 18px 0 6px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: #90a584;
+  font-size: 12px;
+  cursor: pointer;
+}
+.life-log-toggle:hover {
+  color: #deedc0;
+}
+.life-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #b6c6aa;
+}
+.life-log time {
+  display: inline-block;
+  min-width: 96px;
+  margin-right: 8px;
+  color: #90a584;
+  font-variant-numeric: tabular-nums;
+}
 
 .view-info {
   position: absolute;
