@@ -1,53 +1,20 @@
-import { useEffect, useMemo, useRef, type RefObject } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  type RefObject,
+} from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Environment } from "../model/schema";
 import { randomFromSeed } from "../model/random";
-import { surfaceGrid, terrainSamples } from "../model/terrainData";
+import { surfaceGrid, type Terrain as TerrainData } from "../model/terrainData";
+import { changedArea, drawTerrain, makeTerrain } from "./groundSurface";
 import { groundHeight, hasDryGround } from "../model/terrain";
 import { makeWaterMaterial } from "./waterMaterial";
 import { makeGroundMoss } from "./groundMoss";
 
-function makeTerrain(env: Environment) {
-  const { columns, rows } = surfaceGrid(env);
-  const geo = new THREE.PlaneGeometry(env.width, env.depth, columns, rows);
-  geo.rotateX(-Math.PI / 2);
-  const p = geo.getAttribute("position"),
-    colors = [];
-  const soil = new THREE.Color("#443c2b"),
-    sand = new THREE.Color("#a5936a");
-  const palette = {
-    soil,
-    sand,
-    stone: new THREE.Color("#74787b"),
-    moss: soil,
-  };
-  for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i),
-      z = p.getZ(i),
-      h = groundHeight(x, z, env);
-    p.setY(i, h);
-    const color = soil
-      .clone()
-      .lerp(sand, THREE.MathUtils.clamp((0.55 - h) * 2.3, 0, 1));
-    if (env.terrain) {
-      const natural = color.clone();
-      color.setRGB(0, 0, 0);
-      for (const { index, weight } of terrainSamples(x, z, env)) {
-        const material = env.terrain.paint[index];
-        const source = material === "natural" ? natural : palette[material];
-        color.r += source.r * weight;
-        color.g += source.g * weight;
-        color.b += source.b * weight;
-      }
-    }
-    color.multiplyScalar(0.94 + 0.09 * Math.sin(x * 29) * Math.sin(z * 37));
-    colors.push(color.r, color.g, color.b);
-  }
-  geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-  geo.computeVertexNormals();
-  return geo;
-}
 function makeSkirt(env: Environment) {
   const vertices: number[] = [],
     indices: number[] = [];
@@ -85,13 +52,25 @@ export function Terrain({
   groundRef: RefObject<THREE.Mesh | null>;
 }) {
   const pebbles = useRef<THREE.InstancedMesh>(null);
+  const heights = env.terrain?.heights;
   const surface = useMemo(
     () => makeTerrain(env),
-    [env.width, env.depth, env.height, env.substrate, env.terrain],
+    [env.width, env.depth, env.height, env.substrate],
   );
+  const drawn = useRef<{
+    surface: THREE.BufferGeometry;
+    terrain?: TerrainData;
+  }>(null);
+  useLayoutEffect(() => {
+    const before = drawn.current;
+    drawn.current = { surface, terrain: env.terrain };
+    if (before?.surface !== surface) drawTerrain(surface, env);
+    else if (before.terrain !== env.terrain)
+      drawTerrain(surface, env, changedArea(before.terrain, env));
+  }, [surface, env.terrain]);
   const skirt = useMemo(
     () => makeSkirt(env),
-    [env.width, env.depth, env.height, env.substrate, env.terrain],
+    [env.width, env.depth, env.height, env.substrate, heights],
   );
   const stones = useMemo(() => {
     const random = randomFromSeed(84);
@@ -121,7 +100,7 @@ export function Terrain({
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     mesh.computeBoundingSphere();
-  }, [stones, env.width, env.depth, env.height, env.substrate, env.terrain]);
+  }, [stones, env.width, env.depth, env.height, env.substrate, heights]);
   const carpet = useMemo(
     () => makeGroundMoss(env),
     [env.width, env.depth, env.height, env.substrate, env.terrain, env.water],

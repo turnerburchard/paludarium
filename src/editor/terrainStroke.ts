@@ -45,15 +45,22 @@ export class TerrainStroke {
       this.brush,
       0.025,
     );
-    if (environment !== this.current.environment)
-      this.current = {
-        ...this.current,
-        environment,
-        objects: keepStacked(
-          this.current.objects,
-          this.current.environment,
-          environment,
-        ),
-      };
+    if (environment === this.current.environment) return;
+    const reshaped =
+      environment.terrain?.heights !==
+      this.current.environment.terrain?.heights;
+    this.current = {
+      ...this.current,
+      environment,
+      // Paint keeps the objects as they are, so the simulation can tell
+      // nothing moved.
+      objects: reshaped
+        ? keepStacked(
+            this.current.objects,
+            this.current.environment,
+            environment,
+          )
+        : this.current.objects,
+    };
   }
 }

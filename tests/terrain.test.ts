@@ -4,6 +4,7 @@ import {
   baseGroundHeight,
   groundHeight,
   groundNormal,
+  onlyPaintDiffers,
   placementProblem,
 } from "../src/model/terrain";
 import { applyTerrainBrush } from "../src/model/terrainBrush";
@@ -151,7 +152,12 @@ describe("saved landscape brushes", () => {
       mode: "sand",
       radius: 0.65,
     });
-    expect(painted.terrain!.heights).toEqual(env.terrain!.heights);
+    // The same array, so the ground's shape and the simulation skip
+    // rebuilding for paint.
+    expect(painted.terrain!.heights).toBe(env.terrain!.heights);
+    expect(onlyPaintDiffers(env, painted)).toBe(true);
+    expect(onlyPaintDiffers(env, { ...painted, water: 0.1 })).toBe(false);
+    expect(onlyPaintDiffers(painted, env)).toBe(true);
     expect(painted.terrain!.paint).toContain("sand");
     const resized = { ...painted, width: 9, depth: 6 };
     const beforeDelta =

@@ -113,6 +113,39 @@ export function terrainSamples(x: number, z: number, env: Dimensions) {
   );
 }
 
+/** Cubic B-spline weights for the four grid points around offset `t`. */
+function splineWeights(t: number) {
+  const s = 1 - t;
+  return [
+    (s * s * s) / 6,
+    (3 * t * t * t - 6 * t * t + 4) / 6,
+    (-3 * t * t * t + 3 * t * t + 3 * t + 1) / 6,
+    (t * t * t) / 6,
+  ];
+}
+
+/** The sixteen grid points around a spot with smooth B-spline weights.
+ * Paint blended this way has rounded edges, where bilinear blending shows
+ * the square grid as stair steps. */
+export function paintSamples(x: number, z: number, env: Dimensions) {
+  const { columns, rows } = terrainGrid(env);
+  const gx = Math.max(0, Math.min(columns, (x / env.width + 0.5) * columns)),
+    gz = Math.max(0, Math.min(rows, (z / env.depth + 0.5) * rows));
+  const ix = Math.floor(gx),
+    iz = Math.floor(gz);
+  const wx = splineWeights(gx - ix),
+    wz = splineWeights(gz - iz);
+  const samples: { index: number; weight: number }[] = [];
+  for (let j = 0; j < 4; j++) {
+    const row = Math.max(0, Math.min(rows, iz + j - 1));
+    for (let i = 0; i < 4; i++) {
+      const col = Math.max(0, Math.min(columns, ix + i - 1));
+      samples.push({ index: row * (columns + 1) + col, weight: wx[i] * wz[j] });
+    }
+  }
+  return samples;
+}
+
 function fitDivisions(divisions: number, length: number) {
   while (length / divisions > MAX_SPACING) divisions *= 2;
   while (length / divisions < MIN_SPACING && divisions % 2 === 0)

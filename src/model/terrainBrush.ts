@@ -29,7 +29,14 @@ export function applyTerrainBrush(
   const terrain = env.terrain ?? newTerrain(env);
   const { columns, rows } = terrain;
   const sculpted = { ...env, terrain };
-  const heights = [...terrain.heights],
+  const painting =
+    brush.mode === "soil" ||
+    brush.mode === "sand" ||
+    brush.mode === "stone" ||
+    brush.mode === "moss";
+  // Paint leaves the heights array itself untouched, so whatever depends
+  // only on the ground's shape can skip rebuilding.
+  const heights = painting ? terrain.heights : [...terrain.heights],
     paint = [...terrain.paint];
   const water =
     brush.mode === "pool" || brush.mode === "stream"
@@ -65,12 +72,7 @@ export function applyTerrainBrush(
         }, 0) / neighbors.length;
       delta += (average - height) * weight * 0.65;
     } else if (weight > 0.15) paint[index] = brush.mode;
-    if (
-      brush.mode === "soil" ||
-      brush.mode === "sand" ||
-      brush.mode === "stone" ||
-      brush.mode === "moss"
-    ) {
+    if (painting) {
       changed ||= paint[index] !== terrain.paint[index];
       continue;
     }
