@@ -86,8 +86,7 @@ export class SwimSpace {
           (face) => face.bounds.min.y < world.environment.water,
         ),
       );
-      if (asset.hardscape)
-        this.solids.push(buildCollisionTree([...transformed]));
+      if (asset.hardscape) this.solids.push(buildCollisionTree(transformed));
     }
     this.obstacles = buildCollisionTree(faces);
   }

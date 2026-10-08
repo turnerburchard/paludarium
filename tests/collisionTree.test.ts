@@ -25,7 +25,7 @@ function boxes(): CollisionFace[] {
 describe("collision face index", () => {
   it("retains every ray intersection, including shared edges and vertices", () => {
     const faces = boxes();
-    const tree = buildCollisionTree([...faces]);
+    const tree = buildCollisionTree(faces);
     const random = randomFromSeed(173);
     const rays = Array.from(
       { length: 100 },
@@ -63,7 +63,7 @@ describe("collision face index", () => {
 
   it("skips distant triangles instead of visiting the entire mesh", () => {
     const faces = boxes();
-    const tree = buildCollisionTree([...faces]);
+    const tree = buildCollisionTree(faces);
     const candidates: CollisionFace[] = [];
     visitRayFaces(
       tree,
