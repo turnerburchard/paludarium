@@ -21,7 +21,10 @@
   --muted: #a4b3a9;
   --accent: #aec5a0;
   --ink: #14241b;
-  --font-ui: "Fraunces", Georgia, serif;
+  --font-ui:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-heading: "Fraunces", Georgia, serif;
   --text-small: 12px;
   --text-body: 14px;
   --text-title: 18px;
@@ -44,6 +47,13 @@ body {
 button,
 input {
   font: inherit;
+}
+.brand h1,
+.world-title input,
+.inspector h2,
+.modal h2,
+.open-world strong {
+  font-family: var(--font-heading);
 }
 button {
   cursor: pointer;
