@@ -1,21 +1,16 @@
 import { X } from "lucide-react";
-import { downloadWorld, loadWorld, STORAGE_KEY } from "../editor/persistence";
 import { IconButton } from "./IconButton";
 import { Modal } from "./Modal";
 
 export function SharedWorldDialog({
   onCopy,
   onClose,
+  error,
 }: {
   onCopy: () => void;
   onClose: () => void;
+  error?: string;
 }) {
-  let hasSavedWorld = false;
-  try {
-    hasSavedWorld = !!localStorage.getItem(STORAGE_KEY);
-  } catch {
-    /* Storage may be unavailable. */
-  }
   return (
     <Modal label="Build a copy" onClose={onClose}>
       <div className="modal-heading">
@@ -25,16 +20,11 @@ export function SharedWorldDialog({
         </IconButton>
       </div>
       <p>
-        {hasSavedWorld
-          ? "Building a copy will replace your saved habitat on this device. You can export it first, or Undo after copying to bring it back."
-          : "Make your own copy to build and save on this device. Your changes won’t affect the original."}
+        Make your own copy to build and save in Worlds. Your other worlds stay
+        saved, and your changes won’t affect the original.
       </p>
+      {error && <p role="status">{error}</p>}
       <div className="shared-world-actions">
-        {hasSavedWorld && (
-          <button onClick={() => downloadWorld(loadWorld().world)}>
-            Export my world
-          </button>
-        )}
         <button className="intro-build-button" onClick={onCopy}>
           Build a copy
         </button>

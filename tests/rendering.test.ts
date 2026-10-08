@@ -51,6 +51,30 @@ describe("static rendering batches", () => {
 });
 
 describe("moss cover", () => {
+  it.each([
+    { width: 5, depth: 3 },
+    { width: 9, depth: 6 },
+  ])("keeps painted moss inside a $width by $depth tank", (bounds) => {
+    const points = [-1, 1].flatMap((x) =>
+      [-1, 1].map(
+        (z) =>
+          new THREE.Vector3(
+            (x * bounds.width) / 2,
+            0.5,
+            (z * bounds.depth) / 2,
+          ),
+      ),
+    );
+    const cushions = mossCushions(points, randomFromSeed(31));
+    const carpet = mossCarpet(cushions, bounds)!;
+    carpet.computeBoundingBox();
+    expect(carpet.boundingBox!.min.x).toBeGreaterThanOrEqual(-bounds.width / 2);
+    expect(carpet.boundingBox!.max.x).toBeLessThanOrEqual(bounds.width / 2);
+    expect(carpet.boundingBox!.min.z).toBeGreaterThanOrEqual(-bounds.depth / 2);
+    expect(carpet.boundingBox!.max.z).toBeLessThanOrEqual(bounds.depth / 2);
+    carpet.dispose();
+    cushions.forEach((c) => c.lumps.forEach((l) => l.dispose()));
+  });
   it.each(["rock", "log", "rock-shelter"] as const)(
     "grows a %s's moss over its top, the same way for the same seed",
     (kind) => {

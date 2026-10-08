@@ -8,7 +8,8 @@ export const monstera: AssetDefinition = {
   scientificName: "Monstera deliciosa",
   group: "Leafy plants",
   biomes: ["Tropical"],
-  description: "Big split leaves for a lush tropical canopy.",
+  description:
+    "A climbing plant native to Mexico and Central America, with large, split leaves. Aerial roots attach it to trees and other supports.",
   radius: 0.48,
   habitat: "land",
   shelter: true,

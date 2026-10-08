@@ -1,7 +1,7 @@
 import type { Environment, HabitatObject, AssetKind } from "./schema";
 import { assets } from "../assets";
-import { terrainSamples } from "./terrainData";
-export const MAX_GROUND_HEIGHT = 1.25;
+import { terrainSamples, MAX_GROUND_HEIGHT } from "./terrainData";
+export { MAX_GROUND_HEIGHT } from "./terrainData";
 export function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }

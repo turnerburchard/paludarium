@@ -51,14 +51,20 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
         <dd>
           Planting and tank space support your animals. Healthy adults of the
           same species can have young, which slowly grow up. Crowding and too
-          little planting gradually lower condition. Follow a creature to see
-          its age and condition. Life pauses while the tab is hidden; age,
-          condition and offspring stay saved when you return.
+          little planting gradually lower condition. An animal with nowhere it
+          can live, like a frog in a flooded tank or a fish in a drained one,
+          declines within minutes. Follow a creature to see its age and
+          condition. Life pauses while the tab is hidden; age, condition and
+          offspring stay saved when you return.
         </dd>
         <dt>Saving and sharing</dt>
         <dd>
-          Autosaves stay in this browser. Share sends your current layout as a
-          link others can explore and copy. Export keeps a file backup.
+          Autosaves stay in this browser. The open preset resumes after a
+          refresh. Build edits keep it in Your worlds. Preset buttons start
+          fresh, and switching away discards an unedited preset. Your worlds
+          lists recently opened saves first. Share sends your current layout as
+          a link others can explore and copy. Each world’s options include
+          Export file for backups. Undo history resets when you switch worlds.
         </dd>
       </dl>
       <p className="panel-note">

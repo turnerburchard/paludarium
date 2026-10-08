@@ -4,6 +4,7 @@ import {
   baseGroundHeight,
   groundHeight,
   groundNormal,
+  MAX_GROUND_HEIGHT,
   placementProblem,
 } from "../src/model/terrain";
 import { applyTerrainBrush } from "../src/model/terrainBrush";
@@ -14,6 +15,44 @@ import { parseWorld } from "../src/editor/persistence";
 import { buildHabitat } from "../src/simulation/worldHabitat";
 
 describe("saved landscape brushes", () => {
+  it("raises ground above the old ceiling and saves it at the new ceiling", () => {
+    let env = emptyWorld().environment;
+    for (let i = 0; i < 200; i++)
+      env = applyTerrainBrush(env, 1.75, 0, { mode: "raise", radius: 0.65 });
+    expect(groundHeight(1.75, 0, env)).toBeCloseTo(2.4, 3);
+    expect(Math.max(...env.terrain!.heights)).toBeGreaterThan(0.9);
+    expect(
+      Math.max(
+        ...env.terrain!.heights.map((_, index) => {
+          const point = terrainPoint(index, env);
+          return groundHeight(point.x, point.z, env);
+        }),
+      ),
+    ).toBeLessThanOrEqual(MAX_GROUND_HEIGHT);
+    expect(
+      parseWorld(JSON.stringify({ ...emptyWorld(), environment: env }))
+        .environment,
+    ).toEqual(env);
+  });
+  it.each(["raise", "lower"] as const)(
+    "makes %s gradual while repeated passes keep accumulating",
+    (mode) => {
+      const original = emptyWorld();
+      const stroke = new TerrainStroke(original, { mode, radius: 0.65 });
+      stroke.dab(-1.75, 0);
+      const before = groundHeight(-1.75, 0, original.environment);
+      const first = Math.abs(
+        groundHeight(-1.75, 0, stroke.current.environment) - before,
+      );
+      expect(first).toBeGreaterThan(0);
+      expect(first).toBeCloseTo(0.025, 6);
+      stroke.dab(-1.1, 0);
+      stroke.dab(-1.75, 0);
+      expect(
+        Math.abs(groundHeight(-1.75, 0, stroke.current.environment) - before),
+      ).toBeGreaterThan(first * 2);
+    },
+  );
   it("preserves old saves and round trips a whole undoable stroke", () => {
     const original = emptyWorld(),
       before = JSON.stringify(original);
@@ -43,7 +82,7 @@ describe("saved landscape brushes", () => {
     for (let i = 0; i < 6; i++)
       env = applyTerrainBrush(env, -1.75, 0, { mode: "raise", radius: 0.65 });
     const peak = groundHeight(-1.75, 0, env);
-    expect(peak).toBeLessThanOrEqual(1.25);
+    expect(peak).toBeLessThanOrEqual(MAX_GROUND_HEIGHT);
     const smooth = applyTerrainBrush(env, -1.75, 0, {
       mode: "smooth",
       radius: 0.65,
@@ -134,7 +173,7 @@ describe("saved landscape brushes", () => {
     invalid.environment.terrain!.heights.pop();
     expect(() => parseWorld(JSON.stringify(invalid))).toThrow();
     invalid.environment.terrain!.heights =
-      Array<number>(TERRAIN_POINTS).fill(2);
+      Array<number>(TERRAIN_POINTS).fill(3);
     expect(() => parseWorld(JSON.stringify(invalid))).toThrow();
     const malformed = JSON.parse(JSON.stringify(world));
     malformed.environment.terrain.paint[0] = "lava";

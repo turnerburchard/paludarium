@@ -374,6 +374,7 @@ export class LandSurfaces {
           normal: { x: 0, y: 1, z: 0 },
           surface: stone ? "stone" : "bark",
           wet: env.water > 0 && point.y <= env.water + 0.065,
+          submerged: env.water - point.y > 0.025,
           shelter: solid.object.moss ? 0.5 : 0.2,
           perchHeight: point.y - groundHeight(point.x, point.z, env),
           supportId: solid.object.id,
@@ -422,11 +423,7 @@ export class LandSurfaces {
         if (
           Math.abs(lifted.x) > env.width / 2 - margin ||
           Math.abs(lifted.z) > env.depth / 2 - margin ||
-          lifted.y <
-            Math.max(
-              env.water - 0.025,
-              groundHeight(lifted.x, lifted.z, env) - 0.015,
-            ) ||
+          lifted.y < groundHeight(lifted.x, lifted.z, env) - 0.015 ||
           this.inside(node.position)
         )
           continue;
@@ -491,7 +488,13 @@ export class LandSurfaces {
     return false;
   }
 
+  /** A route between two dry points can't dip underwater, so land animals
+   * never wade across a pond. Underwater routes only have to stay above the
+   * ground. */
   clearRoute(from: Vec3, to: Vec3) {
+    const env = this.world.environment;
+    const floor =
+      Math.min(from.y, to.y) < env.water - 0.025 ? 0 : env.water - 0.025;
     const length = Math.hypot(to.x - from.x, to.y - from.y, to.z - from.z);
     const steps = Math.max(2, Math.ceil(length / 0.04));
     for (let i = 1; i < steps; i++) {
@@ -502,11 +505,7 @@ export class LandSurfaces {
         z: from.z + (to.z - from.z) * t,
       };
       if (
-        point.y <
-          Math.max(
-            this.world.environment.water - 0.025,
-            groundHeight(point.x, point.z, this.world.environment) - 0.04,
-          ) ||
+        point.y < Math.max(floor, groundHeight(point.x, point.z, env) - 0.04) ||
         this.inside(point)
       )
         return false;

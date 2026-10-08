@@ -87,6 +87,27 @@ try {
   await page.getByRole("button", { name: "About Paludarium" }).waitFor();
   assert.equal(await page.getByRole("heading").count(), 0);
   assert.equal(await page.getByRole("slider").count(), 0);
+  for (const width of [320, 360, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    const controls = await page.evaluate(() => {
+      const mode = document
+        .querySelector(".mode-switch")
+        .getBoundingClientRect();
+      const tools = document
+        .querySelector(".scene-tools")
+        .getBoundingClientRect();
+      return {
+        modeTop: mode.top,
+        modeRight: mode.right,
+        toolsTop: tools.top,
+        toolsLeft: tools.left,
+        toolsRight: tools.right,
+      };
+    });
+    assert.ok(Math.abs(controls.modeTop - controls.toolsTop) <= 2);
+    assert.ok(controls.modeRight <= controls.toolsLeft);
+    assert.ok(controls.toolsRight <= width - 12);
+  }
   assert.equal(
     await page
       .getByRole("button", { name: /Watch a frog|Watch a creature/ })
@@ -111,17 +132,27 @@ try {
   assert.deepEqual(image, [1200, 630]);
   await page.getByRole("button", { name: "Pause life (Space)" }).click();
   await page.getByRole("button", { name: "Build", exact: true }).click();
-  await page.getByRole("button", { name: "New world", exact: true }).click();
+  await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "Start a world" })
+    .getByRole("dialog", { name: "Worlds" })
+    .locator(".preset-options")
     .getByRole("button", { name: "Aquarium", exact: true })
     .click();
   await page.waitForFunction((key) => {
-    const world = JSON.parse(localStorage.getItem(key));
+    const world = JSON.parse(localStorage.getItem(key), (key, value) =>
+      key === "" && value.worlds
+        ? value.worlds.find((entry) => entry.id === value.activeId).world
+        : value,
+    );
     return world?.name === "Aquarium" && world.environment.water > 2;
   }, storageKey);
   const aquarium = await page.evaluate(
-    (key) => JSON.parse(localStorage.getItem(key)),
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ),
     storageKey,
   );
   await page
@@ -133,6 +164,57 @@ try {
     await page.getByRole("button", { name: "All", exact: true }).count(),
     0,
   );
+  const cards = await page.locator(".asset-card").evaluateAll((cards) =>
+    cards.slice(0, 6).map((card) => ({
+      height: card.getBoundingClientRect().height,
+      labelTop:
+        card.querySelector(".asset-name").getBoundingClientRect().top -
+        card.getBoundingClientRect().top,
+    })),
+  );
+  assert.ok(
+    Math.max(...cards.map((card) => card.height)) -
+      Math.min(...cards.map((card) => card.height)) <
+      1,
+  );
+  assert.ok(
+    Math.max(...cards.map((card) => card.labelTop)) -
+      Math.min(...cards.map((card) => card.labelTop)) <
+      1,
+  );
+  const tabColumns = await page
+    .locator(".panel-tabs > button")
+    .evaluateAll((tabs) =>
+      tabs.map((tab) => ({
+        left: tab.getBoundingClientRect().left,
+        width: tab.getBoundingClientRect().width,
+      })),
+    );
+  const categoryColumns = await page
+    .locator(".category-tabs > button")
+    .evaluateAll((tabs) =>
+      tabs.slice(0, 3).map((tab) => ({
+        left: tab.getBoundingClientRect().left,
+        width: tab.getBoundingClientRect().width,
+      })),
+    );
+  categoryColumns.forEach((column, index) => {
+    assert.ok(Math.abs(column.left - tabColumns[index].left) < 1);
+    assert.ok(Math.abs(column.width - tabColumns[index].width) < 1);
+  });
+  const categoryTop = await page
+    .locator(".category-tabs")
+    .evaluate((tabs) => tabs.getBoundingClientRect().top);
+  await page.locator(".panel-content").evaluate((panel) => {
+    panel.scrollTop = 300;
+  });
+  const scrolledCategoryTop = await page
+    .locator(".category-tabs")
+    .evaluate((tabs) => tabs.getBoundingClientRect().top);
+  assert.ok(Math.abs(scrolledCategoryTop - categoryTop) < 1);
+  await page.locator(".panel-content").evaluate((panel) => {
+    panel.scrollTop = 0;
+  });
   const sheetHeight = await page
     .locator(".sidebar")
     .evaluate((sheet) => sheet.getBoundingClientRect().height);
@@ -199,7 +281,12 @@ try {
     .getByRole("button", { name: "Undo (⌘/Ctrl Z)", exact: true })
     .click();
   await page.waitForFunction(
-    (key) => JSON.parse(localStorage.getItem(key)).environment.water > 2,
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).environment.water > 2,
     storageKey,
   );
   await page.getByRole("button", { name: "View", exact: true }).click();
@@ -211,6 +298,7 @@ try {
   );
   assert.equal(await page.locator(".sidebar").isVisible(), false);
   await page.getByRole("button", { name: "Share this world" }).click();
+  await page.getByRole("button", { name: "Share link", exact: true }).click();
   await page.getByText("World link copied", { exact: true }).waitFor();
   const hash = new URL(await page.evaluate(() => window.copiedLink)).hash;
   assert.match(hash, /^#world=1\.[A-Za-z0-9_-]+$/);
@@ -223,7 +311,12 @@ try {
   await page.getByRole("navigation", { name: "Shared world" }).waitFor();
   assert.deepEqual(
     await page.evaluate(
-      (key) => JSON.parse(localStorage.getItem(key)),
+      (key) =>
+        JSON.parse(localStorage.getItem(key), (key, value) =>
+          key === "" && value.worlds
+            ? value.worlds.find((entry) => entry.id === value.activeId).world
+            : value,
+        ),
       storageKey,
     ),
     original,
@@ -234,21 +327,25 @@ try {
   await page.waitForFunction(
     (key) =>
       !location.hash &&
-      JSON.parse(localStorage.getItem(key)).name === "Aquarium",
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).name === "Aquarium",
     storageKey,
   );
-  await page
-    .getByRole("button", { name: "Undo (⌘/Ctrl Z)", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Worlds", exact: true }).click();
+  await page.getByRole("button", { name: "Smoke check", exact: true }).click();
   await page.waitForFunction(
-    (key) => JSON.parse(localStorage.getItem(key)).name === "Smoke check",
+    (key) => JSON.parse(localStorage.getItem(key)).worlds.length === 2,
     storageKey,
   );
   assert.deepEqual(
-    await page.evaluate(
-      (key) => JSON.parse(localStorage.getItem(key)),
-      storageKey,
-    ),
+    await page.evaluate((key) => {
+      const library = JSON.parse(localStorage.getItem(key));
+      return library.worlds.find((entry) => entry.id === library.activeId)
+        .world;
+    }, storageKey),
     original,
   );
   const unreadable = await browser.newPage();
@@ -272,7 +369,7 @@ try {
     "production rendering and interactions have no runtime errors",
   );
   console.log(
-    `PASS (${Math.round((Date.now() - started) / 1000)}s): production bundle, minimal mobile View, aquarium, water Undo, persistent scene, preview image, share snapshot, safe adoption and Undo, unreadable save kept`,
+    `PASS (${Math.round((Date.now() - started) / 1000)}s): production bundle, minimal mobile View, aquarium, water Undo, persistent scene, preview image, share snapshot, safe adoption and world switching, unreadable save kept`,
   );
 } finally {
   await browser?.close();

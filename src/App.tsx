@@ -3,15 +3,15 @@ import { Info } from "lucide-react";
 import { IconButton } from "./ui/IconButton";
 import { isAnimal } from "./assets";
 import { useEditor } from "./editor/useEditor";
-import { makePreset, type Preset } from "./model/presets";
+import type { Preset } from "./model/presets";
 import { WorldScene } from "./scene/WorldScene";
 import { useEcosystem } from "./simulation/useEcosystem";
 import { BottomHud } from "./ui/BottomHud";
-import { EmptyInvitation } from "./ui/EmptyInvitation";
 import { HelpDialog } from "./ui/HelpDialog";
 import { Inspector } from "./ui/Inspector";
 import { MobileDock } from "./ui/MobileDock";
-import { NewWorldDialog } from "./ui/NewWorldDialog";
+import { ShareDialog } from "./ui/ShareDialog";
+import { WorldsDialog } from "./ui/WorldsDialog";
 import { SceneBoundary } from "./ui/SceneBoundary";
 import { SceneTools } from "./ui/SceneTools";
 import { Sidebar, type Panel } from "./ui/Sidebar";
@@ -32,16 +32,18 @@ export default function App({
   const [view, setView] = useState(true);
   const editor = useEditor(view, sharedWorld);
   const { world, selected, tool } = editor;
+  useEffect(() => {
+    document.title = `paludarium · ${world.name}`;
+  }, [world.name]);
   // Life follows committed edits, not intermediate brush or slider previews.
   const ecosystem = useEcosystem(editor.savedWorld, editor.updateLife);
-  const files = useWorldFiles(editor);
   const [panel, setPanel] = useState<Panel>("objects");
   // On phones the sidebar is a sheet, closed until a dock button opens it.
   const [sheetOpen, setSheetOpen] = useState(false);
   const [hasBuilt, setHasBuilt] = useState(false);
   const [resetCamera, setResetCamera] = useState(0);
   const [dialog, setDialog] = useState<
-    "new-world" | "help" | "about" | "shared-copy" | "share-error" | null
+    "share" | "worlds" | "help" | "about" | "shared-copy" | "share-error" | null
   >(shareError ? "share-error" : null);
   const [watchRequest, setWatchRequest] = useState<string | null>(null);
   // Deselecting (Escape, clicking away) also stops watching.
@@ -72,7 +74,9 @@ export default function App({
   }
 
   function startPreset(preset: Preset) {
-    editor.replaceWorld(makePreset(preset));
+    if (!editor.startPreset(preset)) return;
+    clearWorldLink();
+    setWatchRequest(null);
     setDialog(null);
     setResetCamera((n) => n + 1);
   }
@@ -93,9 +97,22 @@ export default function App({
     setMode(next);
   }
 
+  function openWorlds() {
+    editor.finish();
+    if (editor.saved) editor.notify("");
+    setDialog("worlds");
+  }
+
   function clearWorldLink() {
     history.replaceState(null, "", location.pathname + location.search);
   }
+
+  const files = useWorldFiles(editor, () => {
+    clearWorldLink();
+    setDialog(null);
+    setWatchRequest(null);
+    setResetCamera((n) => n + 1);
+  });
 
   function activateObject(id: string) {
     const object = world.objects.find((o) => o.id === id);
@@ -123,14 +140,7 @@ export default function App({
           />
         </SceneBoundary>
       </div>
-      {!view && (
-        <TopBar
-          editor={editor}
-          onNewWorld={() => setDialog("new-world")}
-          onExport={files.exportWorld}
-          onImport={files.importWorld}
-        />
-      )}
+      {!view && <TopBar editor={editor} onWorlds={openWorlds} />}
       {files.fileInput}
       {hasBuilt && (
         <Sidebar
@@ -143,8 +153,6 @@ export default function App({
           onHelp={() => setDialog("help")}
           onWatch={watch}
           onClose={() => setSheetOpen(false)}
-          onExport={files.exportWorld}
-          onImport={files.importWorld}
         />
       )}
       {!view && !sheetOpen && !selected && tool.type === "select" && (
@@ -153,9 +161,6 @@ export default function App({
           onOpen={openPanel}
           onWatchWorld={() => changeMode(true)}
         />
-      )}
-      {!view && world.objects.length === 0 && tool.type === "select" && (
-        <EmptyInvitation onPreset={startPreset} />
       )}
       {!view && selected && tool.type === "select" && !watchingId && (
         <Inspector
@@ -175,6 +180,8 @@ export default function App({
       <SceneTools
         editor={editor}
         view={view}
+        onShare={() => setDialog("share")}
+        onWorlds={openWorlds}
         onChangeMode={changeMode}
         onResetCamera={() => {
           setWatchRequest(null);
@@ -200,24 +207,36 @@ export default function App({
         </>
       )}
       {!view && <BottomHud editor={editor} />}
-      {dialog === "new-world" && (
-        <NewWorldDialog
-          onPreset={startPreset}
+      {dialog === "share" && (
+        <ShareDialog
+          world={editor.savedWorld}
           onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === "worlds" && (
+        <WorldsDialog
+          editor={editor}
+          onClose={() => setDialog(null)}
+          onPreset={startPreset}
+          onImport={files.importWorld}
+          onOpen={(id) => {
+            if (!editor.openWorld(id)) return;
+            clearWorldLink();
+            setDialog(null);
+            setWatchRequest(null);
+            setResetCamera((n) => n + 1);
+          }}
         />
       )}
       {dialog === "shared-copy" && (
         <SharedWorldDialog
+          error={!editor.saved ? editor.message : ""}
           onClose={() => setDialog(null)}
           onCopy={() => {
-            const saved = editor.adoptSharedWorld();
-            if (saved) clearWorldLink();
+            if (!editor.adoptSharedWorld()) return;
+            clearWorldLink();
             setDialog(null);
             setMode(false);
-            if (!saved)
-              editor.notify(
-                "Saving is unavailable. Export a backup of your copy.",
-              );
           }}
         />
       )}

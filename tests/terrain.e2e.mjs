@@ -60,15 +60,23 @@ try {
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
-  await page.getByRole("button", { name: "New world", exact: true }).click();
+  await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "Start a world" })
+    .getByRole("dialog", { name: "Worlds" })
+    .locator(".preset-options")
     .getByRole("button", { name: "Empty tank", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Habitat settings", exact: true })
     .click();
   await page.locator("summary", { hasText: "Shape landscape" }).click();
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Carve stream", exact: true })
+      .count(),
+    0,
+    "the duplicate stream tool is removed",
+  );
 
   async function saved() {
     await page.evaluate(
@@ -86,7 +94,11 @@ try {
       { timeout: 30000 },
     );
     return page.evaluate(() =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")),
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ),
     );
   }
   async function point(x, z) {
@@ -96,7 +108,11 @@ try {
         return groundHeight(
           x,
           z,
-          JSON.parse(localStorage.getItem("little-worlds:v1")).environment,
+          JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+            key === "" && value.worlds
+              ? value.worlds.find((entry) => entry.id === value.activeId).world
+              : value,
+          ).environment,
         );
       },
       { x, z },
@@ -175,6 +191,20 @@ try {
     sculpted.environment.terrain.heights,
     "paint retains height",
   );
+  await page.getByRole("button", { name: "Paint moss", exact: true }).click();
+  const edge = await point(-3.4, -2.15);
+  await page.mouse.click(edge.x, edge.y);
+  const mossy = await saved();
+  assert.ok(
+    mossy.environment.terrain.paint.includes("moss"),
+    "moss paints at the tank edge",
+  );
+  assert.deepEqual(
+    mossy.environment.terrain.heights,
+    painted.environment.terrain.heights,
+    "moss paint retains height",
+  );
+  await page.screenshot({ path: "/tmp/paludarium-moss-boundary.png" });
   await page.getByRole("button", { name: "Carve pool", exact: true }).click();
   const pool = await point(-2.2, 0.7);
   await page.mouse.click(pool.x, pool.y);
@@ -184,6 +214,10 @@ try {
       const { groundHeight } = await import("/src/model/terrain.ts");
       const env = JSON.parse(
         localStorage.getItem("little-worlds:v1"),
+        (key, value) =>
+          key === "" && value.worlds
+            ? value.worlds.find((entry) => entry.id === value.activeId).world
+            : value,
       ).environment;
       return groundHeight(-2.2, 0.7, env) < env.water - 0.12;
     }),
@@ -192,7 +226,13 @@ try {
   await page.getByRole("button", { name: "Done", exact: true }).click();
   await page.screenshot({ path: "/tmp/paludarium-terrain-desktop.png" });
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Export world", exact: true }).click();
+  await page.getByRole("button", { name: "Worlds", exact: true }).click();
+  await page
+    .getByRole("button", { name: /^Options for/ })
+    .last()
+    .click();
+  await page.getByRole("button", { name: "Export file", exact: true }).click();
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   const download = await downloadPromise;
   const exported = await readFile(await download.path());
   assert.deepEqual(

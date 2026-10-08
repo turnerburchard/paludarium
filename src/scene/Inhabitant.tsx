@@ -71,8 +71,10 @@ export function Inhabitant({
       if (o instanceof THREE.Mesh) {
         const mats = Array.isArray(o.material) ? o.material : [o.material];
         mats.forEach((m) => {
-          m.transparent = ghost;
-          m.opacity = ghost ? 0.55 : 1;
+          // Some animals, such as micro crabs, are see-through already.
+          m.userData.opacity ??= m.opacity;
+          m.transparent = ghost || m.userData.opacity < 1;
+          m.opacity = m.userData.opacity * (ghost ? 0.55 : 1);
         });
       }
     });

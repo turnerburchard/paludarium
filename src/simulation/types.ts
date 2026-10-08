@@ -14,6 +14,8 @@ export interface HabitatNode {
   normal: Vec3;
   surface: Surface;
   wet: boolean;
+  /** Below the waterline, for animals that walk underwater. */
+  submerged?: boolean;
   shelter: number;
   neighbors: string[];
   perchHeight?: number;

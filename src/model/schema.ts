@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { TERRAIN_POINTS, groundMaterials } from "./terrainData";
+import {
+  TERRAIN_POINTS,
+  groundMaterials,
+  MAX_GROUND_HEIGHT,
+} from "./terrainData";
 import { mossSpecies } from "./moss";
 
 export const assetKinds = [
@@ -96,6 +100,9 @@ export const assetKinds = [
   "vampire-crab",
   "stripe-tailed-scorpion",
   "desert-tarantula",
+  "micro-crab",
+  "dwarf-crayfish",
+  "cherry-shrimp",
 ] as const;
 export type AssetKind = (typeof assetKinds)[number];
 export const MAX_OBJECTS = 120;
@@ -136,7 +143,9 @@ export const environmentSchema = z.object({
   // Additive version-1 data: older saves keep their original bank and palette.
   terrain: z
     .object({
-      heights: z.array(finite.min(-0.9).max(0.9)).length(TERRAIN_POINTS),
+      heights: z
+        .array(finite.min(-0.9).max(MAX_GROUND_HEIGHT))
+        .length(TERRAIN_POINTS),
       paint: z.array(z.enum(groundMaterials)).length(TERRAIN_POINTS),
     })
     .optional(),
@@ -169,7 +178,7 @@ export const defaultEnvironment: Environment = {
 export function emptyWorld(): World {
   return {
     version: 1,
-    name: "My little world",
+    name: "Untitled",
     environment: { ...defaultEnvironment },
     objects: [],
   };

@@ -85,6 +85,7 @@ export class HabitatGraph {
   }
   allowed(id: string, species: SpeciesProfile) {
     const node = this.node(id);
+    if (node.submerged ? !species.water : species.water === "lives") return false;
     if (species.body && this.geometry) {
       let cache = this.clearance.get(species.body!);
       if (!cache) this.clearance.set(species.body, (cache = new Map()));
