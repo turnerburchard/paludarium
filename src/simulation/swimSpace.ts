@@ -5,13 +5,29 @@ import {
   buildCollisionTree,
   type CollisionTree,
 } from "../assets/collisionTree";
-import type { Environment, World } from "../model/schema";
+import type { Environment, HabitatObject, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
 import { groundHeight, swimmingHeight } from "../model/terrain";
 import type { Fish } from "./fish";
 
 const CLEARANCE = 0.015;
 export const SWIM_BOB = 0.025;
+
+/** Collision trees for the plants, wood and stone, which only depend on
+ * those objects and the environment. */
+interface Scenery {
+  objects: HabitatObject[];
+  obstacles: CollisionTree;
+  solids: CollisionTree[];
+}
+
+// Kills, births and moved fish leave the scenery alone. Rebuilding its trees
+// for each of them made every fish death in a planted tank hitch.
+const sceneries = new WeakMap<Environment, Scenery>();
+
+function sameObjects(a: HabitatObject[], b: HabitatObject[]) {
+  return a.length === b.length && a.every((object, i) => object === b[i]);
+}
 
 interface Crossing {
   distance: number;
@@ -22,7 +38,7 @@ interface Crossing {
  * hardscape. A hierarchy keeps queries local even in a heavily planted tank. */
 export class SwimSpace {
   private readonly obstacles: CollisionTree;
-  private readonly solids: CollisionTree[] = [];
+  private readonly solids: CollisionTree[];
   private readonly bodies = new Map<
     string,
     { bounds: THREE.Box3; depth: number }
@@ -41,37 +57,46 @@ export class SwimSpace {
   private readonly normal = new THREE.Vector3();
 
   constructor(private readonly world: World) {
-    const faces: CollisionFace[] = [];
     for (const object of world.objects) {
       const asset = assets[object.kind];
-      if (isAnimal(object.kind)) {
-        if (!asset.swims) continue;
-        const bounds = collisionShape(object).bounds.clone();
-        bounds.min.multiplyScalar(object.scale);
-        bounds.max.multiplyScalar(object.scale);
-        // Include the tail's sway and the renderer's vertical bob.
-        const sway = object.kind === "tiger-barb" ? 0.025 * object.scale : 0;
-        bounds.min.x -= sway + CLEARANCE;
-        bounds.max.x += sway + CLEARANCE;
-        bounds.min.y -= CLEARANCE;
-        bounds.max.y += CLEARANCE;
-        bounds.min.z -= CLEARANCE;
-        bounds.max.z += CLEARANCE;
-        this.bodies.set(object.id, { bounds, depth: asset.swims.depth });
-        continue;
-      }
+      if (!isAnimal(object.kind) || !asset.swims) continue;
+      const bounds = collisionShape(object).bounds.clone();
+      bounds.min.multiplyScalar(object.scale);
+      bounds.max.multiplyScalar(object.scale);
+      // Include the tail's sway and the renderer's vertical bob.
+      const sway = object.kind === "tiger-barb" ? 0.025 * object.scale : 0;
+      bounds.min.x -= sway + CLEARANCE;
+      bounds.max.x += sway + CLEARANCE;
+      bounds.min.y -= CLEARANCE;
+      bounds.max.y += CLEARANCE;
+      bounds.min.z -= CLEARANCE;
+      bounds.max.z += CLEARANCE;
+      this.bodies.set(object.id, { bounds, depth: asset.swims.depth });
+    }
+    const objects = world.objects.filter((o) => !isAnimal(o.kind));
+    const built = sceneries.get(world.environment);
+    const scenery =
+      built && sameObjects(built.objects, objects)
+        ? built
+        : this.buildScenery(objects);
+    sceneries.set(world.environment, scenery);
+    this.obstacles = scenery.obstacles;
+    this.solids = scenery.solids;
+  }
+
+  private buildScenery(objects: HabitatObject[]): Scenery {
+    const env = this.world.environment;
+    const faces: CollisionFace[] = [];
+    const solids: CollisionTree[] = [];
+    for (const object of objects) {
       this.matrix.compose(
-        this.position.set(
-          object.x,
-          objectBase(object, world.environment),
-          object.z,
-        ),
+        this.position.set(object.x, objectBase(object, env), object.z),
         this.rotation.setFromAxisAngle(this.up, object.rotation),
         this.unitScale.clone().multiplyScalar(object.scale),
       );
       const geometry = collisionShape(object);
       const submergedBounds = geometry.bounds.clone().applyMatrix4(this.matrix);
-      if (submergedBounds.min.y >= world.environment.water) continue;
+      if (submergedBounds.min.y >= env.water) continue;
       const transformed = geometry.faces.map(({ triangle }) => {
         const moved = triangle.clone();
         for (const point of [moved.a, moved.b, moved.c])
@@ -82,13 +107,12 @@ export class SwimSpace {
         };
       });
       faces.push(
-        ...transformed.filter(
-          (face) => face.bounds.min.y < world.environment.water,
-        ),
+        ...transformed.filter((face) => face.bounds.min.y < env.water),
       );
-      if (asset.hardscape) this.solids.push(buildCollisionTree(transformed));
+      if (assets[object.kind].hardscape)
+        solids.push(buildCollisionTree(transformed));
     }
-    this.obstacles = buildCollisionTree(faces);
+    return { objects, obstacles: buildCollisionTree(faces), solids };
   }
 
   private vertical(
