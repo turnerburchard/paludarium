@@ -73,7 +73,10 @@ export function useEcosystem(
     const died = previous.world.objects.filter(
       (o) => !living.has(o.id) && deaths.some((entry) => entry.kind === o.kind),
     );
-    if (died.length) setRemains((r) => [...r, ...died.map(remainsOf)]);
+    // Read the bodies now: the updater runs after the engine below has
+    // forgotten them, which would put them back where they were placed.
+    const bodies = died.map(remainsOf);
+    if (bodies.length) setRemains((r) => [...r, ...bodies]);
     else if (
       !sharesAnimals &&
       world.environment !== previous.world.environment &&
@@ -169,7 +172,8 @@ export function useEcosystem(
       const died = previous.objects.filter(
         (o) => isAnimal(o.kind) && !living.has(o.id),
       );
-      if (died.length) setRemains((r) => [...r, ...died.map(remainsOf)]);
+      const bodies = died.map(remainsOf);
+      if (bodies.length) setRemains((r) => [...r, ...bodies]);
       current.engine = createWorldEcosystem(next, current);
       current.fish = createFishSchool(next, current);
     }
