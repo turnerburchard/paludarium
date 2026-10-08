@@ -13,6 +13,7 @@ export const treePhilodendron: AssetDefinition = {
     "Deeply lobed, glossy leaves spreading from a short trunk on the rainforest floor.",
   radius: 0.45,
   size: 1.5,
+  scaleRange: [0.7, 1.4],
   habitat: "land",
   shelter: true,
   soil: "damp",

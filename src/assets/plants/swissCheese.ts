@@ -12,6 +12,7 @@ export const swissCheesePlant: AssetDefinition = {
   description: "Pointed leaves full of oval holes, on long arching stalks.",
   radius: 0.48,
   size: 0.6,
+  scaleRange: [0.6, 1.5],
   habitat: "land",
   shelter: true,
   soil: "damp",

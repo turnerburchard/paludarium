@@ -13,6 +13,7 @@ export const barrelCactus: AssetDefinition = {
     "A stout, ribbed barrel armored in red-gold spines, crowned with yellow flowers in spring.",
   radius: 0.2,
   size: 2.2,
+  scaleRange: [0.7, 1.3],
   habitat: "land",
   blocksMovement: true,
   soil: "arid",

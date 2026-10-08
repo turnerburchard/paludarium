@@ -62,6 +62,9 @@ export interface AssetDefinition {
   /** Brings the model to the shared world scale, about 10 cm a unit, without
    * reworking its geometry. Scales the model, footprint, perches and dens. */
   size?: number;
+  /** New placements pick a scale in this range, so plants vary like real
+   * ones of different ages. */
+  scaleRange?: readonly [number, number];
   habitat: "land" | "water" | "either";
   /** Frogs route around it. */
   blocksMovement?: boolean;

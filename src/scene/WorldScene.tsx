@@ -85,6 +85,7 @@ function Scene({
       ? world.objects.find((o) => o.id === tool.id)
       : null;
   const kind = tool.type === "place" ? tool.kind : moving?.kind;
+  const scale = tool.type === "place" ? tool.scale : (moving?.scale ?? 1);
   useCameraLayout(controls, resetCamera, view, env.height);
   useEffect(() => setCursor(null), [tool]);
   useSceneTouch(controls, !!kind, (event) => {
@@ -116,7 +117,7 @@ function Scene({
           cursor.x,
           cursor.z,
           env,
-          kind ? assetRadius(kind) * (moving?.scale ?? 1) : 0,
+          kind ? assetRadius(kind) * scale : 0,
         )
       : null;
   const lift = point
@@ -303,7 +304,7 @@ function Scene({
                   ...point,
                   lift,
                   rotation: editor.placementRotation,
-                  scale: 1,
+                  scale,
                   seed: 42,
                 }
           }

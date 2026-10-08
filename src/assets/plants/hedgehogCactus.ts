@@ -11,6 +11,7 @@ export const hedgehogCactus: AssetDefinition = {
   description:
     "A spiny little column that opens big magenta flowers in spring.",
   radius: 0.2,
+  scaleRange: [0.7, 1.3],
   habitat: "land",
   blocksMovement: true,
   soil: "arid",
