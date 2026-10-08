@@ -647,7 +647,6 @@ button:hover:not(:disabled) {
   margin-top: 12px;
 }
 .preset-options button {
-  text-align: left;
   background: var(--surface);
   border: 1px solid #455f3c;
   border-radius: var(--radius);
@@ -655,6 +654,9 @@ button:hover:not(:disabled) {
   min-height: 48px;
   font-size: var(--text-body);
   color: #e1eccf;
+}
+.preset-options button:hover {
+  background: var(--selected);
 }
 .filter-heading {
   font-size: var(--text-body);
@@ -1464,10 +1466,13 @@ button:hover:not(:disabled) {
   flex: 1;
   min-width: 0;
   text-align: left;
-  padding: 10px;
+  padding: 10px 0;
   background: transparent;
   border: 0;
   color: inherit;
+}
+.open-world:hover strong {
+  color: var(--accent);
 }
 .open-world strong,
 .open-world span {
@@ -1584,15 +1589,21 @@ button:hover:not(:disabled) {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  min-height: 44px;
-  color: var(--muted);
+  min-height: 40px;
+  color: #d6e1c9;
   background: transparent;
-  border: 0;
-  padding: 8px 10px;
+  border: 1px solid #455f3c;
+  border-radius: 8px;
+  padding: 8px 14px;
   font-size: var(--text-body);
+}
+.world-options button:hover,
+.world-library-actions > button:hover {
+  background: var(--selected);
 }
 .world-options .delete-world {
   color: #d7a29a;
+  border-color: #6b4a44;
   margin-left: auto;
 }
 .world-options > span {
