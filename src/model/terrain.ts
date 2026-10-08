@@ -2,8 +2,9 @@ import type { Environment, HabitatObject, AssetKind } from "./schema";
 import { assetRadius, assets } from "../assets";
 import {
   terrainSamples,
+  terrainGrid,
   terrainPoint,
-  TERRAIN_POINTS,
+  terrainPointCount,
   groundCeiling,
 } from "./terrainData";
 export function clamp(n: number, min: number, max: number): number {
@@ -37,7 +38,8 @@ export function groundHeight(x: number, z: number, env: Environment): number {
   return clamp(base + delta, 0.08, groundCeiling(env));
 }
 export function hasDryGround(env: Environment): boolean {
-  for (let index = 0; index < TERRAIN_POINTS; index++) {
+  const points = terrainPointCount(terrainGrid(env));
+  for (let index = 0; index < points; index++) {
     const { x, z } = terrainPoint(index, env);
     if (groundHeight(x, z, env) >= env.water + 0.025) return true;
   }

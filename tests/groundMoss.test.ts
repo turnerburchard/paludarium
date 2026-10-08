@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { emptyWorld } from "../src/model/schema";
 import { applyTerrainBrush } from "../src/model/terrainBrush";
 import { groundHeight } from "../src/model/terrain";
-import { TERRAIN_POINTS, type GroundMaterial } from "../src/model/terrainData";
 import { makeGroundMoss } from "../src/scene/groundMoss";
 
 describe("painted moss carpet", () => {
@@ -10,7 +9,7 @@ describe("painted moss carpet", () => {
     let env = { ...emptyWorld().environment, water: 0 };
     for (let i = 0; i < 20; i++)
       env = applyTerrainBrush(env, -1.75, 0, { mode: "raise", radius: 0.65 });
-    env.terrain!.paint = Array<GroundMaterial>(TERRAIN_POINTS).fill("moss");
+    env.terrain!.paint = env.terrain!.paint.map(() => "moss");
     const carpet = makeGroundMoss(env)!;
     const points = carpet.getAttribute("position");
     expect(points.count).toBeGreaterThan(0);

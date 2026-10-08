@@ -17,7 +17,11 @@ import {
 } from "../src/model/terrain";
 import { assets, buildAsset, disposeAsset } from "../src/assets";
 import { Box3 } from "three";
-import { terrainPoint, TERRAIN_POINTS } from "../src/model/terrainData";
+import {
+  terrainGrid,
+  terrainPoint,
+  terrainPointCount,
+} from "../src/model/terrainData";
 
 describe("editor history", () => {
   const initial: History = { past: [], present: emptyWorld(), future: [] };
@@ -200,7 +204,7 @@ describe("a fully submerged aquarium", () => {
     const env = world.environment;
     expect(env.water).toBe(AQUARIUM_WATER);
     expect(env.water).toBeLessThan(TANK_HEIGHT);
-    for (let i = 0; i < TERRAIN_POINTS; i++) {
+    for (let i = 0; i < terrainPointCount(terrainGrid(env)); i++) {
       const { x, z } = terrainPoint(i, env);
       expect(groundHeight(x, z, env)).toBeLessThan(env.water - 0.12);
       expect(placementProblem("fish", x, z, env)).toBeNull();

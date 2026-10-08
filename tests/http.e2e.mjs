@@ -74,7 +74,7 @@ try {
     await route.fulfill({ response });
   });
   await page.addInitScript(
-    (world) => localStorage.setItem("little-worlds:v1", JSON.stringify(world)),
+    (world) => localStorage.setItem("little-worlds:v2", JSON.stringify(world)),
     empty,
   );
   await page.goto(origin);
@@ -104,7 +104,7 @@ try {
     await dialog.waitFor({ state: "detached" });
     await page.waitForFunction((name) => {
       const world = JSON.parse(
-        localStorage.getItem("little-worlds:v1"),
+        localStorage.getItem("little-worlds:v2"),
         (key, value) =>
           key === "" && value.worlds
             ? value.worlds.find((entry) => entry.id === value.activeId).world
@@ -134,7 +134,7 @@ try {
   );
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -142,7 +142,7 @@ try {
   );
   const placed = await page.evaluate(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,

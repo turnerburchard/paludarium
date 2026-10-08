@@ -4,6 +4,12 @@ import * as THREE from "three";
 import type { OrbitControls } from "three-stdlib";
 import { DEFAULT_TANK_HEIGHT } from "../model/terrainData";
 
+/** How much larger than a 9 by 6 tank this one spreads, for scaling the
+ * camera, fog and shadows that were set for tanks up to that size. */
+export function tankReach(env: { width: number; depth: number }) {
+  return Math.max(1, env.width / 9, env.depth / 6);
+}
+
 /** Modes share one canvas and camera. Make room for desktop tools by easing
  * the projection, keeping the viewer's orbit and zoom intact. */
 export function useCameraLayout(
@@ -11,9 +17,10 @@ export function useCameraLayout(
   reset: number,
   view: boolean,
   height: number,
+  reach: number,
 ) {
   const { camera, size } = useThree();
-  const framed = useRef({ reset: -1, aspect: 0, height: 0 });
+  const framed = useRef({ reset: -1, aspect: 0, height: 0, reach: 0 });
   const offset = useRef({ x: 0, y: 0 });
   useEffect(() => {
     const aspect = size.width / size.height;
@@ -23,16 +30,17 @@ export function useCameraLayout(
     if (
       last.reset === reset &&
       last.height === height &&
+      last.reach === reach &&
       Math.abs(aspect / last.aspect - 1) < 0.15
     )
       return;
-    framed.current = { reset, aspect, height };
-    const fit = Math.max(1, 1.18 / aspect) * Math.max(1, height / 4);
+    framed.current = { reset, aspect, height, reach };
+    const fit = Math.max(1, 1.18 / aspect) * Math.max(1, height / 4) * reach;
     const rise = (height - DEFAULT_TANK_HEIGHT) / 2;
     orbit.object.position.set(8 * fit, 6.6 * fit + rise, 9.8 * fit);
     orbit.target.set(0, 0.8 + rise, 0);
     orbit.update();
-  }, [reset, size.width, size.height, height]);
+  }, [reset, size.width, size.height, height, reach]);
   useFrame((_, dt) => {
     if (!(camera instanceof THREE.PerspectiveCamera)) return;
     const desktopBuild = !view && size.width > 760;
