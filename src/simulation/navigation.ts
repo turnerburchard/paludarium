@@ -399,8 +399,13 @@ export class HabitatGraph {
         Math.hypot(from.x, from.y, from.z) * Math.hypot(to.x, to.y, to.z),
         1e-9,
       );
-    if (alignment > 0.99) return true;
-    // A circular footprint covers the whole pivot with one conservative check.
+    if (alignment > 1 - 1e-6) return true;
+    // Keep the pivot envelope in a fixed surface basis so a permitted turn
+    // cannot change the envelope and prevent the same turn back.
+    const pivotDirection =
+      Math.abs(node.normal.z) < 0.9
+        ? { x: 0, y: 0, z: 1 }
+        : { x: 1, y: 0, z: 0 };
     const body = species.body;
     const radius = Math.hypot(
       Math.max(Math.abs(body.min.x), Math.abs(body.max.x)),
@@ -413,13 +418,18 @@ export class HabitatGraph {
     const pose = this.place(
       node.position,
       node.normal,
-      wanted,
+      pivotDirection,
       node.surface,
       { ...species, body: turningBody },
       !!node.shelterId,
       node.supportId,
     );
-    return this.geometry.fits(pose.position, pose.normal, wanted, turningBody);
+    return this.geometry.fits(
+      pose.position,
+      pose.normal,
+      pivotDirection,
+      turningBody,
+    );
   }
 
   private canStep(

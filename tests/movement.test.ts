@@ -152,6 +152,50 @@ describe("animal movement", () => {
       true,
     );
   });
+  it("uses the same clearance envelope to turn toward a heading and back", () => {
+    const surface = node("a", 0, 0, []);
+    const graph = new HabitatGraph([surface], {
+      groundPose: (position) => ({ position, normal: surface.normal }),
+      aboveGround: (position, normal) => ({ position, normal }),
+      fits: (_position, _normal, direction) => Math.abs(direction.x) < 0.5,
+    });
+    const animal = {
+      ...species,
+      body: {
+        min: { x: -0.05, y: 0, z: -0.2 },
+        max: { x: 0.05, y: 0.1, z: 0.2 },
+      },
+    };
+    const forward = { x: 1, y: 0, z: 0 };
+    const sideways = { x: 0, y: 0, z: 1 };
+    expect(graph.canTurn(surface, forward, sideways, animal)).toBe(true);
+    expect(graph.canTurn(surface, sideways, forward, animal)).toBe(true);
+  });
+
+  it("checks room for small turns instead of letting them accumulate in a gap", () => {
+    const surface = node("a", 0, 0, []);
+    const graph = new HabitatGraph([surface], {
+      groundPose: (position) => ({ position, normal: surface.normal }),
+      aboveGround: (position, normal) => ({ position, normal }),
+      fits: () => false,
+    });
+    const animal = {
+      ...species,
+      body: {
+        min: { x: -0.05, y: 0, z: -0.2 },
+        max: { x: 0.05, y: 0.1, z: 0.2 },
+      },
+    };
+    expect(
+      graph.canTurn(
+        surface,
+        { x: 1, y: 0, z: 0 },
+        { x: 1, y: 0, z: 0.1 },
+        animal,
+      ),
+    ).toBe(false);
+  });
+
   it("can back along a slope without mistaking the surface normal for a turn", () => {
     const slope = { ...node("a", 0, 0, []), normal: { x: 0, y: 0.8, z: 0.6 } };
     const graph = new HabitatGraph([slope], {
