@@ -2,7 +2,13 @@ import { assets, categoryOf, isAnimal } from "../assets";
 import { plantCondition } from "../model/plants";
 import { randomFromSeed } from "../model/random";
 import { placementProblem } from "../model/terrain";
-import { MAX_OBJECTS, type HabitatObject, type World } from "../model/schema";
+import {
+  LOG_LENGTH,
+  MAX_OBJECTS,
+  type HabitatObject,
+  type LogEntry,
+  type World,
+} from "../model/schema";
 
 // These are game-tuning values in active real seconds, not biological measurements.
 export const MATURITY_AGE = 15 * 60;
@@ -59,17 +65,20 @@ export function habitatSupport(world: World) {
   };
 }
 
-/** `stranded` lists the animals with nowhere they can live. */
+/** `stranded` lists the animals with nowhere they can live. Births and
+ * deaths are logged at `now`. */
 export function advanceLife(
   world: World,
   seconds: number,
   random = Math.random,
   stranded: ReadonlySet<string> = new Set(),
+  now = Date.now(),
 ): World {
   if (seconds === 0 || !world.objects.some((o) => isAnimal(o.kind)))
     return world;
   const habitat = habitatSupport(world);
   const support = Math.min(habitat.food, habitat.space);
+  const log: LogEntry[] = [];
   const objects = world.objects.flatMap((object) => {
     if (!isAnimal(object.kind)) return [object];
     const previous = animalLife(object);
@@ -90,7 +99,15 @@ export function advanceLife(
           ? Math.min(BREEDING_INTERVAL, previous.breeding + seconds)
           : 0,
     };
-    if (life.age >= life.lifespan || life.condition <= 0) return [];
+    if (life.age >= life.lifespan || life.condition <= 0) {
+      log.push({
+        at: now,
+        event: "died",
+        kind: object.kind,
+        cause: causeOfDeath(object, life, homeless, habitat),
+      });
+      return [];
+    }
     return [{ ...object, life }];
   });
 
@@ -132,10 +149,28 @@ export function advanceLife(
       },
     };
     objects.push(juvenile);
+    log.push({ at: now, event: "born", kind: object.kind });
     object.life = { ...life, breeding: 0 };
     partner.life = { ...animalLife(partner), breeding: 0 };
     pairs.delete(object.kind);
     population++;
   }
-  return { ...world, objects };
+  if (!log.length) return { ...world, objects };
+  return {
+    ...world,
+    objects,
+    log: [...(world.log ?? []), ...log].slice(-LOG_LENGTH),
+  };
+}
+
+function causeOfDeath(
+  object: HabitatObject,
+  life: { age: number; lifespan: number },
+  homeless: boolean,
+  habitat: { food: number; space: number },
+): LogEntry["cause"] {
+  if (life.age >= life.lifespan) return "age";
+  if (homeless)
+    return assets[object.kind].habitat === "water" ? "stranded" : "drowned";
+  return habitat.food <= habitat.space ? "starved" : "crowded";
 }

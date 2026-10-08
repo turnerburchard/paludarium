@@ -8,9 +8,11 @@ export function isWorldLink(hash: string) {
   return hash.startsWith("#world=");
 }
 
-/** Fragments keep the layout in the link, without uploading it to a server. */
+/** Fragments keep the layout in the link, without uploading it to a server.
+ * The life log stays behind, like the rest of the live activity. */
 export async function createWorldLink(world: World, baseURL: string) {
-  const source = new TextEncoder().encode(JSON.stringify(world));
+  const { log: _log, ...layout } = world;
+  const source = new TextEncoder().encode(JSON.stringify(layout));
   if (source.length > MAX_WORLD_SIZE) throw new Error("World is too large.");
   const compressed = new Uint8Array(
     await new Response(
