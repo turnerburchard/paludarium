@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { Box3, Mesh, type Object3D } from "three";
-import { assets, buildAsset, catalog, disposeAsset } from "../src/assets";
+import {
+  assetRadius,
+  assets,
+  buildAsset,
+  catalog,
+  disposeAsset,
+  placementScale,
+} from "../src/assets";
 import { assetKinds } from "../src/model/schema";
 
 function positions(model: Object3D) {
@@ -41,10 +48,11 @@ describe("land animal assets", () => {
       expect(box.min.y).toBeGreaterThan(-0.04);
       // Geckos lie flatter than frogs, and the micro crab is flat by design.
       expect(box.max.y).toBeGreaterThan(0.04);
-      expect(box.max.y).toBeLessThan(0.28);
+      // The desert tortoise stands tallest.
+      expect(box.max.y).toBeLessThan(0.36);
       for (const axis of ["x", "z"] as const) {
-        expect(box.min[axis]).toBeGreaterThan(-assets[kind].radius);
-        expect(box.max[axis]).toBeLessThan(assets[kind].radius);
+        expect(box.min[axis]).toBeGreaterThan(-assetRadius(kind));
+        expect(box.max[axis]).toBeLessThan(assetRadius(kind));
       }
       let triangles = 0;
       model.traverse((object) => {
@@ -60,4 +68,13 @@ describe("land animal assets", () => {
       disposeAsset(model);
     },
   );
+});
+
+describe("placement scale", () => {
+  it("varies plants within their range on slider steps, and not animals", () => {
+    expect(placementScale("monstera", () => 0)).toBe(0.6);
+    expect(placementScale("monstera", () => 0.999)).toBe(1.5);
+    expect(placementScale("monstera", () => 0.33)).toBe(0.9);
+    expect(placementScale("tree-frog", () => 0.9)).toBe(1);
+  });
 });

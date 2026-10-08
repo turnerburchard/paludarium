@@ -9,7 +9,7 @@ import {
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import type { Editor } from "../editor/useEditor";
-import { assets, isAnimal } from "../assets";
+import { assetRadius, assets, isAnimal } from "../assets";
 import { useWatchVisibility } from "./useWatchVisibility";
 import {
   boundedPosition,
@@ -19,7 +19,7 @@ import {
 import { restingOn, type Surface } from "../model/stacking";
 import { useCameraNavigation } from "./useCameraNavigation";
 import { useFollowCamera } from "./useFollowCamera";
-import { useCameraLayout } from "./useCameraLayout";
+import { tankReach, useCameraLayout } from "./useCameraLayout";
 import { Inhabitant } from "./Inhabitant";
 import type { FoliageVisitor } from "./foliageMotion";
 import { Remains } from "./Remains";
@@ -88,7 +88,9 @@ function Scene({
       ? world.objects.find((o) => o.id === tool.id)
       : null;
   const kind = tool.type === "place" ? tool.kind : moving?.kind;
-  useCameraLayout(controls, resetCamera, view, env.height);
+  const scale = tool.type === "place" ? tool.scale : (moving?.scale ?? 1);
+  const reach = tankReach(env);
+  useCameraLayout(controls, resetCamera, view, env.height, reach);
   useEffect(() => setCursor(null), [tool]);
   useSceneTouch(controls, !!kind, (event) => {
     if (!inhabitants.current) return;
@@ -119,7 +121,7 @@ function Scene({
           cursor.x,
           cursor.z,
           env,
-          kind ? assets[kind].radius * (moving?.scale ?? 1) : 0,
+          kind ? assetRadius(kind) * scale : 0,
         )
       : null;
   const lift = point
@@ -175,7 +177,7 @@ function Scene({
   return (
     <>
       <color attach="background" args={[light.background]} />
-      <fog attach="fog" args={[light.background, 23, 55]} />
+      <fog attach="fog" args={[light.background, 23 * reach, 55 * reach]} />
       <ambientLight intensity={light.ambient * env.brightness} />
       <hemisphereLight args={["#dae4ef", "#141a17", 0.35]} />
       <directionalLight
@@ -184,10 +186,10 @@ function Scene({
         intensity={light.intensity * env.brightness}
         castShadow
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-7}
-        shadow-camera-right={7}
-        shadow-camera-top={7}
-        shadow-camera-bottom={-7}
+        shadow-camera-left={-7 * reach}
+        shadow-camera-right={7 * reach}
+        shadow-camera-top={7 * reach}
+        shadow-camera-bottom={-7 * reach}
         shadow-normalBias={0.035}
       />
       <directionalLight
@@ -310,7 +312,7 @@ function Scene({
                   ...point,
                   lift,
                   rotation: editor.placementRotation,
-                  scale: 1,
+                  scale,
                   seed: 42,
                 }
           }
@@ -356,7 +358,7 @@ function Scene({
         makeDefault
         target={[0, 0.8, 0]}
         minDistance={4}
-        maxDistance={30}
+        maxDistance={30 * reach}
         maxPolarAngle={Math.PI / 2.05}
         minPolarAngle={0.16}
         enablePan

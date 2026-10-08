@@ -60,7 +60,7 @@ try {
     });
     await page.addInitScript(
       (saved) =>
-        localStorage.setItem("little-worlds:v1", JSON.stringify(saved)),
+        localStorage.setItem("little-worlds:v2", JSON.stringify(saved)),
       world,
     );
     await page.goto(url);

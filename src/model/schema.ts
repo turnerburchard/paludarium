@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
-  TERRAIN_POINTS,
   groundMaterials,
+  terrainPointCount,
   DEFAULT_TANK_HEIGHT,
   MIN_TANK_HEIGHT,
   MAX_TANK_HEIGHT,
@@ -108,15 +108,17 @@ export const assetKinds = [
   "cherry-shrimp",
 ] as const;
 export type AssetKind = (typeof assetKinds)[number];
-export const MAX_OBJECTS = 120;
+export const MAX_OBJECTS = 250;
+export const MAX_TANK_WIDTH = 24;
+export const MAX_TANK_DEPTH = 14;
 export const TANK_HEIGHT = DEFAULT_TANK_HEIGHT;
 export const AQUARIUM_WATER = waterCeiling({ height: TANK_HEIGHT });
 const finite = z.number().finite();
 export const objectSchema = z.object({
   id: z.string().min(1).max(100),
   kind: z.enum(assetKinds),
-  x: finite.min(-10).max(10),
-  z: finite.min(-10).max(10),
+  x: finite.min(-MAX_TANK_WIDTH / 2).max(MAX_TANK_WIDTH / 2),
+  z: finite.min(-MAX_TANK_DEPTH / 2).max(MAX_TANK_DEPTH / 2),
   rotation: finite.min(-100).max(100),
   scale: finite.min(0.4).max(2),
   seed: z.number().int().min(0).max(2147483647),
@@ -137,8 +139,8 @@ export const objectSchema = z.object({
 export type HabitatObject = z.infer<typeof objectSchema>;
 export const environmentSchema = z
   .object({
-    width: finite.min(5).max(9),
-    depth: finite.min(3).max(6),
+    width: finite.min(5).max(MAX_TANK_WIDTH),
+    depth: finite.min(3).max(MAX_TANK_DEPTH),
     height: finite
       .min(MIN_TANK_HEIGHT)
       .max(MAX_TANK_HEIGHT)
@@ -151,11 +153,17 @@ export const environmentSchema = z
     // Additive version-1 data: older saves keep their original bank and palette.
     terrain: z
       .object({
-        heights: z
-          .array(finite.min(-0.9).max(MAX_TANK_HEIGHT))
-          .length(TERRAIN_POINTS),
-        paint: z.array(z.enum(groundMaterials)).length(TERRAIN_POINTS),
+        columns: z.number().int().min(1).max(200),
+        rows: z.number().int().min(1).max(200),
+        heights: z.array(finite.min(-0.9).max(MAX_TANK_HEIGHT)),
+        paint: z.array(z.enum(groundMaterials)),
       })
+      .refine(
+        (terrain) =>
+          terrain.heights.length === terrainPointCount(terrain) &&
+          terrain.paint.length === terrainPointCount(terrain),
+        { message: "Terrain must have a point for every grid crossing." },
+      )
       .optional(),
   })
   .refine((env) => env.water <= waterCeiling(env), {

@@ -11,7 +11,7 @@ import {
 import type { MossSpecies } from "./moss";
 import { baseGroundHeight } from "./terrain";
 import { applyTerrainBrush, type TerrainMode } from "./terrainBrush";
-import { TERRAIN_POINTS, terrainPoint } from "./terrainData";
+import { newTerrain, type Terrain } from "./terrainData";
 export type Preset =
   | "empty"
   | "tropical"
@@ -168,8 +168,8 @@ function cloudForest(add: Add, objects: HabitatObject[]) {
   add("monstera", -2.75, -1.15, 1.25, 0.3);
   add("monstera", -1.25, -1.45, 0.85, 2.4);
   add("monstera", -3.25, -0.7, 0.65, 1.7);
-  add("philodendron", -3.6, -1.75, 1.1);
-  add("tree-philodendron", -1.85, -1.85, 0.8, 1.1);
+  add("philodendron", -3.55, -1.75, 1.1);
+  add("tree-philodendron", -1.85, -1.7, 0.8, 1.1);
   add("fern", -2.85, 0.9, 1.2, 1);
   add("fern", -1.5, 0.55, 0.8, 3);
   add("fern", -2.3, -1.4, 1.05, 0.5);
@@ -281,7 +281,7 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
   add("fence-lizard", 1.6, 1.3, 1.1, 2.2);
   // Cattails and grass where the far bank stays damp.
   add("cattail", 2.3, -1, 1, 0.4);
-  add("cattail", 3.5, -0.1, 0.85, 2);
+  add("cattail", 3.3, -0.1, 0.85, 2);
   add("hairgrass", 2.6, -1.2, 1.1);
   add("rock", 3.2, -1.1, 0.75, 1.2);
   add("spruce", 3.9, -1.4, 1.3, 0.8);
@@ -308,7 +308,7 @@ function limestoneGrotto(add: Add, objects: HabitatObject[]) {
   add("limestone-pinnacle", -0.3, -1.9, 1, 0.6, "java");
   add("limestone", 2.3, -1.25, 1.2, 1, "cushion");
   add("limestone", -2.4, -2.05, 1, 2.5, "sheet");
-  add("alocasia", -2.55, -1.0, 1.1, 0.5);
+  add("alocasia", -2.3, -1.0, 1.1, 0.5);
   add("alocasia", 2.5, -0.8, 0.8, 2.4);
   add("mossy-frog", -1.5, -0.8, 1, 0.6);
   add("mossy-frog", 0.8, -0.9, 1, 2.1);
@@ -319,7 +319,7 @@ function limestoneGrotto(add: Add, objects: HabitatObject[]) {
   add("begonia", -2.4, -0.2, 1, 0.3);
   add("begonia", 1.5, -0.2, 0.9, 1.6);
   add("begonia", -0.5, 0.0, 0.8, 2.8);
-  add("nest-fern", 2.4, 0.5, 0.9, 1);
+  add("nest-fern", 2.35, 0.5, 0.9, 1);
   add("fern", 1.4, 1.3, 0.8, 2);
   add("cryptocoryne", 2.0, 1.8, 1, 2.6);
   add("rock", 0.9, 2.0, 0.6, 1.9, "java");
@@ -429,11 +429,10 @@ function sculpt(
 /** Flattens the default bank so a preset can shape its own landscape on top,
  * with water close below the ground instead of in a low corner. */
 function level(env: Environment, ground: number): Environment {
-  const heights = Array.from({ length: TERRAIN_POINTS }, (_, i) => {
-    const { x, z } = terrainPoint(i, env);
-    return ground - baseGroundHeight(x, z, env);
-  });
-  return { ...env, terrain: { heights, paint: heights.map(() => "natural") } };
+  return {
+    ...env,
+    terrain: newTerrain(env, (x, z) => ground - baseGroundHeight(x, z, env)),
+  };
 }
 
 /** Substrate sloping up toward the back glass, as aquascapers lay it. */
@@ -460,15 +459,18 @@ function forestFloor() {
     [0.9, -0.3],
     [0.8, 0.5],
   ];
-  return sculpt(level({ ...defaultEnvironment, width: 8, water: 0.6 }, 0.9), [
-    ["raise", 1.8, [[-2.4, -1.7]], 2],
-    ["raise", 1.5, [[2.6, -1.6]], 3],
-    ["raise", 1.6, [[3.0, 1.2]], 2],
-    ["stream", 0.6, stream],
-    ["smooth", 0.9, stream, 2],
-    ["pool", 1.9, [[0.7, 0.9]]],
-    ["lower", 1.4, [[0.7, 1.0]], 5],
-  ]);
+  return sculpt(
+    level({ ...defaultEnvironment, width: 8, height: 4, water: 0.6 }, 0.9),
+    [
+      ["raise", 1.8, [[-2.4, -1.7]], 2],
+      ["raise", 1.5, [[2.6, -1.6]], 3],
+      ["raise", 1.6, [[3.0, 1.2]], 2],
+      ["stream", 0.6, stream],
+      ["smooth", 0.9, stream, 2],
+      ["pool", 1.9, [[0.7, 0.9]]],
+      ["lower", 1.4, [[0.7, 1.0]], 5],
+    ],
+  );
 }
 
 /** A small, deep tank with a stone wall across the back and a dark pool in
@@ -547,14 +549,19 @@ function creekBed() {
 }
 
 /** Dry, gently rolling sand that dips in the middle to hold a spring. */
-function desertSand(env: Environment): NonNullable<Environment["terrain"]> {
-  const heights = Array.from({ length: TERRAIN_POINTS }, (_, i) => {
-    const { x, z } = terrainPoint(i, env);
-    const dunes = 0.74 + 0.05 * Math.sin(x * 1.3 + z * 0.9);
-    const fromSpring = Math.hypot(x - 0.5, (z - 0.15) * 1.3);
-    const dip = Math.min(1, Math.max(0, (1.8 - fromSpring) / 1.4));
-    const height = dunes - 0.66 * dip * dip * (3 - 2 * dip);
-    return Math.max(-0.9, Math.min(0.9, height - baseGroundHeight(x, z, env)));
-  });
-  return { heights, paint: heights.map(() => "sand") };
+function desertSand(env: Environment): Terrain {
+  return newTerrain(
+    env,
+    (x, z) => {
+      const dunes = 0.74 + 0.05 * Math.sin(x * 1.3 + z * 0.9);
+      const fromSpring = Math.hypot(x - 0.5, (z - 0.15) * 1.3);
+      const dip = Math.min(1, Math.max(0, (1.8 - fromSpring) / 1.4));
+      const height = dunes - 0.66 * dip * dip * (3 - 2 * dip);
+      return Math.max(
+        -0.9,
+        Math.min(0.9, height - baseGroundHeight(x, z, env)),
+      );
+    },
+    "sand",
+  );
 }

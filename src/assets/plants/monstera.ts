@@ -11,6 +11,8 @@ export const monstera: AssetDefinition = {
   description:
     "A climbing plant native to Mexico and Central America, with large, split leaves. Aerial roots attach it to trees and other supports.",
   radius: 0.48,
+  size: 1.3,
+  scaleRange: [0.6, 1.5],
   habitat: "land",
   shelter: true,
   soil: "damp",

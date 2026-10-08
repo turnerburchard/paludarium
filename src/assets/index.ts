@@ -9,6 +9,7 @@ import {
 } from "./types";
 import { batchStaticAsset } from "./batch";
 import type { MossSpecies } from "../model/moss";
+import type { Den, PlantPerch, PlantPoint } from "../model/plantSurfaces";
 import { growMoss } from "./landscape/mossCover";
 import {
   bluePoisonDartFrog,
@@ -239,12 +240,41 @@ export function isAnimal(kind: AssetKind): boolean {
 export function isLandAnimal(kind: AssetKind): boolean {
   return assets[kind].behavior !== undefined;
 }
-export function plantPerches(object: HabitatObject) {
-  return assets[object.kind].perches?.(randomFromSeed(object.seed)) ?? [];
+/** Footprint at scale 1, after the asset's size calibration. */
+export function assetRadius(kind: AssetKind) {
+  return assets[kind].radius * (assets[kind].size ?? 1);
 }
 
-export function objectDens(object: HabitatObject) {
-  return assets[object.kind].dens?.(randomFromSeed(object.seed)) ?? [];
+/** A scale for a new placement within the asset's range, on the same 0.05
+ * steps as the size slider. */
+export function placementScale(kind: AssetKind, random = Math.random) {
+  const [min, max] = assets[kind].scaleRange ?? [1, 1];
+  return Math.round((min + random() * (max - min)) * 20) / 20;
+}
+
+const sized = (point: PlantPoint, size: number) => ({
+  x: point.x * size,
+  y: point.y * size,
+  z: point.z * size,
+});
+
+export function plantPerches(object: HabitatObject): PlantPerch[] {
+  const asset = assets[object.kind];
+  const size = asset.size ?? 1;
+  return (asset.perches?.(randomFromSeed(object.seed)) ?? []).map((route) => ({
+    ...route,
+    stem: route.stem.map((point) => sized(point, size)),
+    perch: sized(route.perch, size),
+  }));
+}
+
+export function objectDens(object: HabitatObject): Den[] {
+  const asset = assets[object.kind];
+  const size = asset.size ?? 1;
+  return (asset.dens?.(randomFromSeed(object.seed)) ?? []).map((den) => ({
+    entrance: sized(den.entrance, size),
+    inside: sized(den.inside, size),
+  }));
 }
 
 export function buildAsset(
@@ -254,6 +284,10 @@ export function buildAsset(
 ): THREE.Group {
   const asset = assets[kind];
   const model = asset.build(randomFromSeed(seed));
+  model.scale.multiplyScalar(asset.size ?? 1);
+  // Skinned meshes refresh their bind inverse only here, so bounds measured
+  // before the first render would otherwise count the size twice.
+  model.updateMatrixWorld(true);
   if (isAnimal(kind)) return model;
   const batched = batchStaticAsset(model);
   if (moss) growMoss(batched, moss, randomFromSeed(seed + 1));

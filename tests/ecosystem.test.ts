@@ -487,11 +487,15 @@ describe("insects across edits", () => {
         .filter((patch) => patch.capacity > 0)
         .reduce((sum, patch) => sum + patch.amount, 0);
     const before = breeding(engine.snapshot().food);
-    // Widening the tank shifts the habitat grid, and with it every colony spot.
-    const edited = structuredClone(world);
-    edited.environment.width += 0.5;
-    const after = createWorldEcosystem(edited, { world, engine });
-    expect(breeding(after.snapshot().food)).toBeGreaterThan(before * 0.8);
+    // Resizing the tank shifts the habitat grid, and with it every colony spot.
+    for (const change of [-0.5, 0.25, 0.5, 1]) {
+      const edited = structuredClone(world);
+      edited.environment.width += change;
+      const after = createWorldEcosystem(edited, { world, engine });
+      expect(breeding(after.snapshot().food), `${change}`).toBeGreaterThan(
+        before * 0.8,
+      );
+    }
   });
 });
 

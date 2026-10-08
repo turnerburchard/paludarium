@@ -13,6 +13,8 @@ export const nestFern: AssetDefinition = {
   description:
     "Glossy, wavy fronds rising from a central nest. Frogs climb out along them.",
   radius: 0.45,
+  size: 1.5,
+  scaleRange: [0.7, 1.4],
   habitat: "land",
   shelter: true,
   soil: "damp",
