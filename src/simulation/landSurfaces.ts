@@ -3,13 +3,14 @@ import { assets } from "../assets";
 import { collisionShape, type CollisionFace } from "../assets/collisionShape";
 import {
   buildCollisionTree,
+  collisionFaces,
   visitRayFaces,
   type CollisionTree,
 } from "../assets/collisionTree";
 import type { HabitatObject, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
-import { groundHeight } from "../model/terrain";
-import type { HabitatNode, Vec3 } from "./types";
+import { groundHeight, groundNormal } from "../model/terrain";
+import type { BodyBounds, HabitatNode, Vec3 } from "./types";
 
 interface Solid {
   object: HabitatObject;
@@ -67,6 +68,202 @@ export class LandSurfaces {
         faceOrder: new Map(faces.map((face, index) => [face, index])),
       });
     }
+  }
+
+  private readonly bodyBox = new THREE.Box3();
+  private readonly bodyMatrix = new THREE.Matrix4();
+  private readonly inverseBody = new THREE.Matrix4();
+  private readonly bodyQuery = new THREE.Box3();
+  private readonly bodyTriangle = new THREE.Triangle();
+  private readonly triangleBounds = new THREE.Box3();
+
+  private orient(
+    position: Vec3,
+    normal: Vec3,
+    direction: Vec3,
+    body: BodyBounds,
+    tilt = 0,
+  ) {
+    const up = new THREE.Vector3(normal.x, normal.y, normal.z).normalize();
+    const back = new THREE.Vector3(direction.x, direction.y, direction.z)
+      .normalize()
+      .projectOnPlane(up);
+    if (back.lengthSq() < 0.001) back.set(0, 0, -1).projectOnPlane(up);
+    if (back.lengthSq() < 0.001) back.set(0, 1, 0).projectOnPlane(up);
+    back.normalize().negate();
+    const right = new THREE.Vector3().crossVectors(up, back).normalize();
+    const rotation = new THREE.Quaternion().setFromRotationMatrix(
+      new THREE.Matrix4().makeBasis(right, up, back),
+    );
+    rotation.multiply(
+      new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), tilt),
+    );
+    this.bodyMatrix.compose(
+      new THREE.Vector3(position.x, position.y, position.z),
+      rotation,
+      new THREE.Vector3(1, 1, 1),
+    );
+    this.inverseBody.copy(this.bodyMatrix).invert();
+    this.bodyBox.min.set(body.min.x - 0.005, body.min.y, body.min.z - 0.005);
+    this.bodyBox.max.set(
+      body.max.x + 0.005,
+      body.max.y + 0.005,
+      body.max.z + 0.005,
+    );
+    this.bodyQuery.copy(this.bodyBox).applyMatrix4(this.bodyMatrix);
+  }
+
+  /** Contact is checked across the lower face, not just at the root point. */
+  private floorPenetration() {
+    let penetration = -Infinity;
+    const point = new THREE.Vector3();
+    const part = this.bodyBox;
+    for (const [ix, iz] of [
+      [0, 0],
+      [0, 2],
+      [2, 0],
+      [2, 2],
+      [1, 1],
+    ]) {
+      point
+        .set(
+          part.min.x + ((part.max.x - part.min.x) * ix) / 2,
+          part.min.y,
+          part.min.z + ((part.max.z - part.min.z) * iz) / 2,
+        )
+        .applyMatrix4(this.bodyMatrix);
+      penetration = Math.max(
+        penetration,
+        groundHeight(point.x, point.z, this.world.environment) - point.y,
+      );
+    }
+    return penetration;
+  }
+
+  groundPose(position: Vec3, direction: Vec3, body: BodyBounds) {
+    const normal = groundNormal(position.x, position.z, this.world.environment);
+    const contact = {
+      ...position,
+      y: groundHeight(position.x, position.z, this.world.environment),
+    };
+    return this.aboveGround(contact, normal, direction, body);
+  }
+
+  aboveGround(position: Vec3, normal: Vec3, direction: Vec3, body: BodyBounds) {
+    this.orient(position, normal, direction, body);
+    const env = this.world.environment;
+    const contact = { ...position };
+    // Round the ground-to-glass corner with room for the rotating body.
+    contact.x +=
+      Math.max(0, -env.width / 2 - this.bodyQuery.min.x) -
+      Math.max(0, this.bodyQuery.max.x - env.width / 2);
+    contact.z +=
+      Math.max(0, -env.depth / 2 - this.bodyQuery.min.z) -
+      Math.max(0, this.bodyQuery.max.z - env.depth / 2);
+    this.orient(contact, normal, direction, body);
+    contact.y += Math.max(0, this.floorPenetration() + 0.006);
+    return { position: contact, normal: { ...normal } };
+  }
+
+  onSurface(
+    position: Vec3,
+    normal: Vec3,
+    direction: Vec3,
+    body: BodyBounds,
+    supportIds: readonly string[],
+  ) {
+    const contact = { ...position };
+    const faceNormal = new THREE.Vector3();
+    for (const support of this.solids.filter((solid) =>
+      supportIds.includes(solid.object.id),
+    )) {
+      for (let pass = 0; pass < 3; pass++) {
+        this.orient(contact, normal, direction, body);
+        let lift = 0;
+        for (const face of collisionFaces(support.tree, this.bodyQuery)) {
+          this.bodyTriangle.copy(face.triangle);
+          for (const point of [
+            this.bodyTriangle.a,
+            this.bodyTriangle.b,
+            this.bodyTriangle.c,
+          ])
+            point.applyMatrix4(this.inverseBody);
+          this.triangleBounds.setFromPoints([
+            this.bodyTriangle.a,
+            this.bodyTriangle.b,
+            this.bodyTriangle.c,
+          ]);
+          if (!this.bodyBox.intersectsBox(this.triangleBounds)) continue;
+          this.bodyTriangle.getNormal(faceNormal);
+          // Only its supporting skin may move the contact point. Other walls,
+          // including the roof inside hollow wood, must still block movement.
+          if (faceNormal.y < 0.15) continue;
+          if (!this.bodyBox.intersectsTriangle(this.bodyTriangle)) continue;
+          const corner = new THREE.Vector3(
+            faceNormal.x >= 0 ? body.min.x : body.max.x,
+            body.min.y,
+            faceNormal.z >= 0 ? body.min.z : body.max.z,
+          );
+          lift = Math.max(
+            lift,
+            (faceNormal.dot(this.bodyTriangle.a) -
+              faceNormal.dot(corner) +
+              0.003) /
+              faceNormal.y,
+          );
+        }
+        if (lift <= 0) break;
+        const reach =
+          Math.hypot(body.max.x - body.min.x, body.max.z - body.min.z) / 2;
+        if (lift > reach) break;
+        contact.x += normal.x * lift;
+        contact.y += normal.y * lift;
+        contact.z += normal.z * lift;
+      }
+    }
+    return { position: contact, normal: { ...normal } };
+  }
+
+  /** Foliage remains soft cover. Only terrain and hardscape exclude a body. */
+  fits(
+    position: Vec3,
+    normal: Vec3,
+    direction: Vec3,
+    body: BodyBounds,
+    tilt = 0,
+  ) {
+    this.orient(position, normal, direction, body, tilt);
+    const env = this.world.environment;
+    if (
+      this.bodyQuery.min.x < -env.width / 2 - 1e-6 ||
+      this.bodyQuery.max.x > env.width / 2 + 1e-6 ||
+      this.bodyQuery.min.z < -env.depth / 2 - 1e-6 ||
+      this.bodyQuery.max.z > env.depth / 2 + 1e-6 ||
+      this.floorPenetration() > 0.01
+    )
+      return false;
+    for (const solid of this.solids) {
+      if (!solid.bounds.intersectsBox(this.bodyQuery)) continue;
+      for (const face of collisionFaces(solid.tree, this.bodyQuery)) {
+        this.bodyTriangle.copy(face.triangle);
+        for (const point of [
+          this.bodyTriangle.a,
+          this.bodyTriangle.b,
+          this.bodyTriangle.c,
+        ])
+          point.applyMatrix4(this.inverseBody);
+        this.triangleBounds.setFromPoints([
+          this.bodyTriangle.a,
+          this.bodyTriangle.b,
+          this.bodyTriangle.c,
+        ]);
+        if (this.bodyBox.intersectsTriangle(this.bodyTriangle)) return false;
+      }
+    }
+    const center = this.bodyBox
+      .getCenter(new THREE.Vector3())
+      .applyMatrix4(this.bodyMatrix);
+    return !this.inside(center);
   }
 
   at(x: number, z: number) {
@@ -198,7 +395,7 @@ export class LandSurfaces {
       }
       for (const { point, normal, node } of samples.values()) {
         normal.normalize();
-        const lifted = point.clone().addScaledVector(normal, 0.018);
+        const lifted = point.clone().addScaledVector(normal, 0.003);
         node.position = { x: lifted.x, y: lifted.y, z: lifted.z };
         node.normal = { x: normal.x, y: normal.y, z: normal.z };
         if (
