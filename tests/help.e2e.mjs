@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { chromium } from "playwright";
 
+const full = process.argv.includes("--full");
 const root = fileURLToPath(new URL("../", import.meta.url));
 const url = process.env.HELP_TEST_URL || "http://127.0.0.1:5199";
 const helpKey = "paludarium:help-dismissed";
@@ -102,9 +103,9 @@ try {
     { width: 1440, height: 960 },
     { width: 390, height: 844 },
   ]) {
-    for (const method of ["close", "escape", "backdrop"]) {
+    for (const method of full ? ["close", "escape", "backdrop"] : ["close"]) {
       console.log(`Help: ${viewport.width} ${method}`);
-      const page = await openPage(viewport, method !== "close");
+      const page = await openPage(viewport, !full || method !== "close");
       await page.goto(url);
       await page.getByRole("button", { name: "About Paludarium" }).waitFor();
       assert.equal(
@@ -158,7 +159,7 @@ try {
         0,
         "returning visits stay unobstructed",
       );
-      if (method !== "close")
+      if (!full || method !== "close")
         assert.equal(
           await page.evaluate((key) => localStorage.getItem(key), storageKey),
           saved,
@@ -166,6 +167,12 @@ try {
       for (let i = 0; i < 2; i++) {
         await reopen(page);
         await closeHelp(page, method);
+      }
+      if (!full) {
+        await page.getByRole("button", { name: "Build", exact: true }).click();
+        assert.equal(await page.locator(".bottom-hud").count(), 0);
+        await page.context().close();
+        continue;
       }
       if (method !== "escape") {
         await page.context().close();
@@ -208,6 +215,7 @@ try {
       }
       await page.context().close();
     }
+    if (!full) continue;
     for (const failure of ["getItem", "setItem"]) {
       const page = await openPage(viewport, true, failure);
       await page.goto(url);
@@ -273,7 +281,9 @@ try {
   }
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: first/returning desktop and touch help, all dismissal paths, reopening, placement interruption, storage failures, shared links/errors, saved worlds",
+    full
+      ? "PASS: first/returning desktop and touch help, all dismissal paths, reopening, placement interruption, storage failures, shared links/errors, saved worlds"
+      : "PASS: desktop and touch initial help, dismissal, return, reopening and no idle hint",
   );
 } finally {
   await browser?.close();
