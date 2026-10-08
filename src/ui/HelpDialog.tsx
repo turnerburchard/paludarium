@@ -1,76 +1,45 @@
-import { X } from "lucide-react";
+import { Eye, Hammer, Move, Share2, X } from "lucide-react";
 import { IconButton } from "./IconButton";
 import { Modal } from "./Modal";
 
 export function HelpDialog({ onClose }: { onClose: () => void }) {
   return (
-    <Modal label="How to build" onClose={onClose}>
+    <Modal label="Controls and help" onClose={onClose}>
       <div className="modal-heading">
-        <h2>How to build</h2>
+        <h2>Controls and help</h2>
         <IconButton label="Close dialog" onClick={onClose}>
           <X size={20} />
         </IconButton>
       </div>
-      <p>
-        Switch to Build, choose an object, then click or tap the tank to place
-        it. Keep placing to make a cluster. Done or Escape returns to selection.
-      </p>
       <dl>
-        <dt>Move the camera</dt>
+        <dt>
+          <Move size={16} aria-hidden="true" /> Look around
+        </dt>
         <dd>
-          Drag with two fingers to pan, including while placing. Pinch to zoom.
-          WASD also moves across the tank; hold Shift to move faster. The Home
-          button returns to the starting view.
+          Drag with one finger or the mouse to rotate. Pinch or scroll to zoom.
+          Drag with two fingers to move across the tank, even while placing
+          objects.
         </dd>
-        <dt>Look around</dt>
+        <dt>
+          <Hammer size={16} aria-hidden="true" /> Build
+        </dt>
         <dd>
-          Drag with one finger or the mouse to orbit when not placing. Scroll to
-          zoom.
+          Switch to Build, choose an object, then tap the tank to place it.
+          Choose Done to finish. Select an object to move, turn, or remove it.
         </dd>
-        <dt>Rearrange</dt>
-        <dd>Select an object, choose Move, then tap its new position.</dd>
-        <dt>Watch a creature</dt>
+        <dt>
+          <Eye size={16} aria-hidden="true" /> Watch
+        </dt>
+        <dd>Tap an animal, then choose Watch up close to follow it.</dd>
+        <dt>
+          <Share2 size={16} aria-hidden="true" /> Save and share
+        </dt>
         <dd>
-          Tap a creature or choose one from the info button’s creature list,
-          then choose Watch up close. The camera follows it, and foliage fades
-          out of the way. Escape stops watching.
-        </dd>
-        <dt>Turn</dt>
-        <dd>
-          Use Left and Right while placing. Tap to turn, hold to spin. R also
-          turns; Shift R turns the other way.
-        </dd>
-        <dt>Undo / redo</dt>
-        <dd>⌘ or Ctrl Z / Shift Z. Each slider gesture is one step.</dd>
-        <dt>Pause</dt>
-        <dd>
-          Space pauses the inhabitants. View hides editing tools; Build reveals
-          them.
-        </dd>
-        <dt>Animal life</dt>
-        <dd>
-          Planting and tank space support your animals. Healthy adults of the
-          same species can have young, which slowly grow up. Crowding and too
-          little planting gradually lower condition. An animal with nowhere it
-          can live, like a frog in a flooded tank or a fish in a drained one,
-          declines within minutes. Follow a creature to see its age and
-          condition. Life pauses while the tab is hidden; age, condition and
-          offspring stay saved when you return.
-        </dd>
-        <dt>Saving and sharing</dt>
-        <dd>
-          Autosaves stay in this browser. The open preset resumes after a
-          refresh. Build edits keep it in Your worlds. Preset buttons start
-          fresh, and switching away discards an unedited preset. Your worlds
-          lists recently opened saves first. Share sends your current layout as
-          a link others can explore and copy. Each world’s options include
-          Export file for backups. Undo history resets when you switch worlds.
+          Your edits save in this browser. Worlds opens presets and saved
+          habitats. Share makes a link others can explore.
         </dd>
       </dl>
-      <p className="panel-note">
-        This is a creative habitat sandbox, not a guide to keeping real animals
-        together.
-      </p>
+      <p className="panel-note">Open this help again from the info menu.</p>
     </Modal>
   );
 }
