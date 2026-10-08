@@ -472,6 +472,24 @@ button:hover:not(:disabled) {
   border-radius: var(--radius);
   box-shadow: 0 14px 40px #0002;
   z-index: 5;
+  max-height: calc(100dvh - 190px);
+  overflow-y: auto;
+}
+.inspector.watch-card p {
+  margin-bottom: 0;
+}
+.animal-care {
+  border-top: 1px solid var(--line);
+  margin: 16px 0;
+  padding-top: 4px;
+}
+.inspector .object-actions {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-bottom: 0;
+}
+.object-actions .kill-button {
+  color: #e4b4a1;
 }
 .inspector-heading {
   display: flex;
@@ -984,6 +1002,7 @@ button:hover:not(:disabled) {
     bottom: 16px;
     width: auto;
     padding: 14px;
+    max-height: calc(100dvh - 160px);
   }
   .inspector p {
     margin: 7px 0 10px;

@@ -27,8 +27,8 @@ export function AboutDialog({
       <dl>
         <dt>View</dt>
         <dd>
-          Tap a creature to follow it. Drag to look around; pinch or scroll to
-          get closer.
+          Tap a creature to learn about it, then watch up close. Drag to look
+          around; pinch or scroll to get closer.
         </dd>
         <dt>Build</dt>
         <dd>Switch to Build to add objects or edit the terrain.</dd>

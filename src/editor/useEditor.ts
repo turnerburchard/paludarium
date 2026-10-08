@@ -1,6 +1,7 @@
 import { createObjectId } from "../model/objectId";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { assets } from "../assets";
+import { assets, isAnimal } from "../assets";
+import { killAnimal } from "../simulation/lifeCycle";
 import {
   MAX_OBJECTS,
   type AssetKind,
@@ -162,17 +163,28 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   );
   const remove = useCallback(() => {
     if (!selectedId) return;
-    commit({
-      ...worldRef.current,
-      objects: replaceObject(
-        worldRef.current.objects,
-        worldRef.current.environment,
-        selectedId,
-      ),
-    });
+    const current = worldRef.current;
+    const object = current.objects.find((o) => o.id === selectedId);
+    const animal = object && isAnimal(object.kind);
+    commit(
+      animal
+        ? killAnimal(current, selectedId)
+        : {
+            ...current,
+            objects: replaceObject(
+              current.objects,
+              current.environment,
+              selectedId,
+            ),
+          },
+    );
     select(null);
     setTool({ type: "select" });
-    notify("Removed. Undo will bring it back.");
+    notify(
+      animal
+        ? "Animal killed. Undo will bring it back."
+        : "Removed. Undo will bring it back.",
+    );
   }, [commit, selectedId]);
   const rotate = useCallback(
     (amount = Math.PI / 6) => {

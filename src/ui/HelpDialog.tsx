@@ -31,9 +31,9 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
         <dd>Select an object, choose Move, then tap its new position.</dd>
         <dt>Watch a creature</dt>
         <dd>
-          In View mode, tap a creature or open the info button’s creature list.
-          The camera follows it, and foliage fades out of the way. Escape stops
-          watching.
+          Tap a creature or choose one from the info button’s creature list,
+          then choose Watch up close. The camera follows it, and foliage fades
+          out of the way. Escape stops watching.
         </dd>
         <dt>Turn</dt>
         <dd>

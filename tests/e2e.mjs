@@ -266,6 +266,7 @@ try {
   );
   await life.locator(".fish-list li", { hasText: "Convict cichlid" }).waitFor();
   await life.getByRole("button", { name: /Follow a creature/ }).click();
+  await page.getByRole("button", { name: "Watch up close" }).click();
   await page
     .getByRole("complementary", { name: "Watching", exact: true })
     .waitFor();
@@ -279,10 +280,10 @@ try {
       value: () => false,
     });
   });
-  const downloadPromise = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "Share this world", exact: true })
     .click();
+  const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Share file", exact: true }).click();
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   const download = await downloadPromise;

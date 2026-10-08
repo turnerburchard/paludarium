@@ -171,7 +171,7 @@ const logEntrySchema = z.object({
   event: z.enum(["born", "died"]),
   kind: z.enum(assetKinds),
   cause: z
-    .enum(["age", "starved", "crowded", "drowned", "stranded"])
+    .enum(["age", "starved", "crowded", "drowned", "stranded", "killed"])
     .optional(),
 });
 export type LogEntry = z.infer<typeof logEntrySchema>;

@@ -68,6 +68,13 @@ export default function App({
     setSheetOpen(false);
   }
 
+  function inspectAnimal(id: string) {
+    editor.finish();
+    editor.select(id);
+    setWatchRequest(null);
+    setSheetOpen(false);
+  }
+
   function openPanel(next: Panel) {
     setPanel(next);
     setSheetOpen(true);
@@ -85,6 +92,8 @@ export default function App({
     if (next === view) return;
     editor.finish();
     setSheetOpen(false);
+    setWatchRequest(null);
+    if (next && selected && !isAnimal(selected.kind)) editor.select(null);
     if (!next) setHasBuilt(true);
     setView(next);
   }
@@ -117,7 +126,7 @@ export default function App({
   function activateObject(id: string) {
     const object = world.objects.find((o) => o.id === id);
     if (view) {
-      if (object && isAnimal(object.kind)) watch(id);
+      if (object && isAnimal(object.kind)) inspectAnimal(id);
     } else editor.select(id);
   }
 
@@ -151,7 +160,7 @@ export default function App({
           panel={panel}
           onPanel={setPanel}
           onHelp={() => setDialog("help")}
-          onWatch={watch}
+          onWatch={inspectAnimal}
           onClose={() => setSheetOpen(false)}
         />
       )}
@@ -162,11 +171,13 @@ export default function App({
           onWatchWorld={() => changeMode(true)}
         />
       )}
-      {!view && selected && tool.type === "select" && !watchingId && (
+      {selected && tool.type === "select" && !watchingId && (
         <Inspector
           key={selected.id}
           editor={editor}
           object={selected}
+          ecosystem={ecosystem}
+          view={view}
           onWatch={() => watch(selected.id)}
         />
       )}
@@ -255,7 +266,7 @@ export default function App({
           ecosystem={ecosystem}
           onWatch={(id) => {
             setDialog(null);
-            watch(id);
+            inspectAnimal(id);
           }}
           onClose={() => setDialog(null)}
         />

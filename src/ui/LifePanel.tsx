@@ -133,6 +133,7 @@ function describe({ event, kind, cause }: LogEntry) {
   if (cause === "crowded") return `${name} died of overcrowding.`;
   if (cause === "drowned") return `${name} drowned.`;
   if (cause === "stranded") return `${name} died out of water.`;
+  if (cause === "killed") return `${name} was killed.`;
   return `${name} died.`;
 }
 

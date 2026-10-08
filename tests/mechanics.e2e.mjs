@@ -25,6 +25,7 @@ const world = {
   environment: {
     width: 7,
     depth: 4.5,
+    height: 2.9,
     substrate: 0.25,
     water: 0,
     light: "day",
@@ -137,6 +138,7 @@ try {
     .getByRole("dialog", { name: "About Paludarium" })
     .getByRole("button", { name: /Red-eyed tree frog/ })
     .click();
+  await page.getByRole("button", { name: "Watch up close" }).click();
   await page.getByRole("complementary", { name: "Watching" }).waitFor();
   assert.equal(
     await page.getByRole("button", { name: "Remove", exact: true }).count(),
@@ -255,8 +257,14 @@ try {
     .click();
   assert.equal(
     await page.getByRole("slider").count(),
-    0,
-    "habitat opens on simple lighting and water choices",
+    1,
+    "habitat opens with water level and the fine-tuning sliders collapsed",
+  );
+  assert.equal(
+    await page
+      .getByRole("slider", { name: "Water level", exact: true })
+      .count(),
+    1,
   );
   await page.locator("summary", { hasText: "Fine-tune habitat" }).click();
   assert.equal(
@@ -465,10 +473,17 @@ try {
     "View hides the editing selection",
   );
   await clickObject("frog");
+  await page.getByRole("button", { name: "Watch up close" }).click();
   await page.getByRole("complementary", { name: "Watching" }).waitFor();
   await page.getByRole("button", { name: "Build", exact: true }).click();
-  await page.getByRole("complementary", { name: "Watching" }).waitFor();
+  await page.getByRole("complementary", { name: "Selected object" }).waitFor();
+  assert.equal(
+    await page.getByRole("meter", { name: "Condition", exact: true }).count(),
+    1,
+  );
   await page.getByRole("button", { name: "View", exact: true }).click();
+  assert.equal(await page.getByRole("meter").count(), 0);
+  await page.getByRole("button", { name: "Watch up close" }).click();
   await page.getByRole("complementary", { name: "Watching" }).waitFor();
   await page
     .getByRole("button", { name: "Stop watching", exact: true })
@@ -486,6 +501,7 @@ try {
       .getByRole("dialog", { name: "About Paludarium" })
       .getByRole("button", { name: /Red-eyed tree frog/ })
       .click();
+    await page.getByRole("button", { name: "Watch up close" }).click();
     await page.getByRole("complementary", { name: "Watching" }).waitFor();
   }
 
@@ -805,6 +821,7 @@ try {
     .locator(".fish-list")
     .getByRole("button", { name: /Rainbow shark/ })
     .click();
+  await fishPage.getByRole("button", { name: "Watch up close" }).click();
   await fishPage.getByRole("complementary", { name: "Watching" }).waitFor();
   await fishPage.getByRole("button", { name: "Build", exact: true }).click();
   await fishPage.evaluate(
