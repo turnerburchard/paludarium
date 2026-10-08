@@ -206,7 +206,7 @@ try {
         .normalize(),
       0.1,
     );
-    const mesh = plant.children[0].children[0];
+    const mesh = plant.getObjectByProperty("isMesh", true);
     const positions = mesh.geometry.getAttribute("position");
     const point = camera.position.clone().set(0, 0, 0);
     for (let i = 0; i < 3; i++)
