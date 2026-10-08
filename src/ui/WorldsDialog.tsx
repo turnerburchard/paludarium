@@ -11,12 +11,14 @@ export function WorldsDialog({
   onOpen,
   onPreset,
   onImport,
+  importError,
   onClose,
 }: {
   editor: Editor;
   onOpen: (id: string) => void;
   onPreset: (preset: Preset) => void;
   onImport: () => void;
+  importError: string;
   onClose: () => void;
 }) {
   const [menuId, setMenuId] = useState<string | null>(null);
@@ -30,9 +32,9 @@ export function WorldsDialog({
           <X size={20} />
         </IconButton>
       </div>
-      {(editor.message || !editor.saved) && (
+      {(editor.saveError || !editor.saved) && (
         <p role="status">
-          {editor.message ||
+          {editor.saveError ||
             "Saving is unavailable. Use Share to export a backup."}
         </p>
       )}
@@ -51,6 +53,7 @@ export function WorldsDialog({
           <Upload size={15} aria-hidden="true" /> Import
         </button>
       </div>
+      {importError && <p role="status">{importError}</p>}
       <div className="world-list">
         {savedWorlds.map(({ id, world }) => (
           <div className="saved-world" key={id}>

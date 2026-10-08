@@ -400,18 +400,6 @@ button:hover:not(:disabled) {
   border-radius: 50%;
   background: #7c947c;
 }
-.status-message {
-  font-size: var(--text-small);
-  color: #b4c6aa;
-  min-height: 17px;
-  text-align: center;
-}
-.status-message {
-  text-shadow: 0 1px 4px #000c;
-}
-.status-message:empty {
-  visibility: hidden;
-}
 .placement-bar {
   pointer-events: auto;
   display: flex;
@@ -968,16 +956,6 @@ button:hover:not(:disabled) {
     bottom: max(12px, env(safe-area-inset-bottom));
   }
   .navigation-hint {
-    display: none;
-  }
-  .status-message {
-    order: -1;
-    max-width: 300px;
-    background: #1b3029bb;
-    border-radius: 5px;
-    padding: 4px 8px;
-  }
-  .status-message:empty {
     display: none;
   }
   .placement-bar {

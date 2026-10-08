@@ -160,6 +160,23 @@ try {
     assert.equal(download.suggestedFilename(), "my-creek.json");
     await page.getByRole("button", { name: "Import", exact: true }).click();
     await page.locator("input[type=file]").setInputFiles({
+      name: "invalid.json",
+      mimeType: "application/json",
+      buffer: Buffer.from("not a world"),
+    });
+    const importError = page
+      .getByRole("dialog", { name: "Worlds" })
+      .getByRole("status");
+    await importError.waitFor();
+    assert.equal(
+      await importError.textContent(),
+      "This file isn't a Paludarium terrarium.",
+    );
+    assert.equal(await page.locator(".status-message").count(), 0);
+    await page.screenshot({ path: `/tmp/paludarium-import-error-${size}.png` });
+    await page.getByRole("button", { name: "Import", exact: true }).click();
+    assert.equal(await importError.count(), 0, "retry clears the import error");
+    await page.locator("input[type=file]").setInputFiles({
       name: "creek.json",
       mimeType: "application/json",
       buffer: Buffer.from(
