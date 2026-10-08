@@ -446,7 +446,12 @@ export function createWorldEcosystem(
               },
       });
   }
-  const colonies = insectColonies(graph);
+  const colonies = insectColonies(
+    graph,
+    snapshot?.food
+      .filter((patch) => patch.capacity > 0)
+      .map((patch) => previous!.engine.graph.node(patch.nodeId).position),
+  );
   const food = new Map(
     colonies.map((colony) => [
       colony.nodeId,
@@ -539,12 +544,19 @@ export function createFishSchool(
 
 /** Insects breed under cover: well-sheltered dry ground becomes a colony whose
  * size follows how much cover it has. Bare ground supports none. */
-export function insectColonies(graph: HabitatGraph): FoodPatch[] {
-  return shelteredSpots(graph, 8, COLONY_SPACING, 0.3).map((node) => ({
-    nodeId: node.id,
-    amount: 0,
-    capacity: 5 * node.shelter,
-  }));
+/** Colonies that existed before an edit keep their place when there is still
+ * shelter near it, so a resize or a small move does not scatter them. */
+export function insectColonies(
+  graph: HabitatGraph,
+  previous: readonly HabitatNode["position"][] = [],
+): FoodPatch[] {
+  return shelteredSpots(graph, 8, COLONY_SPACING, 0.3, previous).map(
+    (node) => ({
+      nodeId: node.id,
+      amount: 0,
+      capacity: 5 * node.shelter,
+    }),
+  );
 }
 
 function nearestWithin(
@@ -571,19 +583,24 @@ function shelteredSpots(
   count: number,
   spacing: number,
   minShelter = 0,
+  anchors: readonly HabitatNode["position"][] = [],
 ) {
-  const ground = [...graph.nodes.values()].filter(
-    (n) => n.surface === "ground" && !n.wet && n.shelter >= minShelter,
-  );
+  const ground = [...graph.nodes.values()]
+    .filter((n) => n.surface === "ground" && !n.wet && n.shelter >= minShelter)
+    .sort((a, b) => b.shelter - a.shelter);
   const selected: HabitatNode[] = [];
-  for (const node of ground.sort((a, b) => b.shelter - a.shelter)) {
+  const add = (node: HabitatNode | undefined) => {
     if (
+      node &&
+      selected.length < count &&
       selected.every(
         (other) => distance(other.position, node.position) > spacing,
       )
     )
       selected.push(node);
-    if (selected.length === count) break;
-  }
+  };
+  for (const anchor of anchors)
+    add(ground.find((node) => distance(node.position, anchor) < spacing));
+  for (const node of ground) add(node);
   return selected;
 }
