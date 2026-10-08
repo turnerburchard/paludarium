@@ -11,7 +11,7 @@ import {
 import type { MossSpecies } from "./moss";
 import { baseGroundHeight } from "./terrain";
 import { applyTerrainBrush, type TerrainMode } from "./terrainBrush";
-import { newTerrain, type Terrain } from "./terrainData";
+import { newTerrain } from "./terrainData";
 export type Preset =
   | "empty"
   | "tropical"
@@ -146,17 +146,10 @@ export function makePreset(preset: Preset): World {
       environment: grottoFloor(),
       objects: limestoneGrotto(add, objects),
     };
-  const environment: Environment = {
-    ...defaultEnvironment,
-    water: 0.3,
-    warmth: 0.8,
-    brightness: 1.25,
-  };
-  environment.terrain = desertSand(environment);
   return {
     version: 1,
     name: "Desert spring",
-    environment,
+    environment: desertBasin(),
     objects: desertSpring(add, objects),
   };
 }
@@ -350,50 +343,97 @@ function limestoneGrotto(add: Add, objects: HabitatObject[]) {
   return objects;
 }
 
-/** A Mojave desert spring: cacti, agave and bunchgrass on dry sand around a
- * small pool of pupfish, with three lizards, a tortoise, a scorpion and a
- * tarantula. */
+/** A Mojave desert spring in the biggest tank: a sandstone mesa and a low
+ * ridge along the back, open dunes in front, and a spring in the middle with
+ * pupfish, cattails and canyon tree frogs. Lizards, two tortoises, a scorpion
+ * and a tarantula live on the dry ground around it. */
 function desertSpring(add: Add, objects: HabitatObject[]) {
-  add("sandstone", -2.4, -1.3, 1.6, 0.4);
-  add("sandstone-ledge", -1.55, -1.55, 1, 2.1);
-  add("sandstone", 2.3, -1.2, 1.3, 1.2);
-  add("sandstone-ledge", 2.7, 1.3, 0.9, 0.3);
-  add("sandstone-pillar", -0.8, 1.45, 1, 2.8);
-  add("rock-shelter", -2.6, 0.75, 1.1, 1.4);
-  add("rock-shelter", 1.7, -1.75, 0.9, 3.4);
-  add("branch", -0.6, -1.35, 1.1, 0.9);
-  add("prickly-pear", -1.6, -0.5, 1.1, 0.3);
-  add("prickly-pear", 2.6, 0.2, 0.9, 1.8);
-  add("barrel-cactus", -0.3, -1.6, 1, 0.2);
-  add("barrel-cactus", 1.4, 1.5, 0.8, 1);
-  add("hedgehog-cactus", -2.9, -0.2, 1, 0.5);
-  add("hedgehog-cactus", 0.6, -1.75, 0.9, 2);
-  add("hedgehog-cactus", -1.5, 1.55, 1.1, 1);
-  add("agave", -2.05, 0.15, 1.1, 0.6);
-  add("agave", 2.75, -0.5, 0.9, 2.2);
-  add("bunchgrass", -0.85, -0.85, 1, 0.4);
-  add("bunchgrass", 0.05, 1.5, 0.9, 1.4);
-  add("bunchgrass", -2.95, 1.6, 1);
-  add("bunchgrass", 2.1, 1.05, 0.9, 2.5);
-  // Rushes and grass where the spring keeps the ground damp.
-  add("grass", -0.55, 0.2, 0.8, 0.6);
-  add("grass", 1.3, 0.8, 0.7, 2);
-  add("leopard-lizard", -1.1, 0.2, 1, 0.8);
-  add("desert-spiny-lizard", -2.2, -0.75, 1, 2.6);
-  add("chuckwalla", 2.2, 0.85, 1, 3.6);
-  add("desert-tortoise", -1.8, 1.0, 1, 2.2);
+  // The mesa, with a cave at its foot.
+  add("sandstone", -5.3, -2.9, 1.8, 0.4);
+  add("sandstone", -3.7, -2.8, 1.4, 1.9);
+  add("sandstone-pillar", -4.5, -3.0, 1.3, 0.8);
+  add("sandstone-ledge", -2.5, -2.2, 1.2, 2.1);
+  add("sandstone-ledge", -5.7, -1.4, 1, 0.3);
+  add("rock-shelter", -3.5, -1.2, 1.2, 1.4);
+  add("dead-tree", -4.7, -2.0, 1.2, 0.9);
+  add("agave", -2.9, -3.1, 1.1, 0.6);
+  add("hedgehog-cactus", -5.7, -2.3, 1, 0.5);
+  add("hedgehog-cactus", -4.0, -1.9, 0.9, 2);
+  add("bunchgrass", -5.0, -1.1, 1);
+  add("bunchgrass", -3.2, -2.1, 0.9, 1.4);
+  add("desert-spiny-lizard", -2.6, -1.3, 1, 2.6);
+  add("desert-tarantula", -2.3, -0.7, 1, 0.7);
+  // A prickly pear thicket and barrel cacti between the mesa and the ridge.
+  add("prickly-pear", 0.2, -2.6, 1.3, 0.3);
+  add("prickly-pear", 0.9, -3.0, 0.9, 1.6);
+  add("prickly-pear", -0.6, -3.0, 0.8, 2.6);
+  add("barrel-cactus", 1.9, -2.6, 1.2, 0.2);
+  add("barrel-cactus", 2.4, -2.0, 0.75, 1);
+  add("bunchgrass", -1.2, -2.0, 0.9, 2.5);
+  add("branch", 2.9, -1.4, 1.2, 0.9);
+  // The ridge, with a second cave and an agave stand.
+  add("sandstone", 4.8, -2.8, 1.5, 1.2);
+  add("rock-shelter", 3.6, -2.6, 1, 3.4);
+  add("sandstone-pillar", 5.8, -2.2, 0.9, 2.8);
+  add("agave", 5.5, -1.0, 1.2, 2.2);
+  add("agave", 4.1, -1.6, 0.8, 1);
+  add("bunchgrass", 3.0, -3.0, 1);
+  add("bunchgrass", 6.0, -3.0, 0.9);
+  add("fence-lizard", 4.3, -0.6, 1, 2);
+  add("stripe-tailed-scorpion", 3.9, -1.2, 1, 2.4);
+  // Rushes and grass where the spring keeps the ground damp, and flat stones
+  // at the water's edge for the frogs.
+  add("cattail", -0.1, 0.0, 1.1, 0.4);
+  add("cattail", 0.4, -0.5, 0.9, 2);
+  add("cattail", 3.6, 1.4, 1, 1.2);
+  add("grass", -0.3, 0.9, 0.9, 0.6);
+  add("grass", 2.7, -0.4, 0.8, 2);
+  add("grass", 3.5, 0.3, 0.9, 1.1);
+  add("grass", 1.1, 2.0, 0.8, 2.8);
+  add("flagstone", 2.9, 1.8, 1, 1.3);
+  add("flagstone", -0.3, 1.6, 0.8, 0.4);
+  add("rock", 3.4, 0.9, 0.7, 2);
+  add("canyon-tree-frog", 2.9, 1.7, 1, 2);
+  add("canyon-tree-frog", -0.2, 1.5, 1, 0.5);
   for (const [x, z, turn] of [
-    [0.35, 0.1, 1],
-    [0.6, 0.4, 2.2],
-    [0.75, -0.1, 4],
+    [1.2, 0.5, 1],
+    [1.5, 0.9, 2.2],
+    [1.9, 0.4, 4],
+    [2.1, 0.9, 0.3],
+    [1.3, 1.1, 3.1],
+    [1.8, 0.7, 5.2],
   ])
     add("pupfish", x, z, 1, turn);
-  add("flagstone", 1.3, -0.55, 0.9, 1.3);
-  add("dead-tree", -1.1, 0.65, 1, 0.9);
-  // Chuckwallas live in small colonies, and a second one lets them breed.
-  add("chuckwalla", 1.85, 1.3, 0.95, 3.2);
-  add("stripe-tailed-scorpion", 1.2, -1.3, 1, 2.4);
-  add("desert-tarantula", -0.3, 0.95, 1, 0.7);
+  add("leopard-lizard", -1.4, -0.4, 1, 0.8);
+  // Open dunes along the front, where the tortoises graze.
+  add("barrel-cactus", -4.2, 1.8, 1.1, 0.3);
+  add("barrel-cactus", -3.7, 2.4, 0.75, 1.7);
+  add("barrel-cactus", -4.8, 2.5, 0.85, 2.9);
+  add("prickly-pear", -2.6, 0.2, 1, 1.8);
+  add("hedgehog-cactus", -2.0, 1.3, 1, 1);
+  add("hedgehog-cactus", -5.8, 2.9, 0.9, 2.3);
+  add("bunchgrass", -5.6, 0.6, 1);
+  add("bunchgrass", -2.4, 2.8, 0.9, 1.4);
+  add("bunchgrass", -1.2, 0.4, 1, 0.4);
+  add("sandstone-ledge", -1.0, 2.7, 0.9, 0.3);
+  add("pebbles", -1.6, 2.0, 1.2, 0.4);
+  add("hedgehog-cactus", 0.2, 2.9, 0.9, 0.6);
+  add("bunchgrass", 0.9, 3.1, 0.8, 2.2);
+  add("barrel-cactus", 2.2, 3.0, 0.7, 0.9);
+  add("desert-tortoise", -3.0, 1.5, 1, 2.2);
+  add("desert-tortoise", -5.0, 0.0, 0.9, 0.6);
+  // Sun-baked rocks in the front corner for a pair of chuckwallas, which live
+  // in small colonies.
+  add("sandstone", 5.3, 2.2, 1.2, 0.5);
+  add("sandstone-ledge", 4.4, 2.8, 1, 1.9);
+  add("chuckwalla", 4.2, 1.7, 1, 3.6);
+  add("chuckwalla", 4.6, 2.5, 0.95, 3.2);
+  add("hedgehog-cactus", 6.0, 0.8, 1, 0.8);
+  add("hedgehog-cactus", 3.9, 3.0, 0.8, 2);
+  add("barrel-cactus", 6.0, 3.0, 0.9, 1.2);
+  add("bunchgrass", 4.6, 0.6, 1, 2.1);
+  add("dead-tree", 6.0, 1.7, 0.8, 2.4);
+  add("pebbles", 3.8, 2.2, 1, 1.1);
   return objects;
 }
 
@@ -548,20 +588,40 @@ function creekBed() {
   ]);
 }
 
-/** Dry, gently rolling sand that dips in the middle to hold a spring. */
-function desertSand(env: Environment): Terrain {
-  return newTerrain(
+/** A wide, low, bright tank of rolling sand that rises into a mesa at the
+ * back and dips in the middle to hold a spring. */
+function desertBasin() {
+  const env: Environment = {
+    ...defaultEnvironment,
+    width: 13,
+    depth: 7,
+    height: 2.4,
+    water: 0.3,
+    warmth: 0.8,
+    brightness: 1.25,
+  };
+  const bump = (distance: number) => {
+    const t = Math.min(1, Math.max(0, (1.2 - distance) / 0.8));
+    return t * t * (3 - 2 * t);
+  };
+  const terrain = newTerrain(
     env,
     (x, z) => {
-      const dunes = 0.74 + 0.05 * Math.sin(x * 1.3 + z * 0.9);
-      const fromSpring = Math.hypot(x - 0.5, (z - 0.15) * 1.3);
-      const dip = Math.min(1, Math.max(0, (1.8 - fromSpring) / 1.4));
-      const height = dunes - 0.66 * dip * dip * (3 - 2 * dip);
+      const dunes =
+        0.72 +
+        0.07 * Math.sin(x * 0.9 + z * 0.6) +
+        0.04 * Math.sin(x * 2.1 - z * 1.3);
+      const mesa = 0.8 * bump(Math.hypot((x + 4.6) / 2.4, (z + 2.7) / 1.3));
+      const ridge = 0.35 * bump(Math.hypot((x - 4.6) / 2.2, (z + 2.8) / 1.1));
+      const spring = bump(Math.hypot((x - 1.6) / 2.6, (z - 0.7) / 1.8) + 0.2);
+      const height = dunes + mesa + ridge - 0.85 * spring;
+      // Centimetre steps, like sculpted presets, keep share links short.
       return Math.max(
         -0.9,
-        Math.min(0.9, height - baseGroundHeight(x, z, env)),
+        Math.round((height - baseGroundHeight(x, z, env)) * 100) / 100,
       );
     },
     "sand",
   );
+  return { ...env, terrain };
 }
