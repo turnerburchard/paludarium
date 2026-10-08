@@ -24,10 +24,18 @@ const MODELS = [
   },
   {
     // "Flower Pot" by Zsky, poly.pizza/m/Kgt363WkKd, CC-BY 3.0; the pot is left out.
-    source: "docs/inspiration/models/alocasia-zsky.glb",
-    out: "src/assets/plants/alocasia.json",
+    source: "docs/inspiration/models/peace-lily-zsky.glb",
+    out: "src/assets/plants/peaceLily.json",
     skip: ["VaseFlowerPot4", "GroundFlowerPot4"],
     height: 0.95,
+  },
+  {
+    // "Big Leaf Plant" by reyshapes, poly.pizza/m/aKIm5k6l5F, CC0. Every leaf
+    // is white with its own material, so leaves are told apart by material.
+    source: "docs/inspiration/models/alocasia-reyshapes.glb",
+    out: "src/assets/plants/alocasia.json",
+    byMaterial: true,
+    height: 1.5,
   },
   {
     // "Grass" by Quaternius, poly.pizza/m/UGTOzcO3P2, CC0; the larger clump.
@@ -216,7 +224,11 @@ for (const model of MODELS) {
       // A pot modeled in the same mesh as its plant is left out by color.
       if (model.skipColors?.includes(source)) continue;
       faces.push({
-        key: roles ? nearestRole(source, roles) : source,
+        key: model.byMaterial
+          ? material.name
+          : roles
+            ? nearestRole(source, roles)
+            : source,
         corners: [0, 1, 2].map((k) => {
           const corner = new Vector3()
             .fromBufferAttribute(position, i + k)

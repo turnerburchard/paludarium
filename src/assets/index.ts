@@ -78,6 +78,7 @@ import { bunchgrass } from "./plants/bunchgrass";
 import { cryptocoryne } from "./plants/cryptocoryne";
 import { begonia } from "./plants/begonia";
 import { alocasia } from "./plants/alocasia";
+import { peaceLily } from "./plants/peaceLily";
 import { treePhilodendron } from "./plants/treePhilodendron";
 import { hairgrass } from "./plants/hairgrass";
 import { orchid } from "./plants/orchid";
@@ -140,6 +141,7 @@ export const assets = {
   "swiss-cheese-plant": swissCheesePlant,
   "tree-philodendron": treePhilodendron,
   alocasia,
+  "peace-lily": peaceLily,
   fern,
   strawberry,
   bromeliad,

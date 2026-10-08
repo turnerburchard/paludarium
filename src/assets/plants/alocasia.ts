@@ -10,8 +10,8 @@ export const alocasia: AssetDefinition = {
   biomes: ["Tropical"],
   description:
     "Tall stalks holding up huge, dark arrow-shaped leaves along shady Asian forest streams.",
-  radius: 0.4,
-  size: 1.5,
+  radius: 0.45,
+  size: 1,
   scaleRange: [0.7, 1.4],
   habitat: "land",
   shelter: true,
@@ -19,7 +19,12 @@ export const alocasia: AssetDefinition = {
   build,
 };
 
-/** Model: "Flower Pot" by Zsky, CC-BY 3.0, without its pot. */
+const GREENS = ["#2f5a22", "#3a6a29", "#28501d", "#44752f"];
+
+/** Model: "Big Leaf Plant" by reyshapes, CC0. Each leaf is its own part, so
+ * neighboring leaves take different greens. */
 function build() {
-  return buildBaked(alocasiaModel, () => ({ color: "#2f5a22" }));
+  return buildBaked(alocasiaModel, (source) => ({
+    color: GREENS[Number(source.split(".")[1]) % GREENS.length],
+  }));
 }
