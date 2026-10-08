@@ -129,8 +129,21 @@ try {
   await page
     .getByRole("button", { name: "Red-eyed tree frog", exact: true })
     .click();
+  await clickWorld(1.4, 0.3, 0);
+  const placementHint = page.locator(".placement-bar [role=status]");
+  assert.equal(
+    await placementHint.textContent(),
+    "Find a dry spot on the bank.",
+  );
+  await page.screenshot({
+    path: "/tmp/paludarium-placement-error-desktop.png",
+  });
   await clickWorld(-1.4, 0.76, 0.75);
   assert.equal((await saved()).objects.length, 1, "place a frog");
+  assert.equal(
+    await placementHint.textContent(),
+    "Tap to place · Two-finger drag to pan",
+  );
   await page.getByRole("button", { name: "Done", exact: true }).click();
   let world = await saved();
   const frog = world.objects[0];
@@ -161,7 +174,7 @@ try {
       "move failure",
       frog,
       world.objects[0],
-      await page.locator(".status-message").textContent(),
+      await page.locator(".placement-bar [role=status]").textContent(),
     );
     await page.screenshot({ path: "/tmp/move-failure.png" });
   }
@@ -183,11 +196,12 @@ try {
     "undoing away the moving object ends the move",
   );
   await page.keyboard.press("Delete");
-  assert.notEqual(
-    await page.locator(".status-message").textContent(),
-    "Removed. Undo will bring it back.",
-    "nothing is selected once undo takes the object away",
+  assert.equal(
+    (await saved()).objects.length,
+    0,
+    "delete does nothing without a selection",
   );
+  assert.equal(await page.locator(".status-message").count(), 0);
   await page.keyboard.press("Control+Shift+z");
   assert.equal((await saved()).objects.length, 1, "redo placing the frog");
   await page.keyboard.press("Escape");

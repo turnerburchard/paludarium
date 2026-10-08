@@ -1,6 +1,6 @@
 import { createObjectId } from "../model/objectId";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { assetRadius, assets, isAnimal, placementScale } from "../assets";
+import { assetRadius, isAnimal, placementScale } from "../assets";
 import { killAnimal } from "../simulation/lifeCycle";
 import {
   MAX_OBJECTS,
@@ -66,7 +66,8 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   const stroke = useRef<TerrainStroke | null>(null);
   const [tool, setTool] = useState<Tool>({ type: "select" });
   const [chosenId, select] = useState<string | null>(null);
-  const [message, notify] = useState(initial.warning ?? "");
+  const [placementError, setPlacementError] = useState("");
+  const [saveError, setSaveError] = useState(initial.warning ?? "");
   const [saved, setSaved] = useState(!initial.warning);
   const [saving, setSaving] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -98,7 +99,13 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       return;
     setSaving(true);
     const persist = () => {
-      setSaved(saveLibrary(updateLibrary(library, history.present)));
+      const saved = saveLibrary(updateLibrary(library, history.present));
+      setSaved(saved);
+      setSaveError(
+        saved
+          ? ""
+          : "Your worlds could not be saved. Export a backup with Share before continuing.",
+      );
       setSaving(false);
     };
     const onHidden = () => {
@@ -116,6 +123,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   useEffect(() => {
     stroke.current = null;
     setPreview(null);
+    setPlacementError("");
   }, [tool]);
   function cancelTerrainStroke() {
     stroke.current = null;
@@ -133,6 +141,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     setTool((tool) =>
       tool.type === "move" || tool.type === "copy" ? { type: "select" } : tool,
     );
+    setPlacementError("");
     dispatch({ type });
   }, []);
   function beginTerrainStroke(x: number, z: number) {
@@ -181,11 +190,6 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     );
     select(null);
     setTool({ type: "select" });
-    notify(
-      animal
-        ? "Animal killed. Undo will bring it back."
-        : "Removed. Undo will bring it back.",
-    );
   }, [commit, selectedId]);
   const rotate = useCallback(
     (amount = Math.PI / 6) => {
@@ -244,17 +248,15 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     window.addEventListener("keydown", keydown);
     return () => window.removeEventListener("keydown", keydown);
   }, [remove, rotate, navigateHistory, readOnly]);
-  /** Leaves placing or moving and clears its leftover message. */
+  /** Leaves placing or moving and discards unfinished terrain edits. */
   function finish() {
     cancelTerrainStroke();
     setTool({ type: "select" });
-    notify("");
   }
   function choose(kind: AssetKind) {
     setTool({ type: "place", kind, scale: placementScale(kind) });
     select(null);
     setPlacementRotation(0);
-    notify("");
   }
   /** Places the tool's object at a spot on the ground, or on top of a stone
    * or wood piece when `surface` names one and the height of the spot. */
@@ -284,7 +286,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       resting.support &&
       holdsUp(world.objects, moving.id, resting.support)
     ) {
-      notify("It can't rest on something that's sitting on it.");
+      setPlacementError("It can't rest on something that's sitting on it.");
       return;
     }
     const problem = placementProblem(
@@ -295,7 +297,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       resting.lift,
     );
     if (problem) {
-      notify(problem);
+      setPlacementError(problem);
       return;
     }
     if (moving && tool.type === "move") {
@@ -305,11 +307,10 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
         rotation: placementRotation,
       });
       setTool({ type: "select" });
-      notify("");
       return;
     }
     if (world.objects.length >= MAX_OBJECTS) {
-      notify("This world is full. Remove an object to make room.");
+      setPlacementError("This world is full. Remove an object to make room.");
       return;
     }
     const object: HabitatObject = {
@@ -329,7 +330,6 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     }
     if (tool.type === "place")
       setTool({ ...tool, scale: placementScale(kind) });
-    notify(`${assets[kind].name} added. Place another, or finish.`);
   }
   function changeEnvironment(patch: Partial<Environment>) {
     commit(withEnvironment(world, patch));
@@ -340,7 +340,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   function switchLibrary(next: WorldLibrary): boolean {
     if (!saveLibrary(next)) {
       setSaved(false);
-      notify(
+      setSaveError(
         "Your worlds could not be saved. Export a backup with Share before continuing.",
       );
       return false;
@@ -349,11 +349,11 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     dispatch({ type: "open", world: activeWorld(next) });
     setIsShared(false);
     setSaved(true);
+    setSaveError("");
     select(null);
     setTool({ type: "select" });
     setPreview(null);
     stroke.current = null;
-    notify("");
     return true;
   }
   function createWorld(next: World): boolean {
@@ -394,7 +394,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     if (id === current.activeId && !isShared) return switchLibrary(next);
     if (!saveLibrary(next)) {
       setSaved(false);
-      notify("Your worlds could not be saved.");
+      setSaveError("Your worlds could not be saved.");
       return false;
     }
     setLibrary(next);
@@ -406,13 +406,11 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     if (!selected) return;
     setPlacementRotation(selected.rotation);
     setTool({ type: "move", id: selected.id });
-    notify("");
   }
   function duplicate() {
     if (!selected || world.objects.length >= MAX_OBJECTS) return;
     setPlacementRotation(selected.rotation);
     setTool({ type: "copy", id: selected.id });
-    notify("");
   }
   return {
     world: shown,
@@ -438,8 +436,9 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     selected,
     selectedId,
     select,
-    message,
-    notify,
+    placementError,
+    setPlacementError,
+    saveError,
     saved,
     saving,
     paused,
