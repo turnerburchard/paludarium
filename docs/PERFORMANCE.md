@@ -37,3 +37,65 @@ For a baseline comparison, extract the named commit into a temporary directory, 
 ## Production bundle
 
 The previous production build shipped one 1,458 KB JavaScript chunk (385 KB gzip). The current build separates React, Three.js core, its renderer, scene controls, and application code. The five chunks range from 198 to 376 KB, with roughly 395 KB gzip in total. This improves cache reuse and removes the oversized application chunk; it does not reduce the total first-load transfer. Vite's default 500 KB warning is restored rather than suppressed.
+
+## Placement and navigation
+
+Placing an object rebuilds navigation synchronously, so its CPU cost blocks
+simulation, input and animation together. Land collision queries now share the
+fish collision hierarchy builder and visit only candidate triangles. Ground,
+plant-anchor and leaf connections use spatial buckets rather than scanning every
+node. Candidate and triangle tie ordering is preserved. Animal decisions find
+nearest destinations with a linear scan and check occupied destinations through
+the existing set. Navigation copies its known vector and neighbor fields directly
+instead of invoking structured cloning for every node.
+
+Animal-only edits reuse the navigation graph when the environment, static objects
+and maximum animal footprint are unchanged. Changing that footprint, terrain,
+hardscape or plants still rebuilds it. Metadata-only edits keep the live simulation
+and its current routes. Habitat support is calculated when the world changes,
+rather than on every HUD snapshot.
+
+Measured in Chromium 151 on the same four-CPU cloud host. The baseline is
+`254f4278`. Each sample appends one rock at `(0, 0)`, scale 0.7, seed 123, to a
+preset; timings are the median of five land-ecosystem rebuilds after two warmups. Measurements
+load the simulation modules into a blank browser page and exclude React updates,
+WebGL rendering, thumbnails, persistence and pointer handling. Run benchmarks
+without competing tests or browser workloads.
+
+| Preset           | Navigation nodes |   Before |  After |
+| ---------------- | ---------------: | -------: | -----: |
+| Cloud forest     |            4,788 |   680 ms | 329 ms |
+| Alpine creek     |            5,123 | 1,159 ms | 489 ms |
+| Desert spring    |            5,110 | 1,160 ms | 264 ms |
+| Limestone grotto |            5,166 | 1,940 ms | 268 ms |
+| Aquarium         |            3,975 |   964 ms | 179 ms |
+
+Populated navigation rebuild medians were 52–86% shorter in this repeat.
+Animal-only land-ecosystem updates took 1–5 ms instead of 563–2,265 ms and reused
+their graph. Empty-tank rock placement measured 112 versus 18 ms after warmup.
+An earlier three-sample run showed 42–64% shorter populated rebuilds but substantial
+cold small-scene variability. These short cloud measurements are not device
+frame-rate targets or startup measurements; individual rebuild samples varied
+considerably, especially in the baseline grotto (1,661–3,410 ms).
+
+These figures exclude fish-space reconstruction: aquarium placement still spent
+about 324 ms rebuilding that space. Geometry edits still block for hundreds of
+milliseconds and remain worth optimizing.
+
+A separate comparison against the original implementation checked complete node
+records and neighbor ordering for all six presets, both initially and after rock
+placement. Seeded animal snapshots after 600 updates also matched. Regression
+tests cover ray hits at mesh edges and vertices, spatial-cell boundaries, graph
+isolation and the inputs that require rebuilding navigation. Rendering geometry,
+animal rules and object limits were not reduced.
+
+To reproduce CPU measurements, start the Vite development server and run:
+
+```sh
+CHROMIUM_PATH=/usr/bin/chromium node scripts/profile-placement.mjs \
+  http://127.0.0.1:5173 /tmp/placement-profile.json
+```
+
+The script also reports fish-space construction, a short simulation-update sample
+and whether an animal-only edit reuses the graph. It can be copied into a baseline
+checkout to run the same measurement there.

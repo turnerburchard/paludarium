@@ -1,6 +1,11 @@
 import * as THREE from "three";
 import { assets } from "../assets";
 import { collisionShape, type CollisionFace } from "../assets/collisionShape";
+import {
+  buildCollisionTree,
+  visitRayFaces,
+  type CollisionTree,
+} from "../assets/collisionTree";
 import type { HabitatObject, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
 import { groundHeight } from "../model/terrain";
@@ -10,6 +15,8 @@ interface Solid {
   object: HabitatObject;
   bounds: THREE.Box3;
   faces: CollisionFace[];
+  tree: CollisionTree;
+  faceOrder: Map<CollisionFace, number>;
 }
 
 /** Exposed stone and wood surfaces, sampled from the same geometry used for
@@ -18,6 +25,13 @@ export class LandSurfaces {
   readonly solids: Solid[] = [];
   private readonly ray = new THREE.Ray();
   private readonly hit = new THREE.Vector3();
+  private readonly origin = new THREE.Vector3();
+  private readonly direction = new THREE.Vector3(
+    0.937,
+    0.213,
+    0.277,
+  ).normalize();
+  private readonly normal = new THREE.Vector3();
   private readonly down = new THREE.Vector3(0, -1, 0);
 
   constructor(private readonly world: World) {
@@ -36,18 +50,21 @@ export class LandSurfaces {
         new THREE.Vector3().setScalar(object.scale),
       );
       const shape = collisionShape(object);
+      const faces = shape.faces.map(({ triangle }) => {
+        const moved = triangle.clone();
+        for (const point of [moved.a, moved.b, moved.c])
+          point.applyMatrix4(matrix);
+        return {
+          triangle: moved,
+          bounds: new THREE.Box3().setFromPoints([moved.a, moved.b, moved.c]),
+        };
+      });
       this.solids.push({
         object,
         bounds: shape.bounds.clone().applyMatrix4(matrix),
-        faces: shape.faces.map(({ triangle }) => {
-          const moved = triangle.clone();
-          for (const point of [moved.a, moved.b, moved.c])
-            point.applyMatrix4(matrix);
-          return {
-            triangle: moved,
-            bounds: new THREE.Box3().setFromPoints([moved.a, moved.b, moved.c]),
-          };
-        }),
+        faces,
+        tree: buildCollisionTree([...faces]),
+        faceOrder: new Map(faces.map((face, index) => [face, index])),
       });
     }
   }
@@ -215,14 +232,13 @@ export class LandSurfaces {
   /** Signed crossings handle both overlapping stones and hollow wood. A
    * point within the skin tolerance can lie on a shared triangle edge. */
   inside(point: Vec3) {
-    const origin = new THREE.Vector3(point.x, point.y, point.z);
-    const direction = new THREE.Vector3(0.937, 0.213, 0.277).normalize();
-    this.ray.set(origin, direction);
+    const origin = this.origin.set(point.x, point.y, point.z);
+    this.ray.set(origin, this.direction);
     for (const solid of this.solids) {
       if (!solid.bounds.containsPoint(origin)) continue;
-      const hits: { distance: number; side: number }[] = [];
-      for (const { triangle, bounds } of solid.faces) {
-        if (!this.ray.intersectsBox(bounds)) continue;
+      const hits: { distance: number; side: number; order: number }[] = [];
+      visitRayFaces(solid.tree, this.ray, (face) => {
+        const { triangle } = face;
         if (
           this.ray.intersectTriangle(
             triangle.a,
@@ -235,11 +251,13 @@ export class LandSurfaces {
           hits.push({
             distance: this.hit.distanceTo(origin),
             side: Math.sign(
-              triangle.getNormal(new THREE.Vector3()).dot(direction),
+              triangle.getNormal(this.normal).dot(this.direction),
             ),
+            order: solid.faceOrder.get(face)!,
           });
-      }
-      hits.sort((a, b) => a.distance - b.distance);
+      });
+      // Preserve the mesh order at shared edges, where equal hits are deduplicated.
+      hits.sort((a, b) => a.distance - b.distance || a.order - b.order);
       const crossings = hits.filter(
         (hit, i) => i === 0 || hit.distance - hits[i - 1].distance > 1e-6,
       );

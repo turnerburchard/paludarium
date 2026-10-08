@@ -27,7 +27,12 @@ export class HabitatGraph {
         throw new Error("Habitat geometry must be finite.");
       if (Math.hypot(node.normal.x, node.normal.y, node.normal.z) < 0.001)
         throw new Error("A surface needs a normal.");
-      map.set(node.id, structuredClone(node));
+      map.set(node.id, {
+        ...node,
+        position: { ...node.position },
+        normal: { ...node.normal },
+        neighbors: [...node.neighbors],
+      });
     }
     for (const node of map.values())
       for (const id of node.neighbors)

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { assets, isAnimal } from "../assets";
 import type { HabitatObject, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
@@ -41,9 +41,17 @@ export function useEcosystem(
     live.current!.engine.snapshot(),
   );
   const [remains, setRemains] = useState<Remains[]>([]);
+  const habitat = useMemo(() => habitatSupport(world), [world]);
   useEffect(() => {
     const previous = live.current!;
     if (previous.world === world) return;
+    if (
+      previous.world.environment === world.environment &&
+      previous.world.objects === world.objects
+    ) {
+      previous.world = world;
+      return;
+    }
     // Brand new preset/import IDs mean a fresh habitat. Normal edits retain live needs.
     const sharesAnimals = world.objects.some(
       (o) =>
@@ -153,7 +161,7 @@ export function useEcosystem(
     /** A body that has finished fading. */
     forgetRemains: (id: string) =>
       setRemains((r) => r.filter((body) => body.object.id !== id)),
-    habitat: habitatSupport(world),
+    habitat,
   };
 }
 export type EcosystemController = ReturnType<typeof useEcosystem>;

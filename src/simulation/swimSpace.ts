@@ -1,6 +1,10 @@
 import * as THREE from "three";
 import { assets, isAnimal } from "../assets";
 import { collisionShape, type CollisionFace } from "../assets/collisionShape";
+import {
+  buildCollisionTree,
+  type CollisionTree,
+} from "../assets/collisionTree";
 import type { Environment, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
 import { groundHeight, swimmingHeight } from "../model/terrain";
@@ -9,42 +13,16 @@ import type { Fish } from "./fish";
 const CLEARANCE = 0.015;
 export const SWIM_BOB = 0.025;
 
-interface Tree {
-  bounds: THREE.Box3;
-  faces?: CollisionFace[];
-  children?: [Tree, Tree];
-}
 interface Crossing {
   distance: number;
   side: number;
 }
 
-function tree(faces: CollisionFace[]): Tree {
-  const bounds = new THREE.Box3();
-  for (const face of faces) bounds.union(face.bounds);
-  if (faces.length <= 12) return { bounds, faces };
-  const size = bounds.getSize(new THREE.Vector3());
-  const axis =
-    size.x > size.y && size.x > size.z ? "x" : size.y > size.z ? "y" : "z";
-  faces.sort(
-    (a, b) =>
-      a.bounds.min[axis] +
-      a.bounds.max[axis] -
-      b.bounds.min[axis] -
-      b.bounds.max[axis],
-  );
-  const middle = Math.floor(faces.length / 2);
-  return {
-    bounds,
-    children: [tree(faces.slice(0, middle)), tree(faces.slice(middle))],
-  };
-}
-
 /** Fish-sized, oriented clearance against the actual leaves, branches and
  * hardscape. A hierarchy keeps queries local even in a heavily planted tank. */
 export class SwimSpace {
-  private readonly obstacles: Tree;
-  private readonly solids: Tree[] = [];
+  private readonly obstacles: CollisionTree;
+  private readonly solids: CollisionTree[] = [];
   private readonly bodies = new Map<
     string,
     { bounds: THREE.Box3; depth: number }
@@ -108,9 +86,10 @@ export class SwimSpace {
           (face) => face.bounds.min.y < world.environment.water,
         ),
       );
-      if (asset.hardscape) this.solids.push(tree([...transformed]));
+      if (asset.hardscape)
+        this.solids.push(buildCollisionTree([...transformed]));
     }
-    this.obstacles = tree(faces);
+    this.obstacles = buildCollisionTree(faces);
   }
 
   private vertical(
@@ -202,7 +181,7 @@ export class SwimSpace {
     return true;
   }
 
-  private intersects(node: Tree, body: THREE.Box3): boolean {
+  private intersects(node: CollisionTree, body: THREE.Box3): boolean {
     if (!node.bounds.intersectsBox(this.query)) return false;
     if (node.children)
       return node.children.some((child) => this.intersects(child, body));
@@ -215,7 +194,7 @@ export class SwimSpace {
     });
   }
 
-  private crossings(node: Tree, hits: Crossing[]) {
+  private crossings(node: CollisionTree, hits: Crossing[]) {
     if (!this.ray.intersectsBox(node.bounds)) return;
     if (node.children) {
       for (const child of node.children) this.crossings(child, hits);
