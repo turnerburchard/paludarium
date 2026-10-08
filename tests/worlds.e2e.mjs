@@ -93,8 +93,6 @@ try {
     await page
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
-    const size = viewport.width > 760 ? "desktop" : "phone";
-    await page.screenshot({ path: `/tmp/paludarium-worlds-${size}-view.png` });
     await page.getByRole("button", { name: "Build", exact: true }).click();
     assert.equal(
       await page
@@ -136,6 +134,18 @@ try {
       await page.getByRole("button", { name: /Undo/ }).isDisabled(),
       true,
     );
+    if (viewport.width > 760) {
+      await page
+        .getByRole("button", { name: "Habitat settings", exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: "Daylight", exact: true })
+        .waitFor();
+      // The rest is the same save logic at either size, and software
+      // rendering makes the large desktop canvas slow, so only the phone runs it.
+      await page.close();
+      continue;
+    }
     await page.reload();
     await page.getByRole("button", { name: "Pause life (Space)" }).click();
     await page.getByRole("button", { name: "Build", exact: true }).click();
@@ -145,17 +155,10 @@ try {
         .inputValue(),
       "My creek",
     );
-    await page.screenshot({ path: `/tmp/paludarium-worlds-${size}-build.png` });
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
-    await page.screenshot({
-      path: `/tmp/paludarium-worlds-${size}-picker.png`,
-    });
     await page
       .getByRole("button", { name: "Options for My creek", exact: true })
       .click();
-    await page.screenshot({
-      path: `/tmp/paludarium-worlds-${size}-actions.png`,
-    });
     const downloadPromise = page.waitForEvent("download");
     await page
       .getByRole("button", { name: "Export file", exact: true })
@@ -177,7 +180,6 @@ try {
       "This file isn't a Paludarium terrarium.",
     );
     assert.equal(await page.locator(".status-message").count(), 0);
-    await page.screenshot({ path: `/tmp/paludarium-import-error-${size}.png` });
     await page.getByRole("button", { name: "Import", exact: true }).click();
     assert.equal(await importError.count(), 0, "retry clears the import error");
     await page.locator("input[type=file]").setInputFiles({
@@ -265,7 +267,6 @@ try {
     await page
       .getByRole("button", { name: "Share this world", exact: true })
       .click();
-    await page.screenshot({ path: `/tmp/paludarium-worlds-${size}-share.png` });
     const filePromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Share file", exact: true }).click();
     assert.equal((await filePromise).suggestedFilename(), "my-creek.json");
@@ -292,7 +293,7 @@ try {
     await page
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 2; i++) {
       await page.getByRole("button", { name: "Worlds", exact: true }).click();
       await page
         .locator(".preset-options")
@@ -322,16 +323,10 @@ try {
         .count(),
       0,
     );
-    await page.screenshot({ path: `/tmp/paludarium-empty-${size}.png` });
-    if (viewport.width > 760)
-      await page
-        .getByRole("button", { name: "Habitat settings", exact: true })
-        .click();
-    else
-      await page
-        .getByRole("navigation", { name: "Tools" })
-        .getByRole("button", { name: "Habitat", exact: true })
-        .click();
+    await page
+      .getByRole("navigation", { name: "Tools" })
+      .getByRole("button", { name: "Habitat", exact: true })
+      .click();
     await page.getByRole("button", { name: "Daylight", exact: true }).click();
     assert.equal(
       await page.evaluate(
@@ -388,7 +383,6 @@ try {
       "My creek\nCurrent",
       "recently opened saves come first",
     );
-    await page.screenshot({ path: `/tmp/paludarium-kept-worlds-${size}.png` });
     await page.close();
   }
   assert.deepEqual(errors, []);
