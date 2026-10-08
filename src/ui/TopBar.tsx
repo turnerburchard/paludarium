@@ -18,7 +18,7 @@ export function TopBar({
           <Leaf size={23} />
         </span>
         <div>
-          <h1>Paludarium</h1>
+          <h1>paludarium</h1>
         </div>
       </div>
       <div className="world-title">

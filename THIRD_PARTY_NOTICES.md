@@ -44,3 +44,7 @@ The original GLBs are in `docs/inspiration/models/`.
 ## npm dependencies
 
 Dependencies are installed from `package-lock.json` and keep their own copyright notices and licenses, which are included in each package under `node_modules/` after `npm ci`. Runtime dependencies are permissively licensed: React, Three.js, React Three Fiber, drei and Zod under MIT; lucide-react under ISC.
+
+## Fraunces font
+
+[Fraunces](https://github.com/google/fonts/tree/main/ofl/fraunces) is licensed under the SIL Open Font License 1.1. The bundled Latin font and its copyright notice and license are in `public/fonts/`.
