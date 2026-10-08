@@ -51,6 +51,7 @@ const bones = JOINTS.map(([name, parent]) => ({
 }));
 const index = (name) => JOINTS.findIndex(([n]) => n === name);
 const SHELL = new Set(["612719", "895019", "baac6c"]);
+const EYES = "303030";
 /** The share of vertices to remove from each color; eyes and claws stay. */
 const REDUCTION = { 507927: 0.55, 612719: 0.45, baac6c: 0.4 };
 
@@ -96,6 +97,9 @@ gltf.scene.traverse((object) => {
     const middle = corners
       .reduce((sum, p) => sum.add(p), new Vector3())
       .divideScalar(3);
+    // The source's left eye is inside out, so it rendered as an empty socket.
+    if (color === EYES && facesInward(corners, eyeCenter(position, middle.x)))
+      corners.reverse();
     const owner = bone(middle, color);
     for (const p of corners) {
       part.positions.push(...round(habitat(p.x, p.y, p.z).toArray(), 5));
@@ -111,6 +115,23 @@ writeFileSync(
 console.log(
   `Prepared ${[...parts.values()].reduce((n, p) => n + p.positions.length / 9, 0)} triangles in ${parts.size} colors, ${bones.length} bones.`,
 );
+
+/** The middle of the eye on the same side of the head as `x`. */
+function eyeCenter(position, x) {
+  const center = new Vector3();
+  let count = 0;
+  for (let i = 0; i < position.count; i++) {
+    if (Math.sign(position.getX(i)) !== Math.sign(x)) continue;
+    center.add(new Vector3().fromBufferAttribute(position, i));
+    count++;
+  }
+  return center.divideScalar(count);
+}
+
+function facesInward([a, b, c], center) {
+  const normal = new Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a));
+  return normal.dot(a.clone().sub(center)) < 0;
+}
 
 function round(values, digits) {
   return values.map((v) => Number(v.toFixed(digits)));
