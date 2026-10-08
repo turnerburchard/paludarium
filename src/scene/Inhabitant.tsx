@@ -1,5 +1,5 @@
 import type { EcosystemController } from "../simulation/useEcosystem";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import {
@@ -25,6 +25,7 @@ import { SwimRig } from "./swimRig";
 import { barbSwim } from "../assets/animals/barb";
 import { SWIM_BOB } from "../simulation/swimSpace";
 import { juvenileScale } from "../simulation/lifeCycle";
+import { FoliageMotion, type FoliageVisitor } from "./foliageMotion";
 
 interface Props {
   object: HabitatObject;
@@ -34,6 +35,8 @@ interface Props {
   ghost?: boolean;
   invalid?: boolean;
   ecosystem?: EcosystemController;
+  foliageVisitors?: RefObject<FoliageVisitor[]>;
+  foliagePlants?: RefObject<Map<string, THREE.Group>>;
   onSelect?: (event: ThreeEvent<MouseEvent>) => void;
 }
 export function Inhabitant({
@@ -45,8 +48,11 @@ export function Inhabitant({
   invalid = false,
   onSelect,
   ecosystem,
+  foliageVisitors,
+  foliagePlants,
 }: Props) {
   const root = useRef<THREE.Group>(null),
+    foliage = useRef<THREE.Group>(null),
     clock = useRef(0);
   const model = useMemo(
     () => buildAsset(object.kind, object.seed, object.moss),
@@ -56,6 +62,24 @@ export function Inhabitant({
     () => createRig(object.kind, model),
     [object.kind, model],
   );
+  const plant = categoryOf(assets[object.kind]) === "Plants";
+  const foliageMotion = useMemo(
+    () => (plant ? new FoliageMotion(object.seed, object.id) : undefined),
+    [
+      plant,
+      object.id,
+      object.seed,
+      object.x,
+      object.z,
+      object.scale,
+      environment,
+      model,
+    ],
+  );
+  const plantHeight = useMemo(
+    () => (plant ? new THREE.Box3().setFromObject(model).max.y : 0),
+    [plant, model],
+  );
   const swimming = useMemo(
     () =>
       object.kind === "tiger-barb"
@@ -64,6 +88,15 @@ export function Inhabitant({
     [object.kind, model],
   );
   useEffect(() => () => disposeAsset(model), [model]);
+  useEffect(() => {
+    const group = foliage.current;
+    if (!plant || ghost || !group || !foliagePlants) return;
+    const plants = foliagePlants.current;
+    plants.set(object.id, group);
+    return () => {
+      plants.delete(object.id);
+    };
+  }, [plant, ghost, object.id, foliagePlants]);
   useEffect(() => {
     clock.current = 0;
   }, [object.x, object.z, environment]);
@@ -98,6 +131,7 @@ export function Inhabitant({
   const baseY = swims
     ? swimmingHeight(object.x, object.z, environment, swims.depth, -0.01)
     : ground;
+  const framePriority = plant ? -0.5 : 0;
   useFrame((_, frameDelta) => {
     const group = root.current;
     if (!group) return;
@@ -108,6 +142,25 @@ export function Inhabitant({
     const rigDelta = paused ? 0 : dt;
     group.position.set(object.x, baseY, object.z);
     group.rotation.set(0, object.rotation, 0);
+    if (foliageMotion && foliage.current && !ghost) {
+      const stopped = paused || selected || document.hidden;
+      const tilt = foliageMotion.update(
+        stopped ? 0 : dt,
+        group.position,
+        assetRadius(object.kind) * object.scale,
+        plantHeight * object.scale,
+        foliageVisitors?.current ?? [],
+      );
+      const cos = Math.cos(object.rotation),
+        sin = Math.sin(object.rotation);
+      // Convert the world-space push into the plant's rotated local axes.
+      foliage.current.rotation.set(
+        sin * tilt.x + cos * tilt.z,
+        0,
+        -(cos * tilt.x - sin * tilt.z),
+      );
+      return;
+    }
     if (rig && !ghost && ecosystem) {
       const state = ecosystem.live.current!.engine.observeRenderedAnimal(
         object.id,
@@ -150,6 +203,20 @@ export function Inhabitant({
           state.direction.y,
           state.direction.z,
         );
+        if (!state.grounded && !state.motion.hop) {
+          const plantId = live.engine.graph.node(state.nodeId).plantId;
+          const support = plantId && foliagePlants?.current.get(plantId);
+          const anchor = support && support.parent;
+          if (support && anchor) {
+            // Apply only the visual lean, retaining the navigation's fixed pose.
+            support.updateWorldMatrix(true, false);
+            pose.matrix.copy(anchor.matrixWorld).invert();
+            pose.matrix.premultiply(support.matrixWorld);
+            group.position.applyMatrix4(pose.matrix);
+            pose.normal.transformDirection(pose.matrix);
+            pose.forward.transformDirection(pose.matrix);
+          }
+        }
         pose.forward.addScaledVector(
           pose.normal,
           -pose.forward.dot(pose.normal),
@@ -196,10 +263,8 @@ export function Inhabitant({
       const tail = model.getObjectByName("tail");
       if (tail) tail.rotation.y = Math.sin(t * swims.speed * 40) * 0.35;
       swimming?.update(undefined, paused ? 0 : dt);
-    } else if (categoryOf(assets[object.kind]) === "Plants") {
-      group.rotation.z = Math.sin(t * 0.7 + object.seed) * 0.012;
     }
-  });
+  }, framePriority);
   return (
     <group
       ref={root}
@@ -212,7 +277,9 @@ export function Inhabitant({
       scale={object.scale * juvenileScale(object)}
       onClick={onSelect}
     >
-      <primitive object={model} />
+      <group ref={foliage}>
+        <primitive object={model} />
+      </group>
       {isAnimal(object.kind) && !ghost && (
         <mesh position={[0, 0.15, 0]}>
           <sphereGeometry args={[0.29, 10, 8]} />
