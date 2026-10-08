@@ -89,6 +89,10 @@ try {
   }, world);
   await page.goto(url);
   await page
+    .getByRole("dialog", { name: "How to build" })
+    .getByRole("button", { name: "Close dialog" })
+    .click();
+  await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .tap();
   await page.getByRole("button", { name: "Build", exact: true }).tap();

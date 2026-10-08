@@ -118,6 +118,10 @@ try {
     });
   });
   await page.goto(url);
+  await page
+    .getByRole("dialog", { name: "How to build" })
+    .getByRole("button", { name: "Close dialog" })
+    .click();
   await page.waitForFunction(() => document.querySelector("canvas"));
   assert.equal(
     await page.getByRole("heading").count(),
@@ -626,6 +630,10 @@ try {
   await receiver
     .getByRole("button", { name: "About Paludarium", exact: true })
     .waitFor();
+  await receiver
+    .getByRole("dialog", { name: "How to build" })
+    .getByRole("button", { name: "Close dialog" })
+    .click();
   await receiver.getByRole("button", { name: "Build", exact: true }).click();
   assert.equal(
     await receiver
@@ -707,6 +715,10 @@ try {
     sharedWorld,
   );
   await newcomer.reload();
+  await newcomer
+    .getByRole("dialog", { name: "How to build" })
+    .getByRole("button", { name: "Close dialog" })
+    .click();
   await newcomer.getByRole("button", { name: "Build", exact: true }).click();
   assert.equal(
     await newcomer.getByRole("textbox", { name: "World name" }).inputValue(),

@@ -7,11 +7,13 @@ import { Modal } from "./Modal";
 
 export function AboutDialog({
   onClose,
+  onHelp,
   world,
   ecosystem,
   onWatch,
 }: {
   onClose: () => void;
+  onHelp: () => void;
   world: World;
   ecosystem: EcosystemController;
   onWatch: (id: string) => void;
@@ -33,6 +35,9 @@ export function AboutDialog({
         <dt>Build</dt>
         <dd>Switch to Build to add objects or edit the terrain.</dd>
       </dl>
+      <button className="intro-build-button" onClick={onHelp}>
+        Controls and help
+      </button>
       {ecosystem.snapshot.animals.length > 0 && (
         <details className="more-options creature-options">
           <summary>Follow a creature</summary>

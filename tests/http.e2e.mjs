@@ -78,6 +78,10 @@ try {
     empty,
   );
   await page.goto(origin);
+  await page
+    .getByRole("dialog", { name: "How to build" })
+    .getByRole("button", { name: "Close dialog" })
+    .click();
   assert.deepEqual(
     await page.evaluate(() => ({
       secure: isSecureContext,

@@ -8,6 +8,7 @@ import { WorldScene } from "./scene/WorldScene";
 import { useEcosystem } from "./simulation/useEcosystem";
 import { BottomHud } from "./ui/BottomHud";
 import { HelpDialog } from "./ui/HelpDialog";
+import { hasDismissedHelp, rememberHelpDismissal } from "./ui/helpPreference";
 import { Inspector } from "./ui/Inspector";
 import { MobileDock } from "./ui/MobileDock";
 import { ShareDialog } from "./ui/ShareDialog";
@@ -44,7 +45,13 @@ export default function App({
   const [resetCamera, setResetCamera] = useState(0);
   const [dialog, setDialog] = useState<
     "share" | "worlds" | "help" | "about" | "shared-copy" | "share-error" | null
-  >(shareError ? "share-error" : null);
+  >(() =>
+    shareError
+      ? "share-error"
+      : !sharedWorld && !hasDismissedHelp()
+        ? "help"
+        : null,
+  );
   const [watchRequest, setWatchRequest] = useState<string | null>(null);
   // Deselecting (Escape, clicking away) also stops watching.
   const watchingId =
@@ -60,6 +67,11 @@ export default function App({
   useEffect(() => {
     if (tool.type !== "select") setSheetOpen(false);
   }, [tool.type]);
+
+  function closeHelp() {
+    rememberHelpDismissal();
+    setDialog(null);
+  }
 
   function watch(id: string) {
     if (!view) setMode(true);
@@ -259,9 +271,10 @@ export default function App({
           }}
         />
       )}
-      {dialog === "help" && <HelpDialog onClose={() => setDialog(null)} />}
+      {dialog === "help" && <HelpDialog onClose={closeHelp} />}
       {dialog === "about" && (
         <AboutDialog
+          onHelp={() => setDialog("help")}
           world={world}
           ecosystem={ecosystem}
           onWatch={(id) => {

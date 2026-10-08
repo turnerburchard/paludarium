@@ -384,22 +384,6 @@ button:hover:not(:disabled) {
   gap: 10px;
   padding: 0 200px 0 25px;
 }
-.navigation-hint {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: var(--text-small);
-  color: #bfceba;
-  white-space: nowrap;
-  /* Stays legible over leaves and sand. */
-  text-shadow: 0 1px 4px #000c;
-}
-.navigation-hint i {
-  height: 3px;
-  width: 3px;
-  border-radius: 50%;
-  background: #7c947c;
-}
 .placement-bar {
   pointer-events: auto;
   display: flex;
@@ -763,9 +747,6 @@ button:hover:not(:disabled) {
     padding-right: 25px;
     bottom: 90px;
   }
-  .navigation-hint {
-    gap: 7px;
-  }
   .inspector {
     width: 245px;
     right: 15px;
@@ -954,9 +935,6 @@ button:hover:not(:disabled) {
   }
   .bottom-hud.placing {
     bottom: max(12px, env(safe-area-inset-bottom));
-  }
-  .navigation-hint {
-    display: none;
   }
   .placement-bar {
     padding: 8px;
