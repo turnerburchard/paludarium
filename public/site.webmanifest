@@ -1,0 +1,21 @@
+{
+  "name": "Paludarium",
+  "short_name": "Paludarium",
+  "description": "Build a planted habitat and watch its animals live.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0c1512",
+  "theme_color": "#172721",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
