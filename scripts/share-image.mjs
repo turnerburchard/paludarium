@@ -42,7 +42,7 @@ try {
   });
   await page.goto(url);
   await page
-    .getByRole("dialog", { name: "New world" })
+    .getByRole("dialog", { name: "Worlds" })
     .getByRole("button", { name: "Close dialog" })
     .click();
   await page
@@ -62,8 +62,7 @@ try {
   await page.evaluate(() => {
     const caption = document.createElement("div");
     caption.className = "preview-caption";
-    caption.innerHTML =
-      "<h1>Paludarium</h1>A tiny living world. Yours to shape.";
+    caption.innerHTML = "<h1>Paludarium</h1>";
     document.body.append(caption);
     const url = document.createElement("div");
     url.className = "preview-url";

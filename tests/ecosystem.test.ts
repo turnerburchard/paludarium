@@ -3,6 +3,7 @@ import { Ecosystem } from "../src/simulation/engine";
 import { HabitatGraph } from "../src/simulation/navigation";
 import {
   buildHabitat,
+  createFishSchool,
   createWorldEcosystem,
   insectColonies,
 } from "../src/simulation/worldHabitat";
@@ -377,11 +378,12 @@ describe("live ecosystem behavior", () => {
     }
   });
   it.each(["tropical", "mountain", "grotto", "desert"] as const)(
-    "lets every animal in the %s preset reach an insect colony",
+    "lets every hunter in the %s preset reach an insect colony",
     (preset) => {
       const engine = createWorldEcosystem(makePreset(preset));
       const colonies = new Set(engine.snapshot().food.map((p) => p.nodeId));
       for (const animal of engine.snapshot().animals) {
+        if (assets[animal.speciesId as AssetKind].behavior?.grazes) continue;
         const paths = engine.graph.paths(
           animal.nodeId,
           frogProfile(animal.speciesId as AssetKind),
@@ -837,5 +839,66 @@ describe("field notebook", () => {
     expect(
       createWorldEcosystem(removed, { world, engine }).snapshot().discoveries,
     ).toEqual([]);
+  });
+});
+
+describe("animals and water", () => {
+  const placed = (kind: AssetKind, x: number) => ({
+    id: kind,
+    kind,
+    x,
+    z: 0,
+    rotation: 0,
+    scale: 1,
+    seed: 3,
+  });
+  it("sends a thirsty vampire crab to soak underwater, not on the shore", () => {
+    const world = emptyWorld();
+    const graph = buildHabitat(world);
+    const crab = frogProfile("vampire-crab");
+    const start = graph.nearest(
+      { x: -2.5, y: groundHeight(-2.5, 0, world.environment), z: 0 },
+      crab,
+    )!;
+    const engine = new Ecosystem(graph, [
+      {
+        id: "crab",
+        species: crab,
+        nodeId: start.id,
+        needs: { hunger: 0, hydration: 0.1, energy: 1 },
+      },
+    ]);
+    let soaked = false;
+    for (let i = 0; i < 600 && !soaked; i++) {
+      engine.advance(1);
+      const state = engine.observeAnimal("crab")!;
+      soaked =
+        state.activity === "bathing" && !!graph.node(state.nodeId).submerged;
+    }
+    expect(soaked).toBe(true);
+  });
+  it("leaves out land animals in a flooded tank and fish in a drained one", () => {
+    const world = emptyWorld();
+    world.objects = [
+      placed("tree-frog", -2.5),
+      placed("vampire-crab", -2),
+      placed("cardinal-tetra", 2),
+    ];
+    const living = (water: number) => {
+      const tank = { ...world, environment: { ...world.environment, water } };
+      const engine = createWorldEcosystem(tank);
+      const fish = createFishSchool(tank);
+      return world.objects
+        .filter((o) => engine.observeAnimal(o.id) || fish.get(o.id))
+        .map((o) => o.kind);
+    };
+    expect(living(world.environment.water)).toEqual([
+      "tree-frog",
+      "vampire-crab",
+      "cardinal-tetra",
+    ]);
+    // The crab can walk the bottom of a flooded tank but has no land.
+    expect(living(1.4)).toEqual(["cardinal-tetra"]);
+    expect(living(0)).toEqual(["tree-frog", "vampire-crab"]);
   });
 });

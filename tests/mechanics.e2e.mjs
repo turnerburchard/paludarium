@@ -156,7 +156,11 @@ try {
   await page.waitForTimeout(400);
   assert.deepEqual(
     await page.evaluate(() =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")),
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ),
     ),
     world,
     "View shortcuts cannot mutate the world",
@@ -273,16 +277,22 @@ try {
   await page.keyboard.press("Tab");
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")).environment
-        .brightness === 1.05,
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).environment.brightness === 1.05,
   );
   await page
     .getByRole("button", { name: "Undo (⌘/Ctrl Z)", exact: true })
     .click();
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")).environment
-        .brightness === 1,
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).environment.brightness === 1,
   );
   assert.equal(
     await page
@@ -344,15 +354,20 @@ try {
     .getByRole("complementary", { name: "Selected object" })
     .getByRole("heading", { name: "River stone", exact: true })
     .waitFor();
-  await page.getByRole("button", { name: "New world", exact: true }).click();
-  await page.getByRole("dialog", { name: "New world" }).waitFor();
+  await page.getByRole("button", { name: "Worlds", exact: true }).click();
+  await page.getByRole("dialog", { name: "Worlds" }).waitFor();
   await page.keyboard.press("Backspace");
   await page.keyboard.press("r");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
   assert.deepEqual(
     await page.evaluate(
-      () => JSON.parse(localStorage.getItem("little-worlds:v1")).objects,
+      () =>
+        JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+          key === "" && value.worlds
+            ? value.worlds.find((entry) => entry.id === value.activeId).world
+            : value,
+        ).objects,
     ),
     world.objects,
     "shortcuts don't edit the world behind an open dialog",
@@ -381,9 +396,11 @@ try {
   assert.equal(
     await page.evaluate(
       () =>
-        JSON.parse(localStorage.getItem("little-worlds:v1")).objects.find(
-          (o) => o.id === "rock",
-        ).scale,
+        JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+          key === "" && value.worlds
+            ? value.worlds.find((entry) => entry.id === value.activeId).world
+            : value,
+        ).objects.find((o) => o.id === "rock").scale,
     ),
     1,
     "drag is only a preview before release",
@@ -392,18 +409,22 @@ try {
   await page.mouse.up();
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")).objects.find(
-        (o) => o.id === "rock",
-      ).scale > 1.5,
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.find((o) => o.id === "rock").scale > 1.5,
   );
   await page
     .getByRole("button", { name: "Undo (⌘/Ctrl Z)", exact: true })
     .click();
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")).objects.find(
-        (o) => o.id === "rock",
-      ).scale === 1,
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.find((o) => o.id === "rock").scale === 1,
   );
   assert.equal(
     await page
@@ -760,8 +781,11 @@ try {
   await fishPage.getByRole("button", { name: "Golden", exact: true }).click();
   await fishPage.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")).environment.light ===
-      "golden",
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).environment.light === "golden",
   );
   await fishPage.evaluate(
     () =>

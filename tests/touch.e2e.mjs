@@ -102,7 +102,11 @@ try {
 
   async function saved() {
     return page.evaluate(() =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")),
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ),
     );
   }
   async function cameraState() {
@@ -130,6 +134,10 @@ try {
         const { camera } = _roots.get(canvas).store.getState();
         const env = JSON.parse(
           localStorage.getItem("little-worlds:v1"),
+          (key, value) =>
+            key === "" && value.worlds
+              ? value.worlds.find((entry) => entry.id === value.activeId).world
+              : value,
         ).environment;
         const point = camera.position
           .clone()
@@ -254,7 +262,11 @@ try {
     );
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")).objects.length === 3,
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.length === 3,
   );
   await page.waitForTimeout(200);
   assert.equal(
@@ -272,7 +284,11 @@ try {
   await pointer("pointerup", point, 1, true);
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")).objects.length === 4,
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.length === 4,
   );
   const placed = (await saved()).objects.at(-1);
   assert.ok(
@@ -450,7 +466,11 @@ try {
   await page.touchscreen.tap(point.x, point.y);
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")).objects.length === 5,
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.length === 5,
   );
   assert.equal(
     (await saved()).objects.length,
@@ -477,13 +497,14 @@ try {
   );
   stage = "frog placement after an interrupted zoom gesture";
   await page.getByRole("button", { name: "Build", exact: true }).tap();
-  await page.getByRole("button", { name: "New world", exact: true }).tap();
+  await page.getByRole("button", { name: "Worlds", exact: true }).tap();
   await page.getByRole("button", { name: "Empty tank", exact: true }).tap();
   await page.getByRole("button", { name: "Build", exact: true }).tap();
   await page
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Add", exact: true })
     .tap();
+  await page.getByRole("button", { name: "Animals", exact: true }).tap();
   await page
     .getByRole("button", { name: "Red-eyed tree frog", exact: true })
     .tap();
@@ -502,7 +523,11 @@ try {
   await page.touchscreen.tap(point.x, point.y);
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")).objects.length === 1,
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.length === 1,
   );
   // iOS may end a browser gesture without delivering its final pointerup.
   await pointer("pointerdown", point, 81);

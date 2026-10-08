@@ -2,14 +2,23 @@ import type { EcosystemController } from "../simulation/useEcosystem";
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
-import { assets, buildAsset, disposeAsset, isLandAnimal } from "../assets";
+import {
+  assets,
+  buildAsset,
+  categoryOf,
+  disposeAsset,
+  isAnimal,
+  isLandAnimal,
+} from "../assets";
 import type { AssetKind, Environment, HabitatObject } from "../model/schema";
-import { groundHeight, swimmingHeight } from "../model/terrain";
+import { groundHeight, groundNormal, swimmingHeight } from "../model/terrain";
 import { objectBase } from "../model/stacking";
 import { FrogRig } from "./frogRig";
 import { GeckoRig } from "./geckoRig";
 import { lizardKinds } from "../assets/animals/lizards";
 import { SnailRig } from "./snailRig";
+import { ArthropodRig } from "./arthropodRig";
+import { arthropodRigs } from "../assets/animals/arthropods";
 import { TurtleRig } from "./turtleRig";
 import { SwimRig } from "./swimRig";
 import { barbSwim } from "../assets/animals/barb";
@@ -62,8 +71,10 @@ export function Inhabitant({
       if (o instanceof THREE.Mesh) {
         const mats = Array.isArray(o.material) ? o.material : [o.material];
         mats.forEach((m) => {
-          m.transparent = ghost;
-          m.opacity = ghost ? 0.55 : 1;
+          // Some animals, such as micro crabs, are see-through already.
+          m.userData.opacity ??= m.opacity;
+          m.transparent = ghost || m.userData.opacity < 1;
+          m.opacity = m.userData.opacity * (ghost ? 0.55 : 1);
         });
       }
     });
@@ -107,7 +118,18 @@ export function Inhabitant({
           state.position.z,
         );
         const live = ecosystem.live.current!;
-        if (environment !== live.world.environment) {
+        // On the ground, follow the terrain under the animal rather than the
+        // straight line between nodes, and lean with its slope.
+        const slope = state.grounded
+          ? groundNormal(state.position.x, state.position.z, environment)
+          : undefined;
+        if (slope)
+          group.position.y = groundHeight(
+            state.position.x,
+            state.position.z,
+            environment,
+          );
+        else if (environment !== live.world.environment) {
           const node = live.engine.graph.node(state.nodeId);
           const supportId = node.plantId ?? node.supportId;
           const plant = supportId
@@ -120,9 +142,8 @@ export function Inhabitant({
             groundHeight(anchor.x, anchor.z, environment) -
             groundHeight(anchor.x, anchor.z, live.world.environment);
         }
-        pose.normal
-          .set(state.normal.x, state.normal.y, state.normal.z)
-          .normalize();
+        const normal = slope ?? state.normal;
+        pose.normal.set(normal.x, normal.y, normal.z).normalize();
         pose.forward.set(
           state.direction.x,
           state.direction.y,
@@ -174,7 +195,7 @@ export function Inhabitant({
       const tail = model.getObjectByName("tail");
       if (tail) tail.rotation.y = Math.sin(t * swims.speed * 40) * 0.35;
       swimming?.update(undefined, paused ? 0 : dt);
-    } else if (assets[object.kind].category === "Plants") {
+    } else if (categoryOf(assets[object.kind]) === "Plants") {
       group.rotation.z = Math.sin(t * 0.7 + object.seed) * 0.012;
     }
   });
@@ -182,7 +203,7 @@ export function Inhabitant({
     <group
       ref={root}
       userData={{
-        plant: assets[object.kind].category === "Plants",
+        plant: categoryOf(assets[object.kind]) === "Plants",
         objectId: object.id,
       }}
       position={[object.x, baseY, object.z]}
@@ -191,7 +212,7 @@ export function Inhabitant({
       onClick={onSelect}
     >
       <primitive object={model} />
-      {assets[object.kind].category === "Animals" && !ghost && (
+      {isAnimal(object.kind) && !ghost && (
         <mesh position={[0, 0.15, 0]}>
           <sphereGeometry args={[0.29, 10, 8]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
@@ -225,6 +246,8 @@ export function Inhabitant({
 function createRig(kind: AssetKind, model: THREE.Group) {
   if (lizardKinds.has(kind)) return new GeckoRig(model);
   if (kind === "snail") return new SnailRig(model);
+  const arthropod = arthropodRigs.get(kind);
+  if (arthropod) return new ArthropodRig(model, arthropod);
   if (kind === "turtle" || kind === "desert-tortoise")
     return new TurtleRig(model);
   if (isLandAnimal(kind)) return new FrogRig(model);

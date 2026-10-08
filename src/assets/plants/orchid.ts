@@ -6,7 +6,8 @@ export const orchid: AssetDefinition = {
   kind: "orchid",
   name: "Reed-stem orchid",
   scientificName: "Epidendrum ibaguense",
-  category: "Plants",
+  group: "Leafy plants",
+  biomes: ["Tropical"],
   description:
     "A tall, leafy cane topped with clusters of starry magenta flowers, common on cloud forest banks.",
   radius: 0.22,

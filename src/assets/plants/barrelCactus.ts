@@ -7,7 +7,8 @@ export const barrelCactus: AssetDefinition = {
   kind: "barrel-cactus",
   name: "Barrel cactus",
   scientificName: "Ferocactus cylindraceus",
-  category: "Plants",
+  group: "Cacti & succulents",
+  biomes: ["Desert"],
   description:
     "A stout, ribbed barrel armored in red-gold spines, crowned with yellow flowers in spring.",
   radius: 0.2,

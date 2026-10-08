@@ -18,6 +18,7 @@ export function WatchCard({
 }) {
   const asset = assets[object.kind];
   const animal = ecosystem.snapshot.animals.find((a) => a.id === object.id);
+  const aquatic = asset.swims || asset.behavior?.water === "lives";
   const life = animalLife(object);
   let lifeStage = "Adult";
   if (life.age < MATURITY_AGE) lifeStage = "Juvenile · Growing";
@@ -46,18 +47,24 @@ export function WatchCard({
           value={life.condition}
         />
       </label>
-      {life.condition < 0.7 && (
+      {!ecosystem.canLive(object.id) ? (
         <p>
-          Condition is low. More planting or fewer animals gives the habitat
-          time to recover.
+          {aquatic
+            ? "Stranded: it needs deeper water to live."
+            : "Drowning: it needs dry land to live."}
         </p>
+      ) : (
+        life.condition < 0.7 && (
+          <p>
+            Condition is low. More planting or fewer animals gives the habitat
+            time to recover.
+          </p>
+        )
       )}
       {animal ? (
         <AnimalStatus animal={animal} compact />
-      ) : asset.swims ? (
-        <p>{asset.description}</p>
       ) : (
-        <p>This creature can’t reach any ground right now.</p>
+        asset.swims && <p>{asset.description}</p>
       )}
     </aside>
   );

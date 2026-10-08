@@ -3,7 +3,6 @@ import * as THREE from "three";
 import { batchStaticAsset } from "../src/assets/batch";
 import { buildAsset, disposeAsset, assets } from "../src/assets";
 import { randomFromSeed } from "../src/model/random";
-import { mossCarpet, mossCushions } from "../src/assets/landscape/mossCover";
 
 function stats(root: THREE.Group) {
   let meshes = 0,
@@ -69,21 +68,4 @@ describe("moss cover", () => {
       [bare, mossy, again].forEach(disposeAsset);
     },
   );
-  it("keeps dry carpet cushions unchanged when water covers others", () => {
-    const points = [0, 0.2, 0.4].map((y) => new THREE.Vector3(y * 4, y, 0));
-    const cushions = mossCushions(points, randomFromSeed(31));
-    const full = mossCarpet(cushions)!;
-    const dry = mossCarpet(cushions.filter((c) => c.point.y > 0.1))!;
-    const lowest = mossCarpet(cushions.slice(0, 1))!;
-    const position = (g: THREE.BufferGeometry) => g.getAttribute("position");
-    expect(position(dry).count).toBe(
-      position(full).count - position(lowest).count,
-    );
-    // The dry cushions are the tail of the full carpet, vertex for vertex.
-    const offset = position(lowest).count * 3;
-    expect(Array.from(position(dry).array)).toEqual(
-      Array.from(position(full).array).slice(offset),
-    );
-    expect(mossCarpet([])).toBeUndefined();
-  });
 });

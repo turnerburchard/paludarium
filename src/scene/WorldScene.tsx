@@ -9,7 +9,7 @@ import {
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import type { Editor } from "../editor/useEditor";
-import { assets } from "../assets";
+import { assets, isAnimal } from "../assets";
 import { useWatchVisibility } from "./useWatchVisibility";
 import {
   boundedPosition,
@@ -21,6 +21,7 @@ import { useCameraNavigation } from "./useCameraNavigation";
 import { useFollowCamera } from "./useFollowCamera";
 import { useCameraLayout } from "./useCameraLayout";
 import { Inhabitant } from "./Inhabitant";
+import { Remains } from "./Remains";
 import { Tank, Terrain, Water } from "./Terrain";
 import { TerrainBrushCursor } from "./TerrainBrushCursor";
 import { useSceneTouch } from "./useSceneTouch";
@@ -64,7 +65,7 @@ function Scene({
   );
   const controls = useRef<OrbitControlsImpl>(null);
   const { raycaster, camera, gl } = useThree();
-  const terrain = useRef<THREE.Group>(null);
+  const terrain = useRef<THREE.Mesh>(null);
   const inhabitants = useRef<THREE.Group>(null);
   useWatchVisibility(inhabitants, ecosystem, watchingId);
   const followCamera = useFollowCamera(
@@ -84,7 +85,7 @@ function Scene({
       ? world.objects.find((o) => o.id === tool.id)
       : null;
   const kind = tool.type === "place" ? tool.kind : moving?.kind;
-  useCameraLayout(controls, resetCamera, view);
+  useCameraLayout(controls, resetCamera, view, env.height);
   useEffect(() => setCursor(null), [tool]);
   useSceneTouch(controls, !!kind, (event) => {
     if (!inhabitants.current) return;
@@ -129,7 +130,7 @@ function Scene({
     point: THREE.Vector3;
     intersections: THREE.Intersection[];
   }) {
-    if (!kind || assets[kind].category === "Animals") return { point: e.point };
+    if (!kind || isAnimal(kind)) return { point: e.point };
     for (const hit of e.intersections) {
       const object = world.objects.find((o) => o.id === objectIdOf(hit.object));
       if (!object) return { point: hit.point };
@@ -237,9 +238,7 @@ function Scene({
         onPointerCancel={editor.cancelTerrainStroke}
         onLostPointerCapture={editor.cancelTerrainStroke}
       >
-        <group ref={terrain}>
-          <Terrain environment={env} />
-        </group>
+        <Terrain environment={env} groundRef={terrain} />
         <mesh
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, 0.001, 0]}
@@ -265,6 +264,14 @@ function Scene({
               }}
             />
           ))}
+        {ecosystem.remains.map((body) => (
+          <Remains
+            key={body.object.id}
+            body={body}
+            paused={editor.paused}
+            onGone={ecosystem.forgetRemains}
+          />
+        ))}
       </group>
       <EcosystemLife
         ecosystem={ecosystem}

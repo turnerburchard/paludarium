@@ -3,6 +3,7 @@ import {
   TERRAIN_COLUMNS,
   TERRAIN_ROWS,
   TERRAIN_POINTS,
+  groundCeiling,
   terrainPoint,
   type GroundMaterial,
 } from "./terrainData";
@@ -25,6 +26,7 @@ export function applyTerrainBrush(
   x: number,
   z: number,
   brush: TerrainBrush,
+  heightStep = 0.07,
 ): Environment {
   const terrain = env.terrain ?? {
     heights: Array<number>(TERRAIN_POINTS).fill(0),
@@ -46,7 +48,7 @@ export function applyTerrainBrush(
       height = groundHeight(point.x, point.z, env);
     let delta = terrain.heights[index];
     if (brush.mode === "raise" || brush.mode === "lower")
-      delta += (brush.mode === "raise" ? 0.07 : -0.07) * weight;
+      delta += (brush.mode === "raise" ? heightStep : -heightStep) * weight;
     else if (brush.mode === "pool" || brush.mode === "stream")
       delta += Math.min(0, water - 0.2 - height) * weight;
     else if (brush.mode === "smooth") {
@@ -66,9 +68,18 @@ export function applyTerrainBrush(
         }, 0) / neighbors.length;
       delta += (average - height) * weight * 0.65;
     } else if (weight > 0.15) paint[index] = brush.mode;
+    if (
+      brush.mode === "soil" ||
+      brush.mode === "sand" ||
+      brush.mode === "stone" ||
+      brush.mode === "moss"
+    ) {
+      changed ||= paint[index] !== terrain.paint[index];
+      continue;
+    }
     heights[index] =
       Math.round(
-        clamp(delta, Math.max(-0.9, 0.08 - base), Math.min(0.9, 1.25 - base)) *
+        clamp(delta, Math.max(-0.9, 0.08 - base), groundCeiling(env) - base) *
           10000,
       ) / 10000;
     changed ||=

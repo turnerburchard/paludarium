@@ -43,6 +43,7 @@ export class TerrainStroke {
       x,
       z,
       this.brush,
+      0.025,
     );
     if (environment !== this.current.environment)
       this.current = {

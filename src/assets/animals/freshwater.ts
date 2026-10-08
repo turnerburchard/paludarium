@@ -7,17 +7,18 @@ export const angelfish: AssetDefinition = {
   kind: "angelfish",
   name: "Freshwater angelfish",
   scientificName: "Pterophyllum scalare",
-  category: "Animals",
+  group: "Fish",
+  biomes: ["Tropical"],
   description:
     "A tall, silver disc of a fish with black bars and long trailing fins. It glides slowly through the middle of the water.",
-  radius: 0.2,
+  radius: 0.26,
   habitat: "water",
   swims: { speed: 0.14, depth: 0.25 },
   build: () =>
     fish({
-      length: 0.2,
-      depth: 0.085,
-      width: 0.02,
+      length: 0.26,
+      depth: 0.111,
+      width: 0.026,
       sections: [
         [-1, 0.3, 0.45],
         [-0.8, 0.65, 0.7],
@@ -61,17 +62,18 @@ export const pearlGourami: AssetDefinition = {
   kind: "pearl-gourami",
   name: "Pearl gourami",
   scientificName: "Trichopodus leerii",
-  category: "Animals",
+  group: "Fish",
+  biomes: ["Tropical"],
   description:
     "A peaceful, oval fish dusted with pearly spots, feeling its way with long threadlike fins.",
-  radius: 0.2,
+  radius: 0.22,
   habitat: "water",
   swims: { speed: 0.16, depth: 0.12 },
   build: () =>
     fish({
-      length: 0.25,
-      depth: 0.055,
-      width: 0.026,
+      length: 0.275,
+      depth: 0.061,
+      width: 0.029,
       sections: [
         [-1, 0.35, 0.45],
         [-0.65, 0.8, 0.85],
@@ -118,18 +120,19 @@ export const rainbowShark: AssetDefinition = {
   kind: "rainbow-shark",
   name: "Rainbow shark",
   scientificName: "Epalzeorhynchos frenatum",
-  category: "Animals",
+  group: "Fish",
+  biomes: ["Tropical"],
   description:
     "Not a shark at all: a sleek black minnow with bright red fins that patrols low over the bottom.",
-  radius: 0.2,
+  radius: 0.26,
   habitat: "water",
   // Deeper than any pool, so it keeps just above the bottom.
   swims: { speed: 0.3, depth: 4 },
   build: () =>
     fish({
-      length: 0.27,
-      depth: 0.04,
-      width: 0.03,
+      length: 0.351,
+      depth: 0.052,
+      width: 0.039,
       sections: [
         [-1, 0.3, 0.45],
         [-0.7, 0.75, 0.8],
@@ -171,17 +174,18 @@ export const corydoras: AssetDefinition = {
   kind: "corydoras",
   name: "Bronze corydoras",
   scientificName: "Corydoras aeneus",
-  category: "Animals",
+  group: "Fish",
+  biomes: ["Tropical"],
   description:
     "A small armored catfish that roots through the sand in busy little groups. Add several.",
-  radius: 0.1,
+  radius: 0.13,
   habitat: "water",
   swims: { speed: 0.12, depth: 4 },
   build: () =>
     fish({
-      length: 0.11,
-      depth: 0.03,
-      width: 0.022,
+      length: 0.143,
+      depth: 0.039,
+      width: 0.029,
       sections: [
         [-1, 0.5, 0.55],
         [-0.7, 0.95, 0.85],
@@ -217,17 +221,18 @@ export const cutthroatTrout: AssetDefinition = {
   kind: "cutthroat-trout",
   name: "Cutthroat trout",
   scientificName: "Oncorhynchus clarkii",
-  category: "Animals",
+  group: "Fish",
+  biomes: ["Temperate"],
   description:
     "A young mountain trout, olive and black-spotted with a red slash under the jaw. It holds in the current and darts after drifting insects.",
-  radius: 0.25,
+  radius: 0.35,
   habitat: "water",
   swims: { speed: 0.32, depth: 0.3 },
   build: () =>
     fish({
-      length: 0.32,
-      depth: 0.04,
-      width: 0.026,
+      length: 0.448,
+      depth: 0.056,
+      width: 0.036,
       sections: [
         [-1, 0.35, 0.45],
         [-0.7, 0.8, 0.8],
@@ -271,17 +276,18 @@ export const sculpin: AssetDefinition = {
   kind: "sculpin",
   name: "Mottled sculpin",
   scientificName: "Cottus bairdii",
-  category: "Animals",
+  group: "Fish",
+  biomes: ["Temperate"],
   description:
     "A big-headed, mottled little fish that hugs the stream bed and hides among the stones.",
-  radius: 0.14,
+  radius: 0.22,
   habitat: "water",
   swims: { speed: 0.08, depth: 4 },
   build: () =>
     fish({
-      length: 0.15,
-      depth: 0.025,
-      width: 0.032,
+      length: 0.24,
+      depth: 0.04,
+      width: 0.051,
       // A broad, flat head that rounds to a blunt snout, then a body
       // tapering to the tail.
       sections: [
@@ -327,17 +333,18 @@ export const convictCichlid: AssetDefinition = {
   kind: "convict-cichlid",
   name: "Convict cichlid",
   scientificName: "Amatitlania nigrofasciata",
-  category: "Animals",
+  group: "Fish",
+  biomes: ["Tropical"],
   description:
     "A bold little Central American cichlid, pale grey crossed with black bars. Pairs guard their patch of stream bed.",
-  radius: 0.18,
+  radius: 0.27,
   habitat: "water",
   swims: { speed: 0.2, depth: 0.8 },
   build: () =>
     fish({
-      length: 0.17,
-      depth: 0.05,
-      width: 0.022,
+      length: 0.255,
+      depth: 0.075,
+      width: 0.033,
       // One ring per bar, so each bar is a clean band around the body.
       sections: [
         [-1, 0.35, 0.45],
@@ -377,17 +384,18 @@ export const harlequinRasbora: AssetDefinition = {
   kind: "harlequin-rasbora",
   name: "Harlequin rasbora",
   scientificName: "Trigonostigma heteromorpha",
-  category: "Animals",
+  group: "Fish",
+  biomes: ["Tropical"],
   description:
     "A small copper-pink fish with a black wedge on its side. Schools through the shaded streams of Southeast Asia.",
-  radius: 0.1,
+  radius: 0.17,
   habitat: "water",
   swims: { speed: 0.22, depth: 0.15 },
   build: () =>
     fish({
-      length: 0.1,
-      depth: 0.025,
-      width: 0.012,
+      length: 0.165,
+      depth: 0.041,
+      width: 0.02,
       sections: [
         [-1, 0.35, 0.45],
         [-0.65, 0.85, 0.85],
@@ -418,17 +426,18 @@ export const pupfish: AssetDefinition = {
   kind: "pupfish",
   name: "Amargosa pupfish",
   scientificName: "Cyprinodon nevadensis",
-  category: "Animals",
+  group: "Fish",
+  biomes: ["Desert"],
   description:
     "A chunky little fish from desert springs. Breeding males turn bright blue and chase each other around the pool.",
-  radius: 0.1,
+  radius: 0.17,
   habitat: "water",
   swims: { speed: 0.18, depth: 0.5 },
   build: () =>
     fish({
-      length: 0.09,
-      depth: 0.026,
-      width: 0.016,
+      length: 0.153,
+      depth: 0.044,
+      width: 0.027,
       sections: [
         [-1, 0.45, 0.5],
         [-0.65, 0.9, 0.9],

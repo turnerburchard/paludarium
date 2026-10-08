@@ -102,6 +102,7 @@ const MODELS = [
     // "Rock Flat" by Kenney, poly.pizza/m/CrSoV13mCU, CC0.
     source: "docs/inspiration/models/rock-flat-kenney.glb",
     out: "src/assets/landscape/flagstone.json",
+    solid: true,
     width: 0.7,
     sink: 0.3,
   },
@@ -129,6 +130,7 @@ const MODELS = [
     // "log with fungus" by sirkitree, poly.pizza/m/32czhZtc7oY, CC-BY 3.0.
     source: "docs/inspiration/models/log-fungus-sirkitree.glb",
     out: "src/assets/landscape/fungusLog.json",
+    solid: true,
     length: 1.15,
     sink: 0.1,
   },
@@ -139,6 +141,62 @@ const MODELS = [
     width: 1.2,
     sink: 0.12,
     roles: { bark: "75522f", barkLight: "9e6a3a", cut: "d98d4a" },
+  },
+  {
+    // "Tree roots" by Poly by Google, poly.pizza/m/eYfjQLsebfA, CC-BY 3.0.
+    source: "docs/inspiration/models/tree-roots-poly-google.glb",
+    out: "src/assets/landscape/treeRoots.json",
+    // Laid on its side, so the roots fan out over the bottom.
+    layDown: true,
+    length: 1.1,
+    sink: 0.3,
+    solid: true,
+    roles: { wood: "7d5b32", cut: "c08444", dark: "130701" },
+  },
+  {
+    // "Tree Stump with Moss" by Quaternius, poly.pizza/m/nFvEbUX6LE, CC0.
+    source: "docs/inspiration/models/stump-moss-quaternius.glb",
+    out: "src/assets/landscape/stump.json",
+    width: 0.8,
+    sink: 0.05,
+    solid: true,
+  },
+  {
+    // "Flower Pot" by Neko, poly.pizza/m/A7g6zgWaCj, CC-BY 3.0; the pot and
+    // its soil are left out.
+    source: "docs/inspiration/models/monstera-neko.glb",
+    out: "src/assets/plants/monstera.json",
+    skipColors: ["23272b", "390b08"],
+    height: 1.7,
+    roles: { top: "97c257", mid: "7bb053", under: "64a050" },
+    // Each leaf's pale upper side is where frogs rest.
+    perches: "top",
+  },
+  {
+    // "Mushroom" by Сергей Тиньков, poly.pizza/m/1CZoDfdfHl_, CC-BY 3.0.
+    source: "docs/inspiration/models/mushroom-tinkov.glb",
+    out: "src/assets/landscape/bolete.json",
+    height: 0.24,
+  },
+  {
+    // "Mushroom" by jeremy, poly.pizza/m/2DAaKHD48ZP, CC-BY 3.0.
+    source: "docs/inspiration/models/mushroom-jeremy.glb",
+    out: "src/assets/landscape/flyAgaric.json",
+    height: 0.3,
+  },
+  {
+    // "Mushroom" by Quaternius, poly.pizza/m/aOW08oSrd4, CC0.
+    source: "docs/inspiration/models/mushroom-quaternius.glb",
+    out: "src/assets/landscape/bonnetMushrooms.json",
+    width: 0.42,
+    roles: { clump: "a38f80" },
+  },
+  {
+    // "Dead Tree Trunk" by Zsky, poly.pizza/m/HdJ7JoEvKR, CC-BY 3.0.
+    source: "docs/inspiration/models/dead-tree-zsky.glb",
+    out: "src/assets/landscape/deadTree.json",
+    height: 1.15,
+    solid: true,
   },
 ];
 
@@ -162,13 +220,19 @@ for (const model of MODELS) {
       const source = color
         ? color(uv.getX(i), uv.getY(i)).toString(16).padStart(6, "0")
         : material.color.getHexString();
+      // A pot modeled in the same mesh as its plant is left out by color.
+      if (model.skipColors?.includes(source)) continue;
       faces.push({
         key: roles ? nearestRole(source, roles) : source,
-        corners: [0, 1, 2].map((k) =>
-          new Vector3()
+        corners: [0, 1, 2].map((k) => {
+          const corner = new Vector3()
             .fromBufferAttribute(position, i + k)
-            .applyMatrix4(object.matrixWorld),
-        ),
+            .applyMatrix4(object.matrixWorld);
+          // Tips an upright model onto its back: up becomes forward.
+          return model.layDown
+            ? corner.set(corner.x, -corner.z, corner.y)
+            : corner;
+        }),
       });
     }
   });
@@ -186,22 +250,118 @@ for (const model of MODELS) {
   // Rocks and logs settle part of their height into the ground.
   const floor = bounds.min.y + (model.sink ?? 0) * size.y;
   const parts = new Map();
+  const kept = new Set();
+  const keptFaces = [];
   for (const face of faces) {
+    const corners = face.corners.map((p) =>
+      [
+        flip * (p.x - center.x) * scale,
+        (p.y - floor) * scale,
+        flip * (p.z - center.z) * scale,
+      ].map((v) => Number(v.toFixed(5))),
+    );
+    // Some models stack a back face on a front face. Animals walk hardscape
+    // by its face normals, and a back-to-back pair cancels out to nothing.
+    const shape = corners.map(String).sort().join("|");
+    if (model.solid && kept.has(shape)) continue;
+    kept.add(shape);
+    keptFaces.push({ key: face.key, corners });
     const part = parts.get(face.key) ?? { color: face.key, positions: [] };
-    for (const p of face.corners)
-      part.positions.push(
-        ...[
-          flip * (p.x - center.x) * scale,
-          (p.y - floor) * scale,
-          flip * (p.z - center.z) * scale,
-        ].map((v) => Number(v.toFixed(5))),
-      );
+    part.positions.push(...corners.flat());
     parts.set(face.key, part);
   }
-  writeFileSync(model.out, JSON.stringify({ parts: [...parts.values()] }));
+  writeFileSync(
+    model.out,
+    JSON.stringify({
+      parts: [...parts.values()],
+      ...(model.perches && {
+        perches: leafPerches(keptFaces, model.perches),
+      }),
+    }),
+  );
   console.log(
     `${model.out}: ${faces.length} triangles in ${parts.size} colors`,
   );
+}
+
+/** Where frogs can climb and rest on a plant: onto the middle of each leaf's
+ * upper side (the faces colored `top`, which form one sheet per leaf), up
+ * from the base of the stem that leaf grows on. */
+function leafPerches(faces, top) {
+  const plants = connectedPieces(faces.map((face) => face.corners));
+  const leaves = connectedPieces(
+    faces.filter((face) => face.key === top).map((face) => face.corners),
+  );
+  const perches = [];
+  for (const leaf of leaves) {
+    if (leaf.faces.length < 8) continue;
+    const center = new Vector3(),
+      normal = new Vector3();
+    let area = 0;
+    for (const corners of leaf.faces) {
+      const [a, b, c] = corners.map((p) => new Vector3(...p));
+      const cross = b.clone().sub(a).cross(c.clone().sub(a));
+      const weight = cross.length() / 2;
+      center.addScaledVector(a.add(b).add(c).divideScalar(3), weight);
+      // Upper sides may be wound either way; count them all facing up.
+      normal.add(cross.y < 0 ? cross.negate() : cross);
+      area += weight;
+    }
+    center.divideScalar(area);
+    normal.normalize();
+    if (normal.y < 0.3) continue;
+    // A deeply split leaf's upper side breaks into a sheet per lobe; one
+    // perch is enough for lobes side by side.
+    if (perches.some(({ perch }) => center.distanceTo(perch) < 0.12)) continue;
+    const corner = String(leaf.faces[0][0]);
+    const plant = plants.find((piece) =>
+      piece.faces.some((corners) => corners.some((p) => String(p) === corner)),
+    );
+    const base = plant.points[0].clone().setY(0);
+    // Halfway up, snapped onto the plant itself, which is usually its stem.
+    const halfway = base.clone().lerp(center, 0.5);
+    const middle = plant.points.reduce((best, p) =>
+      p.distanceTo(halfway) < best.distanceTo(halfway) ? p : best,
+    );
+    const point = (v) => {
+      const [x, y, z] = v.toArray().map((n) => Number(n.toFixed(4)));
+      return { x, y, z };
+    };
+    perches.push({
+      stem: [point(base), point(middle)],
+      perch: point(center.clone().addScaledVector(normal, 0.01)),
+      perchNormal: point(normal),
+    });
+  }
+  return perches;
+}
+
+/** Groups faces that share corners into separate pieces, with their points
+ * sorted from lowest to highest. */
+function connectedPieces(faces) {
+  const parent = faces.map((_, i) => i);
+  const find = (i) => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  const owner = new Map();
+  faces.forEach((corners, i) => {
+    for (const corner of corners) {
+      const key = String(corner);
+      if (owner.has(key)) parent[find(i)] = find(owner.get(key));
+      else owner.set(key, i);
+    }
+  });
+  const pieces = new Map();
+  faces.forEach((corners, i) => {
+    const piece = pieces.get(find(i)) ?? { faces: [] };
+    piece.faces.push(corners);
+    pieces.set(find(i), piece);
+  });
+  return [...pieces.values()].map((piece) => ({
+    faces: piece.faces,
+    points: piece.faces
+      .flat()
+      .map((p) => new Vector3(...p))
+      .sort((a, b) => a.y - b.y),
+  }));
 }
 
 /** Textured models shade each face a little differently; snapping to a few

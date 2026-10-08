@@ -101,7 +101,12 @@ try {
     .getByRole("button", { name: "Resume life (Space)", exact: true })
     .click();
   await page.waitForFunction(
-    (key) => JSON.parse(localStorage.getItem(key)).objects.length === 7,
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.length === 7,
     storageKey,
   );
   await page
@@ -120,13 +125,23 @@ try {
   );
   await page.screenshot({ path: "/tmp/paludarium-juvenile-desktop.png" });
   const saved = await page.evaluate(
-    (key) => JSON.parse(localStorage.getItem(key)),
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ),
     storageKey,
   );
   await page.waitForTimeout(5500);
   assert.deepEqual(
     await page.evaluate(
-      (key) => JSON.parse(localStorage.getItem(key)),
+      (key) =>
+        JSON.parse(localStorage.getItem(key), (key, value) =>
+          key === "" && value.worlds
+            ? value.worlds.find((entry) => entry.id === value.activeId).world
+            : value,
+        ),
       storageKey,
     ),
     saved,
@@ -137,7 +152,12 @@ try {
     .getByRole("button", { name: "Undo (⌘/Ctrl Z)", exact: true })
     .click();
   await page.waitForFunction(
-    (key) => JSON.parse(localStorage.getItem(key)).objects.length === 6,
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.length === 6,
     storageKey,
   );
   assert.equal(
@@ -148,7 +168,12 @@ try {
     .getByRole("button", { name: "Redo (⌘/Ctrl Shift Z)", exact: true })
     .click();
   await page.waitForFunction(
-    (key) => JSON.parse(localStorage.getItem(key)).objects.length === 7,
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.length === 7,
     storageKey,
   );
   await page.reload();
@@ -157,7 +182,12 @@ try {
     .click();
   assert.deepEqual(
     await page.evaluate(
-      (key) => JSON.parse(localStorage.getItem(key)),
+      (key) =>
+        JSON.parse(localStorage.getItem(key), (key, value) =>
+          key === "" && value.worlds
+            ? value.worlds.find((entry) => entry.id === value.activeId).world
+            : value,
+        ),
       storageKey,
     ),
     saved,
@@ -176,11 +206,25 @@ try {
       if (!localStorage.getItem(storageKey))
         localStorage.setItem(storageKey, JSON.stringify(world));
     },
-    { world: habitat("fish", 2.65), storageKey },
+    {
+      world: {
+        version: 1,
+        activeId: "fish-preview",
+        worlds: [
+          { id: "fish-preview", world: habitat("fish", 2.65), preview: true },
+        ],
+      },
+      storageKey,
+    },
   );
   await fishPage.goto(url);
   await fishPage.waitForFunction(
-    (key) => JSON.parse(localStorage.getItem(key)).objects.length === 7,
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.length === 7,
     storageKey,
   );
   await fishPage
@@ -195,13 +239,41 @@ try {
   await fishPage.screenshot({ path: "/tmp/paludarium-life-phone.png" });
   const bornFish = await fishPage.evaluate(
     (key) =>
-      JSON.parse(localStorage.getItem(key)).objects.find((o) =>
-        o.id.startsWith("born:"),
-      ),
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.find((o) => o.id.startsWith("born:")),
     storageKey,
   );
   assert.equal(bornFish.kind, "fish");
   assert.equal(bornFish.life.age, 0);
+  await fishPage.reload();
+  await fishPage
+    .getByRole("button", { name: "Pause life (Space)", exact: true })
+    .click();
+  const resumed = await fishPage.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)),
+    storageKey,
+  );
+  assert.equal(resumed.worlds.length, 1);
+  assert.equal(
+    resumed.worlds[0].preview,
+    true,
+    "watching and opening Build do not keep a preset",
+  );
+  assert.ok(
+    resumed.worlds[0].world.objects.some((o) => o.id === bornFish.id),
+    "offspring survive refresh in an unedited preset",
+  );
+  await fishPage.getByRole("button", { name: "Worlds", exact: true }).click();
+  assert.equal(await fishPage.locator(".world-list .saved-world").count(), 0);
+  await fishPage
+    .getByText("Edit a preset to keep it here.", { exact: true })
+    .waitFor();
+  await fishPage.screenshot({
+    path: "/tmp/paludarium-preset-resume-phone.png",
+  });
 
   // A watched animal dying must leave neither a rendered ghost nor a stale watch card.
   await fishPage.close();
@@ -228,7 +300,12 @@ try {
     .getByRole("complementary", { name: "Watching", exact: true })
     .waitFor();
   await deathPage.waitForFunction(
-    (key) => JSON.parse(localStorage.getItem(key)).objects.length === 4,
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).objects.length === 4,
     storageKey,
   );
   assert.equal(
@@ -237,9 +314,20 @@ try {
       .count(),
     0,
   );
+  await deathPage.getByRole("button", { name: "Build", exact: true }).click();
+  await deathPage
+    .getByRole("button", { name: "Habitat life", exact: true })
+    .click();
+  await deathPage
+    .getByRole("button", { name: "Life log", exact: true })
+    .click();
+  await deathPage
+    .getByRole("list", { name: "Life log", exact: true })
+    .getByText("Red-eyed tree frog died of old age.")
+    .waitFor();
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: land and fish births, juvenile watching, pause, save/reload, Undo/Redo, and watched animal death on desktop and phone",
+    "PASS: land and fish births, juvenile watching, pause, save/reload, Undo/Redo, watched animal death and the life log on desktop and phone",
   );
 } finally {
   await browser?.close();

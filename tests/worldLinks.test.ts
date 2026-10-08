@@ -52,6 +52,14 @@ describe("shared world snapshots", () => {
       expect(await readWorldLink(link.hash)).toEqual(world);
     },
   );
+  it("leaves the life log out of the link", async () => {
+    const world = makePreset("tropical");
+    const link = await createWorldLink(
+      { ...world, log: [{ at: 1, event: "born", kind: "tree-frog" }] },
+      baseURL,
+    );
+    expect(await readWorldLink(new URL(link).hash)).toEqual(world);
+  });
   it("keeps sculpted terrain, painted materials, rotations, seeds and unicode names", async () => {
     const world = makePreset("tropical");
     world.name = "Turner’s tiny forest 🐸";

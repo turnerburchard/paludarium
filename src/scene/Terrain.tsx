@@ -1,17 +1,24 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { TANK_HEIGHT, type Environment } from "../model/schema";
+import type { Environment } from "../model/schema";
 import { randomFromSeed } from "../model/random";
-import { terrainSamples } from "../model/terrainData";
-import { groundHeight, MAX_GROUND_HEIGHT } from "../model/terrain";
+import {
+  TERRAIN_COLUMNS,
+  TERRAIN_ROWS,
+  terrainSamples,
+} from "../model/terrainData";
+import { groundHeight, hasDryGround } from "../model/terrain";
 import { makeWaterMaterial } from "./waterMaterial";
-import { MOSS_COLORS, mossMaterial } from "../assets/landscape/mosses";
-import { mossCarpet, mossCushions } from "../assets/landscape/mossCover";
-import { TERRAIN_POINTS, terrainPoint } from "../model/terrainData";
+import { makeGroundMoss } from "./groundMoss";
 
 function makeTerrain(env: Environment) {
-  const geo = new THREE.PlaneGeometry(env.width, env.depth, 70, 48);
+  const geo = new THREE.PlaneGeometry(
+    env.width,
+    env.depth,
+    TERRAIN_COLUMNS * 4,
+    TERRAIN_ROWS * 4,
+  );
   geo.rotateX(-Math.PI / 2);
   const p = geo.getAttribute("position"),
     colors = [];
@@ -20,8 +27,8 @@ function makeTerrain(env: Environment) {
   const palette = {
     soil,
     sand,
-    stone: new THREE.Color("#867c5b"),
-    moss: new THREE.Color(MOSS_COLORS.sheet[1]),
+    stone: new THREE.Color("#74787b"),
+    moss: soil,
   };
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i),
@@ -61,7 +68,7 @@ function makeSkirt(env: Environment) {
   ];
   for (let edge = 0; edge < 4; edge++) {
     // Match surface subdivisions so the bank and sidewall share their silhouette.
-    const segments = edge % 2 === 0 ? 70 : 48;
+    const segments = (edge % 2 === 0 ? TERRAIN_COLUMNS : TERRAIN_ROWS) * 4;
     for (let i = 0; i <= segments; i++) {
       const t = i / segments,
         x = THREE.MathUtils.lerp(corners[edge][0], corners[edge + 1][0], t),
@@ -77,15 +84,21 @@ function makeSkirt(env: Environment) {
   geo.computeVertexNormals();
   return geo;
 }
-export function Terrain({ environment: env }: { environment: Environment }) {
+export function Terrain({
+  environment: env,
+  groundRef,
+}: {
+  environment: Environment;
+  groundRef: RefObject<THREE.Mesh | null>;
+}) {
   const pebbles = useRef<THREE.InstancedMesh>(null);
   const surface = useMemo(
     () => makeTerrain(env),
-    [env.width, env.depth, env.substrate, env.terrain],
+    [env.width, env.depth, env.height, env.substrate, env.terrain],
   );
   const skirt = useMemo(
     () => makeSkirt(env),
-    [env.width, env.depth, env.substrate, env.terrain],
+    [env.width, env.depth, env.height, env.substrate, env.terrain],
   );
   const stones = useMemo(() => {
     const random = randomFromSeed(84);
@@ -115,41 +128,17 @@ export function Terrain({ environment: env }: { environment: Environment }) {
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     mesh.computeBoundingSphere();
-  }, [stones, env.width, env.depth, env.substrate, env.terrain]);
-  const moss = useMemo(() => {
-    const paint = env.terrain?.paint;
-    if (!paint) return [];
-    const points = [];
-    for (let index = 0; index < TERRAIN_POINTS; index++) {
-      if (paint[index] !== "moss") continue;
-      const { x, z } = terrainPoint(index, env);
-      points.push(new THREE.Vector3(x, groundHeight(x, z, env), z));
-    }
-    return mossCushions(points, randomFromSeed(31));
-  }, [env.width, env.depth, env.substrate, env.terrain]);
-  // Underwater, the painted color stays but the cushions don't grow. Water
-  // covers cushions from the lowest up, so how many stay dry names the set,
-  // and dragging the water level only remerges when the waterline crosses one.
-  const dry = moss.filter((cushion) => cushion.point.y > env.water);
-  const carpet = useMemo(() => mossCarpet(dry), [moss, dry.length]);
-  const carpetSkin = useMemo(() => mossMaterial(), []);
-  useEffect(
-    () => () => {
-      surface.dispose();
-      skirt.dispose();
-      carpet?.dispose();
-    },
-    [surface, skirt, carpet],
+  }, [stones, env.width, env.depth, env.height, env.substrate, env.terrain]);
+  const carpet = useMemo(
+    () => makeGroundMoss(env),
+    [env.width, env.depth, env.height, env.substrate, env.terrain, env.water],
   );
-  useEffect(
-    () => () =>
-      moss.forEach((cushion) => cushion.lumps.forEach((l) => l.dispose())),
-    [moss],
-  );
-  useEffect(() => () => carpetSkin.dispose(), [carpetSkin]);
+  useEffect(() => () => surface.dispose(), [surface]);
+  useEffect(() => () => skirt.dispose(), [skirt]);
+  useEffect(() => () => carpet?.dispose(), [carpet]);
   return (
     <group>
-      <mesh geometry={surface} receiveShadow>
+      <mesh ref={groundRef} geometry={surface} receiveShadow>
         <meshStandardMaterial vertexColors roughness={0.95} />
       </mesh>
       <mesh geometry={skirt}>
@@ -159,7 +148,11 @@ export function Terrain({ environment: env }: { environment: Environment }) {
           side={THREE.DoubleSide}
         />
       </mesh>
-      {carpet && <mesh geometry={carpet} material={carpetSkin} receiveShadow />}
+      {carpet && (
+        <mesh geometry={carpet} receiveShadow>
+          <meshStandardMaterial vertexColors roughness={1} />
+        </mesh>
+      )}
       <instancedMesh ref={pebbles} args={[undefined, undefined, stones.length]}>
         <icosahedronGeometry args={[1, 0]} />
         <meshStandardMaterial roughness={1} />
@@ -176,7 +169,7 @@ export function Water({
 }) {
   const time = useRef({ value: 0 });
   const material = useMemo(() => makeWaterMaterial(time.current), []);
-  material.opacity = env.water > MAX_GROUND_HEIGHT ? 0.22 : 0.47;
+  material.opacity = hasDryGround(env) ? 0.47 : 0.22;
   useEffect(() => () => material.dispose(), [material]);
   useFrame((_, dt) => {
     if (!paused) time.current.value += Math.min(dt, 0.05);
@@ -233,13 +226,13 @@ export function Water({
 }
 
 export function Tank({ environment: env }: { environment: Environment }) {
-  const h = TANK_HEIGHT,
+  const h = env.height,
     w = env.width,
     d = env.depth;
   const edges = useMemo(
     () =>
       new THREE.EdgesGeometry(new THREE.BoxGeometry(w + 0.055, h, d + 0.055)),
-    [w, d],
+    [w, d, h],
   );
   useEffect(() => () => edges.dispose(), [edges]);
   return (

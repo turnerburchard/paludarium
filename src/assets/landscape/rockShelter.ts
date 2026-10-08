@@ -6,7 +6,8 @@ import { stoneMaterial, weatheredStone } from "./rock";
 export const rockShelter: AssetDefinition = {
   kind: "rock-shelter",
   name: "Rock shelter",
-  category: "Landscape",
+  group: "Stone",
+  biomes: ["Tropical", "Temperate", "Desert"],
   description:
     "A flat stone resting on two boulders. Frogs hide in the gap beneath.",
   radius: 0.66,

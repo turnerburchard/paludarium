@@ -7,8 +7,10 @@ export const bromeliad: AssetDefinition = {
   kind: "bromeliad",
   name: "Scarlet star",
   scientificName: "Guzmania lingulata",
-  category: "Plants",
-  description: "A splash of coral among deep green leaves.",
+  group: "Leafy plants",
+  biomes: ["Tropical"],
+  description:
+    "A bromeliad native to Central America, the Caribbean and South America. Its glossy leaves form a rosette, with red bracts surrounding small flowers.",
   radius: 0.32,
   habitat: "land",
   shelter: true,

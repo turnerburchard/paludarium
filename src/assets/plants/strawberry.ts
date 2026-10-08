@@ -7,8 +7,10 @@ export const strawberry: AssetDefinition = {
   kind: "strawberry",
   name: "Wild strawberry",
   scientificName: "Fragaria vesca",
-  category: "Plants",
-  description: "A mountain garden with white flowers and red berries.",
+  group: "Leafy plants",
+  biomes: ["Temperate"],
+  description:
+    "A low-growing strawberry native to Europe and Asia, with white flowers and small red berries.",
   radius: 0.34,
   habitat: "land",
   shelter: true,

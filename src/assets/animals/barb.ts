@@ -6,10 +6,11 @@ export const tigerBarb: AssetDefinition = {
   kind: "tiger-barb",
   name: "Tiger barb",
   scientificName: "Puntigrus tetrazona",
-  category: "Animals",
+  group: "Fish",
+  biomes: ["Tropical"],
   description:
     "A lively gold fish with four black bands, quick in a busy school.",
-  radius: 0.12,
+  radius: 0.19,
   habitat: "water",
   swims: { speed: 0.32, depth: 0.16 },
   build,

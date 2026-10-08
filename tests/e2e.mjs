@@ -52,17 +52,23 @@ try {
   });
   await page.goto("http://127.0.0.1:5191");
   await page
-    .getByRole("dialog", { name: "New world" })
+    .getByRole("dialog", { name: "Worlds" })
+    .getByRole("button", { name: "Close dialog" })
+    .click();
+  await page.getByRole("button", { name: "Build", exact: true }).click();
+  await page.locator(".asset-picture img").first().waitFor({ timeout: 90000 });
+  // A first visit opens on the aquarium; start from an empty tank.
+  assert.equal(
+    await page.getByRole("textbox", { name: "World name" }).inputValue(),
+    "Aquarium",
+    "first visit opens on a finished habitat",
+  );
+  await page.getByRole("button", { name: "Worlds", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Worlds" })
+    .locator(".preset-options")
     .getByRole("button", { name: "Empty tank", exact: true })
     .click();
-  assert.equal(
-    await page
-      .getByRole("button", { name: "Build", exact: true })
-      .getAttribute("aria-pressed"),
-    "true",
-    "an empty first-visit choice enters Build",
-  );
-  await page.locator(".asset-picture img").first().waitFor({ timeout: 90000 });
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
@@ -79,7 +85,12 @@ try {
         ?.textContent?.includes("Saved on this device"),
     );
     return page.evaluate(
-      (key) => JSON.parse(localStorage.getItem(key)),
+      (key) =>
+        JSON.parse(localStorage.getItem(key), (key, value) =>
+          key === "" && value.worlds
+            ? value.worlds.find((entry) => entry.id === value.activeId).world
+            : value,
+        ),
       storageKey,
     );
   }
@@ -118,6 +129,7 @@ try {
     );
     await page.mouse.click(p.x, p.y, { delay: 80 });
   }
+  await page.getByRole("button", { name: "Animals", exact: true }).click();
   await page
     .getByRole("button", { name: "Red-eyed tree frog", exact: true })
     .click();
@@ -198,9 +210,10 @@ try {
     .getByRole("complementary", { name: "Watching" })
     .waitFor({ state: "detached" });
   await page.getByRole("button", { name: "Build", exact: true }).click();
-  await page.getByRole("button", { name: "New world", exact: true }).click();
+  await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page
-    .getByRole("dialog", { name: "New world" })
+    .getByRole("dialog", { name: "Worlds" })
+    .locator(".preset-options")
     .getByRole("button", { name: "Cloud forest", exact: true })
     .click();
   world = await saved();
@@ -219,7 +232,7 @@ try {
     .click();
   await page.getByRole("button", { name: "Habitat life", exact: true }).click();
   const life = page.getByRole("region", { name: "Habitat life", exact: true });
-  await life.getByRole("button", { name: /Follow someone/ }).waitFor();
+  await life.getByRole("button", { name: /Follow a creature/ }).waitFor();
   assert.equal(
     await life
       .getByRole("button", { name: "Scatter insects", exact: true })
@@ -232,7 +245,7 @@ try {
       .count(),
     0,
   );
-  // Every land animal is listed to watch; fish are counted by species.
+  // Every walking animal is listed to watch; fish are counted by species.
   const lifeWorld = await saved();
   assert.equal(
     await life.locator(".frog-list:not(.fish-list) button").count(),
@@ -249,11 +262,14 @@ try {
         "canyon-tree-frog",
         "snail",
         "turtle",
+        "micro-crab",
+        "dwarf-crayfish",
+        "cherry-shrimp",
       ].includes(object.kind),
     ).length,
   );
   await life.locator(".fish-list li", { hasText: "Convict cichlid" }).waitFor();
-  await life.getByRole("button", { name: /Follow someone/ }).click();
+  await life.getByRole("button", { name: /Follow a creature/ }).click();
   await page
     .getByRole("complementary", { name: "Watching", exact: true })
     .waitFor();
@@ -261,8 +277,18 @@ try {
     .getByRole("button", { name: "Stop watching", exact: true })
     .click();
   await page.getByRole("button", { name: "Build", exact: true }).click();
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "canShare", {
+      configurable: true,
+      value: () => false,
+    });
+  });
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Export world", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Share this world", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Share file", exact: true }).click();
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   const download = await downloadPromise;
   assert.equal(download.suggestedFilename(), "cloud-forest.json");
   const invalidBefore = await saved();
@@ -337,8 +363,11 @@ try {
   await page.keyboard.press("Tab");
   await page.waitForFunction(
     (before) =>
-      JSON.parse(localStorage.getItem("little-worlds:v1")).environment.water >
-      before,
+      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).environment.water > before,
     world.environment.water,
   );
 

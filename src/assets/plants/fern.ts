@@ -7,8 +7,10 @@ import type { AssetDefinition } from "../types";
 export const fern: AssetDefinition = {
   kind: "fern",
   name: "Forest fern",
-  category: "Plants",
-  description: "Arching fronds, at home beside a shady pond.",
+  group: "Leafy plants",
+  biomes: ["Tropical", "Temperate"],
+  description:
+    "Arching green fronds with rows of narrow leaflets. Provides low cover in damp, shaded parts of the habitat.",
   radius: 0.36,
   habitat: "land",
   shelter: true,

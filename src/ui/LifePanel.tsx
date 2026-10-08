@@ -1,6 +1,7 @@
-import { Binoculars, Eye, Leaf, Moon } from "lucide-react";
+import { useState } from "react";
+import { Binoculars, Eye, Leaf, Moon, ScrollText } from "lucide-react";
 import { assets } from "../assets";
-import type { AssetKind, World } from "../model/schema";
+import type { AssetKind, LogEntry, World } from "../model/schema";
 import type { EcosystemController } from "../simulation/useEcosystem";
 import { CreatureList } from "./CreatureList";
 
@@ -76,7 +77,7 @@ export function LifePanel({
       {animals.length + fishCount > 0 && (
         <button className="life-follow" onClick={surpriseMe}>
           <Binoculars size={19} />
-          Follow someone
+          Follow a creature
         </button>
       )}
       {animals.length > 0 && (
@@ -112,6 +113,59 @@ export function LifePanel({
           </ul>
         </>
       )}
+      <LifeLog log={world.log ?? []} />
     </section>
+  );
+}
+
+const logTime = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+function describe({ event, kind, cause }: LogEntry) {
+  const name = assets[kind].name;
+  if (event === "born") return `${name} born.`;
+  if (cause === "age") return `${name} died of old age.`;
+  if (cause === "starved") return `${name} died of starvation.`;
+  if (cause === "crowded") return `${name} died of overcrowding.`;
+  if (cause === "drowned") return `${name} drowned.`;
+  if (cause === "stranded") return `${name} died out of water.`;
+  return `${name} died.`;
+}
+
+/** Births and deaths, newest first, kept out of the way until asked for. */
+function LifeLog({ log }: { log: LogEntry[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        className="life-log-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        <ScrollText size={14} />
+        Life log
+      </button>
+      {open &&
+        (log.length ? (
+          <ol className="life-log" aria-label="Life log">
+            {log
+              .map((entry, i) => (
+                <li key={i}>
+                  <time dateTime={new Date(entry.at).toISOString()}>
+                    {logTime.format(entry.at)}
+                  </time>
+                  {describe(entry)}
+                </li>
+              ))
+              .reverse()}
+          </ol>
+        ) : (
+          <p>No births or deaths recorded.</p>
+        ))}
+    </>
   );
 }

@@ -8,7 +8,8 @@ export const anthurium: AssetDefinition = {
   kind: "anthurium",
   name: "Anthurium",
   scientificName: "Anthurium andraeanum",
-  category: "Plants",
+  group: "Leafy plants",
+  biomes: ["Tropical"],
   description:
     "Broad heart-shaped leaves held out level, with glossy red flowers.",
   radius: 0.42,

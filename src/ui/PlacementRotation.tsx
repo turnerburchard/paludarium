@@ -56,7 +56,6 @@ export function PlacementRotation({ editor }: { editor: Editor }) {
       <TurnButton left onTurn={() => editor.rotate(-Math.PI / 12)} />
       <output aria-label="Placement angle">{degrees}°</output>
       <TurnButton onTurn={() => editor.rotate(Math.PI / 12)} />
-      <span>Tap to turn · hold to spin</span>
     </div>
   );
 }

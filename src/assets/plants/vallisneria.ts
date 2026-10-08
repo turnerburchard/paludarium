@@ -6,7 +6,8 @@ export const vallisneria: AssetDefinition = {
   kind: "vallisneria",
   name: "Eelgrass",
   scientificName: "Vallisneria spiralis",
-  category: "Plants",
+  group: "Aquatic plants",
+  biomes: ["Tropical", "Temperate"],
   description:
     "Tall ribbon leaves that rise from the pool floor and bend over near the surface.",
   radius: 0.26,
@@ -38,7 +39,7 @@ function build(random: () => number) {
 
 /** A thin strap that rises nearly straight, leaning more the higher it gets,
  * with a slow twist so the faces catch the light differently. */
-function ribbon(
+export function ribbon(
   base: THREE.Vector3,
   heading: number,
   length: number,

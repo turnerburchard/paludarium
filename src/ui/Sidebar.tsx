@@ -1,11 +1,9 @@
 import {
   ChevronDown,
-  Download,
   HeartPulse,
   HelpCircle,
   SlidersHorizontal,
   Sprout,
-  Upload,
 } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import type { EcosystemController } from "../simulation/useEcosystem";
@@ -18,6 +16,7 @@ export type Panel = "objects" | "habitat" | "life";
 
 export function Sidebar({
   hidden = false,
+  sheetOpen,
   editor,
   ecosystem,
   panel,
@@ -25,10 +24,9 @@ export function Sidebar({
   onHelp,
   onWatch,
   onClose,
-  onExport,
-  onImport,
 }: {
   hidden?: boolean;
+  sheetOpen: boolean;
   editor: Editor;
   ecosystem: EcosystemController;
   panel: Panel;
@@ -37,8 +35,6 @@ export function Sidebar({
   onWatch: (id: string) => void;
   /** Phones show the sidebar as a sheet that can be closed. */
   onClose: () => void;
-  onExport: () => void;
-  onImport: () => void;
 }) {
   return (
     <aside hidden={hidden} className="sidebar" aria-label="Terrarium tools">
@@ -84,7 +80,7 @@ export function Sidebar({
       </div>
       <div className="panel-content">
         {panel === "objects" ? (
-          <Library editor={editor} />
+          <Library editor={editor} hidden={hidden} sheetOpen={sheetOpen} />
         ) : panel === "habitat" ? (
           <EnvironmentPanel editor={editor} />
         ) : (
@@ -99,14 +95,6 @@ export function Sidebar({
       </div>
       <div className="sidebar-footer">
         <span>{editor.world.objects.length} inhabitants & objects</span>
-        <span className="sheet-only">
-          <button onClick={onExport} aria-label="Export world">
-            <Download size={16} />
-          </button>
-          <button onClick={onImport} aria-label="Import world">
-            <Upload size={16} />
-          </button>
-        </span>
         <button onClick={onHelp} aria-label="Controls and help">
           <HelpCircle size={16} />
         </button>

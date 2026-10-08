@@ -56,8 +56,6 @@ export function buildHabitat(world: World): HabitatGraph {
       const x = -env.width / 2 + margin + (ix * (env.width - 2 * margin)) / nx;
       const z = -env.depth / 2 + margin + (iz * (env.depth - 2 * margin)) / nz;
       const y = groundHeight(x, z, env);
-      // Shallow shoreline is reachable; open/deep water is not a frog walking surface.
-      if (env.water - y > 0.025) continue;
       if (surfaces.blocksGround(x, z, clearance)) continue;
       const shelter = shelters.reduce(
         (best, o) =>
@@ -76,6 +74,8 @@ export function buildHabitat(world: World): HabitatGraph {
         normal: { x: 0, y: 1, z: 0 },
         surface: "ground",
         wet: env.water > 0 && y <= env.water + 0.065,
+        // Shallow shoreline is dry enough for land animals.
+        submerged: env.water - y > 0.025,
         shelter,
         neighbors: [],
       };
@@ -112,6 +112,7 @@ export function buildHabitat(world: World): HabitatGraph {
   // Wall ladders start on dry boundary cells, with an explicit bridge to the glass.
   // No ladder crosses a pond; non-climbing species cannot enter these nodes.
   for (const ground of [...nodes]) {
+    if (ground.submerged) continue;
     const [ix, iz] = ground.id.split(":").slice(1).map(Number);
     const sides: Array<{
       tag: string;
@@ -213,6 +214,7 @@ export function buildHabitat(world: World): HabitatGraph {
     anchors
       .filter(
         (node) =>
+          !node.submerged &&
           distance(node.position, point) <= range &&
           Math.abs(node.position.y - point.y) <= 0.18,
       )
@@ -383,7 +385,11 @@ export function createWorldEcosystem(
             z: object.z,
           };
     const node = graph.nearest(position, species);
-    if (node)
+    // An animal that visits the water still needs dry land to live on.
+    const land =
+      behavior.water !== "visits" ||
+      graph.nearest(position, { ...species, water: undefined });
+    if (node && land)
       animals.push({
         id: object.id,
         species,
@@ -446,7 +452,8 @@ export function createFishSchool(
     !placementProblem("fish", x, z, env);
   if (!swimmers.length) return new FishSchool([], isWater);
   const space = new SwimSpace(world);
-  const fish = swimmers.map(({ object, swims }) => {
+  // A fish with no open water anywhere is stranded and left out.
+  const fish = swimmers.flatMap(({ object, swims }) => {
     const old = previous?.world.objects.find((o) => o.id === object.id);
     const swimming = previous?.fish.get(object.id);
     const unmoved =
@@ -467,7 +474,7 @@ export function createFishSchool(
     };
     const clear = (x: number, z: number, heading: number) =>
       isWater(x, z) && space.canStart(fish, x, z, heading);
-    if (clear(fish.x, fish.z, fish.heading)) return fish;
+    if (clear(fish.x, fish.z, fish.heading)) return [fish];
     // An edit may put stone or wood around a live fish. Only that fish
     // moves to the nearest available gap; the rest of the school stays put.
     const reach = Math.hypot(env.width, env.depth);
@@ -476,9 +483,9 @@ export function createFishSchool(
         const angle = (i * Math.PI * 2) / 32;
         const x = fish.x + Math.cos(angle) * radius;
         const z = fish.z + Math.sin(angle) * radius;
-        if (clear(x, z, fish.heading)) return { ...fish, x, z };
+        if (clear(x, z, fish.heading)) return [{ ...fish, x, z }];
       }
-    return fish;
+    return [];
   });
   return new FishSchool(fish, isWater, {
     random,

@@ -1,5 +1,12 @@
 import { z } from "zod";
-import { TERRAIN_POINTS, groundMaterials } from "./terrainData";
+import {
+  TERRAIN_POINTS,
+  groundMaterials,
+  DEFAULT_TANK_HEIGHT,
+  MIN_TANK_HEIGHT,
+  MAX_TANK_HEIGHT,
+  waterCeiling,
+} from "./terrainData";
 import { mossSpecies } from "./moss";
 
 export const assetKinds = [
@@ -85,11 +92,25 @@ export const assetKinds = [
   "limestone-pinnacle",
   "fungus-log",
   "snag",
+  "tree-roots",
+  "stump",
+  "dead-tree",
+  "ludwigia",
+  "dwarf-sagittaria",
+  "bolete",
+  "fly-agaric",
+  "bonnet-mushrooms",
+  "vampire-crab",
+  "stripe-tailed-scorpion",
+  "desert-tarantula",
+  "micro-crab",
+  "dwarf-crayfish",
+  "cherry-shrimp",
 ] as const;
 export type AssetKind = (typeof assetKinds)[number];
 export const MAX_OBJECTS = 120;
-export const TANK_HEIGHT = 2.9;
-export const AQUARIUM_WATER = TANK_HEIGHT - 0.25;
+export const TANK_HEIGHT = DEFAULT_TANK_HEIGHT;
+export const AQUARIUM_WATER = waterCeiling({ height: TANK_HEIGHT });
 const finite = z.number().finite();
 export const objectSchema = z.object({
   id: z.string().min(1).max(100),
@@ -114,29 +135,54 @@ export const objectSchema = z.object({
   lift: finite.min(0).max(4).optional(),
 });
 export type HabitatObject = z.infer<typeof objectSchema>;
-export const environmentSchema = z.object({
-  width: finite.min(5).max(9),
-  depth: finite.min(3).max(6),
-  substrate: finite.min(0.12).max(0.55),
-  water: finite.min(0).max(AQUARIUM_WATER),
-  light: z.enum(["day", "golden", "moon"]),
-  warmth: finite.min(0).max(1).default(0.45),
-  brightness: finite.min(0.4).max(1.6).default(1),
-  // Additive version-1 data: older saves keep their original bank and palette.
-  terrain: z
-    .object({
-      heights: z.array(finite.min(-0.9).max(0.9)).length(TERRAIN_POINTS),
-      paint: z.array(z.enum(groundMaterials)).length(TERRAIN_POINTS),
-    })
+export const environmentSchema = z
+  .object({
+    width: finite.min(5).max(9),
+    depth: finite.min(3).max(6),
+    height: finite
+      .min(MIN_TANK_HEIGHT)
+      .max(MAX_TANK_HEIGHT)
+      .default(DEFAULT_TANK_HEIGHT),
+    substrate: finite.min(0.12).max(0.55),
+    water: finite.min(0).max(waterCeiling({ height: MAX_TANK_HEIGHT })),
+    light: z.enum(["day", "golden", "moon"]),
+    warmth: finite.min(0).max(1).default(0.45),
+    brightness: finite.min(0.4).max(1.6).default(1),
+    // Additive version-1 data: older saves keep their original bank and palette.
+    terrain: z
+      .object({
+        heights: z
+          .array(finite.min(-0.9).max(MAX_TANK_HEIGHT))
+          .length(TERRAIN_POINTS),
+        paint: z.array(z.enum(groundMaterials)).length(TERRAIN_POINTS),
+      })
+      .optional(),
+  })
+  .refine((env) => env.water <= waterCeiling(env), {
+    message: "Water must stay below the tank rim.",
+    path: ["water"],
+  });
+export type Environment = z.infer<typeof environmentSchema>;
+/** Births and deaths, oldest first. Only the most recent are kept. */
+export const LOG_LENGTH = 100;
+const logEntrySchema = z.object({
+  /** Epoch milliseconds. */
+  at: finite.min(0),
+  event: z.enum(["born", "died"]),
+  kind: z.enum(assetKinds),
+  cause: z
+    .enum(["age", "starved", "crowded", "drowned", "stranded"])
     .optional(),
 });
-export type Environment = z.infer<typeof environmentSchema>;
+export type LogEntry = z.infer<typeof logEntrySchema>;
 export const worldSchema = z
   .object({
     version: z.literal(1),
     name: z.string().trim().min(1).max(60),
     environment: environmentSchema,
     objects: z.array(objectSchema).max(MAX_OBJECTS),
+    // Additive version-1 data.
+    log: z.array(logEntrySchema).max(LOG_LENGTH).optional(),
   })
   .superRefine((world, ctx) => {
     if (new Set(world.objects.map((o) => o.id)).size !== world.objects.length)
@@ -149,6 +195,7 @@ export type World = z.infer<typeof worldSchema>;
 export const defaultEnvironment: Environment = {
   width: 7,
   depth: 4.5,
+  height: DEFAULT_TANK_HEIGHT,
   substrate: 0.25,
   water: 0.44,
   light: "day",
@@ -158,7 +205,7 @@ export const defaultEnvironment: Environment = {
 export function emptyWorld(): World {
   return {
     version: 1,
-    name: "My little world",
+    name: "Untitled",
     environment: { ...defaultEnvironment },
     objects: [],
   };

@@ -76,9 +76,6 @@ button:hover:not(:disabled) {
 .sheet-only {
   display: none;
 }
-.file-actions {
-  display: contents;
-}
 .scene-shell canvas {
   display: block;
   touch-action: none;
@@ -158,6 +155,9 @@ button:hover:not(:disabled) {
   align-items: center;
   gap: 7px;
 }
+.desktop-redo {
+  display: flex;
+}
 .icon-button {
   border: 1px solid transparent;
   background: transparent;
@@ -173,26 +173,6 @@ button:hover:not(:disabled) {
 .icon-button.active {
   background: #334b37;
   color: var(--accent);
-}
-.divider {
-  width: 1px;
-  height: 22px;
-  background: var(--line);
-  margin: 0 7px;
-}
-.new-world {
-  background: var(--accent);
-  color: var(--ink);
-  border: 0;
-  border-radius: 7px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  height: 36px;
-  padding: 0 14px;
-  font-size: 13px;
-  font-weight: 650;
-  margin-left: 8px;
 }
 .sidebar {
   position: absolute;
@@ -212,7 +192,8 @@ button:hover:not(:disabled) {
   gap: 8px;
 }
 .panel-tabs button {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   border: 1px solid var(--line);
   background: #1d3227;
   color: #a9bd9f;
@@ -235,6 +216,8 @@ button:hover:not(:disabled) {
   color: #e3edcc;
 }
 .panel-content {
+  min-height: 0;
+  overscroll-behavior: contain;
   overflow-y: auto;
   flex: 1;
   scrollbar-width: thin;
@@ -247,6 +230,8 @@ button:hover:not(:disabled) {
   justify-content: space-between;
 }
 .category-tabs button {
+  flex: 1 1 0;
+  min-width: 0;
   border: 0;
   border-bottom: 2px solid transparent;
   background: transparent;
@@ -261,6 +246,9 @@ button:hover:not(:disabled) {
 .category-tabs button.active {
   color: var(--accent);
   border-bottom-color: var(--accent);
+}
+.category-tabs button.filtered {
+  color: var(--accent);
 }
 .asset-grid {
   padding: 0 18px;
@@ -316,18 +304,17 @@ button:hover:not(:disabled) {
 .asset-name {
   font-size: 12px;
   line-height: 16px;
+  height: 48px;
   font-weight: 500;
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
   padding: 0 9px;
   color: #d6e1c9;
 }
-.library-note {
-  font-size: 12px;
-  text-align: center;
-  color: #849a82;
-  margin: 23px 8px;
-}
 .sidebar-footer {
+  flex-shrink: 0;
   height: 43px;
   display: flex;
   align-items: center;
@@ -438,14 +425,12 @@ button:hover:not(:disabled) {
   font-size: 13px;
   font-weight: 600;
 }
-
 .eyebrow {
   font-size: 10px;
   letter-spacing: 1.7px;
   color: #b5c79d;
   font-weight: 550;
 }
-
 .inspector {
   position: absolute;
   right: 25px;
@@ -636,33 +621,76 @@ button:hover:not(:disabled) {
 }
 .preset-options {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  margin-top: 24px;
+  margin-top: 12px;
 }
 .preset-options button {
   text-align: left;
   background: #2b4330;
   border: 1px solid #455f3c;
   border-radius: 10px;
-  padding: 18px;
-  display: grid;
-  align-items: center;
-  grid-template-columns: 35px 1fr;
-  gap: 5px;
-}
-.preset-options button span {
-  grid-row: span 2;
-  color: #8aa573;
-  font-size: 12px;
-}
-.preset-options strong {
-  font-size: 15px;
-  font-weight: 500;
+  padding: 14px 12px;
+  min-height: 48px;
+  font-size: 14px;
   color: #e1eccf;
 }
-.preset-options small {
+.filter-heading {
   font-size: 12px;
+  font-weight: 600;
   color: #a8bd99;
+  margin: 22px 0 10px;
+}
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.filter-chips button {
+  background: #2b4330;
+  border: 1px solid #455f3c;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: #d6e1c9;
+}
+.filter-chips button.active {
+  background: #d1e6a5;
+  border-color: #d1e6a5;
+  color: var(--ink);
+}
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 26px;
+}
+.filter-actions button {
+  border: 1px solid #455f3c;
+  background: transparent;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 13px;
+  color: #d6e1c9;
+}
+.filter-actions button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--ink);
+}
+.library-empty {
+  font-size: 12px;
+  text-align: center;
+  color: #99ae91;
+  margin: 12px 18px;
+}
+.library-empty button {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  text-decoration: underline;
+  padding: 0;
+  font-size: inherit;
 }
 .modal dl {
   margin: 25px 0;
@@ -694,12 +722,6 @@ button:hover:not(:disabled) {
   .brand {
     min-width: 230px;
   }
-  .new-world {
-    padding: 0 10px;
-  }
-  .new-world span {
-    display: none;
-  }
   .bottom-hud {
     padding-right: 25px;
     bottom: 90px;
@@ -708,7 +730,6 @@ button:hover:not(:disabled) {
     font-size: 10px;
     gap: 7px;
   }
-
   .inspector {
     width: 245px;
     right: 15px;
@@ -722,9 +743,6 @@ button:hover:not(:disabled) {
     height: 56px;
     padding: 0 12px;
     gap: 10px;
-  }
-  .file-actions {
-    display: none;
   }
   .brand {
     min-width: 0;
@@ -740,32 +758,26 @@ button:hover:not(:disabled) {
   .brand h1 {
     font-size: 15px;
   }
-  .world-title,
-  .divider {
+  .world-title {
     display: none;
   }
   .header-actions {
     margin-left: auto;
     gap: 0;
   }
+  .desktop-redo {
+    display: none;
+  }
   /* Comfortable tap targets on phones. */
   .header-actions .icon-button {
     width: 40px;
-    height: 40px;
-  }
-  .new-world {
-    margin-left: 4px;
-    width: 40px;
-    justify-content: center;
-    padding: 0;
     height: 40px;
   }
   /* The sidebar becomes a bottom sheet, hidden until the dock opens it. */
   .sidebar {
     top: auto;
     bottom: 0;
-    height: auto;
-    max-height: min(60vh, 520px);
+    height: min(60svh, 520px);
     width: 100%;
     border-top: 1px solid #43533c;
     border-right: 0;
@@ -788,6 +800,7 @@ button:hover:not(:disabled) {
     gap: 2px;
   }
   .sheet-close {
+    flex: 0 0 40px;
     margin-left: auto;
   }
   .mobile-dock {
@@ -827,9 +840,11 @@ button:hover:not(:disabled) {
     background: var(--line);
   }
   .panel-tabs {
-    padding: 8px 13px 5px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 40px;
+    padding: 12px 12px 8px;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
   }
   .panel-tabs button {
     min-height: 40px;
@@ -842,14 +857,27 @@ button:hover:not(:disabled) {
     overflow-y: auto;
   }
   .category-tabs {
-    gap: 2px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 40px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    gap: 8px;
     border: 0;
-    margin: 0 12px;
+    margin: 0;
+    padding: 0 12px 8px;
+    background: var(--panel);
   }
   .category-tabs button {
-    min-height: 44px;
-    padding: 7px;
-    border-radius: 6px;
+    min-height: 40px;
+    padding: 6px 2px;
+    flex-direction: row;
+    justify-content: center;
+    gap: 4px;
+    border-radius: 9px;
+  }
+  .category-tabs > button:last-child span {
+    display: none;
   }
   .category-tabs button.active {
     background: #354b32;
@@ -867,15 +895,11 @@ button:hover:not(:disabled) {
     height: 85px;
   }
   .asset-name {
-    font-size: 11px;
-  }
-  .library-note {
-    margin: 3px 8px;
-    font-size: 11px;
+    font-size: 12px;
   }
   .sidebar-footer {
     height: 48px;
-    padding: 0 10px 0 15px;
+    padding: 0 12px;
     font-size: 10px;
   }
   .sidebar-footer button {
@@ -938,7 +962,6 @@ button:hover:not(:disabled) {
   .placement-bar .icon-button {
     width: 30px;
   }
-
   /* On phones the inspector is a bottom card, in place of the dock. */
   .inspector {
     left: 12px;
@@ -1006,18 +1029,6 @@ button:hover:not(:disabled) {
   color: #bccb9f !important;
   margin: 0 0 8px !important;
   font-size: 11px !important;
-}
-.asset-name {
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-}
-@media (max-width: 760px) {
-  .asset-name {
-    font-size: 12px;
-    line-height: 16px;
-    min-height: 32px;
-  }
 }
 
 .life-panel {
@@ -1110,21 +1121,6 @@ button:hover:not(:disabled) {
   }
 }
 
-@media (max-width: 760px) {
-  .panel-tabs {
-    padding-right: 140px;
-    gap: 1px;
-  }
-  .panel-tabs button {
-    padding-left: 7px;
-    padding-right: 7px;
-  }
-  .panel-tabs button:first-child {
-    font-size: 11px;
-    gap: 4px;
-  }
-}
-
 .mode-switch {
   position: absolute;
   top: 103px;
@@ -1153,10 +1149,6 @@ button:hover:not(:disabled) {
 .mode-switch button[aria-pressed="true"] {
   background: #3b5038;
   color: #e4efcf;
-}
-.view-mode .mode-switch {
-  top: 24px;
-  left: 24px;
 }
 .view-mode .inspector {
   top: auto;
@@ -1244,10 +1236,6 @@ button:hover:not(:disabled) {
     top: 68px;
     left: 12px;
   }
-  .view-mode .mode-switch {
-    top: 12px;
-    left: 12px;
-  }
   .mode-switch button {
     padding: 0 12px;
   }
@@ -1262,18 +1250,6 @@ button:hover:not(:disabled) {
     display: block;
   }
 }
-.view-mode .scene-tools {
-  top: 24px;
-  right: 24px;
-  bottom: auto;
-}
-@media (max-width: 760px) {
-  .view-mode .scene-tools {
-    top: 12px;
-    right: 12px;
-  }
-}
-
 [hidden] {
   display: none !important;
 }
@@ -1289,34 +1265,7 @@ button:hover:not(:disabled) {
   color: var(--muted);
   font-size: 12px;
 }
-.share-control {
-  position: relative;
-  display: flex;
-}
-.share-feedback,
-.share-fallback {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 10px);
-  padding: 10px 12px;
-  background: #192c24f5;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  font-size: 12px;
-  white-space: nowrap;
-  z-index: 8;
-}
-.share-fallback {
-  width: min(300px, calc(100vw - 24px));
-  white-space: normal;
-}
-.share-fallback > span {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-.share-fallback input {
+.world-link-input {
   width: 100%;
   min-height: 44px;
   padding: 8px;
@@ -1325,11 +1274,6 @@ button:hover:not(:disabled) {
   background: #13241c;
   color: #deedc0;
   font-size: 12px;
-}
-.app:not(.view-mode) .share-feedback,
-.app:not(.view-mode) .share-fallback {
-  top: auto;
-  bottom: calc(100% + 10px);
 }
 .placement-rotation {
   display: grid;
@@ -1442,6 +1386,36 @@ button:hover:not(:disabled) {
 .life-panel li small {
   margin-top: 0;
 }
+.life-log-toggle {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 18px 0 6px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: #90a584;
+  font-size: 12px;
+  cursor: pointer;
+}
+.life-log-toggle:hover {
+  color: #deedc0;
+}
+.life-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #b6c6aa;
+}
+.life-log time {
+  display: inline-block;
+  min-width: 96px;
+  margin-right: 8px;
+  color: #90a584;
+  font-variant-numeric: tabular-nums;
+}
 
 .view-info {
   position: absolute;
@@ -1486,4 +1460,162 @@ button:hover:not(:disabled) {
 .creature-options .frog-list {
   max-height: 240px;
   overflow: auto;
+}
+
+.world-list {
+  margin-top: 4px;
+}
+.saved-world {
+  border-bottom: 1px solid var(--line);
+  padding: 8px 0;
+}
+.saved-world-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.open-world {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: 10px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+}
+.open-world strong,
+.open-world span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.open-world strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.worlds-heading {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  gap: 0;
+  margin-bottom: 22px;
+}
+.worlds-heading h2 {
+  grid-column: 2;
+  text-align: center;
+}
+.world-section-heading {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+.worlds-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #c2d1bb;
+  font-size: 13px;
+  line-height: 1;
+  flex: none;
+}
+.worlds-button:hover {
+  background: #334b37;
+  color: var(--accent);
+}
+.scene-controls {
+  display: contents;
+}
+.view-mode .scene-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  right: 24px;
+  z-index: 6;
+  pointer-events: none;
+}
+.view-mode .scene-controls > .mode-switch,
+.view-mode .scene-controls > .scene-tools {
+  position: static;
+  pointer-events: auto;
+}
+.view-mode .scene-controls > .scene-tools {
+  margin-left: auto;
+}
+@media (max-width: 760px) {
+  .view-mode .scene-controls {
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .view-mode .mode-switch button {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+  .view-mode .mode-switch button span,
+  .view-mode .worlds-button span,
+  .view-mode .scene-tools .icon-button[aria-label="Reset view"] {
+    display: none;
+  }
+  .view-mode .scene-tools .icon-button {
+    width: 44px;
+  }
+  .view-mode .worlds-button {
+    width: 44px;
+    padding: 0;
+  }
+  .worlds-button {
+    height: 44px;
+  }
+}
+.open-world span {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.world-options,
+.world-library-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+.world-options button,
+.world-library-actions > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+.world-options .delete-world {
+  color: #d7a29a;
+  margin-left: auto;
+}
+.world-options > span {
+  width: 100%;
+  color: var(--muted);
+  font-size: 13px;
+}
+.world-library-actions {
+  justify-content: space-between;
+  margin-top: 22px;
+  border-top: 1px solid var(--line);
+  padding-bottom: 0;
 }

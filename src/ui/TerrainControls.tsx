@@ -11,21 +11,19 @@ export function TerrainControls({ editor }: { editor: Editor }) {
     <section className="terrain-controls" aria-label="Landscape brushes">
       <div className="section-label">SHAPE YOUR LANDSCAPE</div>
       <div className="terrain-tools">
-        {terrainTools.map(({ mode, label }) => (
+        {terrainTools.map(({ mode, label, description }) => (
           <button
             key={mode}
             className={brush?.mode === mode ? "active" : ""}
             aria-pressed={brush?.mode === mode}
+            title={description}
             onClick={() => {
               editor.select(null);
               editor.setTool({
                 type: "terrain",
                 mode,
-                radius: mode === "stream" ? Math.min(radius, 0.35) : radius,
+                radius,
               });
-              editor.notify(
-                `${label}. Drag across the tank; Done or Escape finishes.`,
-              );
             }}
           >
             {label}
@@ -44,10 +42,6 @@ export function TerrainControls({ editor }: { editor: Editor }) {
           if (brush) editor.setTool({ ...brush, radius: next });
         }}
       />
-      <p className="terrain-note">
-        Drag to brush, tap for a small change. Each stroke is one undo. Pools
-        and streams fill to the water level.
-      </p>
       <button
         className="reset-terrain"
         disabled={!editor.world.environment.terrain}

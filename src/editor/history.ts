@@ -5,11 +5,14 @@ export interface History {
   future: World[];
 }
 export type HistoryAction =
+  | { type: "open"; world: World }
   | { type: "commit"; world: World }
   | { type: "simulate"; base: World; world: World }
   | { type: "undo" }
   | { type: "redo" };
 export function historyReducer(state: History, action: HistoryAction): History {
+  if (action.type === "open")
+    return { past: [], present: action.world, future: [] };
   if (action.type === "simulate") {
     return state.present === action.base
       ? { ...state, present: action.world }

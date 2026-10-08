@@ -145,32 +145,3 @@ function growTuft(species: MossSpecies, random: () => number) {
   tuft.deleteAttribute("uv");
   return tuft;
 }
-
-/** Low sheet moss cushions crowding each given ground point, for ground
- * painted with moss. Kept per point so water can cover some cushions without
- * reshaping the rest. */
-export function mossCushions(points: THREE.Vector3[], random: () => number) {
-  return points.map((point) => ({
-    point,
-    lumps: [0, 1, 2, 3].map(() => {
-      const size = 0.04 + random() * 0.04;
-      const lump = dome(size, size * 0.4, "sheet", random, 0.3, 1);
-      lump.deleteAttribute("uv");
-      // Lumps spread across the gap to the next painted point and overlap.
-      return lump.translate(
-        point.x + (random() - 0.5) * 0.24,
-        point.y - 0.006,
-        point.z + (random() - 0.5) * 0.24,
-      );
-    }),
-  }));
-}
-
-type MossCushion = ReturnType<typeof mossCushions>[number];
-
-/** Joins cushions into one mesh, so a whole carpet draws at once. */
-export function mossCarpet(cushions: MossCushion[]) {
-  const lumps = cushions.flatMap((cushion) => cushion.lumps);
-  if (lumps.length === 0) return undefined;
-  return mergeGeometries(lumps) ?? undefined;
-}

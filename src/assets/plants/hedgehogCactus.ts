@@ -6,7 +6,8 @@ export const hedgehogCactus: AssetDefinition = {
   kind: "hedgehog-cactus",
   name: "Hedgehog cactus",
   scientificName: "Echinocereus engelmannii",
-  category: "Plants",
+  group: "Cacti & succulents",
+  biomes: ["Desert"],
   description:
     "A spiny little column that opens big magenta flowers in spring.",
   radius: 0.2,

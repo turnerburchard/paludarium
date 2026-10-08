@@ -144,6 +144,7 @@ export class Ecosystem {
           reason: "Settling in",
           moving: false,
           surface: node.surface,
+          grounded: node.surface === "ground",
           motion: { progress: 0, lift: 0, tilt: 0, hop: false },
         },
       });
@@ -273,10 +274,12 @@ export class Ecosystem {
     if (!agent.profile.grazes)
       needs.hunger = clamp(needs.hunger + STEP * HUNGER_RATE);
     // Cover holds in humidity, so a sheltered animal dries out more slowly.
+    // Animals that live underwater never dry out.
     const cover = this.graph.node(state.nodeId).shelter;
-    needs.hydration = clamp(
-      needs.hydration - STEP * HYDRATION_RATE * (1 - 0.6 * cover),
-    );
+    if (agent.profile.water !== "lives")
+      needs.hydration = clamp(
+        needs.hydration - STEP * HYDRATION_RATE * (1 - 0.6 * cover),
+      );
     // Walking costs energy by distance, so slow walkers aren't worn out by
     // the time a trip takes.
     needs.energy = clamp(
@@ -337,8 +340,11 @@ export class Ecosystem {
     const food =
       nearest(reachable.filter((id) => insects(id) >= 0.5)) ??
       nearest(reachable.filter((id) => insects(id) > 0.001));
-    const shoreline = [...lengths.keys()].filter(
-      (id) => this.graph.node(id).wet,
+    // Animals that visit the water soak in it rather than on the shore.
+    const shoreline = [...lengths.keys()].filter((id) =>
+      agent.profile.water === "visits"
+        ? this.graph.node(id).submerged
+        : this.graph.node(id).wet,
     );
     const water = nearest(shoreline.filter((id) => reachable.includes(id)));
     const inactive = agent.profile.nocturnal
@@ -374,7 +380,15 @@ export class Ecosystem {
           : 0,
       );
     if (thirsty && water) {
-      go(water, "bathing", "seeking-water", "Finding a damp shoreline", 30);
+      go(
+        water,
+        "bathing",
+        "seeking-water",
+        agent.profile.water === "visits"
+          ? "Heading into the water"
+          : "Finding a damp shoreline",
+        30,
+      );
       return;
     }
     // Shoreline is scarce. Rather than give up while another animal soaks,
@@ -461,8 +475,13 @@ export class Ecosystem {
         const ahead =
           direction && facing ? (dot(direction, facing) + 1) / 2 : 0.5;
         const fresh = agent.recent.includes(id) ? 0.12 : 1;
-        const perch = this.graph.node(id).surface === "leaf" ? 1.5 : 1;
-        return fresh * perch * (0.5 + ahead) * (0.3 + lengths.get(id)! / range);
+        const node = this.graph.node(id);
+        const perch = node.surface === "leaf" ? 1.5 : 1;
+        // Animals that visit the water like to poke around underwater.
+        const dip = agent.profile.water === "visits" && node.submerged ? 3 : 1;
+        return (
+          fresh * perch * dip * (0.5 + ahead) * (0.3 + lengths.get(id)! / range)
+        );
       });
       let choice =
         this.roll() * weights.reduce((sum, weight) => sum + weight, 0);
@@ -606,6 +625,7 @@ export class Ecosystem {
       state.normal = copyVector(target.normal);
       state.nodeId = target.id;
       state.surface = target.surface;
+      state.grounded = target.surface === "ground";
       state.motion = { progress: 0, lift: 0, tilt: 0, hop: false };
       agent.edge = undefined;
       agent.path.shift();
@@ -673,6 +693,8 @@ export class Ecosystem {
       y: edge.normal.y + (target.normal.y - edge.normal.y) * travel,
       z: edge.normal.z + (target.normal.z - edge.normal.z) * travel,
     };
+    state.grounded =
+      !edge.hop && state.surface === "ground" && target.surface === "ground";
     const length = Math.hypot(normal.x, normal.y, normal.z);
     state.normal =
       length > 0.001

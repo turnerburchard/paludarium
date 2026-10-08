@@ -6,6 +6,29 @@ import type { Surface } from "../simulation/types";
 
 export type Category = "Plants" | "Landscape" | "Animals";
 
+/** Where in the world a thing comes from. Whether it lives underwater is its
+ * habitat, not a biome. */
+export type Biome = "Tropical" | "Temperate" | "Desert";
+
+/** Finer groups within each category, for filtering the library. Adding a
+ * group means listing it here and moving its assets into it. */
+export const groupCategories = {
+  "Leafy plants": "Plants",
+  Grasses: "Plants",
+  "Cacti & succulents": "Plants",
+  "Aquatic plants": "Plants",
+  Mosses: "Plants",
+  Mushrooms: "Plants",
+  Stone: "Landscape",
+  Wood: "Landscape",
+  Amphibians: "Animals",
+  Reptiles: "Animals",
+  Fish: "Animals",
+  Invertebrates: "Animals",
+} as const satisfies Record<string, Category>;
+
+export type Group = keyof typeof groupCategories;
+
 /** How a land animal behaves in the simulation. */
 export interface AnimalBehavior {
   nocturnal: boolean;
@@ -20,6 +43,9 @@ export interface AnimalBehavior {
   /** Feeds on algae and film wherever it goes, so it never goes hungry and
    * leaves the insects to others. */
   grazes?: boolean;
+  /** Whether it walks underwater: animals that visit still need dry land,
+   * and those that live there never leave it or dry out. */
+  water?: "visits" | "lives";
 }
 
 /** Everything the app knows about one kind of placeable thing. */
@@ -27,7 +53,8 @@ export interface AssetDefinition {
   kind: AssetKind;
   name: string;
   scientificName?: string;
-  category: Category;
+  group: Group;
+  biomes: readonly [Biome, ...Biome[]];
   description: string;
   /** Footprint at scale 1, used for placement bounds and selection rings. */
   radius: number;

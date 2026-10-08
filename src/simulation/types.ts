@@ -14,6 +14,8 @@ export interface HabitatNode {
   normal: Vec3;
   surface: Surface;
   wet: boolean;
+  /** Below the waterline, for animals that walk underwater. */
+  submerged?: boolean;
   shelter: number;
   neighbors: string[];
   perchHeight?: number;
@@ -56,6 +58,9 @@ export interface AnimalState {
   reason: string;
   moving: boolean;
   surface: Surface;
+  /** At a ground node or walking between two, so it can follow the terrain
+   * itself rather than the straight line between nodes. */
+  grounded: boolean;
   /** How the current edge is travelled. `hop` is true for the whole edge,
    * including the crouch before takeoff and the landing. */
   motion: { progress: number; lift: number; tilt: number; hop: boolean };

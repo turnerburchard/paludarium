@@ -1,7 +1,12 @@
 import * as THREE from "three";
 import type { AssetKind, HabitatObject } from "../model/schema";
 import { randomFromSeed } from "../model/random";
-import type { AssetDefinition } from "./types";
+import {
+  groupCategories,
+  type AssetDefinition,
+  type Biome,
+  type Category,
+} from "./types";
 import { batchStaticAsset } from "./batch";
 import type { MossSpecies } from "../model/moss";
 import { growMoss } from "./landscape/mossCover";
@@ -23,6 +28,14 @@ import {
   tigerSalamander,
 } from "./animals/lizards";
 import { snail } from "./animals/snail";
+import {
+  scorpion,
+  tarantula,
+  vampireCrab,
+  microCrab,
+  dwarfCrayfish,
+  cherryShrimp,
+} from "./animals/arthropods";
 import { desertTortoise, turtle } from "./animals/turtle";
 import { cardinalTetra, emberTetra } from "./animals/tetras";
 import { tigerBarb } from "./animals/barb";
@@ -89,9 +102,22 @@ import {
 } from "./landscape/stones";
 import { fungusLog } from "./landscape/fungusLog";
 import { snag } from "./landscape/snag";
+import { treeRoots } from "./landscape/treeRoots";
+import { stump } from "./landscape/stump";
+import { deadTree } from "./landscape/deadTree";
+import { bolete, bonnetMushrooms, flyAgaric } from "./landscape/mushrooms";
+import { ludwigia } from "./plants/ludwigia";
+import { dwarfSagittaria } from "./plants/dwarfSagittaria";
 import { leafLitter } from "./landscape/leafLitter";
 
-export type { AssetDefinition, Category, AnimalBehavior } from "./types";
+export type {
+  AssetDefinition,
+  Category,
+  Biome,
+  Group,
+  AnimalBehavior,
+} from "./types";
+export { groupCategories } from "./types";
 
 /** Every placeable thing, in the order the library shows them. */
 export const assets = {
@@ -107,7 +133,6 @@ export const assets = {
   "fence-lizard": fenceLizard,
   chuckwalla,
   "tiger-salamander": tigerSalamander,
-  snail,
   turtle,
   "desert-tortoise": desertTortoise,
   monstera,
@@ -138,6 +163,8 @@ export const assets = {
   "amazon-sword": amazonSword,
   vallisneria,
   rotala,
+  ludwigia,
+  "dwarf-sagittaria": dwarfSagittaria,
   anubias,
   "java-fern": javaFern,
   cryptocoryne,
@@ -162,8 +189,14 @@ export const assets = {
   log,
   "fungus-log": fungusLog,
   snag,
+  stump,
+  "dead-tree": deadTree,
+  "tree-roots": treeRoots,
   "rock-shelter": rockShelter,
   "leaf-litter": leafLitter,
+  "fly-agaric": flyAgaric,
+  bolete,
+  "bonnet-mushrooms": bonnetMushrooms,
   fish,
   "cardinal-tetra": cardinalTetra,
   "ember-tetra": emberTetra,
@@ -177,15 +210,31 @@ export const assets = {
   "cutthroat-trout": cutthroatTrout,
   sculpin,
   pupfish,
+  snail,
+  "vampire-crab": vampireCrab,
+  "stripe-tailed-scorpion": scorpion,
+  "desert-tarantula": tarantula,
+  "micro-crab": microCrab,
+  "dwarf-crayfish": dwarfCrayfish,
+  "cherry-shrimp": cherryShrimp,
 } satisfies Record<AssetKind, AssetDefinition>;
 
 export const catalog: readonly AssetDefinition[] = Object.values(assets);
 
+export function categoryOf(asset: AssetDefinition): Category {
+  return groupCategories[asset.group];
+}
+/** Underwater takes in anything that can live in the water, whatever its biome. */
+export function livesIn(asset: AssetDefinition, place: Biome | "Underwater") {
+  return place === "Underwater"
+    ? asset.habitat !== "land"
+    : asset.biomes.includes(place);
+}
 /** Animals living on the habitat's surfaces, simulated by the ecosystem.
  * Fish swim separately. */
 /** Anything alive that can be watched: land animals and fish. */
 export function isAnimal(kind: AssetKind): boolean {
-  return assets[kind].category === "Animals";
+  return categoryOf(assets[kind]) === "Animals";
 }
 export function isLandAnimal(kind: AssetKind): boolean {
   return assets[kind].behavior !== undefined;
@@ -205,7 +254,7 @@ export function buildAsset(
 ): THREE.Group {
   const asset = assets[kind];
   const model = asset.build(randomFromSeed(seed));
-  if (asset.category === "Animals") return model;
+  if (isAnimal(kind)) return model;
   const batched = batchStaticAsset(model);
   if (moss) growMoss(batched, moss, randomFromSeed(seed + 1));
   return batched;

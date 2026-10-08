@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { catalog, isAnimal } from "../src/assets";
 import {
   emptyWorld,
+  LOG_LENGTH,
   type AssetKind,
   type HabitatObject,
   type World,
@@ -63,9 +64,7 @@ describe("slow animal life cycles", () => {
     expect(habitatSupport(world).plants).toBe(0);
   });
   it.each(
-    catalog
-      .filter((asset) => asset.category === "Animals")
-      .map((asset) => asset.kind),
+    catalog.filter((asset) => isAnimal(asset.kind)).map((asset) => asset.kind),
   )("lets a healthy %s pair have a juvenile of their own species", (kind) => {
     const world = habitat([kind, kind]);
     const next = advanceLife(world, 5, () => 0.5);
@@ -111,6 +110,19 @@ describe("slow animal life cycles", () => {
       world = advanceLife(world, 5);
     expect(world.objects).toHaveLength(0);
   });
+  it("loses a stranded animal within minutes and keeps it from breeding", () => {
+    let world = habitat(["tree-frog", "tree-frog"]);
+    const stranded = new Set(["animal-0"]);
+    world = advanceLife(world, 60, Math.random, stranded);
+    const [frog, other] = world.objects;
+    expect(frog.life!.condition).toBeLessThan(0.7);
+    expect(frog.life!.breeding).toBe(0);
+    expect(other.life!.condition).toBe(1);
+    for (let i = 0; i < 30; i++)
+      world = advanceLife(world, 5, Math.random, stranded);
+    expect(world.objects.some((o) => o.id === "animal-0")).toBe(false);
+    expect(world.objects.some((o) => o.id === "animal-1")).toBe(true);
+  });
   it("ages juveniles into adults and removes an animal at the end of its life", () => {
     const world = habitat(["fish"]);
     world.objects[0].life!.age = MATURITY_AGE - 5;
@@ -141,6 +153,46 @@ describe("slow animal life cycles", () => {
     expect(animalLife(first).lifespan - animalLife(first).age).not.toBe(
       animalLife(second).lifespan - animalLife(second).age,
     );
+  });
+  it("logs births and deaths with the cause of each death", () => {
+    let world = habitat(["tree-frog", "tree-frog"]);
+    world = advanceLife(world, 5, () => 0.5, new Set(), 1000);
+    expect(world.log).toEqual([{ at: 1000, event: "born", kind: "tree-frog" }]);
+    const deaths = (world: World, stranded = new Set<string>()) => {
+      for (
+        let i = 0;
+        i < 3000 && world.objects.some((o) => isAnimal(o.kind));
+        i++
+      )
+        world = advanceLife(world, 5, () => 0.5, stranded, 2000);
+      return world.log!.filter((entry) => entry.event === "died");
+    };
+    const old = habitat(["fish"]);
+    old.objects[0].life!.age = old.objects[0].life!.lifespan - 5;
+    expect(deaths(old)).toEqual([
+      { at: 2000, event: "died", kind: "fish", cause: "age" },
+    ]);
+    expect(deaths(habitat(["tree-frog"], 0))[0].cause).toBe("starved");
+    expect(deaths(habitat(["tree-frog"]), new Set(["animal-0"]))[0].cause).toBe(
+      "drowned",
+    );
+    expect(deaths(habitat(["fish"]), new Set(["animal-0"]))[0].cause).toBe(
+      "stranded",
+    );
+  });
+  it("keeps only the most recent log entries", () => {
+    const world = habitat(["fish"]);
+    world.log = Array.from({ length: LOG_LENGTH }, (_, i) => ({
+      at: i,
+      event: "born" as const,
+      kind: "fish" as const,
+    }));
+    world.objects[0].life!.age = world.objects[0].life!.lifespan;
+    const next = advanceLife(world, 5, Math.random, new Set(), 500);
+    expect(next.log).toHaveLength(LOG_LENGTH);
+    expect(next.log![0].at).toBe(1);
+    expect(next.log!.at(-1)!.event).toBe("died");
+    expect(parseWorld(JSON.stringify(next)).log).toEqual(next.log);
   });
   it("can sustain successive generations from a planted pair", () => {
     let world = habitat(["tree-frog", "tree-frog"], 4);
