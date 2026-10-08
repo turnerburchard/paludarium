@@ -253,12 +253,12 @@ export interface VineLeaf {
   node: number;
 }
 
-/** A heartleaf vine spiralling up a cork pole. Its leaves grow larger as it
- * climbs, as climbing philodendrons do, and only the big upper leaves hold a
- * frog; the way up is along the vine itself. */
+/** A heartleaf vine spiralling up a moss pole, leafy enough to mostly hide
+ * it. Its leaves grow larger as it climbs, as climbing philodendrons do, and
+ * only the big upper leaves hold a frog; the way up is along the vine itself. */
 export function philodendronVine(random: () => number) {
   const height = 1.15 + random() * 0.2;
-  const poleRadius = 0.085;
+  const poleRadius = 0.065;
   const turns = 2.3 + random() * 0.5;
   const phase = random() * Math.PI * 2;
   const vine = Array.from({ length: 25 }, (_, i): PlantPoint => {
@@ -270,14 +270,17 @@ export function philodendronVine(random: () => number) {
       z: Math.sin(angle) * (poleRadius + 0.014),
     };
   });
-  const leaves = Array.from({ length: 16 }, (_, i): VineLeaf => {
-    const node = 1 + Math.round(i * 1.45);
+  const leaves = Array.from({ length: 24 }, (_, i): VineLeaf => {
+    const node = 1 + Math.round(i * 0.97);
     const at = vine[node];
     const t = node / 24;
-    const out = normalized({ x: at.x, y: 0, z: at.z });
+    // Leaves fan to either side of the vine so they wrap around the pole.
+    const spread = (i % 2 ? 1 : -1) * (0.3 + random() * 0.4);
+    const outward = Math.atan2(at.z, at.x) + spread;
+    const out = { x: Math.cos(outward), y: 0, z: Math.sin(outward) };
     const direction = normalized({
       x: out.x,
-      y: -0.15 - random() * 0.2,
+      y: -0.1 + random() * 0.25,
       z: out.z,
     });
     const normal = normalized({
@@ -285,7 +288,7 @@ export function philodendronVine(random: () => number) {
       y: 1 - direction.y * direction.y,
       z: -direction.z * direction.y,
     });
-    const length = 0.12 + t * t * 0.25 + random() * 0.04;
+    const length = 0.17 + t * 0.24 + random() * 0.05;
     return {
       base: {
         x: at.x + out.x * 0.04,
@@ -295,7 +298,7 @@ export function philodendronVine(random: () => number) {
       direction,
       normal,
       length,
-      width: length * 0.78,
+      width: length * 0.8,
       droop: 0.1 + random() * 0.06,
       node,
     };
