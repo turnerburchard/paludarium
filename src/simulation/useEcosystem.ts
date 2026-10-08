@@ -1,10 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import { isAnimal } from "../assets";
-import type { World } from "../model/schema";
+import { assets, isAnimal } from "../assets";
+import type { HabitatObject, World } from "../model/schema";
+import { objectBase } from "../model/stacking";
+import { groundHeight, swimmingHeight } from "../model/terrain";
 import { createFishSchool, createWorldEcosystem } from "./worldHabitat";
 import type { Ecosystem } from "./engine";
 import type { FishSchool } from "./fish";
 import { advanceLife as evolveLife, habitatSupport } from "./lifeCycle";
+import type { Vec3 } from "./types";
+
+/** A dead animal's body, from where it was last seen until it has faded. */
+export interface Remains {
+  object: HabitatObject;
+  position: Vec3;
+  heading: number;
+  /** Where the body comes to rest: the bottom for a fish, and the ground
+   * for an animal that dies on a leaf or the glass. */
+  restY: number;
+}
 
 /** React is a consumer of the engine; it receives HUD snapshots four times a second. */
 export function useEcosystem(
@@ -27,6 +40,7 @@ export function useEcosystem(
   const [snapshot, setSnapshot] = useState(() =>
     live.current!.engine.snapshot(),
   );
+  const [remains, setRemains] = useState<Remains[]>([]);
   useEffect(() => {
     const previous = live.current!;
     if (previous.world === world) return;
@@ -36,6 +50,7 @@ export function useEcosystem(
         isAnimal(o.kind) &&
         previous.world.objects.some((p) => p.id === o.id && p.kind === o.kind),
     );
+    if (!sharesAnimals) setRemains([]);
     live.current = {
       world,
       engine: createWorldEcosystem(world, sharesAnimals ? previous : undefined),
@@ -56,6 +71,44 @@ export function useEcosystem(
   function canLive(id: string) {
     const { engine, fish } = live.current!;
     return !!engine.observeAnimal(id) || !!fish.get(id);
+  }
+  /** Where the animal was last drawn, before the habitat forgets it. */
+  function remainsOf(object: HabitatObject): Remains {
+    const { engine, fish, world } = live.current!;
+    const env = world.environment;
+    const swimmer = fish.get(object.id);
+    if (swimmer) {
+      const { x, z } = swimmer;
+      const depth = assets[object.kind].swims!.depth;
+      return {
+        object,
+        position: { x, y: swimmer.y ?? swimmingHeight(x, z, env, depth), z },
+        heading: swimmer.heading,
+        restY: groundHeight(x, z, env),
+      };
+    }
+    const animal = engine.observeRenderedAnimal(object.id);
+    if (!animal) {
+      const y = objectBase(object, env);
+      return {
+        object,
+        position: { x: object.x, y, z: object.z },
+        heading: object.rotation,
+        restY: y,
+      };
+    }
+    const { position, direction, surface } = animal;
+    const falls =
+      animal.grounded ||
+      surface === "leaf" ||
+      surface === "stem" ||
+      surface === "glass";
+    return {
+      object,
+      position: { ...position },
+      heading: Math.atan2(-direction.x, -direction.z),
+      restY: falls ? groundHeight(position.x, position.z, env) : position.y,
+    };
   }
   function advanceLife(seconds: number, paused: boolean) {
     const current = live.current!;
@@ -80,6 +133,11 @@ export function useEcosystem(
       next.objects.length !== previous.objects.length ||
       next.objects.some((o, i) => o.id !== previous.objects[i]?.id);
     if (populationChanged) {
+      const living = new Set(next.objects.map((o) => o.id));
+      const died = previous.objects.filter(
+        (o) => isAnimal(o.kind) && !living.has(o.id),
+      );
+      if (died.length) setRemains((r) => [...r, ...died.map(remainsOf)]);
       current.engine = createWorldEcosystem(next, current);
       current.fish = createFishSchool(next, current);
     }
@@ -91,6 +149,10 @@ export function useEcosystem(
     snapshot,
     canLive,
     advanceLife,
+    remains,
+    /** A body that has finished fading. */
+    forgetRemains: (id: string) =>
+      setRemains((r) => r.filter((body) => body.object.id !== id)),
     habitat: habitatSupport(world),
   };
 }
