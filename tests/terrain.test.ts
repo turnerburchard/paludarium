@@ -4,11 +4,14 @@ import {
   baseGroundHeight,
   groundHeight,
   groundNormal,
-  MAX_GROUND_HEIGHT,
   placementProblem,
 } from "../src/model/terrain";
 import { applyTerrainBrush } from "../src/model/terrainBrush";
-import { terrainPoint, TERRAIN_POINTS } from "../src/model/terrainData";
+import {
+  groundCeiling,
+  terrainPoint,
+  TERRAIN_POINTS,
+} from "../src/model/terrainData";
 import { TerrainStroke } from "../src/editor/terrainStroke";
 import { historyReducer } from "../src/editor/history";
 import { parseWorld } from "../src/editor/persistence";
@@ -19,7 +22,7 @@ describe("saved landscape brushes", () => {
     let env = emptyWorld().environment;
     for (let i = 0; i < 200; i++)
       env = applyTerrainBrush(env, 1.75, 0, { mode: "raise", radius: 0.65 });
-    expect(groundHeight(1.75, 0, env)).toBeCloseTo(2.4, 3);
+    expect(groundHeight(1.75, 0, env)).toBeCloseTo(groundCeiling(env), 3);
     expect(Math.max(...env.terrain!.heights)).toBeGreaterThan(0.9);
     expect(
       Math.max(
@@ -28,7 +31,7 @@ describe("saved landscape brushes", () => {
           return groundHeight(point.x, point.z, env);
         }),
       ),
-    ).toBeLessThanOrEqual(MAX_GROUND_HEIGHT);
+    ).toBeLessThanOrEqual(groundCeiling(env));
     expect(
       parseWorld(JSON.stringify({ ...emptyWorld(), environment: env }))
         .environment,
@@ -82,7 +85,7 @@ describe("saved landscape brushes", () => {
     for (let i = 0; i < 6; i++)
       env = applyTerrainBrush(env, -1.75, 0, { mode: "raise", radius: 0.65 });
     const peak = groundHeight(-1.75, 0, env);
-    expect(peak).toBeLessThanOrEqual(MAX_GROUND_HEIGHT);
+    expect(peak).toBeLessThanOrEqual(groundCeiling(env));
     const smooth = applyTerrainBrush(env, -1.75, 0, {
       mode: "smooth",
       radius: 0.65,
@@ -173,7 +176,7 @@ describe("saved landscape brushes", () => {
     invalid.environment.terrain!.heights.pop();
     expect(() => parseWorld(JSON.stringify(invalid))).toThrow();
     invalid.environment.terrain!.heights =
-      Array<number>(TERRAIN_POINTS).fill(3);
+      Array<number>(TERRAIN_POINTS).fill(7);
     expect(() => parseWorld(JSON.stringify(invalid))).toThrow();
     const malformed = JSON.parse(JSON.stringify(world));
     malformed.environment.terrain.paint[0] = "lava";

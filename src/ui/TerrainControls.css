@@ -21,11 +21,6 @@
   background: #354b31;
   color: #e3edcc;
 }
-.terrain-note {
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.6;
-}
 .reset-terrain {
   width: 100%;
 }
