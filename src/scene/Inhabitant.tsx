@@ -87,8 +87,6 @@ export function Inhabitant({
       back: new THREE.Vector3(),
       matrix: new THREE.Matrix4(),
       rotation: new THREE.Quaternion(),
-      facing: new THREE.Quaternion(),
-      faced: false,
     }),
     [],
   );
@@ -118,18 +116,12 @@ export function Inhabitant({
           state.position.z,
         );
         const live = ecosystem.live.current!;
-        // On the ground, follow the terrain under the animal rather than the
-        // straight line between nodes, and lean with its slope.
-        const slope = state.grounded
+        const previewGround =
+          state.grounded && environment !== live.world.environment;
+        const slope = previewGround
           ? groundNormal(state.position.x, state.position.z, environment)
           : undefined;
-        if (slope)
-          group.position.y = groundHeight(
-            state.position.x,
-            state.position.z,
-            environment,
-          );
-        else if (environment !== live.world.environment) {
+        if (environment !== live.world.environment) {
           const node = live.engine.graph.node(state.nodeId);
           const supportId = node.plantId ?? node.supportId;
           const plant = supportId
@@ -161,12 +153,9 @@ export function Inhabitant({
         pose.right.crossVectors(pose.normal, pose.back).normalize();
         pose.matrix.makeBasis(pose.right, pose.normal, pose.back);
         pose.rotation.setFromRotationMatrix(pose.matrix);
-        // Ease into new headings so a change of edge reads as a turn, not a snap.
-        if (pose.faced)
-          pose.facing.slerp(pose.rotation, 1 - Math.exp(-12 * rigDelta));
-        else pose.facing.copy(pose.rotation);
-        pose.faced = true;
-        group.quaternion.copy(pose.facing);
+        // The engine already interpolates motion. Lagging behind its surface
+        // normal can put a sideways body underground after landing.
+        group.quaternion.copy(pose.rotation);
         group.position.y += state.motion.lift;
         group.rotateX(state.motion.tilt);
         rig.update(state, rigDelta);
