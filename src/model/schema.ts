@@ -74,6 +74,7 @@ export const assetKinds = [
   "cryptocoryne",
   "begonia",
   "alocasia",
+  "peace-lily",
   "tree-philodendron",
   "hairgrass",
   "orchid",
