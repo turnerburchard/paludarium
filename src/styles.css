@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url("/fonts/fraunces-latin.woff2") format("woff2");
+}
+
 :root {
   font-family:
     ui-sans-serif,
@@ -6,16 +14,20 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  color: #e6ebe1;
-  background: #233d36;
+  color: #ebe7de;
+  background: #0c1512;
   font-synthesis: none;
   font-weight: 400;
   font-size: 16px;
-  --panel: #182b25;
-  --line: rgba(207, 223, 196, 0.12);
-  --muted: #a5b5a6;
-  --accent: #d1e6a5;
-  --ink: #203329;
+  --panel: hsl(145 28% 11%);
+  --surface: hsl(145 28% 15%);
+  --selected: hsl(145 28% 21%);
+  --line: rgba(235, 231, 222, 0.12);
+  --muted: #a4b3a9;
+  --accent: #aec5a0;
+  --ink: #14241b;
+  --serif: "Fraunces", Georgia, serif;
+  --radius: 14px;
 }
 * {
   box-sizing: border-box;
@@ -90,7 +102,7 @@ button:hover:not(:disabled) {
   display: flex;
   align-items: center;
   gap: 28px;
-  background: #172820;
+  background: var(--panel);
   border-bottom: 1px solid var(--line);
   z-index: 10;
 }
@@ -106,13 +118,12 @@ button:hover:not(:disabled) {
   display: grid;
   place-items: center;
   color: var(--accent);
-  border: 1px solid #506545;
-  border-radius: 50%;
+  border: 0;
 }
 .brand h1 {
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-weight: 650;
-  font-size: 19px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 28px;
   letter-spacing: -0.6px;
   line-height: 1.4;
   margin: 0;
@@ -125,14 +136,15 @@ button:hover:not(:disabled) {
   flex: 1;
 }
 .world-title input {
-  color: #e7eddc;
+  font-family: var(--serif);
+  color: #ebe7de;
   background: transparent;
   border: 0;
   outline: none;
   width: 100%;
   max-width: 290px;
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 20px;
+  font-weight: 400;
   padding: 2px 0;
   border-bottom: 1px solid transparent;
 }
@@ -171,7 +183,7 @@ button:hover:not(:disabled) {
 }
 .icon-button:hover,
 .icon-button.active {
-  background: #334b37;
+  background: var(--selected);
   color: var(--accent);
 }
 .sidebar {
@@ -195,10 +207,10 @@ button:hover:not(:disabled) {
   flex: 1 1 0;
   min-width: 0;
   border: 1px solid var(--line);
-  background: #1d3227;
+  background: var(--panel);
   color: #a9bd9f;
   padding: 9px 6px;
-  border-radius: 9px;
+  border-radius: var(--radius);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -211,8 +223,8 @@ button:hover:not(:disabled) {
   color: #dfebcc;
 }
 .panel-tabs button.active {
-  border-color: #93ac73;
-  background: #354b31;
+  border-color: var(--accent);
+  background: var(--selected);
   color: #e3edcc;
 }
 .panel-content {
@@ -258,26 +270,24 @@ button:hover:not(:disabled) {
 }
 .asset-card {
   padding: 0 0 12px;
-  background: #23392c;
-  border: 1px solid rgba(182, 204, 154, 0.06);
-  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
   overflow: hidden;
   text-align: left;
 }
 .asset-card:hover {
-  background: #2b4633;
-  border-color: #5c7650;
+  background: var(--surface);
+  border-color: var(--line);
 }
 .asset-card.chosen {
-  border-color: #d1e6a5;
-  background: #354c32;
-  box-shadow: 0 0 0 1px #d1e6a5;
+  border-color: var(--accent);
+  background: var(--selected);
 }
 .asset-picture {
   height: 87px;
   display: block;
   position: relative;
-  background: radial-gradient(ellipse at 50% 80%, #3b513b33, transparent);
 }
 .asset-picture img {
   width: 100%;
@@ -302,16 +312,17 @@ button:hover:not(:disabled) {
   opacity: 1;
 }
 .asset-name {
-  font-size: 12px;
-  line-height: 16px;
-  height: 48px;
-  font-weight: 500;
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 21px;
+  height: 63px;
+  font-weight: 400;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
   overflow: hidden;
   padding: 0 9px;
-  color: #d6e1c9;
+  color: #ebe7de;
 }
 .sidebar-footer {
   flex-shrink: 0;
@@ -336,10 +347,10 @@ button:hover:not(:disabled) {
   bottom: 31px;
   display: flex;
   gap: 5px;
-  background: #192d25df;
+  background: var(--panel);
   border: 1px solid var(--line);
   padding: 5px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   z-index: 4;
 }
 .bottom-hud {
@@ -390,7 +401,7 @@ button:hover:not(:disabled) {
   padding: 12px 13px;
   background: #14271fee;
   border: 1px solid #627650;
-  border-radius: 12px;
+  border-radius: var(--radius);
   box-shadow: 0 12px 40px #0002;
 }
 .placement-icon {
@@ -437,9 +448,9 @@ button:hover:not(:disabled) {
   top: 103px;
   width: 275px;
   padding: 20px;
-  background: #192c24ee;
+  background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius);
   box-shadow: 0 14px 40px #0002;
   z-index: 5;
 }
@@ -449,8 +460,9 @@ button:hover:not(:disabled) {
   align-items: center;
 }
 .inspector h2 {
-  font-size: 18px;
-  font-weight: 500;
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 400;
   margin: 7px 0;
 }
 .inspector p {
@@ -476,7 +488,7 @@ button:hover:not(:disabled) {
   padding: 9px;
   border: 1px solid #536b49;
   border-radius: 7px;
-  background: #2b422f;
+  background: var(--surface);
   color: #deedc0;
   font-size: 12px;
   cursor: pointer;
@@ -511,7 +523,7 @@ button:hover:not(:disabled) {
   padding: 7px 8px;
 }
 .object-actions button:hover {
-  background: #334a32;
+  background: var(--selected);
 }
 .range-control {
   display: block;
@@ -556,7 +568,7 @@ button:hover:not(:disabled) {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  background: #24392c;
+  background: var(--surface);
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 14px 8px;
@@ -565,8 +577,8 @@ button:hover:not(:disabled) {
   color: #acbe9c;
 }
 .light-options button.active {
-  border-color: #93ac73;
-  background: #354b31;
+  border-color: var(--accent);
+  background: var(--selected);
   color: #e3edcc;
 }
 .panel-note {
@@ -589,7 +601,7 @@ button:hover:not(:disabled) {
   width: min(460px, 100%);
   max-height: 90dvh;
   overflow: auto;
-  background: #1d3227;
+  background: var(--panel);
   border: 1px solid #526549;
   border-radius: 16px;
   padding: 26px;
@@ -607,9 +619,9 @@ button:hover:not(:disabled) {
   gap: 3px;
 }
 .modal h2 {
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: 23px;
-  font-weight: 500;
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 400;
   letter-spacing: -0.6px;
   margin: 0;
 }
@@ -627,9 +639,9 @@ button:hover:not(:disabled) {
 }
 .preset-options button {
   text-align: left;
-  background: #2b4330;
+  background: var(--surface);
   border: 1px solid #455f3c;
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 14px 12px;
   min-height: 48px;
   font-size: 14px;
@@ -647,16 +659,16 @@ button:hover:not(:disabled) {
   gap: 8px;
 }
 .filter-chips button {
-  background: #2b4330;
+  background: var(--surface);
   border: 1px solid #455f3c;
-  border-radius: 999px;
+  border-radius: var(--radius);
   padding: 8px 14px;
   font-size: 13px;
   color: #d6e1c9;
 }
 .filter-chips button.active {
-  background: #d1e6a5;
-  border-color: #d1e6a5;
+  background: var(--accent);
+  border-color: var(--accent);
   color: var(--ink);
 }
 .filter-actions {
@@ -756,7 +768,7 @@ button:hover:not(:disabled) {
     width: 18px;
   }
   .brand h1 {
-    font-size: 15px;
+    font-size: 22px;
   }
   .world-title {
     display: none;
@@ -781,7 +793,7 @@ button:hover:not(:disabled) {
     width: 100%;
     border-top: 1px solid #43533c;
     border-right: 0;
-    border-radius: 16px 16px 0 0;
+    border-radius: 20px 20px 0 0;
     overflow: hidden;
     box-shadow: 0 -12px 40px #0007;
     transform: translateY(105%);
@@ -812,7 +824,7 @@ button:hover:not(:disabled) {
     z-index: 10;
     gap: 2px;
     padding: 5px;
-    background: #182b25f2;
+    background: var(--panel);
     border: 1px solid var(--line);
     border-radius: 14px;
     box-shadow: 0 10px 30px #0006;
@@ -826,13 +838,13 @@ button:hover:not(:disabled) {
     min-width: 50px;
     padding: 7px 8px;
     border: 0;
-    border-radius: 10px;
+    border-radius: var(--radius);
     background: transparent;
     color: #d6e4c4;
     font-size: 10px;
   }
   .mobile-dock button:active {
-    background: #2b422f;
+    background: var(--surface);
   }
   .dock-divider {
     width: 1px;
@@ -874,13 +886,13 @@ button:hover:not(:disabled) {
     flex-direction: row;
     justify-content: center;
     gap: 4px;
-    border-radius: 9px;
+    border-radius: var(--radius);
   }
   .category-tabs > button:last-child span {
     display: none;
   }
   .category-tabs button.active {
-    background: #354b32;
+    background: var(--selected);
     border-bottom-color: transparent;
   }
   .asset-grid {
@@ -895,7 +907,9 @@ button:hover:not(:disabled) {
     height: 85px;
   }
   .asset-name {
-    font-size: 12px;
+    font-size: 15px;
+    line-height: 19px;
+    height: 57px;
   }
   .sidebar-footer {
     height: 48px;
@@ -972,7 +986,7 @@ button:hover:not(:disabled) {
     padding: 14px;
   }
   .inspector h2 {
-    font-size: 16px;
+    font-size: 22px;
   }
   .inspector p {
     font-size: 11px;
@@ -1015,7 +1029,7 @@ button:hover:not(:disabled) {
     padding: 20px;
   }
   .modal h2 {
-    font-size: 20px;
+    font-size: 24px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1034,7 +1048,7 @@ button:hover:not(:disabled) {
 .life-panel {
   padding: 14px 18px;
   border-top: 0;
-  background: #172c23;
+  background: var(--panel);
   flex-shrink: 0;
 }
 .life-heading {
@@ -1077,7 +1091,7 @@ button:hover:not(:disabled) {
   padding: 8px 10px;
   border: 1px solid transparent;
   border-radius: 7px;
-  background: #213a2d;
+  background: var(--surface);
   color: #deedc0;
   font-size: 12px;
   text-align: left;
@@ -1129,9 +1143,9 @@ button:hover:not(:disabled) {
   display: flex;
   gap: 3px;
   padding: 4px;
-  background: #192c24ed;
+  background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 30px;
+  border-radius: var(--radius);
 }
 .mode-switch button {
   display: flex;
@@ -1141,13 +1155,13 @@ button:hover:not(:disabled) {
   min-height: 40px;
   padding: 0 15px;
   border: 0;
-  border-radius: 24px;
+  border-radius: 10px;
   background: transparent;
   font-size: 13px;
   color: var(--muted);
 }
 .mode-switch button[aria-pressed="true"] {
-  background: #3b5038;
+  background: var(--selected);
   color: #e4efcf;
 }
 .view-mode .inspector {
@@ -1190,13 +1204,13 @@ button:hover:not(:disabled) {
   flex: 1;
   min-height: 44px;
   border: 1px solid var(--line);
-  border-radius: 9px;
-  background: #25392c;
+  border-radius: var(--radius);
+  background: var(--surface);
   font-size: 12px;
 }
 .water-options button[aria-pressed="true"] {
   border-color: #73885c;
-  background: #3b5038;
+  background: var(--selected);
 }
 .moss-options {
   margin-top: 16px;
@@ -1216,12 +1230,12 @@ button:hover:not(:disabled) {
   padding: 6px 0;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #25392c;
+  background: var(--surface);
   font-size: 10px;
 }
 .moss-options button[aria-pressed="true"] {
-  border-color: #93ac73;
-  background: #354b31;
+  border-color: var(--accent);
+  background: var(--selected);
 }
 .moss-swatch {
   width: 14px;
@@ -1271,7 +1285,7 @@ button:hover:not(:disabled) {
   padding: 8px;
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: #13241c;
+  background: var(--surface);
   color: #deedc0;
   font-size: 12px;
 }
@@ -1291,7 +1305,7 @@ button:hover:not(:disabled) {
   padding: 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #2b422f;
+  background: var(--surface);
   font-size: 12px;
   touch-action: none;
 }
@@ -1365,8 +1379,8 @@ button:hover:not(:disabled) {
   padding: 14px;
   margin: 12px 0 6px;
   border: 1px solid #536b49;
-  border-radius: 12px;
-  background: #2b422f;
+  border-radius: var(--radius);
+  background: var(--surface);
   color: #deedc0;
   text-align: left;
   font-size: 14px;
@@ -1489,8 +1503,9 @@ button:hover:not(:disabled) {
   overflow-wrap: anywhere;
 }
 .open-world strong {
-  font-size: 14px;
-  font-weight: 500;
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 400;
 }
 .worlds-heading {
   display: grid;
@@ -1523,7 +1538,7 @@ button:hover:not(:disabled) {
   flex: none;
 }
 .worlds-button:hover {
-  background: #334b37;
+  background: var(--selected);
   color: var(--accent);
 }
 .scene-controls {
