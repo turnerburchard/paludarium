@@ -15,7 +15,7 @@ export const philodendron: AssetDefinition = {
   group: "Leafy plants",
   biomes: ["Tropical"],
   description:
-    "A heartleaf vine on a cork pole. Frogs climb it to the big upper leaves.",
+    "A heartleaf vine climbing a moss pole. Frogs climb it to the big upper leaves.",
   radius: 0.3,
   size: 1.3,
   scaleRange: [0.7, 1.4],
@@ -29,28 +29,29 @@ export const philodendron: AssetDefinition = {
 function build(random: () => number) {
   const root = new THREE.Group();
   const { height, poleRadius, vine, leaves } = philodendronVine(random);
-  const cork = material("#7b6a57", 0.97);
-  cork.vertexColors = true;
-  // Cork bark is paler and greyer than driftwood, with a ragged cut top.
+  // A moss pole, mottled green and brown, ending below the vine's top leaves
+  // so the plant reads as foliage rather than a post.
+  const moss = material("#4f5b30", 0.97);
+  moss.vertexColors = true;
   barkLimb(
     root,
     [
       [0, -0.05, 0],
-      [0.01, height * 0.5, -0.01],
-      [-0.005, height, 0.005],
+      [0.01, height * 0.45, -0.01],
+      [-0.005, height * 0.85, 0.005],
     ],
-    [poleRadius * 1.15, poleRadius, poleRadius * 0.92],
-    { bark: cork, cut: material("#b49a74", 0.95) },
+    [poleRadius * 1.1, poleRadius, poleRadius * 0.92],
+    { bark: moss, cut: material("#5e5236", 0.95) },
   );
-  const stem = material("#5b7f35");
+  const stem = material("#4d7438");
   curvedStem(
     root,
     vine.map((p) => new THREE.Vector3(p.x, p.y, p.z)),
     0.007,
     stem,
   );
-  const greens = ["#3f8a3a", "#4c9942", "#367a35"].map((color) =>
-    material(color, 0.5),
+  const greens = ["#2c6537", "#367640", "#285b33"].map((color) =>
+    material(color, 0.45),
   );
   for (const [i, leaf] of leaves.entries()) {
     const at = vine[leaf.node];
