@@ -21,6 +21,7 @@ import { useCameraNavigation } from "./useCameraNavigation";
 import { useFollowCamera } from "./useFollowCamera";
 import { useCameraLayout } from "./useCameraLayout";
 import { Inhabitant } from "./Inhabitant";
+import { Remains } from "./Remains";
 import { Tank, Terrain, Water } from "./Terrain";
 import { TerrainBrushCursor } from "./TerrainBrushCursor";
 import { useSceneTouch } from "./useSceneTouch";
@@ -263,6 +264,14 @@ function Scene({
               }}
             />
           ))}
+        {ecosystem.remains.map((body) => (
+          <Remains
+            key={body.object.id}
+            body={body}
+            paused={editor.paused}
+            onGone={ecosystem.forgetRemains}
+          />
+        ))}
       </group>
       <EcosystemLife
         ecosystem={ecosystem}
