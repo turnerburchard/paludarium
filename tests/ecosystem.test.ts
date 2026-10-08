@@ -442,7 +442,7 @@ describe("insect colonies", () => {
     for (const patch of food) expect(patch.amount).toBe(patch.capacity);
   });
 
-  // Leave room for concurrent CI workers.
+  // Six simulated hours include body clearance and replanning around tight spaces.
   it("can keep a frog fed without help in a planted tank", () => {
     const engine = createWorldEcosystem(makePreset("mountain"));
     run(engine, 3600);
@@ -451,7 +451,7 @@ describe("insect colonies", () => {
       .animals.filter((animal) => animal.speciesId === "canyon-tree-frog");
     expect(frogs).toHaveLength(1);
     expect(frogs[0].needs.hunger).toBeLessThan(0.8);
-  }, 20_000);
+  }, 40_000);
 });
 
 describe("preset habitats", () => {

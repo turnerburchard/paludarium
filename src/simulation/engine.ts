@@ -349,6 +349,7 @@ export class Ecosystem {
           state.nodeId,
           agent.profile,
           agent.blocked,
+          false,
         ),
       };
     }
@@ -366,6 +367,7 @@ export class Ecosystem {
           state.nodeId,
           agent.profile,
           agent.blocked,
+          false,
         );
     }
     const navigation = agent.routes.navigation;

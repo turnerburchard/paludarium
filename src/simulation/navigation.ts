@@ -49,10 +49,6 @@ export class HabitatGraph {
     BodyBounds,
     Map<string, Vec3 | null>
   >();
-  private readonly routeNeighbors = new WeakMap<
-    SpeciesProfile,
-    Map<string, HabitatNode[]>
-  >();
   constructor(
     nodes: readonly HabitatNode[],
     private readonly geometry?: HabitatGeometry,
@@ -426,7 +422,12 @@ export class HabitatGraph {
     return this.geometry.fits(pose.position, pose.normal, wanted, turningBody);
   }
 
-  private canStep(from: HabitatNode, to: HabitatNode, species: SpeciesProfile) {
+  private canStep(
+    from: HabitatNode,
+    to: HabitatNode,
+    species: SpeciesProfile,
+    checkTravel = true,
+  ) {
     if (!this.allowed(to.id, species)) return false;
     if (
       from.surface === "leaf" &&
@@ -447,6 +448,7 @@ export class HabitatGraph {
       return false;
     const leap = from.surface === "leaf" && to.surface === "leaf";
     if (
+      checkTravel &&
       !this.canTravel(from, to, species, leap) &&
       (leap || !this.canTravel(from, to, species, false, true))
     )
@@ -490,9 +492,8 @@ export class HabitatGraph {
     start: string,
     species: SpeciesProfile,
     blocked?: ReadonlyMap<string, ReadonlySet<string>>,
+    checkTravel = true,
   ): HabitatRoutes {
-    let neighbors = this.routeNeighbors.get(species);
-    if (!neighbors) this.routeNeighbors.set(species, (neighbors = new Map()));
     const parents = new Map<string, string>();
     const firstSteps = new Map<string, string>();
     const distances = new Map<string, number>([[start, 0]]);
@@ -532,16 +533,10 @@ export class HabitatGraph {
       const current = dequeue();
       if (current.distance !== distances.get(current.id)) continue;
       const from = this.node(current.id);
-      let exits = neighbors.get(from.id);
-      if (!exits) {
-        exits = from.neighbors
-          .map((id) => this.node(id))
-          .filter((to) => this.canStep(from, to, species));
-        neighbors.set(from.id, exits);
-      }
-      for (const to of exits) {
-        const next = to.id;
+      for (const next of from.neighbors) {
         if (blocked?.get(current.id)?.has(next)) continue;
+        const to = this.node(next);
+        if (!this.canStep(from, to, species, checkTravel)) continue;
         const length = current.distance + distance(from.position, to.position);
         if (length >= (distances.get(next) ?? Infinity)) continue;
         distances.set(next, length);
