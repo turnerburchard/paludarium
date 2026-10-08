@@ -30,13 +30,6 @@ const MODELS = [
     height: 0.95,
   },
   {
-    // "Houseplant" by Quaternius, poly.pizza/m/bfLOqIV5uP, CC0; the pot is left out.
-    source: "docs/inspiration/models/houseplant-quaternius.glb",
-    out: "src/assets/plants/treePhilodendron.json",
-    skip: ["Black", "Brown"],
-    height: 0.8,
-  },
-  {
     // "Grass" by Quaternius, poly.pizza/m/UGTOzcO3P2, CC0; the larger clump.
     source: "docs/inspiration/models/grass-quaternius.glb",
     out: "src/assets/plants/hairgrass.json",

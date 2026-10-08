@@ -27,7 +27,7 @@ The vampire crab is derived from ["Crab" by jeremy](https://poly.pizza/m/bmZ6-Ln
 - The monstera is derived from ["Flower Pot" by Neko](https://poly.pizza/m/A7g6zgWaCj), licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), without its pot and recolored.
 - The elephant ear is derived from ["Flower Pot" by Zsky](https://poly.pizza/m/Kgt363WkKd), licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), without its pot and recolored.
 - The water lily and hedgehog cactus are derived from ["Lily pad"](https://poly.pizza/m/0-_GjMekeob) and ["Cactus"](https://poly.pizza/m/9UCcl_W0Xq3) by Poly by Google, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), rescaled and recolored.
-- The lacy tree philodendron and tufted hairgrass are derived from ["Houseplant"](https://poly.pizza/m/bfLOqIV5uP) and ["Grass"](https://poly.pizza/m/UGTOzcO3P2) by Quaternius, and the reed-stem orchid from ["Flowers" by CreativeTrio](https://poly.pizza/m/RP8p3h7JHJ), all released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
+- The tufted hairgrass is derived from ["Grass"](https://poly.pizza/m/UGTOzcO3P2) by Quaternius, and the reed-stem orchid from ["Flowers" by CreativeTrio](https://poly.pizza/m/RP8p3h7JHJ), all released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
 
 The original GLBs are in `docs/inspiration/models/`.
 
