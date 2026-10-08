@@ -1,7 +1,7 @@
-import { X } from "lucide-react";
+import { Binoculars, Eye, Hammer, HelpCircle, X } from "lucide-react";
+import { assets } from "../assets";
 import type { World } from "../model/schema";
 import type { EcosystemController } from "../simulation/useEcosystem";
-import { CreatureList } from "./CreatureList";
 import { IconButton } from "./IconButton";
 import { Modal } from "./Modal";
 
@@ -18,6 +18,12 @@ export function AboutDialog({
   ecosystem: EcosystemController;
   onWatch: (id: string) => void;
 }) {
+  const creatureIds = [
+    ...ecosystem.snapshot.animals.map((animal) => animal.id),
+    ...world.objects
+      .filter((object) => assets[object.kind].swims)
+      .map((object) => object.id),
+  ];
   return (
     <Modal label="About Paludarium" onClose={onClose}>
       <div className="modal-heading">
@@ -27,31 +33,35 @@ export function AboutDialog({
         </IconButton>
       </div>
       <dl>
-        <dt>View</dt>
+        <dt>
+          <Eye size={16} aria-hidden="true" /> View
+        </dt>
         <dd>
           Tap a creature to learn about it, then watch up close. Drag to look
           around; pinch or scroll to get closer.
         </dd>
-        <dt>Build</dt>
+        <dt>
+          <Hammer size={16} aria-hidden="true" /> Build
+        </dt>
         <dd>Switch to Build to add objects or edit the terrain.</dd>
       </dl>
-      <button className="intro-build-button" onClick={onHelp}>
-        Controls and help
-      </button>
-      {ecosystem.snapshot.animals.length > 0 && (
-        <details className="more-options creature-options">
-          <summary>Follow a creature</summary>
-          <CreatureList
-            world={world}
-            animals={ecosystem.snapshot.animals}
-            onWatch={onWatch}
-          />
-        </details>
+      {creatureIds.length > 0 && (
+        <button
+          className="life-follow"
+          onClick={() =>
+            onWatch(creatureIds[Math.floor(Math.random() * creatureIds.length)])
+          }
+        >
+          <Binoculars size={19} aria-hidden="true" /> Follow a creature
+        </button>
       )}
       <p className="panel-note">
         Your layout saves on this device. Share sends a snapshot others can
         explore and copy; Export keeps a backup.
       </p>
+      <button className="intro-build-button" onClick={onHelp}>
+        <HelpCircle size={16} aria-hidden="true" /> Controls and help
+      </button>
       <div className="modal-footer">
         <a
           className="source-link"

@@ -84,7 +84,7 @@ try {
     );
     await page.goto(url);
     await page
-      .getByRole("dialog", { name: "How to build" })
+      .getByRole("dialog", { name: "Controls and help" })
       .getByRole("button", { name: "Close dialog" })
       .click();
     await page.getByRole("button", { name: "Pause life (Space)" }).click();

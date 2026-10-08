@@ -49,10 +49,7 @@ input {
   font: inherit;
 }
 .brand h1,
-.world-title input,
-.inspector h2,
-.modal h2,
-.open-world strong {
+.modal h2 {
   font-family: var(--font-heading);
 }
 button {
@@ -717,6 +714,9 @@ button:hover:not(:disabled) {
   margin: 25px 0;
 }
 .modal dt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: var(--text-body);
   font-weight: 500;
   margin-top: 15px;
@@ -1238,6 +1238,9 @@ button:hover:not(:disabled) {
   display: none !important;
 }
 .intro-build-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 12px 18px;
   background: var(--accent);
   color: var(--ink);
@@ -1437,13 +1440,6 @@ button:hover:not(:disabled) {
   flex-shrink: 0;
   color: var(--muted);
   text-underline-offset: 3px;
-}
-.creature-options {
-  margin-bottom: 16px;
-}
-.creature-options .frog-list {
-  max-height: 240px;
-  overflow: auto;
 }
 
 .world-list {

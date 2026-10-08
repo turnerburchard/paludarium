@@ -86,7 +86,7 @@ try {
     return page;
   }
   async function closeHelp(page, method) {
-    const dialog = page.getByRole("dialog", { name: "How to build" });
+    const dialog = page.getByRole("dialog", { name: "Controls and help" });
     await dialog.waitFor();
     if (method === "escape") await page.keyboard.press("Escape");
     else if (method === "backdrop")
@@ -109,7 +109,7 @@ try {
       await page.goto(url);
       await page.getByRole("button", { name: "About Paludarium" }).waitFor();
       assert.equal(
-        await page.getByRole("dialog", { name: "How to build" }).count(),
+        await page.getByRole("dialog", { name: "Controls and help" }).count(),
         1,
         "a fresh visit opens the existing controls help",
       );
@@ -119,7 +119,7 @@ try {
       );
       assert.match(
         await page.getByRole("dialog").innerText(),
-        /Drag with two fingers to pan/,
+        /Drag with two fingers to move across the tank/,
       );
       assert.equal(
         await page.evaluate((key) => localStorage.getItem(key), helpKey),
@@ -258,7 +258,7 @@ try {
     await page.goto(url + "/#world=1.broken");
     await page.getByRole("dialog").waitFor();
     assert.equal(
-      await page.getByRole("dialog", { name: "How to build" }).count(),
+      await page.getByRole("dialog", { name: "Controls and help" }).count(),
       0,
     );
     assert.match(await page.getByRole("dialog").innerText(), /link/i);

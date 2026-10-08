@@ -112,7 +112,7 @@ try {
   );
   await page.goto(url);
   await page
-    .getByRole("dialog", { name: "How to build" })
+    .getByRole("dialog", { name: "Controls and help" })
     .getByRole("button", { name: "Close dialog" })
     .click();
   await page.waitForFunction(() => document.querySelector("canvas"));
@@ -137,12 +137,10 @@ try {
   await page
     .getByRole("button", { name: "About Paludarium", exact: true })
     .click();
-  await page.locator("summary", { hasText: "Follow a creature" }).click();
   await page
     .getByRole("dialog", { name: "About Paludarium" })
-    .getByRole("button", { name: /Red-eyed tree frog/ })
+    .getByRole("button", { name: "Follow a creature", exact: true })
     .click();
-  await page.getByRole("button", { name: "Watch up close" }).click();
   await page.getByRole("complementary", { name: "Watching" }).waitFor();
   assert.equal(
     await page.getByRole("button", { name: "Remove", exact: true }).count(),
@@ -496,16 +494,14 @@ try {
   async function watchFrog() {
     // Life is running here, so the frog can move behind foliage between
     // projecting its position and clicking. Scene picking is covered above;
-    // use the stable creature picker to set up the camera-return checks.
+    // use the Follow button to set up the camera-return checks.
     await page
       .getByRole("button", { name: "About Paludarium", exact: true })
       .click();
-    await page.locator("summary", { hasText: "Follow a creature" }).click();
     await page
       .getByRole("dialog", { name: "About Paludarium" })
-      .getByRole("button", { name: /Red-eyed tree frog/ })
+      .getByRole("button", { name: "Follow a creature", exact: true })
       .click();
-    await page.getByRole("button", { name: "Watch up close" }).click();
     await page.getByRole("complementary", { name: "Watching" }).waitFor();
   }
 
@@ -756,7 +752,7 @@ try {
   );
   await fishPage.goto(url);
   await fishPage
-    .getByRole("dialog", { name: "How to build" })
+    .getByRole("dialog", { name: "Controls and help" })
     .getByRole("button", { name: "Close dialog" })
     .click();
   await fishPage.bringToFront();

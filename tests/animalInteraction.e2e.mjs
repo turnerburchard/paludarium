@@ -87,7 +87,7 @@ try {
       );
       await page.goto(url);
       await page
-        .getByRole("dialog", { name: "How to build" })
+        .getByRole("dialog", { name: "Controls and help" })
         .getByRole("button", { name: "Close dialog" })
         .click();
       await page
@@ -104,22 +104,21 @@ try {
             .getByRole("button", { name: "Habitat life", exact: true })
             .click();
       }
-      if (kind === "tree-frog") {
-        await page.getByRole("button", { name: "About Paludarium" }).click();
-        await page.getByText("Follow a creature", { exact: true }).click();
+      await page.getByRole("button", { name: "About Paludarium" }).click();
+      const about = page.getByRole("dialog", { name: "About Paludarium" });
+      await about
+        .getByRole("button", { name: "Follow a creature", exact: true })
+        .click();
+      const followed = page.getByRole("complementary", { name: "Watching" });
+      await followed.getByRole("heading", { name, exact: true }).waitFor();
+      assert.equal(await about.count(), 0);
+      assert.equal(
         await page
-          .getByRole("dialog")
-          .getByRole("button", { name: new RegExp(name) })
-          .click();
-      } else {
-        await page.getByRole("button", { name: "Build", exact: true }).click();
-        await openLife();
-        await page
-          .locator(".fish-list")
-          .getByRole("button", { name: new RegExp(name) })
-          .click();
-        await page.getByRole("button", { name: "View", exact: true }).click();
-      }
+          .getByRole("complementary", { name: "Selected object" })
+          .count(),
+        0,
+      );
+      await followed.getByRole("button", { name: "Stop watching" }).click();
       const card = page.getByRole("complementary", { name: "Selected object" });
       await card.getByRole("heading", { name, exact: true }).waitFor();
       assert.equal(
@@ -259,7 +258,7 @@ try {
       assert.equal((await saved()).log.length, 1);
       assert.deepEqual(errors, []);
       console.log(
-        `PASS: ${name}, ${width}px: information first, calm close-up, Build condition, death animation, last-animal remains, pause, Undo/Redo and saved log`,
+        `PASS: ${name}, ${width}px: direct follow, inspection, calm close-up, Build condition, death animation, last-animal remains, pause, Undo/Redo and saved log`,
       );
       await page.close();
     }

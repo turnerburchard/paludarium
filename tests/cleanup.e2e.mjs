@@ -119,7 +119,7 @@ try {
   });
   await page.goto(url);
   await page
-    .getByRole("dialog", { name: "How to build" })
+    .getByRole("dialog", { name: "Controls and help" })
     .getByRole("button", { name: "Close dialog" })
     .click();
   await page.waitForFunction(() => document.querySelector("canvas"));
@@ -631,7 +631,7 @@ try {
     .getByRole("button", { name: "About Paludarium", exact: true })
     .waitFor();
   await receiver
-    .getByRole("dialog", { name: "How to build" })
+    .getByRole("dialog", { name: "Controls and help" })
     .getByRole("button", { name: "Close dialog" })
     .click();
   await receiver.getByRole("button", { name: "Build", exact: true }).click();
@@ -716,7 +716,7 @@ try {
   );
   await newcomer.reload();
   await newcomer
-    .getByRole("dialog", { name: "How to build" })
+    .getByRole("dialog", { name: "Controls and help" })
     .getByRole("button", { name: "Close dialog" })
     .click();
   await newcomer.getByRole("button", { name: "Build", exact: true }).click();

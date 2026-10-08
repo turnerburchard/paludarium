@@ -89,7 +89,7 @@ try {
     });
     await page.goto(`http://127.0.0.1:${port}`);
     await page
-      .getByRole("dialog", { name: "How to build" })
+      .getByRole("dialog", { name: "Controls and help" })
       .getByRole("button", { name: "Close dialog" })
       .click();
     await page

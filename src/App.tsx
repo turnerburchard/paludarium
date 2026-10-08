@@ -279,7 +279,7 @@ export default function App({
           ecosystem={ecosystem}
           onWatch={(id) => {
             setDialog(null);
-            inspectAnimal(id);
+            watch(id);
           }}
           onClose={() => setDialog(null)}
         />
