@@ -1,6 +1,6 @@
 import { createObjectId } from "../model/objectId";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { assetRadius, assets, isAnimal } from "../assets";
+import { assetRadius, assets, isAnimal, placementScale } from "../assets";
 import { killAnimal } from "../simulation/lifeCycle";
 import {
   MAX_OBJECTS,
@@ -41,7 +41,7 @@ import {
 } from "./persistence";
 export type Tool =
   | { type: "select" }
-  | { type: "place"; kind: AssetKind }
+  | { type: "place"; kind: AssetKind; scale: number }
   | { type: "move"; id: string }
   | { type: "copy"; id: string }
   | ({ type: "terrain" } & TerrainBrush);
@@ -250,7 +250,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     notify("");
   }
   function choose(kind: AssetKind) {
-    setTool({ type: "place", kind });
+    setTool({ type: "place", kind, scale: placementScale(kind) });
     select(null);
     setPlacementRotation(0);
     notify("");
@@ -264,11 +264,12 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
         : null;
     const kind = tool.type === "place" ? tool.kind : moving?.kind;
     if (!kind) return;
+    const scale = tool.type === "place" ? tool.scale : (moving?.scale ?? 1);
     const position = boundedPosition(
       x,
       z,
       world.environment,
-      assetRadius(kind) * (moving?.scale ?? 1),
+      assetRadius(kind) * scale,
     );
     const resting = restingOn(
       surface,
@@ -316,7 +317,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       ...position,
       ...(resting.support && resting),
       rotation: placementRotation,
-      scale: moving?.scale ?? 1,
+      scale,
       seed: moving?.seed ?? Math.floor(Math.random() * 2147483647),
       ...(moving?.moss && { moss: moving.moss }),
     };
@@ -325,6 +326,8 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       select(object.id);
       setTool({ type: "select" });
     }
+    if (tool.type === "place")
+      setTool({ ...tool, scale: placementScale(kind) });
     notify(`${assets[kind].name} added. Place another, or finish.`);
   }
   function changeEnvironment(patch: Partial<Environment>) {

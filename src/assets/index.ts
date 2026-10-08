@@ -245,6 +245,13 @@ export function assetRadius(kind: AssetKind) {
   return assets[kind].radius * (assets[kind].size ?? 1);
 }
 
+/** A scale for a new placement within the asset's range, on the same 0.05
+ * steps as the size slider. */
+export function placementScale(kind: AssetKind, random = Math.random) {
+  const [min, max] = assets[kind].scaleRange ?? [1, 1];
+  return Math.round((min + random() * (max - min)) * 20) / 20;
+}
+
 const sized = (point: PlantPoint, size: number) => ({
   x: point.x * size,
   y: point.y * size,

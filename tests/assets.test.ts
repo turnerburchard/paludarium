@@ -6,6 +6,7 @@ import {
   buildAsset,
   catalog,
   disposeAsset,
+  placementScale,
 } from "../src/assets";
 import { assetKinds } from "../src/model/schema";
 
@@ -67,4 +68,13 @@ describe("land animal assets", () => {
       disposeAsset(model);
     },
   );
+});
+
+describe("placement scale", () => {
+  it("varies plants within their range on slider steps, and not animals", () => {
+    expect(placementScale("monstera", () => 0)).toBe(0.6);
+    expect(placementScale("monstera", () => 0.999)).toBe(1.5);
+    expect(placementScale("monstera", () => 0.33)).toBe(0.9);
+    expect(placementScale("tree-frog", () => 0.9)).toBe(1);
+  });
 });

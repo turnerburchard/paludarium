@@ -18,6 +18,7 @@ export const philodendron: AssetDefinition = {
     "A heartleaf vine on a cork pole. Frogs climb it to the big upper leaves.",
   radius: 0.3,
   size: 1.3,
+  scaleRange: [0.7, 1.4],
   habitat: "land",
   shelter: true,
   soil: "damp",

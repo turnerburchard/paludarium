@@ -13,6 +13,7 @@ export const calathea: AssetDefinition = {
     "Round leaves banded in silver and green, held up on slender stalks.",
   radius: 0.36,
   size: 1.5,
+  scaleRange: [0.7, 1.4],
   habitat: "land",
   shelter: true,
   soil: "damp",
