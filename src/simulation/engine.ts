@@ -381,10 +381,18 @@ export class Ecosystem {
     const reachable = [...lengths.keys()].filter(
       (id) => id === state.nodeId || !taken.has(id),
     );
-    const nearest = (ids: string[]) =>
-      ids
-        .sort((a, b) => lengths.get(a)! - lengths.get(b)!)
-        .find((id) => this.graph.allowed(id, agent.profile));
+    const nearest = (ids: string[]) => {
+      let best: string | undefined;
+      let distance = Infinity;
+      for (const id of ids) {
+        const candidate = lengths.get(id)!;
+        if (candidate < distance && this.graph.allowed(id, agent.profile)) {
+          best = id;
+          distance = candidate;
+        }
+      }
+      return best;
+    };
     const insects = (id: string) => this.food.get(id)?.amount ?? 0;
     // A meal is worth the walk; crumbs only when there's nothing better.
     const food =
@@ -396,7 +404,9 @@ export class Ecosystem {
         ? this.graph.node(id).submerged
         : this.graph.node(id).wet,
     );
-    const water = nearest(shoreline.filter((id) => reachable.includes(id)));
+    const water = nearest(
+      shoreline.filter((id) => id === state.nodeId || !taken.has(id)),
+    );
     const inactive = agent.profile.nocturnal
       ? this.phase === "day"
       : this.phase === "night";

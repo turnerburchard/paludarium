@@ -7,18 +7,13 @@
 }
 
 :root {
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-ui);
   color: #ebe7de;
   background: #0c1512;
   font-synthesis: none;
   font-weight: 400;
-  font-size: 16px;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
   --panel: hsl(145 28% 11%);
   --surface: hsl(145 28% 15%);
   --selected: hsl(145 28% 21%);
@@ -26,8 +21,22 @@
   --muted: #a4b3a9;
   --accent: #aec5a0;
   --ink: #14241b;
-  --serif: "Fraunces", Georgia, serif;
+  --font-ui:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-heading: "Fraunces", Georgia, serif;
+  --text-small: 12px;
+  --text-body: 14px;
+  --text-title: 18px;
+  --text-dialog: 22px;
+  --text-brand: 24px;
+  --leading-body: 1.5;
+  --leading-title: 1.25;
   --radius: 14px;
+}
+strong,
+b {
+  font-weight: 500;
 }
 * {
   box-sizing: border-box;
@@ -38,6 +47,13 @@ body {
 button,
 input {
   font: inherit;
+}
+.brand h1,
+.world-title input,
+.inspector h2,
+.modal h2,
+.open-world strong {
+  font-family: var(--font-heading);
 }
 button {
   cursor: pointer;
@@ -121,11 +137,10 @@ button:hover:not(:disabled) {
   border: 0;
 }
 .brand h1 {
-  font-family: var(--serif);
   font-weight: 400;
-  font-size: 28px;
+  font-size: var(--text-brand);
   letter-spacing: -0.6px;
-  line-height: 1.4;
+  line-height: var(--leading-title);
   margin: 0;
 }
 .world-title {
@@ -136,14 +151,14 @@ button:hover:not(:disabled) {
   flex: 1;
 }
 .world-title input {
-  font-family: var(--serif);
   color: #ebe7de;
   background: transparent;
   border: 0;
   outline: none;
   width: 100%;
   max-width: 290px;
-  font-size: 20px;
+  line-height: var(--leading-title);
+  font-size: var(--text-title);
   font-weight: 400;
   padding: 2px 0;
   border-bottom: 1px solid transparent;
@@ -153,7 +168,7 @@ button:hover:not(:disabled) {
 }
 .save-status {
   min-height: 16px;
-  font-size: 11px;
+  font-size: var(--text-small);
   color: #9aae98;
   display: flex;
   gap: 4px;
@@ -215,7 +230,7 @@ button:hover:not(:disabled) {
   flex-direction: column;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
+  font-size: var(--text-body);
   cursor: pointer;
 }
 .panel-tabs button:hover {
@@ -253,7 +268,7 @@ button:hover:not(:disabled) {
   gap: 7px;
   align-items: center;
   padding: 5px 6px 12px;
-  font-size: 11px;
+  font-size: var(--text-body);
 }
 .category-tabs button.active {
   color: var(--accent);
@@ -312,15 +327,15 @@ button:hover:not(:disabled) {
   opacity: 1;
 }
 .asset-name {
-  font-family: var(--serif);
-  font-size: 17px;
-  line-height: 21px;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
   height: 63px;
   font-weight: 400;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
   overflow: hidden;
+  overflow-wrap: anywhere;
   padding: 0 9px;
   color: #ebe7de;
 }
@@ -332,7 +347,7 @@ button:hover:not(:disabled) {
   justify-content: space-between;
   padding: 0 20px;
   border-top: 1px solid var(--line);
-  font-size: 11px;
+  font-size: var(--text-small);
   color: #8fa18a;
 }
 .sidebar-footer button {
@@ -369,7 +384,7 @@ button:hover:not(:disabled) {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 11px;
+  font-size: var(--text-small);
   color: #bfceba;
   white-space: nowrap;
   /* Stays legible over leaves and sand. */
@@ -382,7 +397,7 @@ button:hover:not(:disabled) {
   background: #7c947c;
 }
 .status-message {
-  font-size: 12px;
+  font-size: var(--text-small);
   color: #b4c6aa;
   min-height: 17px;
   text-align: center;
@@ -415,12 +430,12 @@ button:hover:not(:disabled) {
 }
 .placement-bar strong {
   display: block;
-  font-size: 13px;
-  font-weight: 550;
+  font-size: var(--text-body);
+  font-weight: 500;
 }
 .placement-bar span:not(.placement-icon) {
   display: block;
-  font-size: 11px;
+  font-size: var(--text-small);
   color: #a3b697;
   margin-top: 4px;
 }
@@ -433,14 +448,14 @@ button:hover:not(:disabled) {
   color: var(--ink);
   border-radius: 7px;
   padding: 10px 14px;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-body);
+  font-weight: 500;
 }
 .eyebrow {
-  font-size: 10px;
+  font-size: var(--text-small);
   letter-spacing: 1.7px;
   color: #b5c79d;
-  font-weight: 550;
+  font-weight: 500;
 }
 .inspector {
   position: absolute;
@@ -460,14 +475,14 @@ button:hover:not(:disabled) {
   align-items: center;
 }
 .inspector h2 {
-  font-family: var(--serif);
-  font-size: 24px;
+  line-height: var(--leading-title);
+  font-size: var(--text-title);
   font-weight: 400;
   margin: 7px 0;
 }
 .inspector p {
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
   color: #a9bba1;
   margin: 10px 0 19px;
 }
@@ -490,7 +505,7 @@ button:hover:not(:disabled) {
   border-radius: 7px;
   background: var(--surface);
   color: #deedc0;
-  font-size: 12px;
+  font-size: var(--text-body);
   cursor: pointer;
 }
 .watch-button:hover {
@@ -499,7 +514,7 @@ button:hover:not(:disabled) {
 .inspector strong {
   display: block;
   margin-top: 12px;
-  font-size: 14px;
+  font-size: var(--text-body);
   font-weight: 500;
 }
 .inspector strong + p {
@@ -515,7 +530,7 @@ button:hover:not(:disabled) {
   flex-direction: column;
   align-items: center;
   gap: 7px;
-  font-size: 10px;
+  font-size: var(--text-body);
   border: 0;
   border-radius: 7px;
   background: transparent;
@@ -533,11 +548,11 @@ button:hover:not(:disabled) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
+  font-size: var(--text-body);
   color: #ccdac0;
 }
 .range-control output {
-  font-size: 12px;
+  font-size: var(--text-small);
   color: #a7bb95;
   font-variant-numeric: tabular-nums;
 }
@@ -553,7 +568,7 @@ button:hover:not(:disabled) {
   padding: 0 23px 20px;
 }
 .section-label {
-  font-size: 10px;
+  font-size: var(--text-small);
   letter-spacing: 1.6px;
   color: #90a584;
   margin: 19px 0 15px;
@@ -572,7 +587,7 @@ button:hover:not(:disabled) {
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 14px 8px;
-  font-size: 10px;
+  font-size: var(--text-body);
   flex: 1;
   color: #acbe9c;
 }
@@ -582,8 +597,8 @@ button:hover:not(:disabled) {
   color: #e3edcc;
 }
 .panel-note {
-  font-size: 12px;
-  line-height: 1.7;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
   color: #99ae91;
 }
 .modal-backdrop {
@@ -619,17 +634,17 @@ button:hover:not(:disabled) {
   gap: 3px;
 }
 .modal h2 {
-  font-family: var(--serif);
-  font-size: 26px;
+  line-height: var(--leading-title);
+  font-size: var(--text-dialog);
   font-weight: 400;
   letter-spacing: -0.6px;
   margin: 0;
 }
 .modal p,
 .modal dd {
-  font-size: 13px;
+  font-size: var(--text-body);
   color: #afc0a4;
-  line-height: 1.7;
+  line-height: var(--leading-body);
 }
 .preset-options {
   display: grid;
@@ -644,12 +659,12 @@ button:hover:not(:disabled) {
   border-radius: var(--radius);
   padding: 14px 12px;
   min-height: 48px;
-  font-size: 14px;
+  font-size: var(--text-body);
   color: #e1eccf;
 }
 .filter-heading {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--text-body);
+  font-weight: 500;
   color: #a8bd99;
   margin: 22px 0 10px;
 }
@@ -663,7 +678,7 @@ button:hover:not(:disabled) {
   border: 1px solid #455f3c;
   border-radius: var(--radius);
   padding: 8px 14px;
-  font-size: 13px;
+  font-size: var(--text-body);
   color: #d6e1c9;
 }
 .filter-chips button.active {
@@ -682,7 +697,7 @@ button:hover:not(:disabled) {
   background: transparent;
   border-radius: 8px;
   padding: 9px 16px;
-  font-size: 13px;
+  font-size: var(--text-body);
   color: #d6e1c9;
 }
 .filter-actions button.primary {
@@ -691,7 +706,7 @@ button:hover:not(:disabled) {
   color: var(--ink);
 }
 .library-empty {
-  font-size: 12px;
+  font-size: var(--text-body);
   text-align: center;
   color: #99ae91;
   margin: 12px 18px;
@@ -708,8 +723,8 @@ button:hover:not(:disabled) {
   margin: 25px 0;
 }
 .modal dt {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-body);
+  font-weight: 500;
   margin-top: 15px;
 }
 .modal dd {
@@ -718,7 +733,7 @@ button:hover:not(:disabled) {
 .webgl-fallback {
   padding: 60px 30px;
   max-width: 550px;
-  line-height: 1.7;
+  line-height: var(--leading-body);
   color: #e1eccf;
 }
 @media (min-width: 1600px) {
@@ -739,7 +754,6 @@ button:hover:not(:disabled) {
     bottom: 90px;
   }
   .navigation-hint {
-    font-size: 10px;
     gap: 7px;
   }
   .inspector {
@@ -766,9 +780,6 @@ button:hover:not(:disabled) {
   }
   .brand-mark svg {
     width: 18px;
-  }
-  .brand h1 {
-    font-size: 22px;
   }
   .world-title {
     display: none;
@@ -841,7 +852,7 @@ button:hover:not(:disabled) {
     border-radius: var(--radius);
     background: transparent;
     color: #d6e4c4;
-    font-size: 10px;
+    font-size: var(--text-small);
   }
   .mobile-dock button:active {
     background: var(--surface);
@@ -863,7 +874,6 @@ button:hover:not(:disabled) {
     padding: 6px 8px;
     flex-direction: row;
     justify-content: center;
-    font-size: 12px;
   }
   .panel-content {
     overflow-y: auto;
@@ -906,15 +916,9 @@ button:hover:not(:disabled) {
   .asset-picture {
     height: 85px;
   }
-  .asset-name {
-    font-size: 15px;
-    line-height: 19px;
-    height: 57px;
-  }
   .sidebar-footer {
     height: 48px;
     padding: 0 12px;
-    font-size: 10px;
   }
   .sidebar-footer button {
     padding: 10px;
@@ -946,7 +950,6 @@ button:hover:not(:disabled) {
   }
   .status-message {
     order: -1;
-    font-size: 11px;
     max-width: 300px;
     background: #1b3029bb;
     border-radius: 5px;
@@ -960,18 +963,11 @@ button:hover:not(:disabled) {
     gap: 8px;
     max-width: 100%;
   }
-  .placement-bar strong {
-    font-size: 12px;
-  }
-  .placement-bar span:not(.placement-icon) {
-    font-size: 10px;
-  }
   .placement-icon {
     display: none;
   }
   .finish-button {
     padding: 9px;
-    font-size: 12px;
   }
   .placement-bar .icon-button {
     width: 30px;
@@ -985,11 +981,7 @@ button:hover:not(:disabled) {
     width: auto;
     padding: 14px;
   }
-  .inspector h2 {
-    font-size: 22px;
-  }
   .inspector p {
-    font-size: 11px;
     margin: 7px 0 10px;
   }
   .object-actions {
@@ -1022,14 +1014,8 @@ button:hover:not(:disabled) {
     width: 16px;
     height: 16px;
   }
-  .range-control > span {
-    font-size: 12px;
-  }
   .modal {
     padding: 20px;
-  }
-  .modal h2 {
-    font-size: 24px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1042,7 +1028,7 @@ button:hover:not(:disabled) {
   font-style: italic;
   color: #bccb9f !important;
   margin: 0 0 8px !important;
-  font-size: 11px !important;
+  font-size: var(--text-small) !important;
 }
 
 .life-panel {
@@ -1055,23 +1041,23 @@ button:hover:not(:disabled) {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  font-size: 11px;
+  font-size: var(--text-small);
   color: #bacb9b;
   margin-bottom: 8px;
 }
 .life-panel strong {
-  font-size: 13px;
+  font-size: var(--text-body);
   font-weight: 500;
 }
 .life-panel p {
-  font-size: 12px;
-  line-height: 1.4;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
   color: #b6c6aa;
   margin: 6px 0 10px;
 }
 .life-panel small {
   display: block;
-  font-size: 10px;
+  font-size: var(--text-small);
   color: #a6b999;
   margin-top: 9px;
 }
@@ -1093,7 +1079,7 @@ button:hover:not(:disabled) {
   border-radius: 7px;
   background: var(--surface);
   color: #deedc0;
-  font-size: 12px;
+  font-size: var(--text-body);
   text-align: left;
   cursor: pointer;
 }
@@ -1103,7 +1089,7 @@ button:hover:not(:disabled) {
 }
 .frog-list small {
   color: #a6b999;
-  font-size: 11px;
+  font-size: var(--text-small);
 }
 .life-needs {
   display: grid;
@@ -1115,7 +1101,7 @@ button:hover:not(:disabled) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11px;
+  font-size: var(--text-small);
   color: #bacb9b;
 }
 .life-needs meter,
@@ -1157,7 +1143,7 @@ button:hover:not(:disabled) {
   border: 0;
   border-radius: 10px;
   background: transparent;
-  font-size: 13px;
+  font-size: var(--text-body);
   color: var(--muted);
 }
 .mode-switch button[aria-pressed="true"] {
@@ -1175,7 +1161,7 @@ button:hover:not(:disabled) {
 .more-options summary {
   cursor: pointer;
   padding: 16px 0;
-  font-size: 13px;
+  font-size: var(--text-body);
   color: var(--muted);
   min-height: 44px;
 }
@@ -1206,7 +1192,7 @@ button:hover:not(:disabled) {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  font-size: 12px;
+  font-size: var(--text-body);
 }
 .water-options button[aria-pressed="true"] {
   border-color: #73885c;
@@ -1231,7 +1217,7 @@ button:hover:not(:disabled) {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
-  font-size: 10px;
+  font-size: var(--text-body);
 }
 .moss-options button[aria-pressed="true"] {
   border-color: var(--accent);
@@ -1273,11 +1259,11 @@ button:hover:not(:disabled) {
   color: var(--ink);
   border: 0;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 .source-link {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-small);
 }
 .world-link-input {
   width: 100%;
@@ -1287,7 +1273,7 @@ button:hover:not(:disabled) {
   border-radius: 6px;
   background: var(--surface);
   color: #deedc0;
-  font-size: 12px;
+  font-size: var(--text-body);
 }
 .placement-rotation {
   display: grid;
@@ -1306,19 +1292,19 @@ button:hover:not(:disabled) {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
-  font-size: 12px;
+  font-size: var(--text-body);
   touch-action: none;
 }
 .placement-rotation output {
   min-width: 36px;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--text-small);
   font-variant-numeric: tabular-nums;
 }
 .placement-rotation > span {
   grid-column: 1 / -1;
   text-align: center;
-  font-size: 10px;
+  font-size: var(--text-small);
   color: var(--muted);
 }
 @media (max-width: 760px) {
@@ -1349,7 +1335,7 @@ button:hover:not(:disabled) {
   place-items: center;
   background: #0e1c16;
   color: #deedc0;
-  font-size: 15px;
+  font-size: var(--text-body);
 }
 .shared-world-actions {
   display: flex;
@@ -1383,14 +1369,14 @@ button:hover:not(:disabled) {
   background: var(--surface);
   color: #deedc0;
   text-align: left;
-  font-size: 14px;
+  font-size: var(--text-body);
   cursor: pointer;
 }
 .life-follow:hover {
   background: #38533c;
 }
 .life-group {
-  font-size: 10px;
+  font-size: var(--text-small);
   font-weight: 400;
   letter-spacing: 1.6px;
   text-transform: uppercase;
@@ -1409,7 +1395,7 @@ button:hover:not(:disabled) {
   border: 0;
   background: none;
   color: #90a584;
-  font-size: 12px;
+  font-size: var(--text-body);
   cursor: pointer;
 }
 .life-log-toggle:hover {
@@ -1419,8 +1405,8 @@ button:hover:not(:disabled) {
   list-style: none;
   margin: 0;
   padding: 0;
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: var(--text-small);
+  line-height: var(--leading-body);
   color: #b6c6aa;
 }
 .life-log time {
@@ -1450,7 +1436,7 @@ button:hover:not(:disabled) {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 12px;
+  font-size: var(--text-small);
   color: var(--muted);
   z-index: 4;
 }
@@ -1503,8 +1489,8 @@ button:hover:not(:disabled) {
   overflow-wrap: anywhere;
 }
 .open-world strong {
-  font-family: var(--serif);
-  font-size: 19px;
+  line-height: var(--leading-title);
+  font-size: var(--text-title);
   font-weight: 400;
 }
 .worlds-heading {
@@ -1519,7 +1505,7 @@ button:hover:not(:disabled) {
 }
 .world-section-heading {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-body);
   font-weight: 500;
 }
 .worlds-button {
@@ -1533,8 +1519,8 @@ button:hover:not(:disabled) {
   border-radius: 8px;
   background: transparent;
   color: #c2d1bb;
-  font-size: 13px;
-  line-height: 1;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
   flex: none;
 }
 .worlds-button:hover {
@@ -1596,7 +1582,7 @@ button:hover:not(:disabled) {
 }
 .open-world span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-small);
   margin-top: 4px;
 }
 .world-options,
@@ -1617,7 +1603,7 @@ button:hover:not(:disabled) {
   background: transparent;
   border: 0;
   padding: 8px 10px;
-  font-size: 13px;
+  font-size: var(--text-body);
 }
 .world-options .delete-world {
   color: #d7a29a;
@@ -1626,7 +1612,7 @@ button:hover:not(:disabled) {
 .world-options > span {
   width: 100%;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-body);
 }
 .world-library-actions {
   justify-content: space-between;

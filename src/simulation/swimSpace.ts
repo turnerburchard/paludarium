@@ -1,11 +1,10 @@
 import * as THREE from "three";
 import { assets, isAnimal } from "../assets";
+import { collisionShape, type CollisionFace } from "../assets/collisionShape";
 import {
-  collisionShape,
-  collisionTree as tree,
-  type CollisionFace,
-  type CollisionTree as Tree,
-} from "../assets/collisionShape";
+  buildCollisionTree,
+  type CollisionTree,
+} from "../assets/collisionTree";
 import type { Environment, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
 import { groundHeight, swimmingHeight } from "../model/terrain";
@@ -22,8 +21,8 @@ interface Crossing {
 /** Fish-sized, oriented clearance against the actual leaves, branches and
  * hardscape. A hierarchy keeps queries local even in a heavily planted tank. */
 export class SwimSpace {
-  private readonly obstacles: Tree;
-  private readonly solids: Tree[] = [];
+  private readonly obstacles: CollisionTree;
+  private readonly solids: CollisionTree[] = [];
   private readonly bodies = new Map<
     string,
     { bounds: THREE.Box3; depth: number }
@@ -87,9 +86,10 @@ export class SwimSpace {
           (face) => face.bounds.min.y < world.environment.water,
         ),
       );
-      if (asset.hardscape) this.solids.push(tree([...transformed]));
+      if (asset.hardscape)
+        this.solids.push(buildCollisionTree([...transformed]));
     }
-    this.obstacles = tree(faces);
+    this.obstacles = buildCollisionTree(faces);
   }
 
   private vertical(
@@ -181,7 +181,7 @@ export class SwimSpace {
     return true;
   }
 
-  private intersects(node: Tree, body: THREE.Box3): boolean {
+  private intersects(node: CollisionTree, body: THREE.Box3): boolean {
     if (!node.bounds.intersectsBox(this.query)) return false;
     if (node.children)
       return node.children.some((child) => this.intersects(child, body));
@@ -194,7 +194,7 @@ export class SwimSpace {
     });
   }
 
-  private crossings(node: Tree, hits: Crossing[]) {
+  private crossings(node: CollisionTree, hits: Crossing[]) {
     if (!this.ray.intersectsBox(node.bounds)) return;
     if (node.children) {
       for (const child of node.children) this.crossings(child, hits);

@@ -8,7 +8,8 @@ import {
   createWorldEcosystem,
   buildHabitat,
 } from "../src/simulation/worldHabitat";
-import { collisionShape, collisionTree } from "../src/assets/collisionShape";
+import { collisionShape } from "../src/assets/collisionShape";
+import { buildCollisionTree } from "../src/assets/collisionTree";
 import { LandSurfaces } from "../src/simulation/landSurfaces";
 import type { SpeciesProfile } from "../src/simulation/types";
 
@@ -109,7 +110,8 @@ describe("land animal clearance", () => {
     surfaces.solids.push({
       object: stone,
       faces,
-      tree: collisionTree([...faces]),
+      tree: buildCollisionTree([...faces]),
+      faceOrder: new Map(faces.map((face, index) => [face, index])),
       bounds: new THREE.Box3().setFromPoints(
         faces.flatMap((face) => [
           face.triangle.a,

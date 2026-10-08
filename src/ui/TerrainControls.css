@@ -14,7 +14,7 @@
   border-radius: 7px;
   padding: 10px 6px;
   min-height: 40px;
-  font-size: 11px;
+  font-size: var(--text-body);
 }
 .terrain-tools button.active {
   border-color: #93ac73;
