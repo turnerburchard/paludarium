@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import type { EcosystemController } from "../simulation/useEcosystem";
 import * as THREE from "three";
 import type { Vec3 } from "../simulation/types";
-import { assets, isAnimal } from "../assets";
+import { assetRadius, assets, isAnimal } from "../assets";
 import { juvenileScale } from "../simulation/lifeCycle";
 import { swimmingHeight } from "../model/terrain";
 import type { Environment } from "../model/schema";
@@ -64,7 +64,7 @@ export function EcosystemLife({
           ? live.engine.graph.node(state.nodeId).plantId
           : undefined;
       visitor.radius =
-        assets[animal.kind].radius * animal.scale * juvenileScale(animal);
+        assetRadius(animal.kind) * animal.scale * juvenileScale(animal);
     }
     visitors.length = count;
   }, -1);

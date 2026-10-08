@@ -147,7 +147,7 @@ export function Inhabitant({
       const tilt = foliageMotion.update(
         stopped ? 0 : dt,
         group.position,
-        assets[object.kind].radius * object.scale,
+        assetRadius(object.kind) * object.scale,
         plantHeight * object.scale,
         foliageVisitors?.current ?? [],
       );
