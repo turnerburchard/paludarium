@@ -3,7 +3,9 @@ import { emptyWorld, type HabitatObject } from "../src/model/schema";
 import {
   groundCeiling,
   waterCeiling,
-  TERRAIN_POINTS,
+  newTerrain,
+  terrainGrid,
+  terrainPoint,
 } from "../src/model/terrainData";
 import { groundHeight, hasDryGround } from "../src/model/terrain";
 import { applyTerrainBrush } from "../src/model/terrainBrush";
@@ -16,21 +18,37 @@ import {
   createWorldEcosystem,
 } from "../src/simulation/worldHabitat";
 
+/** The grid point nearest x = -1.75 in the default tank. The brush gives a
+ * grid point its full step, and ground between points is interpolated. */
+const SPOT = (() => {
+  const env = emptyWorld().environment;
+  const { columns, rows } = terrainGrid(env);
+  return terrainPoint(
+    Math.round(rows / 2) * (columns + 1) + Math.round(columns / 4),
+    env,
+  );
+})();
+
 describe("adjustable tank height", () => {
   it("reseats animals in the resized habitat while preserving their needs", () => {
     const original = emptyWorld();
     original.environment = { ...original.environment, height: 5, water: 4.75 };
     for (let i = 0; i < 200; i++)
-      original.environment = applyTerrainBrush(original.environment, -1.75, 0, {
-        mode: "raise",
-        radius: 1.2,
-      });
+      original.environment = applyTerrainBrush(
+        original.environment,
+        SPOT.x,
+        SPOT.z,
+        {
+          mode: "raise",
+          radius: 1.2,
+        },
+      );
     original.objects = [
       {
         id: "frog",
         kind: "dart-frog",
-        x: -1.75,
-        z: 0,
+        x: SPOT.x,
+        z: SPOT.z,
         rotation: 0,
         scale: 1,
         seed: 1,
@@ -38,8 +56,8 @@ describe("adjustable tank height", () => {
       {
         id: "fish",
         kind: "fish",
-        x: 1.75,
-        z: 0,
+        x: -SPOT.x,
+        z: SPOT.z,
         rotation: 0,
         scale: 1,
         seed: 2,
@@ -85,8 +103,14 @@ describe("adjustable tank height", () => {
   it("sculpts to just below the rim, including above the old fixed ceiling", () => {
     let env = { ...emptyWorld().environment, height: 5 };
     for (let i = 0; i < 200; i++)
-      env = applyTerrainBrush(env, -1.75, 0, { mode: "raise", radius: 0.65 });
-    expect(groundHeight(-1.75, 0, env)).toBeCloseTo(groundCeiling(env), 3);
+      env = applyTerrainBrush(env, SPOT.x, SPOT.z, {
+        mode: "raise",
+        radius: 0.65,
+      });
+    expect(groundHeight(SPOT.x, SPOT.z, env)).toBeCloseTo(
+      groundCeiling(env),
+      3,
+    );
     expect(
       parseWorld(JSON.stringify({ ...emptyWorld(), environment: env }))
         .environment,
@@ -97,15 +121,20 @@ describe("adjustable tank height", () => {
     original.environment.height = 5;
     original.environment.water = 4.75;
     for (let i = 0; i < 200; i++)
-      original.environment = applyTerrainBrush(original.environment, -1.75, 0, {
-        mode: "raise",
-        radius: 0.65,
-      });
+      original.environment = applyTerrainBrush(
+        original.environment,
+        SPOT.x,
+        SPOT.z,
+        {
+          mode: "raise",
+          radius: 0.65,
+        },
+      );
     const rock: HabitatObject = {
       id: "rock",
       kind: "rock",
-      x: -1.75,
-      z: 0,
+      x: SPOT.x,
+      z: SPOT.z,
       rotation: 0,
       scale: 1,
       seed: 1,
@@ -149,10 +178,7 @@ describe("adjustable tank height", () => {
   it("recognizes a dry island above full water and hides dry habitat only when none remains", () => {
     const env = { ...emptyWorld().environment, height: 5, water: 4.75 };
     expect(hasDryGround(env)).toBe(false);
-    const terrain = {
-      heights: Array<number>(TERRAIN_POINTS).fill(4.5),
-      paint: Array<"natural">(TERRAIN_POINTS).fill("natural"),
-    };
+    const terrain = newTerrain(env, () => 4.5);
     expect(hasDryGround({ ...env, terrain })).toBe(true);
   });
 });

@@ -1,9 +1,7 @@
 import type { Environment } from "./schema";
 import {
-  TERRAIN_COLUMNS,
-  TERRAIN_ROWS,
-  TERRAIN_POINTS,
   groundCeiling,
+  newTerrain,
   terrainPoint,
   type GroundMaterial,
 } from "./terrainData";
@@ -28,10 +26,9 @@ export function applyTerrainBrush(
   brush: TerrainBrush,
   heightStep = 0.07,
 ): Environment {
-  const terrain = env.terrain ?? {
-    heights: Array<number>(TERRAIN_POINTS).fill(0),
-    paint: Array<GroundMaterial>(TERRAIN_POINTS).fill("natural"),
-  };
+  const terrain = env.terrain ?? newTerrain(env);
+  const { columns, rows } = terrain;
+  const sculpted = { ...env, terrain };
   const heights = [...terrain.heights],
     paint = [...terrain.paint];
   const water =
@@ -39,8 +36,8 @@ export function applyTerrainBrush(
       ? Math.max(0.35, env.water)
       : env.water;
   let changed = water !== env.water;
-  for (let index = 0; index < TERRAIN_POINTS; index++) {
-    const point = terrainPoint(index, env);
+  for (let index = 0; index < heights.length; index++) {
+    const point = terrainPoint(index, sculpted);
     const distance = Math.hypot(point.x - x, point.z - z) / brush.radius;
     if (distance >= 1) continue;
     const weight = (1 - distance * distance) ** 2;
@@ -52,18 +49,18 @@ export function applyTerrainBrush(
     else if (brush.mode === "pool" || brush.mode === "stream")
       delta += Math.min(0, water - 0.2 - height) * weight;
     else if (brush.mode === "smooth") {
-      const col = index % (TERRAIN_COLUMNS + 1),
-        row = Math.floor(index / (TERRAIN_COLUMNS + 1));
+      const col = index % (columns + 1),
+        row = Math.floor(index / (columns + 1));
       const neighbors = [
         [col, row],
         [Math.max(0, col - 1), row],
-        [Math.min(TERRAIN_COLUMNS, col + 1), row],
+        [Math.min(columns, col + 1), row],
         [col, Math.max(0, row - 1)],
-        [col, Math.min(TERRAIN_ROWS, row + 1)],
+        [col, Math.min(rows, row + 1)],
       ];
       const average =
         neighbors.reduce((sum, [cx, cz]) => {
-          const p = terrainPoint(cz * (TERRAIN_COLUMNS + 1) + cx, env);
+          const p = terrainPoint(cz * (columns + 1) + cx, sculpted);
           return sum + groundHeight(p.x, p.z, env);
         }, 0) / neighbors.length;
       delta += (average - height) * weight * 0.65;
@@ -86,5 +83,7 @@ export function applyTerrainBrush(
       heights[index] !== terrain.heights[index] ||
       paint[index] !== terrain.paint[index];
   }
-  return changed ? { ...env, water, terrain: { heights, paint } } : env;
+  return changed
+    ? { ...env, water, terrain: { columns, rows, heights, paint } }
+    : env;
 }

@@ -20,7 +20,7 @@ const server = spawn(
   { stdio: "ignore" },
 );
 let browser;
-const storageKey = "little-worlds:v1";
+const storageKey = "little-worlds:v2";
 try {
   for (let i = 0; i < 50; i++) {
     try {
@@ -360,7 +360,7 @@ try {
   await page.keyboard.press("Tab");
   await page.waitForFunction(
     (before) =>
-      JSON.parse(localStorage.getItem("little-worlds:v1"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,

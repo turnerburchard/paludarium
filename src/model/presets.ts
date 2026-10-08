@@ -11,7 +11,7 @@ import {
 import type { MossSpecies } from "./moss";
 import { baseGroundHeight } from "./terrain";
 import { applyTerrainBrush, type TerrainMode } from "./terrainBrush";
-import { TERRAIN_POINTS, terrainPoint } from "./terrainData";
+import { newTerrain, type Terrain } from "./terrainData";
 export type Preset =
   | "empty"
   | "tropical"
@@ -281,7 +281,7 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
   add("fence-lizard", 1.6, 1.3, 1.1, 2.2);
   // Cattails and grass where the far bank stays damp.
   add("cattail", 2.3, -1, 1, 0.4);
-  add("cattail", 3.5, -0.1, 0.85, 2);
+  add("cattail", 3.3, -0.1, 0.85, 2);
   add("hairgrass", 2.6, -1.2, 1.1);
   add("rock", 3.2, -1.1, 0.75, 1.2);
   add("spruce", 3.9, -1.4, 1.3, 0.8);
@@ -429,11 +429,10 @@ function sculpt(
 /** Flattens the default bank so a preset can shape its own landscape on top,
  * with water close below the ground instead of in a low corner. */
 function level(env: Environment, ground: number): Environment {
-  const heights = Array.from({ length: TERRAIN_POINTS }, (_, i) => {
-    const { x, z } = terrainPoint(i, env);
-    return ground - baseGroundHeight(x, z, env);
-  });
-  return { ...env, terrain: { heights, paint: heights.map(() => "natural") } };
+  return {
+    ...env,
+    terrain: newTerrain(env, (x, z) => ground - baseGroundHeight(x, z, env)),
+  };
 }
 
 /** Substrate sloping up toward the back glass, as aquascapers lay it. */
@@ -550,14 +549,19 @@ function creekBed() {
 }
 
 /** Dry, gently rolling sand that dips in the middle to hold a spring. */
-function desertSand(env: Environment): NonNullable<Environment["terrain"]> {
-  const heights = Array.from({ length: TERRAIN_POINTS }, (_, i) => {
-    const { x, z } = terrainPoint(i, env);
-    const dunes = 0.74 + 0.05 * Math.sin(x * 1.3 + z * 0.9);
-    const fromSpring = Math.hypot(x - 0.5, (z - 0.15) * 1.3);
-    const dip = Math.min(1, Math.max(0, (1.8 - fromSpring) / 1.4));
-    const height = dunes - 0.66 * dip * dip * (3 - 2 * dip);
-    return Math.max(-0.9, Math.min(0.9, height - baseGroundHeight(x, z, env)));
-  });
-  return { heights, paint: heights.map(() => "sand") };
+function desertSand(env: Environment): Terrain {
+  return newTerrain(
+    env,
+    (x, z) => {
+      const dunes = 0.74 + 0.05 * Math.sin(x * 1.3 + z * 0.9);
+      const fromSpring = Math.hypot(x - 0.5, (z - 0.15) * 1.3);
+      const dip = Math.min(1, Math.max(0, (1.8 - fromSpring) / 1.4));
+      const height = dunes - 0.66 * dip * dip * (3 - 2 * dip);
+      return Math.max(
+        -0.9,
+        Math.min(0.9, height - baseGroundHeight(x, z, env)),
+      );
+    },
+    "sand",
+  );
 }

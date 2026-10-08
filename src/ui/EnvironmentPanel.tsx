@@ -8,6 +8,7 @@ import {
   MIN_TANK_HEIGHT,
   MAX_TANK_HEIGHT,
 } from "../model/terrainData";
+import { MAX_TANK_DEPTH, MAX_TANK_WIDTH } from "../model/schema";
 
 export function EnvironmentPanel({ editor }: { editor: Editor }) {
   const env = editor.world.environment;
@@ -105,7 +106,7 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
           label="Tank width"
           value={env.width}
           min={5}
-          max={9}
+          max={MAX_TANK_WIDTH}
           step={0.5}
           format={(n) => `${Math.round(n * 10)} cm`}
           onPreview={(width) => editor.previewEnvironment({ width })}
@@ -115,7 +116,7 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
           label="Tank depth"
           value={env.depth}
           min={3}
-          max={6}
+          max={MAX_TANK_DEPTH}
           step={0.5}
           format={(n) => `${Math.round(n * 10)} cm`}
           onPreview={(depth) => editor.previewEnvironment({ depth })}

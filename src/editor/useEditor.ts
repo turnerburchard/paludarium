@@ -23,6 +23,7 @@ import {
   baseGroundHeight,
 } from "../model/terrain";
 import {
+  fitTerrain,
   terrainPoint,
   groundCeiling,
   waterCeiling,
@@ -468,6 +469,8 @@ export function withEnvironment(
 ): World {
   const environment = { ...world.environment, ...patch };
   environment.water = Math.min(environment.water, waterCeiling(environment));
+  if (environment.terrain)
+    environment.terrain = fitTerrain(environment.terrain, environment);
   if (environment.height < world.environment.height && environment.terrain) {
     environment.terrain = {
       ...environment.terrain,

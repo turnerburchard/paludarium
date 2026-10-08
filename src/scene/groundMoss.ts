@@ -2,17 +2,12 @@ import * as THREE from "three";
 import type { Environment } from "../model/schema";
 import { randomFromSeed } from "../model/random";
 import { groundHeight } from "../model/terrain";
-import {
-  TERRAIN_COLUMNS,
-  TERRAIN_ROWS,
-  terrainSamples,
-} from "../model/terrainData";
+import { surfaceGrid, terrainSamples } from "../model/terrainData";
 
 export function makeGroundMoss(env: Environment) {
   const paint = env.terrain?.paint;
   if (!paint?.includes("moss")) return undefined;
-  const columns = TERRAIN_COLUMNS * 4,
-    rows = TERRAIN_ROWS * 4;
+  const { columns, rows } = surfaceGrid(env);
   const dark = new THREE.Color("#293c23"),
     light = new THREE.Color("#53633a");
   // Sample the whole grid, including bare ground, so painting never reshuffles detail.

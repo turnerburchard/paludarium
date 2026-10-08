@@ -7,7 +7,7 @@ import {
   type AssetKind,
   type HabitatObject,
 } from "../src/model/schema";
-import { TERRAIN_POINTS } from "../src/model/terrainData";
+import { newTerrain } from "../src/model/terrainData";
 import { groundHeight } from "../src/model/terrain";
 import { FishSchool, type Fish } from "../src/simulation/fish";
 import { SwimSpace } from "../src/simulation/swimSpace";
@@ -33,10 +33,7 @@ const tank = (...objects: HabitatObject[]) => ({
   environment: {
     ...emptyWorld().environment,
     water: AQUARIUM_WATER,
-    terrain: {
-      heights: Array(TERRAIN_POINTS).fill(-0.9),
-      paint: Array(TERRAIN_POINTS).fill("sand"),
-    },
+    terrain: newTerrain(emptyWorld().environment, () => -0.9, "sand"),
   },
   objects,
 });
@@ -58,7 +55,7 @@ describe("fish-sized water clearance", () => {
       ...world.environment,
       terrain: {
         ...world.environment.terrain!,
-        heights: Array(TERRAIN_POINTS).fill(0.3),
+        heights: world.environment.terrain!.heights.map(() => 0.3),
       },
     };
     const shown = school.get("corydoras", preview)!;

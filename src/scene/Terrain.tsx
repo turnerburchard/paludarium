@@ -3,22 +3,14 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Environment } from "../model/schema";
 import { randomFromSeed } from "../model/random";
-import {
-  TERRAIN_COLUMNS,
-  TERRAIN_ROWS,
-  terrainSamples,
-} from "../model/terrainData";
+import { surfaceGrid, terrainSamples } from "../model/terrainData";
 import { groundHeight, hasDryGround } from "../model/terrain";
 import { makeWaterMaterial } from "./waterMaterial";
 import { makeGroundMoss } from "./groundMoss";
 
 function makeTerrain(env: Environment) {
-  const geo = new THREE.PlaneGeometry(
-    env.width,
-    env.depth,
-    TERRAIN_COLUMNS * 4,
-    TERRAIN_ROWS * 4,
-  );
+  const { columns, rows } = surfaceGrid(env);
+  const geo = new THREE.PlaneGeometry(env.width, env.depth, columns, rows);
   geo.rotateX(-Math.PI / 2);
   const p = geo.getAttribute("position"),
     colors = [];
@@ -66,9 +58,10 @@ function makeSkirt(env: Environment) {
     [-env.width / 2, env.depth / 2],
     [-env.width / 2, -env.depth / 2],
   ];
+  const { columns, rows } = surfaceGrid(env);
   for (let edge = 0; edge < 4; edge++) {
     // Match surface subdivisions so the bank and sidewall share their silhouette.
-    const segments = (edge % 2 === 0 ? TERRAIN_COLUMNS : TERRAIN_ROWS) * 4;
+    const segments = edge % 2 === 0 ? columns : rows;
     for (let i = 0; i <= segments; i++) {
       const t = i / segments,
         x = THREE.MathUtils.lerp(corners[edge][0], corners[edge + 1][0], t),

@@ -7,7 +7,7 @@ import {
 import { MAX_WORLD_SIZE } from "../src/editor/persistence";
 import { makePreset } from "../src/model/presets";
 import { emptyWorld, MAX_OBJECTS } from "../src/model/schema";
-import { TERRAIN_POINTS } from "../src/model/terrainData";
+import { newTerrain } from "../src/model/terrainData";
 
 const baseURL = "https://turnerburchard.com/paludarium/";
 async function untrustedLink(text: string) {
@@ -63,14 +63,11 @@ describe("shared world snapshots", () => {
   it("keeps sculpted terrain, painted materials, rotations, seeds and unicode names", async () => {
     const world = makePreset("tropical");
     world.name = "Turner’s tiny forest 🐸";
+    const terrain = newTerrain(world.environment);
     world.environment.terrain = {
-      heights: Array.from(
-        { length: TERRAIN_POINTS },
-        (_, i) => Math.sin(i) * 0.1,
-      ),
-      paint: Array.from({ length: TERRAIN_POINTS }, (_, i) =>
-        i % 3 ? "sand" : "soil",
-      ),
+      ...terrain,
+      heights: terrain.heights.map((_, i) => Math.sin(i) * 0.1),
+      paint: terrain.paint.map((_, i) => (i % 3 ? "sand" : "soil")),
     };
     world.objects = Array.from({ length: MAX_OBJECTS }, (_, i) => ({
       ...world.objects[0],
