@@ -7,12 +7,11 @@ import {
   plantPerches,
 } from "../assets";
 import { plantCondition } from "../model/plants";
-import { groundHeight, groundNormal, placementProblem } from "../model/terrain";
+import { groundHeight, placementProblem } from "../model/terrain";
 import { objectBase } from "../model/stacking";
 import { transformPlantPoint } from "../model/plantSurfaces";
 import { FishSchool } from "./fish";
 import { SwimSpace } from "./swimSpace";
-import { collisionShape } from "../assets/collisionShape";
 import { HabitatNodeGrid } from "./nodeGrid";
 import { LandSurfaces } from "./landSurfaces";
 import { Ecosystem } from "./engine";
@@ -66,7 +65,7 @@ export function buildHabitat(world: World): HabitatGraph {
     nodes: HabitatNode[] = [],
     grid = new Map<string, HabitatNode>();
   const clearance = habitatClearance(world);
-  const margin = 0.08,
+  const margin = clearance + 0.08,
     spacing = 0.32;
   const nx = Math.ceil((env.width - 2 * margin) / spacing),
     nz = Math.ceil((env.depth - 2 * margin) / spacing);
@@ -83,9 +82,7 @@ export function buildHabitat(world: World): HabitatGraph {
       const x = -env.width / 2 + margin + (ix * (env.width - 2 * margin)) / nx;
       const z = -env.depth / 2 + margin + (iz * (env.depth - 2 * margin)) / nz;
       const y = groundHeight(x, z, env);
-      // Body clearance is species-specific. A large turtle must not erase a
-      // narrow ground route that a small frog can use.
-      if (surfaces.blocksGround(x, z, 0)) continue;
+      if (surfaces.blocksGround(x, z, clearance)) continue;
       const shelter = shelters.reduce(
         (best, o) =>
           Math.max(
@@ -100,7 +97,7 @@ export function buildHabitat(world: World): HabitatGraph {
       const node: HabitatNode = {
         id: `g:${ix}:${iz}`,
         position: { x, y, z },
-        normal: groundNormal(x, z, env),
+        normal: { x: 0, y: 1, z: 0 },
         surface: "ground",
         wet: env.water > 0 && y <= env.water + 0.065,
         // Shallow shoreline is dry enough for land animals.
@@ -184,7 +181,7 @@ export function buildHabitat(world: World): HabitatGraph {
           id: `wall:${side.tag}:${ground.id}:${level}`,
           position: {
             x: side.x,
-            y: ground.position.y + clearance + 0.08 + level * 0.28,
+            y: ground.position.y + level * 0.28,
             z: side.z,
           },
           normal: side.normal,
@@ -235,7 +232,7 @@ export function buildHabitat(world: World): HabitatGraph {
     for (const ground of groundGrid.near(node.position, groundRange))
       if (
         distance(node.position, ground.position) <= groundRange &&
-        Math.abs(node.position.y - ground.position.y) <= clearance + 0.18
+        Math.abs(node.position.y - ground.position.y) <= 0.18
       )
         connect(node, ground);
   }
@@ -252,7 +249,7 @@ export function buildHabitat(world: World): HabitatGraph {
         (node) =>
           !node.submerged &&
           distance(node.position, point) <= range &&
-          Math.abs(node.position.y - point.y) <= clearance + 0.18,
+          Math.abs(node.position.y - point.y) <= 0.18,
       )
       .sort(
         (a, b) =>
@@ -338,7 +335,10 @@ export function buildHabitat(world: World): HabitatGraph {
         const { x, z } = transformPlantPoint(point, object);
         return {
           x,
-          y: Math.max(groundHeight(x, z, env), baseY + point.y * object.scale),
+          y:
+            groundHeight(x, z, env) +
+            (object.lift ?? 0) +
+            point.y * object.scale,
           z,
         };
       });
@@ -351,7 +351,6 @@ export function buildHabitat(world: World): HabitatGraph {
       ] as const) {
         const node: HabitatNode = {
           id: `den:${object.id}:${denIndex}:${part}`,
-          shelterId: object.id,
           position,
           normal: up,
           surface: "ground",
@@ -377,7 +376,7 @@ export function buildHabitat(world: World): HabitatGraph {
         perch.neighbors.push(other.id);
         other.neighbors.push(perch.id);
       }
-  return new HabitatGraph(nodes, surfaces);
+  return new HabitatGraph(nodes);
 }
 
 /** Plant stems face away from the plant's center. */
@@ -411,25 +410,7 @@ export function createWorldEcosystem(
   for (const object of world.objects) {
     const behavior = assets[object.kind].behavior;
     if (!behavior) continue;
-    const shape = collisionShape(object);
-    const bounds = shape.bounds;
-    const scale = object.scale;
-    const species: SpeciesProfile = {
-      id: object.kind,
-      ...behavior,
-      body: {
-        min: {
-          x: bounds.min.x * scale,
-          y: bounds.min.y * scale,
-          z: bounds.min.z * scale,
-        },
-        max: {
-          x: bounds.max.x * scale,
-          y: bounds.max.y * scale,
-          z: bounds.max.z * scale,
-        },
-      },
-    };
+    const species: SpeciesProfile = { id: object.kind, ...behavior };
     const oldObject = previous?.world.objects.find((o) => o.id === object.id);
     const oldState = snapshot?.animals.find(
       (a) => a.id === object.id && a.speciesId === object.kind,

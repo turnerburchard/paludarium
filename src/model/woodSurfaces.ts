@@ -88,10 +88,7 @@ export function logPerches(random: () => number): PlantPerch[] {
 
 export function logDens(): Den[] {
   return [
-    {
-      entrance: { x: 0.72, y: 0.07, z: 0 },
-      inside: { x: 0.05, y: 0.07, z: 0 },
-    },
+    { entrance: { x: 0.72, y: 0, z: 0 }, inside: { x: 0.05, y: 0, z: 0 } },
   ];
 }
 

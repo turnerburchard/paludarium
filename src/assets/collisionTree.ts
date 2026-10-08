@@ -44,16 +44,3 @@ export function visitRayFaces(
       if (ray.intersectsBox(face.bounds)) visit(face);
   }
 }
-
-export function* collisionFaces(
-  tree: CollisionTree,
-  query: THREE.Box3,
-): Generator<CollisionFace> {
-  if (!query.intersectsBox(tree.bounds)) return;
-  if (tree.faces) {
-    for (const face of tree.faces)
-      if (query.intersectsBox(face.bounds)) yield face;
-  } else {
-    for (const child of tree.children!) yield* collisionFaces(child, query);
-  }
-}
