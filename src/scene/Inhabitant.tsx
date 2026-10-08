@@ -24,6 +24,7 @@ import { SwimRig } from "./swimRig";
 import { barbSwim } from "../assets/animals/barb";
 import { SWIM_BOB } from "../simulation/swimSpace";
 import { juvenileScale } from "../simulation/lifeCycle";
+import { FoliageMotion, type FoliageVisitor } from "./foliageMotion";
 
 interface Props {
   object: HabitatObject;
@@ -46,6 +47,7 @@ export function Inhabitant({
   ecosystem,
 }: Props) {
   const root = useRef<THREE.Group>(null),
+    foliage = useRef<THREE.Group>(null),
     clock = useRef(0);
   const model = useMemo(
     () => buildAsset(object.kind, object.seed, object.moss),
@@ -54,6 +56,15 @@ export function Inhabitant({
   const rig = useMemo(
     () => createRig(object.kind, model),
     [object.kind, model],
+  );
+  const plant = categoryOf(assets[object.kind]) === "Plants";
+  const foliageMotion = useMemo(
+    () => (plant ? new FoliageMotion(object.seed) : undefined),
+    [plant, object.seed, object.x, object.z, object.scale, environment, model],
+  );
+  const plantHeight = useMemo(
+    () => (plant ? new THREE.Box3().setFromObject(model).max.y : 0),
+    [plant, model],
   );
   const swimming = useMemo(
     () =>
@@ -107,6 +118,47 @@ export function Inhabitant({
     const rigDelta = paused ? 0 : dt;
     group.position.set(object.x, baseY, object.z);
     group.rotation.set(0, object.rotation, 0);
+    if (foliageMotion && foliage.current && !ghost) {
+      const visitors: FoliageVisitor[] = [];
+      const live = ecosystem?.live.current;
+      if (live) {
+        for (const animal of live.world.objects) {
+          if (!isAnimal(animal.kind)) continue;
+          const state = live.engine.observeRenderedAnimal(animal.id);
+          const fish = state
+            ? undefined
+            : live.fish.get(animal.id, environment);
+          const position = state
+            ? { ...state.position, y: state.position.y + state.motion.lift }
+            : fish && { x: fish.x, y: fish.y ?? baseY, z: fish.z };
+          if (position)
+            visitors.push({
+              id: animal.id,
+              position,
+              radius:
+                assets[animal.kind].radius *
+                animal.scale *
+                juvenileScale(animal),
+            });
+        }
+      }
+      const tilt = foliageMotion.update(
+        paused || selected || document.hidden ? 0 : dt,
+        group.position,
+        assets[object.kind].radius * object.scale,
+        plantHeight * object.scale,
+        visitors,
+      );
+      const cos = Math.cos(object.rotation),
+        sin = Math.sin(object.rotation);
+      // Convert the world-space push into the plant's rotated local axes.
+      foliage.current.rotation.set(
+        sin * tilt.x + cos * tilt.z,
+        0,
+        -(cos * tilt.x - sin * tilt.z),
+      );
+      return;
+    }
     if (rig && !ghost && ecosystem) {
       const state = ecosystem.live.current!.engine.observeRenderedAnimal(
         object.id,
@@ -195,8 +247,6 @@ export function Inhabitant({
       const tail = model.getObjectByName("tail");
       if (tail) tail.rotation.y = Math.sin(t * swims.speed * 40) * 0.35;
       swimming?.update(undefined, paused ? 0 : dt);
-    } else if (categoryOf(assets[object.kind]) === "Plants") {
-      group.rotation.z = Math.sin(t * 0.7 + object.seed) * 0.012;
     }
   });
   return (
@@ -211,7 +261,9 @@ export function Inhabitant({
       scale={object.scale * juvenileScale(object)}
       onClick={onSelect}
     >
-      <primitive object={model} />
+      <group ref={foliage}>
+        <primitive object={model} />
+      </group>
       {isAnimal(object.kind) && !ghost && (
         <mesh position={[0, 0.15, 0]}>
           <sphereGeometry args={[0.29, 10, 8]} />
