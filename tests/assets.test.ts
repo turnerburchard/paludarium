@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Box3, Mesh, type Object3D } from "three";
+import { Box3, Mesh, Vector3, type Object3D } from "three";
 import {
   assetRadius,
   assets,
@@ -9,6 +9,7 @@ import {
   placementScale,
 } from "../src/assets";
 import { assetKinds } from "../src/model/schema";
+import turtleModel from "../src/assets/animals/turtle.json";
 
 function positions(model: Object3D) {
   const values: number[] = [];
@@ -76,5 +77,32 @@ describe("placement scale", () => {
     expect(placementScale("monstera", () => 0.999)).toBe(1.5);
     expect(placementScale("monstera", () => 0.33)).toBe(0.9);
     expect(placementScale("tree-frog", () => 0.9)).toBe(1);
+  });
+});
+
+describe("turtle model", () => {
+  it("winds both eyes outward so neither is culled", () => {
+    const eyes = turtleModel.parts.find((part) => part.color === "303030")!;
+    const triangles = [];
+    for (let i = 0; i < eyes.positions.length; i += 9)
+      triangles.push(
+        [0, 3, 6].map((k) =>
+          new Vector3().fromArray(eyes.positions, i + k),
+        ) as [Vector3, Vector3, Vector3],
+      );
+    for (const side of [-1, 1]) {
+      const own = triangles.filter(([a]) => Math.sign(a.x) === side);
+      const center = own
+        .flat()
+        .reduce((sum, p) => sum.add(p), new Vector3())
+        .divideScalar(own.length * 3);
+      for (const [a, b, c] of own) {
+        const normal = new Vector3().crossVectors(
+          b.clone().sub(a),
+          c.clone().sub(a),
+        );
+        expect(normal.dot(a.clone().sub(center))).toBeGreaterThan(0);
+      }
+    }
   });
 });
