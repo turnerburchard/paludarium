@@ -12,6 +12,7 @@ export const fern: AssetDefinition = {
   description:
     "Arching green fronds with rows of narrow leaflets. Provides low cover in damp, shaded parts of the habitat.",
   radius: 0.36,
+  size: 1.3,
   habitat: "land",
   shelter: true,
   soil: "damp",

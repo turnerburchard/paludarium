@@ -1,6 +1,6 @@
 import { createObjectId } from "../model/objectId";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { assets, isAnimal } from "../assets";
+import { assetRadius, assets, isAnimal } from "../assets";
 import { killAnimal } from "../simulation/lifeCycle";
 import {
   MAX_OBJECTS,
@@ -268,7 +268,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       x,
       z,
       world.environment,
-      assets[kind].radius * (moving?.scale ?? 1),
+      assetRadius(kind) * (moving?.scale ?? 1),
     );
     const resting = restingOn(
       surface,

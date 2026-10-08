@@ -11,6 +11,7 @@ export const alocasia: AssetDefinition = {
   description:
     "Tall stalks holding up huge, dark arrow-shaped leaves along shady Asian forest streams.",
   radius: 0.4,
+  size: 1.5,
   habitat: "land",
   shelter: true,
   soil: "damp",

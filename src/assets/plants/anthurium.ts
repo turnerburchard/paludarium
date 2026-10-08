@@ -13,6 +13,7 @@ export const anthurium: AssetDefinition = {
   description:
     "Broad heart-shaped leaves held out level, with glossy red flowers.",
   radius: 0.42,
+  size: 1.4,
   habitat: "land",
   shelter: true,
   soil: "damp",

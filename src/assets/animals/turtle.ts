@@ -39,6 +39,7 @@ export const desertTortoise: AssetDefinition = {
   description:
     "A patient, sand-colored tortoise that grazes on grasses and cactus flowers and rests out the heat in the shade.",
   radius: 0.28,
+  size: 1.8,
   habitat: "land",
   behavior: {
     nocturnal: false,

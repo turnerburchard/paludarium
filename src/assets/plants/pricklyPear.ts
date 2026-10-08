@@ -11,6 +11,7 @@ export const pricklyPear: AssetDefinition = {
   description:
     "Flat, spiny pads stacked on one another, edged with yellow flowers and purple fruit.",
   radius: 0.34,
+  size: 1.5,
   habitat: "land",
   shelter: true,
   blocksMovement: true,

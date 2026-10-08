@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import {
+  assetRadius,
   assets,
   buildAsset,
   categoryOf,
@@ -226,8 +227,8 @@ export function Inhabitant({
         >
           <ringGeometry
             args={[
-              assets[object.kind].radius + 0.04,
-              assets[object.kind].radius + 0.065,
+              assetRadius(object.kind) + 0.04,
+              assetRadius(object.kind) + 0.065,
               48,
             ]}
           />
