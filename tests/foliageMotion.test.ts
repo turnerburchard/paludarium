@@ -3,14 +3,13 @@ import { FoliageMotion, type FoliageVisitor } from "../src/scene/foliageMotion";
 
 const base = { x: 0, y: 0, z: 0 };
 const visitor = (x: number, y = 0.2, z = 0): FoliageVisitor => ({
-  id: "frog",
   position: { x, y, z },
   radius: 0.15,
 });
 
 function pass(speed: number, side = 1, y = 0.2, z = 0) {
-  const motion = new FoliageMotion(7);
-  const idle = new FoliageMotion(7);
+  const motion = new FoliageMotion(7, "plant");
+  const idle = new FoliageMotion(7, "plant");
   for (let i = 0; i <= 20; i++) {
     const x = side * (0.15 + (20 - i) * speed * 0.02);
     motion.update(0.02, base, 0.4, 1, [visitor(x, y, z)]);
@@ -21,8 +20,8 @@ function pass(speed: number, side = 1, y = 0.2, z = 0) {
 
 describe("foliage movement", () => {
   it("sways gently and varies with the seed", () => {
-    const a = new FoliageMotion(7),
-      b = new FoliageMotion(8);
+    const a = new FoliageMotion(7, "plant"),
+      b = new FoliageMotion(8, "plant");
     const first = { ...a.update(0.02, base, 0.4, 1, []) };
     for (let i = 0; i < 100; i++) {
       a.update(0.02, base, 0.4, 1, []);
@@ -36,29 +35,37 @@ describe("foliage movement", () => {
   it("bends away from creatures on either side, more strongly than ambient sway", () => {
     expect(pass(0.5).bend).toBeLessThan(-0.04);
     expect(pass(0.5, -1).bend).toBeGreaterThan(0.04);
-    const motion = new FoliageMotion(7),
-      idle = new FoliageMotion(7);
+    const motion = new FoliageMotion(7, "plant"),
+      idle = new FoliageMotion(7, "plant");
     motion.update(0.02, base, 0.4, 1, [visitor(0, 0.2, -0.2)]);
     motion.update(0.02, base, 0.4, 1, [visitor(0, 0.2, -0.19)]);
     idle.update(0.04, base, 0.4, 1, []);
     expect(motion.tilt.z - idle.tilt.z).toBeGreaterThan(0);
   });
 
-  it("responds to actual speed and ignores stationary or distant creatures", () => {
-    expect(Math.abs(pass(0.5).bend)).toBeGreaterThan(Math.abs(pass(0.05).bend));
-    expect(pass(0).bend).toBe(0);
+  it("holds foliage away from a creature that stops nearby", () => {
+    const { motion, idle, bend } = pass(0.5);
+    for (let i = 0; i < 150; i++) {
+      motion.update(0.02, base, 0.4, 1, [visitor(0.15)]);
+      idle.update(0.02, base, 0.4, 1, []);
+    }
+    expect(motion.tilt.x - idle.tilt.x).toBeLessThanOrEqual(bend);
+    expect(pass(0).bend).toBeLessThan(-0.04);
+  });
+
+  it("ignores creatures outside the horizontal or vertical reach", () => {
     expect(pass(0.5, 1, 3).bend).toBe(0);
     expect(pass(0.5, 1, 0.2, 3).bend).toBe(0);
   });
 
-  it("does not jolt on a new creature or a teleport", () => {
-    const motion = new FoliageMotion(7),
-      idle = new FoliageMotion(7);
-    for (const x of [0.2, -0.2]) {
-      motion.update(0.02, base, 0.4, 1, [visitor(x)]);
-      idle.update(0.02, base, 0.4, 1, []);
-      expect(motion.tilt).toEqual(idle.tilt);
-    }
+  it("eases toward nearby creatures even when they are newly placed", () => {
+    const motion = new FoliageMotion(7, "plant"),
+      idle = new FoliageMotion(7, "plant");
+    motion.update(0.02, base, 0.4, 1, [visitor(0.2)]);
+    idle.update(0.02, base, 0.4, 1, []);
+    const bend = motion.tilt.x - idle.tilt.x;
+    expect(bend).toBeLessThan(0);
+    expect(Math.abs(bend)).toBeLessThan(0.03);
   });
 
   it("freezes when paused, then settles smoothly after a creature leaves", () => {
@@ -77,14 +84,58 @@ describe("foliage movement", () => {
     expect(motion.tilt.x).toBeCloseTo(idle.tilt.x, 4);
   });
 
-  it("limits the combined bend from crowds", () => {
-    const motion = new FoliageMotion(7),
-      idle = new FoliageMotion(7);
+  it("leans toward a perched animal, including leaves beyond the ground footprint", () => {
+    const motion = new FoliageMotion(7, "plant"),
+      idle = new FoliageMotion(7, "plant");
+    const perched = { ...visitor(0.9, 1), perchedOn: "plant" };
     for (let i = 0; i < 100; i++) {
-      const crowd = Array.from({ length: 20 }, (_, j) => ({
-        ...visitor(0.1 + i * 0.001),
-        id: String(j),
-      }));
+      motion.update(0.02, base, 0.4, 1, [perched]);
+      idle.update(0.02, base, 0.4, 1, []);
+    }
+    expect(motion.tilt.x - idle.tilt.x).toBeGreaterThan(0.04);
+    expect(pass(0).bend).toBeLessThan(0);
+  });
+
+  it("uses animal size for weight and settles when the perch is empty", () => {
+    const large = new FoliageMotion(7, "plant"),
+      small = new FoliageMotion(7, "plant"),
+      idle = new FoliageMotion(7, "plant");
+    for (let i = 0; i < 100; i++) {
+      large.update(0.02, base, 0.4, 1, [
+        { ...visitor(0.5), perchedOn: "plant" },
+      ]);
+      small.update(0.02, base, 0.4, 1, [
+        { ...visitor(0.5), perchedOn: "plant", radius: 0.05 },
+      ]);
+      idle.update(0.02, base, 0.4, 1, []);
+    }
+    expect(large.tilt.x - idle.tilt.x).toBeGreaterThan(
+      small.tilt.x - idle.tilt.x,
+    );
+    for (let i = 0; i < 150; i++) {
+      large.update(0.02, base, 0.4, 1, []);
+      idle.update(0.02, base, 0.4, 1, []);
+    }
+    expect(large.tilt.x).toBeCloseTo(idle.tilt.x, 4);
+  });
+
+  it("still bends away from an animal perched on a different plant", () => {
+    const motion = new FoliageMotion(7, "plant"),
+      idle = new FoliageMotion(7, "plant");
+    for (let i = 0; i < 100; i++) {
+      motion.update(0.02, base, 0.4, 1, [
+        { ...visitor(0.2), perchedOn: "other-plant" },
+      ]);
+      idle.update(0.02, base, 0.4, 1, []);
+    }
+    expect(motion.tilt.x - idle.tilt.x).toBeLessThan(-0.04);
+  });
+
+  it("limits the combined bend from crowds", () => {
+    const motion = new FoliageMotion(7, "plant"),
+      idle = new FoliageMotion(7, "plant");
+    for (let i = 0; i < 100; i++) {
+      const crowd = Array.from({ length: 20 }, () => visitor(0.1 + i * 0.001));
       motion.update(0.02, base, 0.4, 1, crowd);
       idle.update(0.02, base, 0.4, 1, []);
       expect(

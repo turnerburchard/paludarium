@@ -21,6 +21,7 @@ import { useCameraNavigation } from "./useCameraNavigation";
 import { useFollowCamera } from "./useFollowCamera";
 import { useCameraLayout } from "./useCameraLayout";
 import { Inhabitant } from "./Inhabitant";
+import type { FoliageVisitor } from "./foliageMotion";
 import { Remains } from "./Remains";
 import { Tank, Terrain, Water } from "./Terrain";
 import { TerrainBrushCursor } from "./TerrainBrushCursor";
@@ -67,6 +68,8 @@ function Scene({
   const { raycaster, camera, gl } = useThree();
   const terrain = useRef<THREE.Mesh>(null);
   const inhabitants = useRef<THREE.Group>(null);
+  const foliageVisitors = useRef<FoliageVisitor[]>([]);
+  const foliagePlants = useRef(new Map<string, THREE.Group>());
   useWatchVisibility(inhabitants, ecosystem, watchingId);
   const followCamera = useFollowCamera(
     controls,
@@ -254,6 +257,8 @@ function Scene({
               key={object.id}
               object={object}
               ecosystem={ecosystem}
+              foliageVisitors={foliageVisitors}
+              foliagePlants={foliagePlants}
               environment={env}
               paused={editor.paused}
               selected={!view && editor.selectedId === object.id}
@@ -275,6 +280,8 @@ function Scene({
       </group>
       <EcosystemLife
         ecosystem={ecosystem}
+        environment={env}
+        foliageVisitors={foliageVisitors}
         paused={
           editor.paused ||
           tool.type !== "select" ||

@@ -1,20 +1,22 @@
 import type { Vec3 } from "../simulation/types";
 
 export interface FoliageVisitor {
-  id: string;
   position: Vec3;
   radius: number;
+  perchedOn?: string;
 }
 
 /** Visual motion only: plant anchors and navigation surfaces stay fixed. */
 export class FoliageMotion {
-  private previous = new Map<string, Vec3>();
   private bendX = 0;
   private bendZ = 0;
   private time = 0;
   readonly tilt = { x: 0, z: 0 };
 
-  constructor(private readonly seed: number) {}
+  constructor(
+    private readonly seed: number,
+    private readonly plantId: string,
+  ) {}
 
   update(
     dt: number,
@@ -27,36 +29,33 @@ export class FoliageMotion {
     this.time += dt;
     let pushX = 0,
       pushZ = 0;
-    const next = new Map<string, Vec3>();
     for (const visitor of visitors) {
       const p = visitor.position;
-      const old = this.previous.get(visitor.id);
-      next.set(visitor.id, { ...p });
-      // A new creature or a placement edit must not look like a fast pass.
-      if (!old) continue;
-      const travel = Math.hypot(p.x - old.x, p.y - old.y, p.z - old.z);
-      if (travel > 0.3 || travel === 0) continue;
-      const speed = Math.min(1, travel / dt / 0.5);
       const dx = base.x - p.x,
         dz = base.z - p.z;
-      const distance = Math.hypot(dx, dz);
+      if (visitor.perchedOn === this.plantId) {
+        // Size stands in for weight; the offset from the stem supplies leverage.
+        const weight =
+          (Math.min(1, visitor.radius / 0.2) * 0.08) / Math.max(height, 0.1);
+        pushX -= dx * weight;
+        pushZ -= dz * weight;
+        continue;
+      }
       const reach = radius + visitor.radius + 0.25;
+      const distanceSquared = dx * dx + dz * dz;
+      if (distanceSquared >= reach * reach) continue;
       const verticalGap = Math.max(base.y - p.y, p.y - base.y - height, 0);
-      const proximity = Math.max(0, 1 - distance / reach);
-      const vertical = Math.max(0, 1 - verticalGap / (visitor.radius + 0.15));
-      const strength = proximity * proximity * vertical * speed * 0.18;
+      const verticalReach = visitor.radius + 0.15;
+      if (verticalGap >= verticalReach) continue;
+      const distance = Math.sqrt(distanceSquared);
+      const proximity = 1 - distance / reach;
+      const vertical = 1 - verticalGap / verticalReach;
+      const strength = proximity * proximity * vertical * 0.18;
       if (distance > 0.001) {
         pushX += (dx / distance) * strength;
         pushZ += (dz / distance) * strength;
-      } else {
-        const horizontalTravel = Math.hypot(p.x - old.x, p.z - old.z);
-        if (horizontalTravel > 0) {
-          pushX -= ((p.x - old.x) / horizontalTravel) * strength;
-          pushZ -= ((p.z - old.z) / horizontalTravel) * strength;
-        }
       }
     }
-    this.previous = next;
     const limit = Math.max(1, Math.hypot(pushX, pushZ) / 0.18);
     pushX /= limit;
     pushZ /= limit;
