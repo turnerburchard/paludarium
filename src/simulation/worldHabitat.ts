@@ -40,7 +40,7 @@ export function buildHabitat(world: World): HabitatGraph {
       .filter((o) => isLandAnimal(o.kind))
       .map((o) => assets[o.kind].radius * o.scale),
   );
-  const margin = clearance + 0.08,
+  const margin = 0.08,
     spacing = 0.32;
   const nx = Math.ceil((env.width - 2 * margin) / spacing),
     nz = Math.ceil((env.depth - 2 * margin) / spacing);
@@ -158,7 +158,7 @@ export function buildHabitat(world: World): HabitatGraph {
           id: `wall:${side.tag}:${ground.id}:${level}`,
           position: {
             x: side.x,
-            y: ground.position.y + margin + level * 0.28,
+            y: ground.position.y + clearance + 0.08 + level * 0.28,
             z: side.z,
           },
           normal: side.normal,
@@ -377,18 +377,6 @@ export function createWorldEcosystem(
       id: object.kind,
       ...behavior,
       body: {
-        parts: shape.parts.map((part) => ({
-          min: {
-            x: part.min.x * scale,
-            y: part.min.y * scale,
-            z: part.min.z * scale,
-          },
-          max: {
-            x: part.max.x * scale,
-            y: part.max.y * scale,
-            z: part.max.z * scale,
-          },
-        })),
         min: {
           x: bounds.min.x * scale,
           y: bounds.min.y * scale,

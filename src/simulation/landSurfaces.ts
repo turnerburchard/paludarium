@@ -67,8 +67,6 @@ export class LandSurfaces {
   private readonly bodyQuery = new THREE.Box3();
   private readonly bodyTriangle = new THREE.Triangle();
   private readonly triangleBounds = new THREE.Box3();
-  private readonly partBounds = new WeakMap<BodyBounds, THREE.Box3[]>();
-  private bodyParts: THREE.Box3[] = [];
 
   private orient(
     position: Vec3,
@@ -104,26 +102,6 @@ export class LandSurfaces {
       body.max.z + 0.005,
     );
     this.bodyQuery.copy(this.bodyBox).applyMatrix4(this.bodyMatrix);
-    let parts = this.partBounds.get(body);
-    if (!parts) {
-      parts = (body.parts ?? [body]).map(
-        (part) =>
-          new THREE.Box3(
-            new THREE.Vector3(
-              part.min.x - 0.005,
-              part.min.y,
-              part.min.z - 0.005,
-            ),
-            new THREE.Vector3(
-              part.max.x + 0.005,
-              part.max.y + 0.005,
-              part.max.z + 0.005,
-            ),
-          ),
-      );
-      this.partBounds.set(body, parts);
-    }
-    this.bodyParts = parts;
   }
 
   /** Contact is checked across the lower face, not just at the root point. */
@@ -131,20 +109,25 @@ export class LandSurfaces {
     let penetration = -Infinity;
     const point = new THREE.Vector3();
     const part = this.bodyBox;
-    for (let ix = 0; ix <= 2; ix++)
-      for (let iz = 0; iz <= 2; iz++) {
-        point
-          .set(
-            part.min.x + ((part.max.x - part.min.x) * ix) / 2,
-            part.min.y,
-            part.min.z + ((part.max.z - part.min.z) * iz) / 2,
-          )
-          .applyMatrix4(this.bodyMatrix);
-        penetration = Math.max(
-          penetration,
-          groundHeight(point.x, point.z, this.world.environment) - point.y,
-        );
-      }
+    for (const [ix, iz] of [
+      [0, 0],
+      [0, 2],
+      [2, 0],
+      [2, 2],
+      [1, 1],
+    ]) {
+      point
+        .set(
+          part.min.x + ((part.max.x - part.min.x) * ix) / 2,
+          part.min.y,
+          part.min.z + ((part.max.z - part.min.z) * iz) / 2,
+        )
+        .applyMatrix4(this.bodyMatrix);
+      penetration = Math.max(
+        penetration,
+        groundHeight(point.x, point.z, this.world.environment) - point.y,
+      );
+    }
     return penetration;
   }
 
@@ -206,25 +189,19 @@ export class LandSurfaces {
           // Only its supporting skin may move the contact point. Other walls,
           // including the roof inside hollow wood, must still block movement.
           if (faceNormal.y < 0.15) continue;
-          for (const part of this.bodyParts) {
-            if (
-              !part.intersectsBox(this.triangleBounds) ||
-              !part.intersectsTriangle(this.bodyTriangle)
-            )
-              continue;
-            const corner = new THREE.Vector3(
-              faceNormal.x >= 0 ? part.min.x : part.max.x,
-              faceNormal.y >= 0 ? part.min.y : part.max.y,
-              faceNormal.z >= 0 ? part.min.z : part.max.z,
-            );
-            lift = Math.max(
-              lift,
-              (faceNormal.dot(this.bodyTriangle.a) -
-                faceNormal.dot(corner) +
-                0.003) /
-                faceNormal.y,
-            );
-          }
+          if (!this.bodyBox.intersectsTriangle(this.bodyTriangle)) continue;
+          const corner = new THREE.Vector3(
+            faceNormal.x >= 0 ? body.min.x : body.max.x,
+            body.min.y,
+            faceNormal.z >= 0 ? body.min.z : body.max.z,
+          );
+          lift = Math.max(
+            lift,
+            (faceNormal.dot(this.bodyTriangle.a) -
+              faceNormal.dot(corner) +
+              0.003) /
+              faceNormal.y,
+          );
         }
         if (lift <= 0) break;
         const reach =
@@ -271,21 +248,13 @@ export class LandSurfaces {
           this.bodyTriangle.b,
           this.bodyTriangle.c,
         ]);
-        if (
-          this.bodyParts.some(
-            (part) =>
-              part.intersectsBox(this.triangleBounds) &&
-              part.intersectsTriangle(this.bodyTriangle),
-          )
-        )
-          return false;
+        if (this.bodyBox.intersectsTriangle(this.bodyTriangle)) return false;
       }
     }
-    const center = new THREE.Vector3();
-    return this.bodyParts.every((part) => {
-      part.getCenter(center).applyMatrix4(this.bodyMatrix);
-      return !this.inside(center);
-    });
+    const center = this.bodyBox
+      .getCenter(new THREE.Vector3())
+      .applyMatrix4(this.bodyMatrix);
+    return !this.inside(center);
   }
 
   at(x: number, z: number) {

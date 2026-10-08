@@ -9,7 +9,7 @@ export interface CollisionFace {
 
 const shapes = new WeakMap<
   HabitatObject,
-  { faces: CollisionFace[]; bounds: THREE.Box3; parts: THREE.Box3[] }
+  { faces: CollisionFace[]; bounds: THREE.Box3 }
 >();
 
 /** Only baked geometry survives; these models never enter the scene. Moss
@@ -21,14 +21,11 @@ export function collisionShape(object: HabitatObject) {
   model.updateMatrixWorld(true);
   const faces: CollisionFace[] = [];
   const bounds = new THREE.Box3();
-  const groups = new Map<string, THREE.Box3>();
   model.traverse((part) => {
     if (!(part instanceof THREE.Mesh)) return;
     const positions = part.geometry.getAttribute("position");
     const index = part.geometry.index;
     const count = index?.count ?? positions.count;
-    const skinIndex = part.geometry.getAttribute("skinIndex");
-    const skinWeight = part.geometry.getAttribute("skinWeight");
     for (let i = 0; i < count; i += 3) {
       const points = [0, 1, 2].map((offset) =>
         new THREE.Vector3()
@@ -42,40 +39,6 @@ export function collisionShape(object: HabitatObject) {
       const box = new THREE.Box3().setFromPoints(points);
       faces.push({ triangle, bounds: box });
       bounds.union(box);
-      // Group skinned faces by their strongest bone. This leaves the space
-      // between limbs open without needing a collision mesh for every pose.
-      const weights = new Map<number, number>();
-      if (skinIndex && skinWeight)
-        for (let corner = 0; corner < 3; corner++) {
-          const vertex = index ? index.getX(i + corner) : i + corner;
-          for (let influence = 0; influence < 4; influence++) {
-            const bone = skinIndex.getComponent(vertex, influence);
-            weights.set(
-              bone,
-              (weights.get(bone) ?? 0) +
-                skinWeight.getComponent(vertex, influence),
-            );
-          }
-        }
-      let bone = 0,
-        weight = -1;
-      for (const [candidate, amount] of weights)
-        if (amount > weight) {
-          bone = candidate;
-          weight = amount;
-        }
-      const name =
-        part instanceof THREE.SkinnedMesh
-          ? part.skeleton.bones[bone].name
-          : String(part.id);
-      const key =
-        skinIndex &&
-        !/leg|hip|foot|arm|hand|thigh|shin|tail|knee|tip/i.test(name)
-          ? "trunk"
-          : name;
-      const group = groups.get(key) ?? new THREE.Box3();
-      group.union(box);
-      groups.set(key, group);
     }
   });
   const tail = model.getObjectByName("tail");
@@ -85,7 +48,7 @@ export function collisionShape(object: HabitatObject) {
       bounds.union(new THREE.Box3().setFromObject(model));
     }
   disposeAsset(model);
-  const result = { faces, bounds, parts: [...groups.values()] };
+  const result = { faces, bounds };
   shapes.set(object, result);
   return result;
 }

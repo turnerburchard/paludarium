@@ -347,12 +347,12 @@ export class Ecosystem {
         start: state.nodeId,
         navigation: this.graph.routes(
           state.nodeId,
-          { ...agent.profile, body: undefined },
+          agent.profile,
           agent.blocked,
         ),
       };
     }
-    if (agent.routes.navigation.distances.size === 1) {
+    if (agent.blocked.has(state.nodeId)) {
       const from = this.graph.node(state.nodeId);
       let reopened = false;
       for (const id of agent.blocked.get(from.id) ?? []) {
@@ -364,7 +364,7 @@ export class Ecosystem {
       if (reopened)
         agent.routes.navigation = this.graph.routes(
           state.nodeId,
-          { ...agent.profile, body: undefined },
+          agent.profile,
           agent.blocked,
         );
     }

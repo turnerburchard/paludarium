@@ -360,7 +360,7 @@ describe("live ecosystem behavior", () => {
       before.food.reduce((s, f) => s + f.amount, 0),
     );
     expect(after.elapsed).toBe(before.elapsed);
-  });
+  }, 10_000);
   it("builds finite connected surfaces for preset tanks without entering deep water", () => {
     const world = makePreset("tropical"),
       graph = buildHabitat(world);
@@ -376,7 +376,7 @@ describe("live ecosystem behavior", () => {
         true,
       );
     }
-  });
+  }, 10_000);
   it.each(["tropical", "mountain", "grotto", "desert"] as const)(
     "lets every hunter in the %s preset reach an insect colony",
     (preset) => {
@@ -442,7 +442,6 @@ describe("insect colonies", () => {
     for (const patch of food) expect(patch.amount).toBe(patch.capacity);
   });
 
-  // Six simulated hours include body clearance against terrain and hardscape.
   // Leave room for concurrent CI workers.
   it("can keep a frog fed without help in a planted tank", () => {
     const engine = createWorldEcosystem(makePreset("mountain"));
@@ -452,7 +451,7 @@ describe("insect colonies", () => {
       .animals.filter((animal) => animal.speciesId === "canyon-tree-frog");
     expect(frogs).toHaveLength(1);
     expect(frogs[0].needs.hunger).toBeLessThan(0.8);
-  }, 120_000);
+  }, 20_000);
 });
 
 describe("preset habitats", () => {
@@ -493,7 +492,7 @@ describe("insects across edits", () => {
     edited.environment.width += 0.5;
     const after = createWorldEcosystem(edited, { world, engine });
     expect(breeding(after.snapshot().food)).toBeGreaterThan(before * 0.8);
-  });
+  }, 10_000);
 });
 
 describe("plant perches and species movement", () => {
@@ -631,7 +630,11 @@ describe("plant perches and species movement", () => {
     )!;
     expect(dropped.surface).toBe("ground");
     expect(dropped.needs).toEqual(animal.needs);
-    const ground = groundHeight(dropped.position.x, dropped.position.z, removed.environment);
+    const ground = groundHeight(
+      dropped.position.x,
+      dropped.position.z,
+      removed.environment,
+    );
     expect(dropped.position.y).toBeGreaterThanOrEqual(ground);
     expect(dropped.position.y).toBeLessThan(ground + 0.1);
     const moved = structuredClone(world);

@@ -45,13 +45,13 @@ export class HabitatGraph {
     BodyBounds,
     Map<string, { clear: boolean; poses: { position: Vec3; normal: Vec3 }[] }>
   >();
-  private readonly turnClearance = new WeakMap<
-    BodyBounds,
-    Map<string, boolean>
-  >();
   private readonly clearance = new WeakMap<
     BodyBounds,
     Map<string, Vec3 | null>
+  >();
+  private readonly routeNeighbors = new WeakMap<
+    SpeciesProfile,
+    Map<string, HabitatNode[]>
   >();
   constructor(
     nodes: readonly HabitatNode[],
@@ -85,7 +85,8 @@ export class HabitatGraph {
   }
   allowed(id: string, species: SpeciesProfile) {
     const node = this.node(id);
-    if (node.submerged ? !species.water : species.water === "lives") return false;
+    if (node.submerged ? !species.water : species.water === "lives")
+      return false;
     if (species.body && this.geometry) {
       let cache = this.clearance.get(species.body!);
       if (!cache) this.clearance.set(species.body, (cache = new Map()));
@@ -245,11 +246,14 @@ export class HabitatGraph {
       const length = Math.hypot(normal.x, normal.y, normal.z);
       return {
         position: mix(a.position, b.position),
-        normal: length > 0.001 ? {
-          x: normal.x / length,
-          y: normal.y / length,
-          z: normal.z / length,
-        } : {...b.normal},
+        normal:
+          length > 0.001
+            ? {
+                x: normal.x / length,
+                y: normal.y / length,
+                z: normal.z / length,
+              }
+            : { ...b.normal },
       };
     }
     const position = {
@@ -342,7 +346,7 @@ export class HabitatGraph {
       from.surface === "leaf" && to.surface === "leaf"
         ? 0.2
         : Math.min(0.16, 0.06 + length * 0.24);
-    const steps = Math.max(2, Math.ceil(length / 0.025), hop ? 16 : 0);
+    const steps = Math.max(2, Math.ceil(length / 0.12), hop ? 4 : 0);
     const sign = backwards ? -1 : 1;
     const direction = {
       x: (to.position.x - from.position.x) * sign,
@@ -382,69 +386,44 @@ export class HabitatGraph {
     species: SpeciesProfile,
   ) {
     if (!species.body || !this.geometry) return true;
-    let cache = this.turnClearance.get(species.body);
-    if (!cache) this.turnClearance.set(species.body, (cache = new Map()));
-    const normal = node.normal;
-    const project = (value: Vec3) => {
-      const size = Math.hypot(value.x, value.y, value.z);
-      if (size < 1e-9) return undefined;
-      const v = { x: value.x / size, y: value.y / size, z: value.z / size };
-      const dot = v.x * normal.x + v.y * normal.y + v.z * normal.z;
-      const tangent = {
-        x: v.x - normal.x * dot,
-        y: v.y - normal.y * dot,
-        z: v.z - normal.z * dot,
+    const tangent = (v: Vec3) => {
+      const dot =
+        v.x * node.normal.x + v.y * node.normal.y + v.z * node.normal.z;
+      return {
+        x: v.x - dot * node.normal.x,
+        y: v.y - dot * node.normal.y,
+        z: v.z - dot * node.normal.z,
       };
-      const length = Math.hypot(tangent.x, tangent.y, tangent.z);
-      return length > 0.001
-        ? {
-            x: tangent.x / length,
-            y: tangent.y / length,
-            z: tangent.z / length,
-          }
-        : undefined;
     };
-    const from = project(facing),
-      to = project(wanted);
-    if (!from || !to) return true;
-    const key = `${node.id}:${[from.x, from.y, from.z, to.x, to.y, to.z].map((value) => value.toFixed(8)).join(",")}`;
-    const cached = cache.get(key);
-    if (cached !== undefined) return cached;
-    const cosine = from.x * to.x + from.y * to.y + from.z * to.z;
-    const angle = Math.acos(Math.max(-1, Math.min(1, cosine)));
-    const across = {
-      x: normal.y * from.z - normal.z * from.y,
-      y: normal.z * from.x - normal.x * from.z,
-      z: normal.x * from.y - normal.y * from.x,
-    };
-    const sign =
-      across.x * to.x + across.y * to.y + across.z * to.z < 0 ? -1 : 1;
-    const steps = Math.max(1, Math.ceil(angle / 0.1));
-    for (let i = 0; i <= steps; i++) {
-      const turn = (angle * sign * i) / steps;
-      const direction = {
-        x: from.x * Math.cos(turn) + across.x * Math.sin(turn),
-        y: from.y * Math.cos(turn) + across.y * Math.sin(turn),
-        z: from.z * Math.cos(turn) + across.z * Math.sin(turn),
-      };
-      const pose = this.place(
-        node.position,
-        normal,
-        direction,
-        node.surface,
-        species,
-        !!node.shelterId,
-        node.supportId,
+    const from = tangent(facing),
+      to = tangent(wanted);
+    const alignment =
+      (from.x * to.x + from.y * to.y + from.z * to.z) /
+      Math.max(
+        Math.hypot(from.x, from.y, from.z) * Math.hypot(to.x, to.y, to.z),
+        1e-9,
       );
-      if (
-        !this.geometry.fits(pose.position, pose.normal, direction, species.body)
-      ) {
-        cache.set(key, false);
-        return false;
-      }
-    }
-    cache.set(key, true);
-    return true;
+    if (alignment > 0.99) return true;
+    // A circular footprint covers the whole pivot with one conservative check.
+    const body = species.body;
+    const radius = Math.hypot(
+      Math.max(Math.abs(body.min.x), Math.abs(body.max.x)),
+      Math.max(Math.abs(body.min.z), Math.abs(body.max.z)),
+    );
+    const turningBody = {
+      min: { x: -radius, y: body.min.y, z: -radius },
+      max: { x: radius, y: body.max.y, z: radius },
+    };
+    const pose = this.place(
+      node.position,
+      node.normal,
+      wanted,
+      node.surface,
+      { ...species, body: turningBody },
+      !!node.shelterId,
+      node.supportId,
+    );
+    return this.geometry.fits(pose.position, pose.normal, wanted, turningBody);
   }
 
   private canStep(from: HabitatNode, to: HabitatNode, species: SpeciesProfile) {
@@ -482,7 +461,11 @@ export class HabitatGraph {
     const isolated = new Set<string>();
     for (const node of candidates) {
       if (isolated.has(node.id) || !this.allowed(node.id, species)) continue;
-      if (!species.body || !this.geometry || (node.surface === "ground" && !node.shelterId))
+      if (
+        !species.body ||
+        !this.geometry ||
+        (node.surface === "ground" && !node.shelterId)
+      )
         return node;
       const reached = new Set([node.id]);
       const queue = [node];
@@ -508,6 +491,8 @@ export class HabitatGraph {
     species: SpeciesProfile,
     blocked?: ReadonlyMap<string, ReadonlySet<string>>,
   ): HabitatRoutes {
+    let neighbors = this.routeNeighbors.get(species);
+    if (!neighbors) this.routeNeighbors.set(species, (neighbors = new Map()));
     const parents = new Map<string, string>();
     const firstSteps = new Map<string, string>();
     const distances = new Map<string, number>([[start, 0]]);
@@ -547,10 +532,16 @@ export class HabitatGraph {
       const current = dequeue();
       if (current.distance !== distances.get(current.id)) continue;
       const from = this.node(current.id);
-      for (const next of from.neighbors) {
+      let exits = neighbors.get(from.id);
+      if (!exits) {
+        exits = from.neighbors
+          .map((id) => this.node(id))
+          .filter((to) => this.canStep(from, to, species));
+        neighbors.set(from.id, exits);
+      }
+      for (const to of exits) {
+        const next = to.id;
         if (blocked?.get(current.id)?.has(next)) continue;
-        const to = this.node(next);
-        if (!this.canStep(from, to, species)) continue;
         const length = current.distance + distance(from.position, to.position);
         if (length >= (distances.get(next) ?? Infinity)) continue;
         distances.set(next, length);

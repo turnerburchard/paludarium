@@ -26,7 +26,6 @@ export interface HabitatNode {
 export interface BodyBounds {
   min: Vec3;
   max: Vec3;
-  parts?: readonly { min: Vec3; max: Vec3 }[];
 }
 export interface SpeciesProfile extends AnimalBehavior {
   id: string;

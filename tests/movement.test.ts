@@ -152,6 +152,26 @@ describe("animal movement", () => {
       true,
     );
   });
+  it("can back along a slope without mistaking the surface normal for a turn", () => {
+    const slope = { ...node("a", 0, 0, []), normal: { x: 0, y: 0.8, z: 0.6 } };
+    const graph = new HabitatGraph([slope], {
+      groundPose: (position) => ({ position, normal: slope.normal }),
+      aboveGround: (position, normal) => ({ position, normal }),
+      fits: () => false,
+    });
+    const narrow = {
+      ...species,
+      body: {
+        min: { x: -0.05, y: 0, z: -0.2 },
+        max: { x: 0.05, y: 0.1, z: 0.2 },
+      },
+    };
+    // There is no room to pivot, but both headings point along the same slope tangent.
+    expect(
+      graph.canTurn(slope, { x: 1, y: 0, z: 0 }, { x: 1, y: 8, z: 6 }, narrow),
+    ).toBe(true);
+  });
+
   it("backs out of a narrow passage instead of turning through its walls", () => {
     const corridor = new HabitatGraph(
       [node("a", 0, 0, ["b"]), { ...node("b", 0.32, 0, ["a"]), shelter: 1 }],
@@ -164,7 +184,8 @@ describe("animal movement", () => {
           position: { ...position },
           normal: { ...normal },
         }),
-        fits: (_position, _normal, direction) => Math.abs(direction.z) < 0.08,
+        fits: (_position, _normal, direction, body) =>
+          Math.abs(direction.z) < 0.08 && body.max.x - body.min.x < 0.2,
       },
     );
     const animal = {

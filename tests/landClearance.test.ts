@@ -27,24 +27,12 @@ function profile(animal: HabitatObject): SpeciesProfile {
     body: {
       min: { ...bounds.min },
       max: { ...bounds.max },
-      parts: collisionShape(animal).parts.map((part) => ({
-        min: {
-          x: part.min.x * animal.scale,
-          y: part.min.y * animal.scale,
-          z: part.min.z * animal.scale,
-        },
-        max: {
-          x: part.max.x * animal.scale,
-          y: part.max.y * animal.scale,
-          z: part.max.z * animal.scale,
-        },
-      })),
     },
   };
 }
 
 describe("land animal clearance", () => {
-  it("checks occupied body parts rather than the empty space above a limb", () => {
+  it("checks a conservative body envelope and normalizes short headings", () => {
     const world = emptyWorld();
     world.environment.water = 0;
     const surfaces = new LandSurfaces(world);
@@ -100,28 +88,6 @@ describe("land animal clearance", () => {
     expect(
       surfaces.fits(position, normal, { x: 0.001, y: 0, z: 0 }, body),
     ).toBe(true);
-    const parts = [
-      { min: { x: -0.1, y: 0, z: -0.1 }, max: { x: 0.1, y: 0.3, z: 0.1 } },
-      { min: { x: -0.4, y: 0, z: -0.1 }, max: { x: 0.4, y: 0.05, z: 0.1 } },
-    ];
-    expect(surfaces.fits(position, normal, direction, { ...body, parts })).toBe(
-      true,
-    );
-    const offsetBody = {
-      min: { x: -0.15, y: 0, z: -0.1 },
-      max: { x: 0.65, y: 0.3, z: 0.1 },
-      parts: [
-        parts[0],
-        { min: { x: -0.15, y: 0, z: -0.1 }, max: { x: 0.65, y: 0.05, z: 0.1 } },
-      ],
-    };
-    expect(surfaces.fits(position, normal, direction, offsetBody)).toBe(true);
-    expect(
-      surfaces.fits({ ...position, x: position.x + 0.2 }, normal, direction, {
-        ...body,
-        parts,
-      }),
-    ).toBe(false);
   });
   it("preserves vertical glass climbs with a clear transition from the floor", () => {
     const world = emptyWorld();
