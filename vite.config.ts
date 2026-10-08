@@ -1,7 +1,9 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
+  // Mesh-heavy tests compete for CPU when every available worker starts at once.
+  test: { maxWorkers: 2 },
   base: "./",
   build: {
     rollupOptions: {

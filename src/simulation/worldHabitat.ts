@@ -1,11 +1,18 @@
 import type { World } from "../model/schema";
-import { assets, isLandAnimal, objectDens, plantPerches } from "../assets";
+import {
+  assets,
+  isAnimal,
+  isLandAnimal,
+  objectDens,
+  plantPerches,
+} from "../assets";
 import { plantCondition } from "../model/plants";
 import { groundHeight, placementProblem } from "../model/terrain";
 import { objectBase } from "../model/stacking";
 import { transformPlantPoint } from "../model/plantSurfaces";
 import { FishSchool } from "./fish";
 import { SwimSpace } from "./swimSpace";
+import { HabitatNodeGrid } from "./nodeGrid";
 import { LandSurfaces } from "./landSurfaces";
 import { Ecosystem } from "./engine";
 import { HabitatGraph, distance } from "./navigation";
@@ -28,17 +35,36 @@ const groundWalker: SpeciesProfile = {
   speed: 1,
 };
 
-/** Conservative ground navigation. The graph describes surfaces, not animal mesh anatomy. */
-export function buildHabitat(world: World): HabitatGraph {
-  const env = world.environment,
-    nodes: HabitatNode[] = [],
-    grid = new Map<string, HabitatNode>();
-  const clearance = Math.max(
+function habitatClearance(world: World) {
+  return Math.max(
     0.16,
     ...world.objects
       .filter((o) => isLandAnimal(o.kind))
       .map((o) => assets[o.kind].radius * o.scale),
   );
+}
+
+// Moving animals leaves surfaces intact; a changed maximum footprint does not.
+function sameHabitat(a: World, b: World) {
+  if (
+    a.environment !== b.environment ||
+    habitatClearance(a) !== habitatClearance(b)
+  )
+    return false;
+  const objects = a.objects.filter((object) => !isAnimal(object.kind));
+  const next = b.objects.filter((object) => !isAnimal(object.kind));
+  return (
+    objects.length === next.length &&
+    objects.every((object, i) => object === next[i])
+  );
+}
+
+/** Conservative ground navigation. The graph describes surfaces, not animal mesh anatomy. */
+export function buildHabitat(world: World): HabitatGraph {
+  const env = world.environment,
+    nodes: HabitatNode[] = [],
+    grid = new Map<string, HabitatNode>();
+  const clearance = habitatClearance(world);
   const margin = clearance + 0.08,
     spacing = 0.32;
   const nx = Math.ceil((env.width - 2 * margin) / spacing),
@@ -171,6 +197,7 @@ export function buildHabitat(world: World): HabitatGraph {
     }
   }
   const groundNodes = nodes.filter((node) => node.surface === "ground");
+  const groundGrid = new HabitatNodeGrid(groundNodes, spacing);
   const hardscapeNodes = surfaces.routes(margin);
   nodes.push(...hardscapeNodes);
   const connect = (a: HabitatNode, b: HabitatNode) => {
@@ -182,6 +209,7 @@ export function buildHabitat(world: World): HabitatGraph {
   // pieces remain disconnected. Spatial buckets avoid comparing every pair.
   const buckets = new Map<string, HabitatNode[]>();
   const bucketSize = 0.16;
+  const groundRange = spacing + clearance + 0.06;
   for (const node of hardscapeNodes) {
     const cell = [node.position.x, node.position.y, node.position.z].map((n) =>
       Math.floor(n / bucketSize),
@@ -198,20 +226,25 @@ export function buildHabitat(world: World): HabitatGraph {
             )
               connect(node, other);
     const key = cell.join(":");
-    buckets.set(key, [...(buckets.get(key) ?? []), node]);
-    for (const ground of groundNodes)
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(node);
+    else buckets.set(key, [node]);
+    for (const ground of groundGrid.near(node.position, groundRange))
       if (
-        distance(node.position, ground.position) <=
-          spacing + clearance + 0.06 &&
+        distance(node.position, ground.position) <= groundRange &&
         Math.abs(node.position.y - ground.position.y) <= 0.18
       )
         connect(node, ground);
   }
-  const anchors = [...groundNodes, ...hardscapeNodes];
+  const anchors = new HabitatNodeGrid(
+    [...groundNodes, ...hardscapeNodes],
+    0.65,
+  );
   /** Stems and dens start on a nearby dry surface at their actual base,
    * including the top of a support. Never bridge up through stacked stone. */
   const dryAnchor = (point: Vec3, range: number) =>
     anchors
+      .near(point, range)
       .filter(
         (node) =>
           !node.submerged &&
@@ -332,11 +365,16 @@ export function buildHabitat(world: World): HabitatGraph {
     }
   }
   const perches = nodes.filter((node) => node.surface === "leaf");
-  for (let i = 0; i < perches.length; i++)
-    for (let j = i + 1; j < perches.length; j++)
-      if (distance(perches[i].position, perches[j].position) <= 0.65) {
-        perches[i].neighbors.push(perches[j].id);
-        perches[j].neighbors.push(perches[i].id);
+  const perchGrid = new HabitatNodeGrid(perches, 0.65);
+  const perchOrder = new Map(perches.map((node, index) => [node.id, index]));
+  for (const [i, perch] of perches.entries())
+    for (const other of perchGrid.near(perch.position, 0.65))
+      if (
+        perchOrder.get(other.id)! > i &&
+        distance(perch.position, other.position) <= 0.65
+      ) {
+        perch.neighbors.push(other.id);
+        other.neighbors.push(perch.id);
       }
   return new HabitatGraph(nodes);
 }
@@ -363,7 +401,10 @@ export function createWorldEcosystem(
   world: World,
   previous?: { world: World; engine: Ecosystem },
 ): Ecosystem {
-  const graph = buildHabitat(world),
+  const graph =
+      previous && sameHabitat(previous.world, world)
+        ? previous.engine.graph
+        : buildHabitat(world),
     snapshot = previous?.engine.snapshot();
   const animals: AnimalSeed[] = [];
   for (const object of world.objects) {
