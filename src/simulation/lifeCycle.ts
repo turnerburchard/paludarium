@@ -39,6 +39,23 @@ export function juvenileScale(object: HabitatObject) {
   return 0.45 + 0.55 * Math.min(1, animalLife(object).age / MATURITY_AGE);
 }
 
+/** A deliberate death uses the same population and log as natural deaths. */
+export function killAnimal(world: World, id: string, now = Date.now()): World {
+  const object = world.objects.find((o) => o.id === id);
+  if (!object || !isAnimal(object.kind)) return world;
+  const death: LogEntry = {
+    at: now,
+    event: "died",
+    kind: object.kind,
+    cause: "killed",
+  };
+  return {
+    ...world,
+    objects: world.objects.filter((o) => o.id !== id),
+    log: [...(world.log ?? []), death].slice(-LOG_LENGTH),
+  };
+}
+
 export function habitatSupport(world: World) {
   const population = world.objects.filter((o) => isAnimal(o.kind)).length;
   const plants = world.objects.filter((o) => {

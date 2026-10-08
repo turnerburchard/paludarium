@@ -58,7 +58,27 @@ export function useEcosystem(
         isAnimal(o.kind) &&
         previous.world.objects.some((p) => p.id === o.id && p.kind === o.kind),
     );
-    if (!sharesAnimals) setRemains([]);
+    // Editor deaths arrive through a committed world, rather than advanceLife.
+    const deaths = (world.log ?? []).filter(
+      (entry) =>
+        world.environment === previous.world.environment &&
+        entry.cause === "killed" &&
+        !previous.world.log?.includes(entry),
+    );
+    const living = new Set(world.objects.map((o) => o.id));
+    const died = previous.world.objects.filter(
+      (o) => !living.has(o.id) && deaths.some((entry) => entry.kind === o.kind),
+    );
+    if (died.length) setRemains((r) => [...r, ...died.map(remainsOf)]);
+    else if (
+      !sharesAnimals &&
+      world.environment !== previous.world.environment &&
+      !world.objects.some((o) =>
+        previous.world.objects.some((p) => p.id === o.id),
+      )
+    )
+      setRemains([]);
+    else setRemains((r) => r.filter((body) => !living.has(body.object.id)));
     live.current = {
       world,
       engine: createWorldEcosystem(world, sharesAnimals ? previous : undefined),

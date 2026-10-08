@@ -15,6 +15,7 @@ import {
   animalLife,
   habitatSupport,
   juvenileScale,
+  killAnimal,
   MATURITY_AGE,
   BREEDING_INTERVAL,
 } from "../src/simulation/lifeCycle";
@@ -46,6 +47,42 @@ function habitat(kinds: AssetKind[], plants = 8): World {
 }
 
 describe("slow animal life cycles", () => {
+  it.each(["tree-frog", "fish"] as const)(
+    "kills a %s once, saves the cause and supports Undo/Redo",
+    (kind) => {
+      const world = habitat([kind]);
+      const killed = killAnimal(world, "animal-0", 2000);
+      expect(killed.objects).toEqual(world.objects.slice(1));
+      expect(killed.log).toEqual([
+        { at: 2000, event: "died", kind, cause: "killed" },
+      ]);
+      expect(parseWorld(JSON.stringify(killed))).toEqual(killed);
+      expect(killAnimal(killed, "animal-0")).toBe(killed);
+      const edited = historyReducer(
+        { past: [], present: world, future: [] },
+        { type: "commit", world: killed },
+      );
+      const undone = historyReducer(edited, { type: "undo" });
+      expect(undone.present).toBe(world);
+      expect(historyReducer(undone, { type: "redo" }).present).toBe(killed);
+      expect(world.objects[0].id).toBe("animal-0");
+      expect(world.log).toBeUndefined();
+    },
+  );
+  it("does not kill scenery or exceed the life log limit", () => {
+    const world = habitat(["tree-frog"]);
+    expect(killAnimal(world, "plant-0")).toBe(world);
+    expect(killAnimal(world, "missing")).toBe(world);
+    world.log = Array.from({ length: LOG_LENGTH }, (_, at) => ({
+      at,
+      event: "born",
+      kind: "tree-frog",
+    }));
+    const killed = killAnimal(world, "animal-0", 2000);
+    expect(killed.log).toHaveLength(LOG_LENGTH);
+    expect(killed.log![0].at).toBe(1);
+    expect(killed.log!.at(-1)?.cause).toBe("killed");
+  });
   it("keeps starter habitats supported and excludes unsuitable planting", () => {
     for (const preset of [
       "tropical",

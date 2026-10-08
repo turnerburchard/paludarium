@@ -296,6 +296,7 @@ try {
   await deathPage.getByRole("button", { name: "About Paludarium" }).click();
   await deathPage.getByText("Follow a creature", { exact: true }).click();
   await deathPage.getByRole("button", { name: /Red-eyed tree frog/ }).click();
+  await deathPage.getByRole("button", { name: "Watch up close" }).click();
   await deathPage
     .getByRole("complementary", { name: "Watching", exact: true })
     .waitFor();

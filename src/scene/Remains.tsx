@@ -92,6 +92,7 @@ export function Remains({
       position={[position.x, position.y, position.z]}
       rotation={[0, heading, 0]}
       scale={scale}
+      userData={{ remainsId: object.id }}
     >
       <primitive object={model} />
     </group>
