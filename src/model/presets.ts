@@ -21,6 +21,7 @@ export type Preset =
   | "mountain"
   | "desert"
   | "grotto"
+  | "island"
   | "aquarium";
 type Add = (
   kind: AssetKind,
@@ -162,6 +163,13 @@ export function makePreset(preset: Preset): World {
       objects,
     };
   }
+  if (preset === "island")
+    return {
+      version: 1,
+      name: "Tropical island",
+      environment: islandLagoon(),
+      objects: tropicalIsland(add, objects),
+    };
   if (preset === "tropical") {
     const environment = forestFloor();
     return {
@@ -277,6 +285,83 @@ function cloudForest(add: Add, shelter: Shelter, objects: HabitatObject[]) {
     add("convict-cichlid", x, z, 0.8, turn);
   add("micro-crab", 0.9, 1.45, 1, 0.6);
   add("micro-crab", 0.2, 1.1, 1, 2.5);
+  return objects;
+}
+
+/** A planted island in a deep lagoon, as hobbyists build a paludarium:
+ * mantellas and day geckos on land, vampire crabs on the shore, and tetras,
+ * gouramis, shrimp and micro crabs in the water. */
+function tropicalIsland(add: Add, objects: HabitatObject[]) {
+  // Big leaves on the high ground, for the geckos to climb.
+  add("monstera", -1.75, -1.25, 1.45, 5.2);
+  add("swiss-cheese-plant", -0.65, -0.95, 1.3, 0.8);
+  add("alocasia", 0.35, -1.35, 1.15, 2);
+  add("peace-lily", -0.05, -0.55, 0.8, 2.9);
+  add("tree-roots", -2.45, -0.75, 1, 1.6);
+  add("wood", 0.75, -1.55, 1, 4.2);
+  for (const [kind, x, z, scale, rotation] of [
+    ["fern", -2.25, -1.65, 0.75, 0.4],
+    ["fern", -1.65, -0.45, 1.1, 2.2],
+    ["fern", -0.55, -0.15, 0.75, 4.1],
+    ["fittonia", -1.2, -0.85, 1, 1.1],
+    ["fittonia", -2.0, -0.95, 1, 3.4],
+    ["moss", -1.0, -0.35, 1, 0.3],
+    ["moss", -0.25, -0.2, 1, 2.6],
+    ["moss", 0.45, -0.75, 1, 4.4],
+    ["moss", -1.4, -0.25, 0.9, 1.7],
+  ] as const)
+    add(kind, x, z, scale, rotation);
+  // Sedge, river stones and epiphytes where the island meets the water.
+  for (const [kind, x, z, scale, rotation] of [
+    ["grass", -2.6, -1.45, 1, 0.5],
+    ["grass", -2.35, -0.6, 0.9, 2.1],
+    ["grass", 0.7, -1.2, 0.9, 3.7],
+    ["rock", 1.15, -0.55, 0.7, 1.3],
+    ["pebbles", 0.6, -0.1, 1, 0.8],
+    ["anubias", -2.75, -0.5, 1, 0.6],
+    ["anubias", 1.35, -1.6, 1, 4.5],
+    ["java-fern", -2.45, 0.1, 1, 2.8],
+  ] as const)
+    add(kind, x, z, scale, rotation);
+  // Tall vallisneria in the open water, swords and rotala in front.
+  for (const [kind, x, z, scale, rotation] of [
+    ["vallisneria", 2.55, -1.2, 1, 0],
+    ["vallisneria", 2.95, -0.55, 1.1, 1.4],
+    ["vallisneria", 2.1, -1.75, 0.9, 2.9],
+    ["amazon-sword", -1.1, 1.05, 1, 0.9],
+    ["amazon-sword", -0.3, 1.35, 0.9, 3.3],
+    ["rotala", -2.75, 1.75, 1, 1.9],
+    ["java-fern", -1.6, 1.8, 1, 5.1],
+  ] as const)
+    add(kind, x, z, scale, rotation);
+  for (const [x, z, heading] of [
+    [-1.4, -0.65, 0.4],
+    [-0.9, -0.6, 2.1],
+    [-1.2, -1.1, 4.6],
+  ])
+    add("golden-mantella", x, z, 1, heading);
+  add("gecko", -1.95, -1.25, 1, 1.2);
+  add("gecko", 0.15, -1.1, 1, 3.9);
+  add("vampire-crab", 0.95, -0.85, 1, 2.4);
+  add("vampire-crab", -2.6, -1.0, 1, 5.6);
+  for (let i = 0; i < 6; i++)
+    add(
+      "cardinal-tetra",
+      0.2 + (i % 3) * 0.3,
+      0.5 + Math.floor(i / 3) * 0.3,
+      1,
+      0.4,
+    );
+  add("pearl-gourami", 2.0, -0.2, 1, 3.6);
+  add("pearl-gourami", 1.6, 0.5, 1, 2.2);
+  for (const [kind, x, z, heading] of [
+    ["cherry-shrimp", -1.15, 0.8, 1.1],
+    ["cherry-shrimp", -0.7, 1.4, 4.3],
+    ["micro-crab", -1.6, 1.15, 0.6],
+    ["micro-crab", -1.3, 1.55, 2.9],
+    ["micro-crab", -0.75, 1.75, 5.0],
+  ] as const)
+    add(kind, x, z, 1, heading);
   return objects;
 }
 
@@ -855,6 +940,54 @@ function creekBed() {
       [
         [0.4, -1.5],
         [0.9, -1.2],
+      ],
+    ],
+  ]);
+}
+
+/** A tank of deep water around a raised island toward the back. */
+function islandLagoon() {
+  const env: Environment = { ...defaultEnvironment, water: 1.3, warmth: 0.6 };
+  const smooth = (t: number) => {
+    t = Math.min(1, Math.max(0, t));
+    return t * t * (3 - 2 * t);
+  };
+  // 1 on a mound's top, sloping away to 0 well past its shore.
+  const mound = (x: number, z: number, rx: number, rz: number) =>
+    smooth((1.3 - Math.hypot(x / rx, z / rz)) / 0.95);
+  const terrain = newTerrain(
+    env,
+    (x, z) => {
+      const floor = 0.14 + 0.04 * Math.sin(x * 1.3 + z * 0.9);
+      const island = Math.max(
+        mound(x + 0.6, z + 0.8, 2.6, 1.4),
+        mound(x + 1.9, z + 1.1, 1.45, 1.1),
+      );
+      const peak = 0.12 * smooth(1 - Math.hypot(x + 0.9, z + 1.0) / 1.3);
+      const height = floor + (1.58 + peak - floor) * island;
+      return Math.round((height - baseGroundHeight(x, z, env)) * 100) / 100;
+    },
+    "sand",
+  );
+  // Moss over the island, with bare soil around its back edge.
+  return sculpt({ ...env, terrain }, [
+    [
+      "soil",
+      0.6,
+      [
+        [-2.9, -1.4],
+        [-1.5, -1.85],
+        [0.5, -1.85],
+        [1.3, -1.3],
+      ],
+    ],
+    [
+      "moss",
+      1.0,
+      [
+        [-2.1, -0.9],
+        [-0.9, -0.8],
+        [0.4, -0.9],
       ],
     ],
   ]);

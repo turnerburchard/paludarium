@@ -131,6 +131,33 @@ export const bluePoisonDartFrog: AssetDefinition = {
     ),
 };
 
+export const goldenMantella: AssetDefinition = {
+  kind: "golden-mantella",
+  name: "Golden mantella",
+  scientificName: "Mantella aurantiaca",
+  group: "Amphibians",
+  biomes: ["Tropical"],
+  description:
+    "A tiny, solid orange frog from Madagascar that lives in small groups on damp forest floor.",
+  radius: 0.14,
+  size: 0.75,
+  habitat: "land",
+  behavior: { nocturnal: false, climbs: false, speed: 0.04, movement: "hop" },
+  build: (random) =>
+    buildFrog(
+      {
+        back: "#ee7a14",
+        belly: "#e0661a",
+        iris: "#14100c",
+        feet: "#d8561c",
+        height: 0.88,
+        size: 0.4,
+        roughness: 0.6,
+      },
+      random,
+    ),
+};
+
 export const mossyFrog: AssetDefinition = {
   kind: "mossy-frog",
   name: "Vietnamese mossy frog",

@@ -376,7 +376,7 @@ describe("live ecosystem behavior", () => {
       );
     }
   });
-  it.each(["tropical", "mountain", "grotto", "desert"] as const)(
+  it.each(["tropical", "mountain", "grotto", "desert", "island"] as const)(
     "lets every hunter in the %s preset reach an insect colony",
     (preset) => {
       const engine = createWorldEcosystem(makePreset(preset));
@@ -463,6 +463,7 @@ describe("preset habitats", () => {
       "mountain",
       "grotto",
       "desert",
+      "island",
     ] as const) {
       const engine = createWorldEcosystem(makePreset(preset));
       for (const animal of engine.snapshot().animals) {

@@ -51,6 +51,7 @@ export const assetKinds = [
   "tree-frog",
   "dart-frog",
   "blue-dart-frog",
+  "golden-mantella",
   "mossy-frog",
   "gecko",
   "snail",

@@ -375,7 +375,14 @@ describe("fish in a real tank", () => {
     },
   );
 
-  it.each(["aquarium", "tropical", "mountain", "grotto", "desert"] as const)(
+  it.each([
+    "aquarium",
+    "tropical",
+    "mountain",
+    "grotto",
+    "desert",
+    "island",
+  ] as const)(
     "start in open water where the %s preset places them",
     (preset) => {
       const world = makePreset(preset);

@@ -90,6 +90,7 @@ describe("slow animal life cycles", () => {
       "desert",
       "grotto",
       "aquarium",
+      "island",
     ] as const) {
       const support = habitatSupport(makePreset(preset));
       expect(support.food, preset).toBe(1);
