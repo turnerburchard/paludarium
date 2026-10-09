@@ -30,7 +30,12 @@ describe("ground surface", () => {
     for (const name of ["position", "color", "normal"]) {
       const drawn = surface.getAttribute(name).array,
         expected = fresh.getAttribute(name).array;
-      drawn.forEach((value, i) => expect(value).toBeCloseTo(expected[i], 5));
+      // One expect per value takes seconds on a mesh this size.
+      let worst = 0;
+      drawn.forEach((value, i) => {
+        worst = Math.max(worst, Math.abs(value - expected[i]));
+      });
+      expect(worst, name).toBeLessThan(5e-6);
     }
     surface.dispose();
     fresh.dispose();

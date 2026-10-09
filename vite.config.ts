@@ -2,8 +2,9 @@ import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
-  // Mesh-heavy tests compete for CPU when every available worker starts at once.
-  test: { maxWorkers: 2 },
+  // Mesh-heavy tests compete for CPU when every available worker starts at once,
+  // and the longer simulations run for several seconds on a CI runner.
+  test: { maxWorkers: 2, testTimeout: 20_000 },
   base: "./",
   build: {
     rollupOptions: {

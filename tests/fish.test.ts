@@ -99,24 +99,32 @@ describe("fish steering", () => {
   });
 
   it("drift apart for a while instead of always schooling", () => {
-    // A wide pool, so a roaming fish has room to leave the others.
-    const s = school(five(), {
+    // A wide pool, so a roaming fish has room to leave the others. One school
+    // swings anywhere from 10% to 90% apart, and which way depends on float
+    // rounding that differs between CPUs, so judge several.
+    const wide: SwimWater = {
       ...pond,
       canSwim: (_id, x, _y, z) => Math.hypot(x, z) < 3,
-    });
+    };
+    const seeds = [1, 2, 3, 4, 5, 6, 7, 8];
     let apart = 0;
-    for (let second = 0; second < 240; second++) {
-      run(s, 1);
-      const fish = s.all();
-      if (
-        fish.some((a) =>
-          fish.every((b) => a === b || Math.hypot(a.x - b.x, a.z - b.z) > 0.9),
+    for (const seed of seeds) {
+      const s = school(five(), wide, randomFromSeed(seed));
+      for (let second = 0; second < 240; second++) {
+        run(s, 1);
+        const fish = s.all();
+        if (
+          fish.some((a) =>
+            fish.every(
+              (b) => a === b || Math.hypot(a.x - b.x, a.z - b.z) > 0.9,
+            ),
+          )
         )
-      )
-        apart++;
+          apart++;
+      }
     }
-    expect(apart / 240).toBeGreaterThan(0.15);
-    expect(apart / 240).toBeLessThan(0.85);
+    expect(apart / (240 * seeds.length)).toBeGreaterThan(0.15);
+    expect(apart / (240 * seeds.length)).toBeLessThan(0.85);
   });
 
   it("keeps a little space between fish", () => {
@@ -234,7 +242,6 @@ describe("fish in a real tank", () => {
             `${object.kind} keeps exploring`,
           ).toBeGreaterThan(assets[object.kind].swims!.speed * 120 * 0.2);
     },
-    20_000,
   );
 
   it("use their whole depth range in a deep tank", () => {
@@ -260,7 +267,7 @@ describe("fish in a real tank", () => {
     }
     const spread = [...heights.values()].map((r) => r.high - r.low);
     expect(Math.max(...spread)).toBeGreaterThan(0.3);
-  }, 20_000);
+  });
 
   it.each([3, 8, 19])(
     "Fish from older Cloud Forest saves escape tight starting spots and keep exploring (seed %s)",
@@ -316,7 +323,6 @@ describe("fish in a real tank", () => {
           ).toBeGreaterThan(0.2);
       }
     },
-    20_000,
   );
 
   it.each(["aquarium", "tropical", "mountain", "grotto", "desert"] as const)(
