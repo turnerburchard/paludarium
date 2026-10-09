@@ -48,12 +48,18 @@ Rules that keep this working:
 - Simulation randomness goes through an injected random source so behavior is testable.
 - Changing the save schema needs validation. There are no users yet, so with the owner's OK an incompatible change can bump the storage key (now `little-worlds:v3`) and drop old saves instead of migrating them. Once people rely on their saves, incompatible changes need a migration.
 
+## Testing
+
+- Put logic in plain functions and cover it with Vitest unit tests in `tests/`. Filters, simulation rules, collision and placement math all belong there, with a fixed seed so results are the same on every run.
+- The quick browser checks (`npm run test:e2e`) are there to prove the built app loads, renders and its main flows run without errors. Don't add steps to them for a new feature. If a rule can only be checked by clicking through the UI, pull the rule out into a function and unit test it instead.
+- Browser checks shouldn't depend on timing, frame rate, or animals reaching a spot in a live scene. Software WebGL on CI is slow and uneven, so those checks turn flaky.
+- Don't write screenshots from tests unless the test compares them.
+
 ## Workflow
 
 - Commit straight to `main` in small, focused commits with clear messages. `git pull --rebase` before pushing; another agent may be working at the same time.
 - Never push with failing checks. If CI fails after your push, fixing it is your top priority.
 - Work is tracked in GitHub issues. Take issues labeled for you (`agent:claude` or `agent:codex`); leave the others alone unless asked. Close issues with a short note when done.
 - Art direction (how frogs, plants, and terrain *look*) is decided with the owner. Agents can make art easier to work on, but don't change the look of existing assets on your own. Issues labeled `art` need the owner.
-- Write real tests in `tests/` for logic you add or change.
 - For visual or layout changes, run `npm run screenshot` and look at the images before committing.
 - Keep `README.md` short. Track planned work in GitHub issues.
