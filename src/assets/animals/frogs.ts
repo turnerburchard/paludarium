@@ -43,7 +43,7 @@ const climber: Shape = { width: 0.08, depth: 0.25, legs: 0.45 };
 /** Wide and round from above, on heavy legs, like a toad. */
 const squat: Shape = { width: 0.75, depth: 0.55, legs: 1.4 };
 /** Nearly as wide as long, mostly mouth, on short stubby legs. */
-const globe: Shape = { width: 1, depth: 0.8, head: 0.9, legs: 1.5 };
+const globe: Shape = { width: 1, depth: 0.8, head: 0.3, legs: 0.8 };
 
 export const treeFrog: AssetDefinition = {
   kind: "tree-frog",
@@ -669,9 +669,12 @@ function limbs(root: THREE.Object3D, bones: THREE.Bone[]) {
 function fatten(point: THREE.Vector3, trunk: number, shape: Shape) {
   const girth = trunk * Math.max(0, 1 - ((point.z - 0.02) / 0.32) ** 2);
   // The head lies toward -z, from just ahead of the shoulders to the snout.
-  const jaw = trunk * THREE.MathUtils.clamp((-0.02 - point.z) / 0.15, 0, 1);
+  const head = trunk * THREE.MathUtils.clamp((-0.02 - point.z) / 0.15, 0, 1);
+  // Flanks broaden most at mid-height and the back least, so a wide frog
+  // stays domed instead of growing ridges along its shoulders.
+  const flank = THREE.MathUtils.clamp((0.28 - point.y) / 0.12, 0.25, 1);
   return point.set(
-    point.x * (1 + shape.width * girth + (shape.head ?? 0) * jaw),
+    point.x * (1 + (shape.width * girth + (shape.head ?? 0) * head) * flank),
     point.y + (point.y - 0.15) * shape.depth * girth,
     point.z,
   );
