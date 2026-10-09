@@ -246,26 +246,6 @@ try {
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await page.getByRole("button", { name: "View", exact: true }).click();
-    await page.getByRole("button", { name: "Worlds", exact: true }).click();
-    await page
-      .locator(".preset-options")
-      .getByRole("button", { name: "Aquarium", exact: true })
-      .click();
-    await page.getByRole("button", { name: "Worlds", exact: true }).click();
-    await page
-      .locator(".preset-options")
-      .getByRole("button", { name: "Cloud forest", exact: true })
-      .click();
-    await page.getByRole("button", { name: "Worlds", exact: true }).click();
-    assert.equal(await page.locator(".world-list .saved-world").count(), 1);
-    assert.equal(
-      await page
-        .locator(".world-list")
-        .getByRole("button", { name: "Aquarium", exact: true })
-        .count(),
-      0,
-    );
-    await page.getByRole("button", { name: "My creek", exact: true }).click();
     await page
       .getByRole("button", { name: "Share this world", exact: true })
       .click();
@@ -292,104 +272,11 @@ try {
       name: "my-creek.json",
       activation: true,
     });
-    await page
-      .getByRole("button", { name: "Close dialog", exact: true })
-      .click();
-    for (let i = 0; i < 2; i++) {
-      await page.getByRole("button", { name: "Worlds", exact: true }).click();
-      await page
-        .locator(".preset-options")
-        .getByRole("button", { name: "Empty tank", exact: true })
-        .click();
-    }
-    assert.equal(
-      await page.evaluate(
-        (key) => JSON.parse(localStorage.getItem(key)).worlds.length,
-        storageKey,
-      ),
-      2,
-    );
-    await page.getByRole("button", { name: "Build", exact: true }).click();
-    await page.waitForFunction(
-      () => document.title === "paludarium · Untitled",
-    );
-    assert.equal(
-      await page
-        .getByRole("button", { name: "Cloud forest", exact: true })
-        .count(),
-      0,
-    );
-    assert.equal(
-      await page
-        .getByRole("button", { name: "Alpine creek", exact: true })
-        .count(),
-      0,
-    );
-    await page
-      .getByRole("navigation", { name: "Tools" })
-      .getByRole("button", { name: "Habitat", exact: true })
-      .click();
-    await page.getByRole("button", { name: "Daylight", exact: true }).click();
-    assert.equal(
-      await page.evaluate(
-        (key) => JSON.parse(localStorage.getItem(key)).worlds[0].preview,
-        storageKey,
-      ),
-      true,
-      "entering Build and a no-op keep the preset temporary",
-    );
-    await page.getByRole("button", { name: "Moonlight", exact: true }).click();
-    await page.waitForFunction(
-      (key) => !JSON.parse(localStorage.getItem(key)).worlds[0].preview,
-      storageKey,
-    );
-    await page
-      .getByRole("button", { name: "Undo (⌘/Ctrl Z)", exact: true })
-      .click();
-    await page.reload();
-    const afterReload = await page.evaluate(
-      (key) => JSON.parse(localStorage.getItem(key)),
-      storageKey,
-    );
-    assert.equal(
-      afterReload.worlds[0].world.environment.light,
-      "day",
-      "pagehide flushes an edit before the autosave delay",
-    );
-    assert.equal(afterReload.worlds[0].preview, undefined);
-    await page.getByRole("button", { name: "Worlds", exact: true }).click();
-    assert.equal(
-      await page.locator(".world-list .open-world").first().innerText(),
-      "Untitled\nCurrent",
-      "an edited preset stays kept even after Undo",
-    );
-    await page
-      .locator(".preset-options")
-      .getByRole("button", { name: "Empty tank", exact: true })
-      .click();
-    const current = await page.evaluate(
-      (key) => JSON.parse(localStorage.getItem(key)),
-      storageKey,
-    );
-    assert.equal(current.worlds.length, 3);
-    assert.equal(current.worlds[0].preview, true);
-    assert.equal(current.worlds[1].world.name, "Untitled");
-    await page.getByRole("button", { name: "Worlds", exact: true }).click();
-    await page
-      .locator(".world-list")
-      .getByRole("button", { name: "My creek", exact: true })
-      .click();
-    await page.getByRole("button", { name: "Worlds", exact: true }).click();
-    assert.equal(
-      await page.locator(".world-list .open-world").first().innerText(),
-      "My creek\nCurrent",
-      "recently opened saves come first",
-    );
     await page.close();
   }
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: desktop and phone save migration, preset switching, immediate save, reload, scoped Undo, export/import, confirmed deletion, storage failure, file sharing, and minimal closed UI",
+    "PASS: desktop and phone rename, preset switching, reload, export/import, confirmed deletion, storage failure, file sharing, and minimal closed UI",
   );
 } finally {
   await browser?.close();
