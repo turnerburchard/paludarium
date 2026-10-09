@@ -4,7 +4,7 @@ import type { AssetKind } from "../model/schema";
 import type { Den, PlantPerch } from "../model/plantSurfaces";
 import type { Surface } from "../simulation/types";
 
-export type Category = "Plants" | "Landscape" | "Animals";
+export type Category = "Plants" | "Hardscape" | "Animals";
 
 /** Where in the world a thing comes from. Whether it lives underwater is its
  * habitat, not a biome. */
@@ -19,8 +19,8 @@ export const groupCategories = {
   "Aquatic plants": "Plants",
   Mosses: "Plants",
   Mushrooms: "Plants",
-  Stone: "Landscape",
-  Wood: "Landscape",
+  Stone: "Hardscape",
+  Wood: "Hardscape",
   Amphibians: "Animals",
   Reptiles: "Animals",
   Fish: "Animals",

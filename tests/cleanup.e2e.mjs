@@ -416,7 +416,7 @@ try {
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Add", exact: true })
     .click();
-  await page.getByRole("button", { name: "Landscape", exact: true }).click();
+  await page.getByRole("button", { name: "Hardscape", exact: true }).click();
   await page.getByRole("button", { name: "River stone", exact: true }).click();
   const angle = page.getByRole("status", { name: "Placement angle" });
   await page.getByRole("button", { name: "Turn placement right" }).tap();
