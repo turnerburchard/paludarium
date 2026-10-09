@@ -189,7 +189,7 @@ try {
           .getByRole("navigation", { name: "Tools" })
           .getByRole("button", { name: "Add", exact: true })
           .click();
-      await page.getByRole("button", { name: "Controls and help" }).click();
+      await reopen(page);
       await closeHelp(page, "escape");
       if (method === "escape" && viewport.width > 760) {
         await page
@@ -200,7 +200,7 @@ try {
           .click();
         await page.getByRole("button", { name: "Done", exact: true }).waitFor();
         for (let i = 0; i < 2; i++) {
-          await page.getByRole("button", { name: "Controls and help" }).click();
+          await reopen(page);
           await closeHelp(page, "escape");
           assert.equal(
             await page

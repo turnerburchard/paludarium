@@ -170,7 +170,7 @@ export default function App({
           ecosystem={ecosystem}
           panel={panel}
           onPanel={setPanel}
-          onHelp={() => setDialog("help")}
+          onAbout={() => setDialog("about")}
           onWatch={inspectAnimal}
           onClose={() => setSheetOpen(false)}
         />
