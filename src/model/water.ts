@@ -286,7 +286,8 @@ function buildWaterMap(env: Environment): WaterMap {
   const width = (i: number) => springWidth(flow[i]);
   for (const route of routes) {
     let cells: number[] = [],
-      from: number | undefined;
+      from: number | undefined,
+      edge: number | undefined;
     const finish = (to?: number) => {
       if (cells.length > 1)
         map.streams.push(course(cells, from, to, map, env, width));
@@ -306,8 +307,11 @@ function buildWaterMap(env: Environment): WaterMap {
           finish(map.pools[pool].level);
         }
         from = map.pools[pool].level;
+        edge = i;
         continue;
       }
+      // Water spilling out of a pool starts within it, so the two meet.
+      if (!cells.length && edge !== undefined) cells.push(edge);
       cells.push(i);
       if (drawn[i]) {
         finish(map.ground[i] + STREAM_DEPTH);
@@ -467,9 +471,9 @@ function hollow(start: number, map: WaterMap, fill: Float64Array): Pool {
 
 /** A stream's course through a run of cells, rounded off so it doesn't
  * zigzag along the grid. Its surface keeps a little above the bed and never
- * climbs, so where the bed rises the water runs under the rise. It starts
- * at `from` when it spills out of a pool and ends at `to` where it meets
- * water. */
+ * climbs, so where the bed rises the water runs under the rise. Spilling out
+ * of a pool at `from`, it starts a little above the pool so there's water
+ * over the rim. It ends at `to` where it meets water. */
 function course(
   cells: number[],
   from: number | undefined,
@@ -488,15 +492,26 @@ function course(
       width: width(cell),
     };
   });
+  // Cells beside each other along the glass can land on the same spot.
+  points = points.filter(
+    (point, i) =>
+      i === 0 ||
+      Math.hypot(point.x - points[i - 1].x, point.z - points[i - 1].z) > 1e-6,
+  );
+  // Bends wide enough that the stream's inner edge doesn't fold over itself.
+  const widest = Math.max(...points.map((point) => point.width));
+  for (let pass = 0; pass < (widest / CELL) ** 2 / 2; pass++)
+    points = relaxed(points);
   for (let pass = 0; pass < 2; pass++) points = rounded(points);
-  let surface = from ?? Infinity,
+  const rim = (from ?? -Infinity) + STREAM_DEPTH / 2;
+  let surface = from === undefined ? Infinity : rim,
     along = 0;
   return points.map((point, i) => {
     if (i > 0)
       along += Math.hypot(point.x - points[i - 1].x, point.z - points[i - 1].z);
     surface = Math.min(
       surface,
-      groundHeight(point.x, point.z, env) + STREAM_DEPTH,
+      Math.max(rim, groundHeight(point.x, point.z, env) + STREAM_DEPTH),
     );
     const y = i === points.length - 1 && to !== undefined ? to : surface;
     return { ...point, y: Math.max(y, to ?? -Infinity), along };
@@ -504,6 +519,21 @@ function course(
 }
 
 type PathPoint = { x: number; z: number; width: number };
+
+/** Each point moved halfway toward the middle of its neighbors, keeping both
+ * ends where they are. */
+function relaxed(points: PathPoint[]): PathPoint[] {
+  return points.map((point, i) => {
+    if (i === 0 || i === points.length - 1) return point;
+    const before = points[i - 1],
+      after = points[i + 1];
+    return {
+      x: (before.x + 2 * point.x + after.x) / 4,
+      z: (before.z + 2 * point.z + after.z) / 4,
+      width: point.width,
+    };
+  });
+}
 
 /** Chaikin's corner cutting, keeping both ends where they are. */
 function rounded(points: PathPoint[]): PathPoint[] {

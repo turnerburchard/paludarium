@@ -12,8 +12,10 @@ const RAPID_SLOPE = 0.2;
 const FALL_SLOPE = 0.8;
 /** How far white water carries past the foot of a fall. */
 const FOAM_REACH = 0.3;
-/** Distance over which the water fades in at its source and out into the pool. */
-const FADE = 0.2;
+/** Distance over which the water fades in at its source and out into the
+ * pool. Kept to about a grid cell, since a stream starts and ends a cell
+ * inside the pools it joins, and any longer leaves a gap at their shores. */
+const FADE = 0.1;
 /** Vertices across the stream, so its edges can follow the bed. */
 const ACROSS = 7;
 /** The outer part of each side, as a share of half the width, that fades

@@ -80,9 +80,37 @@ describe("water from springs", () => {
     // One stream into the pool, and one out of it down to the water.
     expect(streams).toHaveLength(2);
     expect(streams[0].at(-1)!.y).toBe(pool.level);
-    expect(streams[1][0].y).toBeLessThanOrEqual(pool.level);
     expect(streams[1].at(-1)!.y).toBe(env.water);
     for (const course of streams) expectDownhill(course);
+  });
+
+  it("spills out of a pool from within it, with water over the rim", () => {
+    const env = ramp([spring(-0.42)], [{ at: -1.5, radius: 0.7 }]);
+    const map = waterMap(env);
+    const [pool] = map.pools;
+    const outflow = map.streams[1];
+    expect(waterLevel(outflow[0].x, outflow[0].z, env)).toBe(pool.level);
+    expect(outflow[0].y).toBeGreaterThan(pool.level);
+    expect(outflow[0].y).toBeLessThan(pool.level + 0.05);
+    for (const point of outflow)
+      expect(point.y).toBeGreaterThan(groundHeight(point.x, point.z, env));
+  });
+
+  it("runs along the glass without stopping in place", () => {
+    // Ground falling toward the back glass as well as to the right.
+    const base = defaultEnvironment;
+    const env = {
+      ...base,
+      springs: [{ x: -0.42, z: -0.4, flow: 0.5 }],
+      terrain: newTerrain(
+        base,
+        (x, z) => 0.75 - 0.12 * x + 0.3 * z - baseGroundHeight(x, z, base),
+      ),
+    };
+    const [course] = waterMap(env).streams;
+    expect(course.some((point) => point.z < -env.depth / 2 + 0.3)).toBe(true);
+    for (let i = 1; i < course.length; i++)
+      expect(course[i].along).toBeGreaterThan(course[i - 1].along);
   });
 
   it("chains pools down a slope with water running between them", () => {
@@ -136,7 +164,8 @@ describe("water from springs", () => {
     const joined = second.at(-1)!;
     expect(
       first.some(
-        (point) => Math.hypot(point.x - joined.x, point.z - joined.z) < 0.1,
+        (point) =>
+          Math.hypot(point.x - joined.x, point.z - joined.z) < point.width / 4,
       ),
     ).toBe(true);
   });
