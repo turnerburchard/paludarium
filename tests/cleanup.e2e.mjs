@@ -78,7 +78,7 @@ try {
   await page.addInitScript(() => {
     // Keep gesture and UI checks independent of a dense starter habitat's GPU cost.
     localStorage.setItem(
-      "little-worlds:v2",
+      "little-worlds:v3",
       JSON.stringify({
         version: 1,
         name: "Cleanup check",
@@ -175,7 +175,7 @@ try {
     sharedWorld,
     await page.evaluate(() => {
       const library = JSON.parse(
-        localStorage.getItem("little-worlds:v2"),
+        localStorage.getItem("little-worlds:v3"),
         (key, value) =>
           key === "" && value.worlds
             ? value.worlds.find((entry) => entry.id === value.activeId).world
@@ -290,7 +290,7 @@ try {
   await page.keyboard.press("Enter");
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -337,7 +337,7 @@ try {
       width: canvas.width,
       height: canvas.height,
       sidebar: document.querySelector(".sidebar"),
-      world: localStorage.getItem("little-worlds:v2"),
+      world: localStorage.getItem("little-worlds:v3"),
     };
     window.modeSamples = [];
     window.sampleModes = true;
@@ -367,7 +367,7 @@ try {
       sameCamera: before.camera === state.camera,
       sameCanvas: before.canvas === canvas,
       sameSidebar: before.sidebar === document.querySelector(".sidebar"),
-      sameWorld: before.world === localStorage.getItem("little-worlds:v2"),
+      sameWorld: before.world === localStorage.getItem("little-worlds:v3"),
       noResize: window.modeSamples.every(
         (sample) =>
           sample.width === before.width && sample.height === before.height,
@@ -458,7 +458,7 @@ try {
     const canvas = document.querySelector("canvas");
     const { camera } = _roots.get(canvas).store.getState();
     const env = JSON.parse(
-      localStorage.getItem("little-worlds:v2"),
+      localStorage.getItem("little-worlds:v3"),
       (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
@@ -503,7 +503,7 @@ try {
   assert.equal(
     await page.evaluate(
       () =>
-        JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+        JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
           key === "" && value.worlds
             ? value.worlds.find((entry) => entry.id === value.activeId).world
             : value,
@@ -527,7 +527,7 @@ try {
   await page.touchscreen.tap(spot.x, spot.y);
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -537,7 +537,7 @@ try {
   assert.equal(
     await page.evaluate(
       () =>
-        JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+        JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
           key === "" && value.worlds
             ? value.worlds.find((entry) => entry.id === value.activeId).world
             : value,
@@ -548,7 +548,7 @@ try {
   );
   const rotation = await page.evaluate(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -579,7 +579,7 @@ try {
   };
   await receiver.addInitScript((world) => {
     if (!sessionStorage.getItem("receiver-initialized")) {
-      localStorage.setItem("little-worlds:v2", JSON.stringify(world));
+      localStorage.setItem("little-worlds:v3", JSON.stringify(world));
       sessionStorage.setItem("receiver-initialized", "true");
     }
   }, ownWorld);
@@ -592,7 +592,7 @@ try {
   await receiver.waitForTimeout(500);
   const receiverSaved = () =>
     receiver.evaluate(() =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -662,7 +662,7 @@ try {
     .click();
   await receiver.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -691,7 +691,7 @@ try {
     .waitFor();
   await newcomer.waitForTimeout(500);
   assert.equal(
-    await newcomer.evaluate(() => localStorage.getItem("little-worlds:v2")),
+    await newcomer.evaluate(() => localStorage.getItem("little-worlds:v3")),
     null,
   );
   await newcomer.getByRole("button", { name: "Build", exact: true }).click();
@@ -706,7 +706,7 @@ try {
     .click();
   assert.deepEqual(
     await newcomer.evaluate(() =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,

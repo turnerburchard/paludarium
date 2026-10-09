@@ -91,7 +91,7 @@ import { rock } from "./landscape/rock";
 import { wood } from "./landscape/wood";
 import { branch } from "./landscape/branch";
 import { log } from "./landscape/log";
-import { rockShelter } from "./landscape/rockShelter";
+import { capstone, standingStone } from "./landscape/shelterStones";
 import {
   cobble,
   flagstone,
@@ -205,7 +205,8 @@ export const assets = {
   stump,
   "dead-tree": deadTree,
   "tree-roots": treeRoots,
-  "rock-shelter": rockShelter,
+  "standing-stone": standingStone,
+  capstone,
   "leaf-litter": leafLitter,
   "fly-agaric": flyAgaric,
   bolete,

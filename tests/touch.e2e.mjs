@@ -85,7 +85,7 @@ try {
       fiberUrl = response.url();
   });
   await page.addInitScript((world) => {
-    localStorage.setItem("little-worlds:v2", JSON.stringify(world));
+    localStorage.setItem("little-worlds:v3", JSON.stringify(world));
   }, world);
   await page.goto(url);
   await page
@@ -106,7 +106,7 @@ try {
 
   async function saved() {
     return page.evaluate(() =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -137,7 +137,7 @@ try {
         const canvas = document.querySelector("canvas");
         const { camera } = _roots.get(canvas).store.getState();
         const env = JSON.parse(
-          localStorage.getItem("little-worlds:v2"),
+          localStorage.getItem("little-worlds:v3"),
           (key, value) =>
             key === "" && value.worlds
               ? value.worlds.find((entry) => entry.id === value.activeId).world
@@ -266,7 +266,7 @@ try {
     );
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -288,7 +288,7 @@ try {
   await pointer("pointerup", point, 1, true);
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -470,7 +470,7 @@ try {
   await page.touchscreen.tap(point.x, point.y);
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -527,7 +527,7 @@ try {
   await page.touchscreen.tap(point.x, point.y);
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,

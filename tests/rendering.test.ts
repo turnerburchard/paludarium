@@ -50,7 +50,7 @@ describe("static rendering batches", () => {
 });
 
 describe("moss cover", () => {
-  it.each(["rock", "log", "rock-shelter"] as const)(
+  it.each(["rock", "log", "capstone"] as const)(
     "grows a %s's moss over its top, the same way for the same seed",
     (kind) => {
       const bare = buildAsset(kind, 173);

@@ -11,6 +11,7 @@ import {
 import type { Editor } from "../editor/useEditor";
 import { loadThumbnails, type Thumbnails } from "../scene/thumbnails";
 import { hasDryGround } from "../model/terrain";
+import { prebuilts } from "../model/prebuilts";
 import { LibraryFilter, type Place } from "./LibraryFilter";
 const categories: { name: Category; icon: typeof Leaf }[] = [
   { name: "Plants", icon: Leaf },
@@ -72,16 +73,14 @@ export function Library({
     const controller = new AbortController();
     const observer = new IntersectionObserver(
       (entries) => {
-        const kinds = entries
+        const keys = entries
           .filter((entry) => entry.isIntersecting)
           .map((entry) => {
             observer.unobserve(entry.target);
-            return catalog.find(
-              (asset) => asset.kind === entry.target.getAttribute("data-kind"),
-            )!.kind;
+            return entry.target.getAttribute("data-kind")!;
           });
-        if (kinds.length)
-          void loadThumbnails(kinds, controller.signal).then((loaded) => {
+        if (keys.length)
+          void loadThumbnails(keys, controller.signal).then((loaded) => {
             if (!controller.signal.aborted)
               setThumbnails((current) => ({ ...current, ...loaded }));
           });
@@ -143,30 +142,79 @@ export function Library({
         </p>
       )}
       <div className="asset-grid" ref={grid}>
+        {/* Prebuilts lead the landscape, unless filters narrow it down. */}
+        {activeCategory === "Landscape" && filterCount === 0 && (
+          <>
+            <h3 className="asset-heading">Prebuilt</h3>
+            {prebuilts.map((prebuilt) => (
+              <Card
+                key={prebuilt.id}
+                id={`prebuilt:${prebuilt.id}`}
+                name={prebuilt.name}
+                description={prebuilt.description}
+                thumbnails={thumbnails}
+                chosen={
+                  editor.tool.type === "prebuilt" &&
+                  editor.tool.prebuilt.id === prebuilt.id
+                }
+                onChoose={() => editor.choosePrebuilt(prebuilt)}
+              />
+            ))}
+            <h3 className="asset-heading">Pieces</h3>
+          </>
+        )}
         {shown.map((asset) => (
-          <button
+          <Card
             key={asset.kind}
-            data-kind={asset.kind}
-            className={`asset-card ${editor.tool.type === "place" && editor.tool.kind === asset.kind ? "chosen" : ""}`}
-            onClick={() => editor.choose(asset.kind)}
-            title={asset.description}
-            aria-pressed={
+            id={asset.kind}
+            name={asset.name}
+            description={asset.description}
+            thumbnails={thumbnails}
+            chosen={
               editor.tool.type === "place" && editor.tool.kind === asset.kind
             }
-          >
-            <span className="asset-picture">
-              {thumbnails[asset.kind] && (
-                <img src={thumbnails[asset.kind]} alt="" draggable={false} />
-              )}
-              <span className="asset-add">
-                <Plus size={13} />
-              </span>
-            </span>
-            <span className="asset-name">{asset.name}</span>
-          </button>
+            onChoose={() => editor.choose(asset.kind)}
+          />
         ))}
       </div>
     </>
+  );
+}
+
+/** A library entry; `id` also names its thumbnail. */
+function Card({
+  id,
+  name,
+  description,
+  thumbnails,
+  chosen,
+  onChoose,
+}: {
+  id: string;
+  name: string;
+  description: string;
+  thumbnails: Thumbnails;
+  chosen: boolean;
+  onChoose: () => void;
+}) {
+  return (
+    <button
+      data-kind={id}
+      className={`asset-card ${chosen ? "chosen" : ""}`}
+      onClick={onChoose}
+      title={description}
+      aria-pressed={chosen}
+    >
+      <span className="asset-picture">
+        {thumbnails[id] && (
+          <img src={thumbnails[id]} alt="" draggable={false} />
+        )}
+        <span className="asset-add">
+          <Plus size={13} />
+        </span>
+      </span>
+      <span className="asset-name">{name}</span>
+    </button>
   );
 }
 
