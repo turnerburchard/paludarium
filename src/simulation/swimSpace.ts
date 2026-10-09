@@ -164,6 +164,9 @@ export class SwimSpace {
     );
     this.inverse.copy(this.matrix).invert();
     this.query.copy(this.bodyBox).applyMatrix4(this.matrix);
+    // Retreats can keep their previous depth, so check the floor here too.
+    if (this.query.min.y < groundHeight(x, z, this.world.environment))
+      return false;
     return this.clear();
   };
 
