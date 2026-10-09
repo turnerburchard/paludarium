@@ -61,22 +61,6 @@ describe("reusing habitat navigation", () => {
         objects: world.objects.filter((o) => o.id !== frog.id),
       }),
     ],
-    [
-      "removing the last frog",
-      (world: World) => ({
-        ...world,
-        objects: world.objects.filter((o) => o.kind !== "tree-frog"),
-      }),
-    ],
-    [
-      "larger animal footprint",
-      (world: World) => ({
-        ...world,
-        objects: world.objects.map((o) =>
-          o.id === frog.id ? { ...o, scale: 2 } : o,
-        ),
-      }),
-    ],
   ])("reuses unchanged surfaces after %s", (_, edit) => {
     const world = habitat();
     const engine = createWorldEcosystem(world);
@@ -95,6 +79,22 @@ describe("reusing habitat navigation", () => {
       (world: World) => ({
         ...world,
         objects: world.objects.filter((o) => o.kind !== "fish"),
+      }),
+    ],
+    [
+      "removing the last large footprint",
+      (world: World) => ({
+        ...world,
+        objects: world.objects.filter((o) => o.kind !== "tree-frog"),
+      }),
+    ],
+    [
+      "larger animal footprint",
+      (world: World) => ({
+        ...world,
+        objects: world.objects.map((o) =>
+          o.id === frog.id ? { ...o, scale: 5 } : o,
+        ),
       }),
     ],
     [
