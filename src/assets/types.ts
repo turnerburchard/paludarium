@@ -76,6 +76,9 @@ export interface AssetDefinition {
    * ones of different ages. */
   scaleRange?: readonly [number, number];
   habitat: "land" | "water" | "either";
+  /** Where a long piece meets the ground, in model units. It settles to the
+   * lowest ground under these, so on a slope no end hangs in the air. */
+  groundPoints?: readonly { x: number; z: number }[];
   /** Frogs route around it. */
   blocksMovement?: boolean;
   /** Frogs prefer to rest and sleep near it, and insects breed under it. */

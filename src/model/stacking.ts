@@ -5,8 +5,35 @@ import { groundHeight } from "./terrain";
 /** Where an object's base sits: on the ground, on the stone or wood it was
  * placed on, or on the surface for floating plants. */
 export function objectBase(object: HabitatObject, env: Environment) {
-  const base = groundHeight(object.x, object.z, env) + (object.lift ?? 0);
-  return assets[object.kind].floats ? Math.max(base, env.water) : base;
+  const asset = assets[object.kind];
+  const ground =
+    asset.groundPoints && !object.support
+      ? lowestGround(object, asset.groundPoints, env)
+      : groundHeight(object.x, object.z, env);
+  const base = ground + (object.lift ?? 0);
+  return asset.floats ? Math.max(base, env.water) : base;
+}
+
+/** The lowest ground under points on a model, after it is turned and
+ * scaled into place. */
+function lowestGround(
+  object: HabitatObject,
+  points: readonly { x: number; z: number }[],
+  env: Environment,
+) {
+  const grow = object.scale * (assets[object.kind].size ?? 1);
+  const cos = Math.cos(object.rotation),
+    sin = Math.sin(object.rotation);
+  return Math.min(
+    ...points.map((p) =>
+      // Matches how Three.js turns a model about its vertical axis.
+      groundHeight(
+        object.x + (p.x * cos + p.z * sin) * grow,
+        object.z + (-p.x * sin + p.z * cos) * grow,
+        env,
+      ),
+    ),
+  );
 }
 
 /** A spot the pointer found on a stone or wood piece: which one, and the

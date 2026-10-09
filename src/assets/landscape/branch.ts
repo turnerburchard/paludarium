@@ -14,6 +14,7 @@ export const branch: AssetDefinition = {
   radius: 0.55,
   habitat: "either",
   hardscape: "wood",
+  groundPoints: [{ x: -0.52, z: 0 }],
   perches: branchPerches,
   build,
 };

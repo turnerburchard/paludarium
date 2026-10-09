@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { Mesh, Vector3, type Object3D } from "three";
+import { assets, buildAsset, catalog } from "../src/assets";
 import {
   defaultEnvironment,
   emptyWorld,
@@ -155,3 +157,48 @@ describe("floating plants", () => {
     );
   });
 });
+
+describe("long wood", () => {
+  // Halfway down the bank, where the ground falls about 0.15 across a piece.
+  const lying = catalog.filter((asset) => asset.groundPoints);
+
+  it.each(lying.map((asset) => asset.kind))(
+    "keeps every end of %s on a slope instead of floating",
+    (kind) => {
+      for (const rotation of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+        const piece = object("piece", 0.9, 0.3, { kind, rotation });
+        const model = buildAsset(kind, piece.seed);
+        model.position.set(piece.x, objectBase(piece, env), piece.z);
+        model.rotation.y = rotation;
+        model.updateMatrixWorld(true);
+        const bark = vertices(model);
+        for (const point of assets[kind].groundPoints!) {
+          const end = new Vector3(point.x, 0, point.z).applyMatrix4(
+            model.matrixWorld,
+          );
+          const lowest = Math.min(
+            ...bark
+              .filter((v) => Math.hypot(v.x - end.x, v.z - end.z) < 0.08)
+              .map((v) => v.y),
+          );
+          expect(lowest).toBeLessThan(groundHeight(end.x, end.z, env));
+        }
+      }
+    },
+  );
+});
+
+function vertices(model: Object3D) {
+  const points: Vector3[] = [];
+  model.traverse((part) => {
+    if (!(part instanceof Mesh)) return;
+    const position = part.geometry.getAttribute("position");
+    for (let i = 0; i < position.count; i++)
+      points.push(
+        new Vector3()
+          .fromBufferAttribute(position, i)
+          .applyMatrix4(part.matrixWorld),
+      );
+  });
+  return points;
+}
