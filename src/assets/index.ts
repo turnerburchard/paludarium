@@ -86,6 +86,7 @@ import { hairgrass } from "./plants/hairgrass";
 import { orchid } from "./plants/orchid";
 import { waterLily } from "./plants/waterLily";
 import { hedgehogCactus } from "./plants/hedgehogCactus";
+import { beavertail, cholla, organPipe, saguaro } from "./plants/cacti";
 import { cushionMoss, fernMoss, javaMoss, sheetMoss } from "./landscape/mosses";
 import { rock } from "./landscape/rock";
 import { wood } from "./landscape/wood";
@@ -119,6 +120,10 @@ import {
   quaterniusBoulder,
   quaterniusOutcrop,
   quaterniusCrag,
+  quaterniusWedge,
+  quaterniusDome,
+  quaterniusBlock,
+  quaterniusLedge,
 } from "./landscape/quaterniusStones";
 import { leafLitter } from "./landscape/leafLitter";
 
@@ -170,6 +175,10 @@ export const assets = {
   "prickly-pear": pricklyPear,
   "barrel-cactus": barrelCactus,
   "hedgehog-cactus": hedgehogCactus,
+  saguaro,
+  "organ-pipe": organPipe,
+  beavertail,
+  cholla,
   agave,
   bunchgrass,
   hairgrass,
@@ -193,6 +202,10 @@ export const assets = {
   "quaternius-boulder": quaterniusBoulder,
   "quaternius-outcrop": quaterniusOutcrop,
   "quaternius-crag": quaterniusCrag,
+  "quaternius-wedge": quaterniusWedge,
+  "quaternius-dome": quaterniusDome,
+  "quaternius-block": quaterniusBlock,
+  "quaternius-ledge": quaterniusLedge,
   sandstone,
   "sandstone-pillar": sandstonePillar,
   "sandstone-ledge": sandstoneLedge,
