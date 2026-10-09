@@ -115,6 +115,11 @@ import { deadTree } from "./landscape/deadTree";
 import { bolete, bonnetMushrooms, flyAgaric } from "./landscape/mushrooms";
 import { ludwigia } from "./plants/ludwigia";
 import { dwarfSagittaria } from "./plants/dwarfSagittaria";
+import {
+  quaterniusBoulder,
+  quaterniusOutcrop,
+  quaterniusCrag,
+} from "./landscape/quaterniusStones";
 import { leafLitter } from "./landscape/leafLitter";
 
 export type {
@@ -185,6 +190,9 @@ export const assets = {
   "java-moss": javaMoss,
   rock,
   granite,
+  "quaternius-boulder": quaterniusBoulder,
+  "quaternius-outcrop": quaterniusOutcrop,
+  "quaternius-crag": quaterniusCrag,
   sandstone,
   "sandstone-pillar": sandstonePillar,
   "sandstone-ledge": sandstoneLedge,

@@ -108,3 +108,20 @@ describe("turtle model", () => {
     }
   });
 });
+
+describe("Quaternius stones", () => {
+  it.each([
+    "quaternius-boulder",
+    "quaternius-outcrop",
+    "quaternius-crag",
+  ] as const)("grounds %s within its placement footprint", (kind) => {
+    const model = buildAsset(kind, 7);
+    const box = new Box3().setFromObject(model);
+    expect(box.min.y).toBeCloseTo(0, 4);
+    expect(box.max.y).toBeGreaterThan(0.1);
+    for (const x of [box.min.x, box.max.x])
+      for (const z of [box.min.z, box.max.z])
+        expect(Math.hypot(x, z)).toBeLessThanOrEqual(assetRadius(kind));
+    disposeAsset(model);
+  });
+});
