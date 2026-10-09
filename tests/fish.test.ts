@@ -128,9 +128,32 @@ describe("fish steering", () => {
       const fish = s.all();
       for (const a of fish)
         for (const b of fish)
-          if (a !== b && Math.hypot(a.x - b.x, a.z - b.z) < 0.08) crowded++;
+          if (a !== b && Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) < 0.08)
+            crowded++;
     }
     expect(crowded).toBeLessThan(20);
+  });
+
+  it("keeps clear of other kinds of fish too", () => {
+    // Two fish swimming head on at the same depth.
+    const s = school([
+      { ...five()[0], id: "a", species: "tetra", x: 0, z: 0.4, heading: 0 },
+      {
+        ...five()[0],
+        id: "b",
+        species: "angelfish",
+        x: 0,
+        z: -0.4,
+        heading: Math.PI,
+      },
+    ]);
+    let closest = Infinity;
+    for (let i = 0; i < 6 * 30; i++) {
+      s.advance(1 / 30);
+      const [a, b] = s.all();
+      closest = Math.min(closest, Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z));
+    }
+    expect(closest).toBeGreaterThan(0.08);
   });
 
   it("heads for its goal along a smooth curve", () => {

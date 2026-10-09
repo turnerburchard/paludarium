@@ -157,9 +157,6 @@ export class Steering {
     goal: Vec3 | undefined,
     dt: number,
   ) {
-    const climbLimit = f.speed * f.pace * CLIMB_SHARE;
-    const climb = clamp(((goal?.y ?? f.y) - f.y) * 0.8, climbLimit);
-    f.climb += clamp(climb - f.climb, CLIMB_ACCELERATION * dt);
     if (f.retreatFor > 0) {
       f.retreatFor -= dt;
       f.climb = 0;
@@ -215,18 +212,25 @@ export class Steering {
       alignZ = 0,
       centerX = 0,
       centerZ = 0;
+    let rise = 0;
     for (const other of fish) {
-      if (other === f || other.species !== f.species) continue;
+      if (other === f) continue;
       const dx = other.x - f.x,
+        dy = other.y - f.y,
         dz = other.z - f.z,
         d = Math.hypot(dx, dz);
       if (d > NEIGHBOR_RANGE) continue;
-      if (d < PERSONAL_SPACE && d > 0) {
-        steerX -= (dx / d) * (PERSONAL_SPACE - d) * 6;
-        steerZ -= (dz / d) * (PERSONAL_SPACE - d) * 6;
+      // Keep clear of any fish nearby at much the same depth, whatever its
+      // kind, moving apart both sideways and up or down.
+      const crowding = PERSONAL_SPACE - Math.hypot(d, dy * 2);
+      if (crowding > 0 && d > 0) {
+        steerX -= (dx / d) * crowding * 6;
+        steerZ -= (dz / d) * crowding * 6;
+        rise -= (Math.sign(dy) || (f.id < other.id ? 1 : -1)) * crowding;
       }
-      // The school doesn't follow a fish that has wandered off on its own.
-      if (other.roaming) continue;
+      // Fish school only with their own kind, and not with one that has
+      // wandered off on its own.
+      if (other.species !== f.species || other.roaming) continue;
       neighbors++;
       const otherHeading = direction(other.heading);
       alignX += otherHeading.x;
@@ -240,6 +244,9 @@ export class Steering {
       steerX += (centerX / neighbors - f.x) * 0.5;
       steerZ += (centerZ / neighbors - f.z) * 0.5;
     }
+    const climbLimit = f.speed * f.pace * CLIMB_SHARE;
+    const climb = clamp(((goal?.y ?? f.y) + rise - f.y) * 0.8, climbLimit);
+    f.climb += clamp(climb - f.climb, CLIMB_ACCELERATION * dt);
     if (goal) {
       const dx = goal.x - f.x,
         dz = goal.z - f.z,
