@@ -82,12 +82,21 @@ export function makePreset(preset: Preset): World {
         objectBase(support, env) + height - groundHeight(piece.x, piece.z, env);
     };
   if (preset === "amazon") {
+    // Sunken wood and fallen leaves in place of stone, as in a blackwater
+    // creek.
     add("wood", -1.45, -0.35, 1.1, -0.5);
-    add("rock", -2.45, -0.95, 1.3, 0.5);
-    add("rock", -1.95, 0.85, 0.85, 2);
-    add("rock", 0.25, -1.15, 0.9, 1.4);
-    add("rock", 1.65, 0.95, 0.7, 2.7);
-    add("rock", 2.6, -0.5, 0.5, 0.6);
+    add("tree-roots", -2.45, -0.95, 1.2, 0.5);
+    add("spiderwood", -1.95, 0.85, 0.9, 2);
+    add("forked-branch", 0.25, -1.15, 1, 1.4);
+    add("wood", 1.65, 0.95, 0.8, 2.7);
+    for (const [x, z, rotation] of [
+      [2.6, -0.5, 0.6],
+      [-1.0, 0.25, 2.1],
+      [0.9, 1.55, 4],
+      [-2.4, 1.6, 1.2],
+      [2.3, -1.6, 5.3],
+    ])
+      add("leaf-litter", x, z, 1, rotation);
     for (const [x, z, scale] of [
       [-2.6, 0.3, 1.1],
       [-1.75, -1.25, 1.2],
@@ -156,7 +165,7 @@ export function makePreset(preset: Preset): World {
     return {
       version: 1,
       name: "Amazon river",
-      environment: aquascape(),
+      environment: blackwater(),
       objects,
     };
   }
@@ -297,12 +306,12 @@ function cloudForest(add: Add, shelter: Shelter, objects: HabitatObject[]) {
  * gouramis, barbs and rasboras. */
 function asianStream(add: Add, objects: HabitatObject[]) {
   // River stones up the bank, with java fern and java moss growing on some.
-  add("rock", -2.6, -1.4, 1.2, 0.4, "java");
-  add("rock", -1.35, -1.65, 0.9, 2.1);
-  add("cobble", -0.25, -1.3, 1, 1);
-  add("rock", 0.95, -1.55, 1.1, 2.8, "java");
-  add("cobble", 2.15, -1.15, 0.9, 0.5);
-  add("rock", 2.95, -1.75, 0.8, 1.6);
+  add("quaternius-outcrop", -2.6, -1.4, 1.2, 0.4, "java");
+  add("quaternius-boulder", -1.35, -1.65, 0.9, 2.1);
+  add("quaternius-crag", -0.25, -1.3, 1, 1);
+  add("quaternius-outcrop", 0.95, -1.55, 1.1, 2.8, "java");
+  add("quaternius-crag", 2.15, -1.15, 0.9, 0.5);
+  add("quaternius-boulder", 2.95, -1.75, 0.8, 1.6);
   add("java-fern", -2.2, -0.85, 1.1);
   add("java-fern", 0.55, -1.05, 1);
   add("java-fern", 2.65, -1.2, 0.9);
@@ -317,10 +326,10 @@ function asianStream(add: Add, objects: HabitatObject[]) {
   ])
     add("java-moss", x, z, scale);
   // Smaller stones and pebbles out in the gravel.
-  add("rock", -2.3, 1.0, 0.6, 1.2);
+  add("quaternius-dome", -2.3, 1.0, 0.6, 1.2);
   add("pebbles", -1.0, 1.3, 1);
   add("pebbles", 1.5, 0.8, 0.9, 2.2);
-  add("rock", 2.6, 1.35, 0.55, 3);
+  add("quaternius-crag", 2.6, 1.35, 0.55, 3);
   // Rotala and eelgrass along the back glass, crypts through the middle.
   for (const [x, z] of [
     [-3.0, -1.95],
@@ -792,24 +801,43 @@ function level(env: Environment, ground: number): Environment {
   };
 }
 
-/** Substrate sloping up toward the back glass, as aquascapers lay it. */
-function aquascape() {
-  const env = { ...defaultEnvironment, water: AQUARIUM_WATER };
-  return sculpt(level(env, 0.35), [
+/** Dark soil sloping up toward the back glass under warm, dim light, like
+ * tea-stained blackwater. */
+function blackwater(): Environment {
+  const env = sculpt(
+    level(
+      {
+        ...defaultEnvironment,
+        water: AQUARIUM_WATER,
+        light: "golden",
+        brightness: 0.8,
+      },
+      0.35,
+    ),
     [
-      "raise",
-      1.6,
       [
-        [-3.5, -2.2],
-        [3.5, -2.2],
+        "raise",
+        1.6,
+        [
+          [-3.5, -2.2],
+          [3.5, -2.2],
+        ],
       ],
     ],
-  ]);
+  );
+  return {
+    ...env,
+    terrain: { ...env.terrain!, paint: env.terrain!.paint.map(() => "soil") },
+  };
 }
 
 /** A gravel streambed with a stony bank rising toward the back glass. */
 function streambed() {
-  const env = { ...defaultEnvironment, water: AQUARIUM_WATER };
+  const env: Environment = {
+    ...defaultEnvironment,
+    water: AQUARIUM_WATER,
+    brightness: 1.15,
+  };
   const smooth = (t: number) => {
     t = Math.min(1, Math.max(0, t));
     return t * t * (3 - 2 * t);
@@ -817,15 +845,15 @@ function streambed() {
   const terrain = newTerrain(
     env,
     (x, z) => {
-      const bank = smooth((-z - 0.3) / 1.7);
+      const bank = smooth((-z - 0.3) / 1.5);
       const height =
-        0.3 + 0.04 * Math.sin(x * 1.7) + (0.85 + 0.25 * Math.sin(x + 1)) * bank;
+        0.3 + 0.04 * Math.sin(x * 1.7) + (1.3 + 0.35 * Math.sin(x + 1)) * bank;
       // `|| 0` turns -0 into 0, which a saved world can't tell apart.
       return (
         Math.round((height - baseGroundHeight(x, z, env)) * 100) / 100 || 0
       );
     },
-    "sand",
+    "stone",
   );
   return { ...env, terrain };
 }
