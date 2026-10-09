@@ -159,6 +159,37 @@ describe("exposed hardscape routes", () => {
     }
   });
 
+  it("gives each animal the room it needs, in a graph that doesn't depend on who lives there", () => {
+    const world = emptyWorld();
+    world.environment.water = 0;
+    world.objects = [object("stone", "rock", { x: 0, scale: 1.2 })];
+    const graph = buildHabitat(world);
+    const small = profile("dart-frog");
+    const large = { ...profile("chuckwalla"), radius: 0.63 };
+    expect(
+      [...graph.nodes.values()].some(
+        (node) =>
+          node.surface === "ground" &&
+          graph.allowed(node.id, small) &&
+          !graph.allowed(node.id, large),
+      ),
+    ).toBe(true);
+    // A large climber still finds a way onto the stone and up the glass,
+    // keeping to places it fits.
+    const gecko = { ...profile("gecko"), radius: 0.45 };
+    const start = graph.nearest(
+      { x: -3, y: groundHeight(-3, 0, world.environment), z: 0 },
+      gecko,
+    )!;
+    const reached = [...graph.paths(start.id, gecko).keys()].map((id) =>
+      graph.node(id),
+    );
+    expect(reached.some((node) => node.supportId === "stone")).toBe(true);
+    expect(reached.some((node) => node.surface === "glass")).toBe(true);
+    for (const node of reached)
+      expect(node.room ?? Infinity).toBeGreaterThanOrEqual(gecko.radius);
+  });
+
   it("opens diagonal ground routes without cutting through stone or flooded corners", () => {
     const world = emptyWorld();
     const graph = buildHabitat(world);
