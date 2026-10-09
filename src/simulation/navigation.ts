@@ -32,10 +32,11 @@ export class HabitatGraph {
         position: { ...node.position },
         normal: { ...node.normal },
         neighbors: [...node.neighbors],
+        leaps: node.leaps && [...node.leaps],
       });
     }
     for (const node of map.values())
-      for (const id of node.neighbors)
+      for (const id of [...node.neighbors, ...(node.leaps ?? [])])
         if (!map.has(id)) throw new Error(`Missing neighbor: ${id}`);
     this.nodes = map;
   }
@@ -124,7 +125,11 @@ export class HabitatGraph {
       const current = dequeue();
       if (current.distance !== distances.get(current.id)) continue;
       const from = this.node(current.id);
-      for (const next of from.neighbors) {
+      const steps =
+        from.leaps && species.movement === "hop"
+          ? from.neighbors.concat(from.leaps)
+          : from.neighbors;
+      for (const next of steps) {
         if (!this.allowed(next, species)) continue;
         const to = this.node(next);
         if (

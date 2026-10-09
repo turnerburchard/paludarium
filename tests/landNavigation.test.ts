@@ -7,6 +7,7 @@ import {
   type HabitatObject,
   type World,
 } from "../src/model/schema";
+import { makePreset } from "../src/model/presets";
 import { groundHeight } from "../src/model/terrain";
 import { LandSurfaces } from "../src/simulation/landSurfaces";
 import { buildHabitat } from "../src/simulation/worldHabitat";
@@ -209,6 +210,25 @@ describe("exposed hardscape routes", () => {
       }
     }
     expect(diagonals).toBeGreaterThan(0);
+  });
+
+  it("lets hopping frogs leap the island's channel by its stepping stone", () => {
+    const islet = (world: World, species: SpeciesProfile) => {
+      const graph = buildHabitat(world);
+      const start = graph.nearest({ x: -1, y: 1.6, z: -0.8 }, species)!;
+      return [...graph.paths(start.id, species).keys()].some((id) => {
+        const { x, z } = graph.node(id).position;
+        return x > 1.9 && z < -0.5;
+      });
+    };
+    const world = makePreset("island");
+    const frog = profile("golden-mantella");
+    expect(islet(world, frog)).toBe(true);
+    expect(islet(world, { ...frog, movement: "crawl" })).toBe(false);
+    // Without the stone, the channel is too wide to leap.
+    const stone = world.objects.find((o) => o.kind === "rock" && o.x === 1.4)!;
+    world.objects = world.objects.filter((o) => o !== stone);
+    expect(islet(world, frog)).toBe(false);
   });
 
   it("keeps land animals dry, water dwellers under the water, and lets visitors cross the shore", () => {
