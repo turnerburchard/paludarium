@@ -322,8 +322,8 @@ function tropicalIsland(add: Add, objects: HabitatObject[]) {
     add(kind, x, z, scale, rotation);
   // River stones and pebbles resting on the ledges down the island's sides.
   for (const [kind, x, z, scale, rotation] of [
-    ["rock", 0.85, 0.45, 0.6, 0.4],
-    ["pebbles", 0.55, 0.6, 0.9, 2.1],
+    ["rock", 0.4, 0.55, 0.6, 0.4],
+    ["pebbles", 0.1, 0.7, 0.9, 2.1],
     ["pebbles", -1.6, 0.65, 1, 0.8],
     ["rock", 1.4, -0.2, 0.55, 2.7],
     ["pebbles", -3.05, -0.45, 0.9, 4.0],
@@ -973,7 +973,7 @@ function islandLagoon() {
     [0.2, -1.35],
   ];
   const ledges = [
-    { x: 0.75, z: 0.5, y: 1.0, radius: 0.4 },
+    { x: 0.3, z: 0.6, y: 1.0, radius: 0.4 },
     { x: -1.6, z: 0.65, y: 1.08, radius: 0.35 },
     { x: 1.4, z: -0.2, y: 1.08, radius: 0.35 },
     { x: -3.05, z: -0.45, y: 1.0, radius: 0.35 },
