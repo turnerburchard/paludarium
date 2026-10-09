@@ -118,6 +118,7 @@ export const assetKinds = [
   "bolete",
   "fly-agaric",
   "bonnet-mushrooms",
+  "chicken-of-the-woods",
   "vampire-crab",
   "stripe-tailed-scorpion",
   "desert-tarantula",
