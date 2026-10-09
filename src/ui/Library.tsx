@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Leaf, Mountain, Bird, Plus, ListFilter } from "lucide-react";
+import { Plus, ListFilter } from "lucide-react";
 import {
   catalog,
   categoryOf,
@@ -13,11 +13,7 @@ import { loadThumbnails, type Thumbnails } from "../scene/thumbnails";
 import { hasDryGround } from "../model/terrain";
 import { prebuilts } from "../model/prebuilts";
 import { LibraryFilter, type Place } from "./LibraryFilter";
-const categories: { name: Category; icon: typeof Leaf }[] = [
-  { name: "Plants", icon: Leaf },
-  { name: "Landscape", icon: Mountain },
-  { name: "Animals", icon: Bird },
-];
+const categories: Category[] = ["Plants", "Landscape", "Animals"];
 export function Library({
   editor,
   hidden,
@@ -99,27 +95,26 @@ export function Library({
     <>
       <div className="category-tabs" aria-label="Object categories">
         {categories
-          .filter(({ name }) =>
+          .filter((name) =>
             available.some((asset) => categoryOf(asset) === name),
           )
-          .map(({ name, icon: Icon }) => (
+          .map((name) => (
             <button
               key={name}
               className={activeCategory === name ? "active" : ""}
               onClick={() => setCategory(name)}
               aria-pressed={activeCategory === name}
             >
-              <Icon size={17} />
-              <span>{name}</span>
+              {name}
             </button>
           ))}
         <button
-          className={filterCount ? "filtered" : ""}
+          className={`category-filter ${filterCount ? "filtered" : ""}`}
           onClick={() => setFiltering(true)}
           aria-label="Filter objects"
         >
-          <ListFilter size={17} />
-          <span>{filterCount ? `Filter · ${filterCount}` : "Filter"}</span>
+          <ListFilter size={16} />
+          {filterCount > 0 && filterCount}
         </button>
       </div>
       {filtering && (
