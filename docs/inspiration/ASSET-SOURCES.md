@@ -48,4 +48,8 @@ Every imported model needs a retained source, license, attribution if required, 
 
 Owner-preferred look (October 6, 2026): Quaternius-style chunky low poly, as in the Animated Animal Pack and Animated Dinosaur Bundle on Poly Pizza. Candidates the owner suggested for later: hummingbird and parrot (see issue #27), black caiman, seahorse (Poly by Google, CC BY 3.0) and fish and spider (Quaternius, CC0).
 
-The faceted boulder, outcrop and crag use `Rock_1`, `Rock_4` and `Rock_6` from [Quaternius Ultimate Nature Pack](https://quaternius.com/packs/ultimatenature.html), [CC0](https://creativecommons.org/publicdomain/zero/1.0/). Downloaded from [Quaternius’s official itch.io mirror](https://quaternius.itch.io/150-lowpoly-nature-models). Original OBJ/MTL files and license are in `docs/inspiration/models/quaternius-nature/`; `scripts/prepare-quaternius-stones.mjs` centers and scales them, preserving their source color.
+The faceted stones use `Rock_1` through `Rock_7` (pillar, wedge, dome, outcrop, block, crag, ledge), and the saguaro, organ pipe and beavertail cacti use `CactusFlowers_2` to `CactusFlowers_4`, from [Quaternius Ultimate Nature Pack](https://quaternius.com/packs/ultimatenature.html), [CC0](https://creativecommons.org/publicdomain/zero/1.0/). Downloaded from [Quaternius’s official itch.io mirror](https://quaternius.itch.io/150-lowpoly-nature-models). Original OBJ/MTL files and license are in `docs/inspiration/models/quaternius-nature/`.
+
+The cholla uses `Cactus_4` from Quaternius [Nature Crops Pack](https://quaternius.com), [CC0](https://creativecommons.org/publicdomain/zero/1.0/). Original OBJ/MTL files and license are in `docs/inspiration/models/quaternius-crops/`.
+
+`scripts/prepare-quaternius-stones.mjs` centers and scales both packs' models, keeping one part per source material. Stones keep their source color; the cacti are recolored to the app's cactus palette.
