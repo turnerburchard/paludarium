@@ -172,7 +172,7 @@ export class Ecosystem {
           moving: false,
           surface: node.surface,
           grounded: node.surface === "ground",
-          motion: { progress: 0, lift: 0, tilt: 0, hop: false },
+          motion: { progress: 0, lift: 0, tilt: 0, hop: false, bend: 0 },
         },
       });
       if (swimmer) {
@@ -234,6 +234,8 @@ export class Ecosystem {
       tilt:
         previous.motion.tilt + (state.motion.tilt - previous.motion.tilt) * t,
       hop: landing || state.motion.hop,
+      bend:
+        previous.motion.bend + (state.motion.bend - previous.motion.bend) * t,
     };
     if (landing) rendered.moving = true;
     return rendered;
@@ -554,7 +556,7 @@ export class Ecosystem {
       );
   }
   private swim(agent: Agent, fish: Swimmer) {
-    // A fish that had to back out of a dead end tries somewhere else, rather
+    // A fish that had to turn out of a dead end tries somewhere else, rather
     // than nosing back into the same spot.
     if (
       fish.blocked ||
@@ -596,7 +598,13 @@ export class Ecosystem {
       y: Math.sin(pitch),
       z: -Math.cos(fish.heading) * Math.cos(pitch),
     };
-    state.motion = { progress: 0, lift, tilt: 0, hop: false };
+    state.motion = {
+      progress: 0,
+      lift,
+      tilt: 0,
+      hop: false,
+      bend: fish.curl,
+    };
     state.moving = true;
     state.activity = "swimming";
     state.reason = fish.roaming
@@ -640,8 +648,7 @@ export class Ecosystem {
     if (!target) {
       // Favor water it hasn't visited and that lies ahead, so a fish makes
       // long, purposeful outings rather than doubling back. A fish that has
-      // just backed out of a dead end heads back the way it came instead.
-      const facing = blocked ? fish.heading + Math.PI : fish.heading;
+      // just turned out of a dead end already faces away from it.
       const candidates = [...lengths.keys()].filter((id) => {
         const length = lengths.get(id)!;
         return length >= SWIM_RANGE[0] && length <= SWIM_RANGE[1];
@@ -653,7 +660,7 @@ export class Ecosystem {
         // 1 straight ahead, 0 straight behind.
         const ahead =
           (1 -
-            (dx * Math.sin(facing) + dz * Math.cos(facing)) /
+            (dx * Math.sin(fish.heading) + dz * Math.cos(fish.heading)) /
               Math.max(Math.hypot(dx, dz), 0.001)) /
           2;
         return (agent.recent.includes(id) ? 0.12 : 1) * (0.2 + ahead);
@@ -803,7 +810,7 @@ export class Ecosystem {
       state.nodeId = target.id;
       state.surface = target.surface;
       state.grounded = target.surface === "ground";
-      state.motion = { progress: 0, lift: 0, tilt: 0, hop: false };
+      state.motion = { progress: 0, lift: 0, tilt: 0, hop: false, bend: 0 };
       agent.edge = undefined;
       agent.path.shift();
       agent.hasTravelled = true;
@@ -886,6 +893,7 @@ export class Ecosystem {
         : style === "crawl"
           ? Math.sin(edge.progress * Math.PI * 4) * 0.025
           : 0,
+      bend: 0,
     };
   }
   /** Rotates the facing toward a point about the surface normal. Returns
@@ -921,7 +929,7 @@ export class Ecosystem {
       y: facing!.y * Math.cos(step) + across.y * Math.sin(step),
       z: facing!.z * Math.cos(step) + across.z * Math.sin(step),
     };
-    state.motion = { progress: 0, lift: 0, tilt: 0, hop: false };
+    state.motion = { progress: 0, lift: 0, tilt: 0, hop: false, bend: 0 };
     return true;
   }
 }

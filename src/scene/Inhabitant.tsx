@@ -22,6 +22,7 @@ import { ArthropodRig } from "./arthropodRig";
 import { arthropodRigs } from "../assets/animals/arthropods";
 import { TurtleRig } from "./turtleRig";
 import { SwimRig } from "./swimRig";
+import { FishCurl } from "./fishCurl";
 import { barbSwim } from "../assets/animals/barb";
 import { juvenileScale } from "../simulation/lifeCycle";
 import { FoliageMotion, type FoliageVisitor } from "./foliageMotion";
@@ -75,6 +76,10 @@ export function Inhabitant({
       object.kind === "tiger-barb"
         ? new SwimRig(model, barbSwim, 1.3)
         : undefined,
+    [object.kind, model],
+  );
+  const curl = useMemo(
+    () => (assets[object.kind].swims ? new FishCurl(model) : undefined),
     [object.kind, model],
   );
   useEffect(() => () => disposeAsset(model), [model]);
@@ -265,6 +270,7 @@ export function Inhabitant({
       const tail = model.getObjectByName("tail");
       if (tail) tail.rotation.y = Math.sin(t * swims.speed * 40) * 0.35;
       swimming?.update(undefined, paused ? 0 : dt);
+      curl?.update(fish?.motion.bend ?? 0, paused ? 0 : dt);
     }
   }, framePriority);
   return (

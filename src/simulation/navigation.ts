@@ -53,6 +53,7 @@ export class HabitatGraph {
       return (
         !!swims &&
         node.swim.room >= swims.room &&
+        node.swim.column >= swims.height &&
         node.swim.depth <= swims.depth[1] &&
         (node.swim.depth >= swims.depth[0] || node.swim.bottom)
       );

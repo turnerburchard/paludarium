@@ -22,10 +22,20 @@ export interface SwimWater {
     y: number,
     z: number,
     heading: number,
-    padding?: number,
+    clearance?: Clearance,
   ): boolean;
   /** Half the length of the fish's body. */
   reach(id: string): number;
+}
+
+/** What a fish's body has to keep clear of. */
+export interface Clearance {
+  /** Extra room around the body, for steering. */
+  padding?: number;
+  /** Curled up from a tight turn, 1 to its left and -1 to its right: a
+   * shorter body that pushes leaves aside, so only stone, wood and glass are
+   * in the way. */
+  curl?: number;
 }
 
 export interface Fish {
@@ -54,6 +64,18 @@ const SHY_TURN = 0.4;
 const CLIMB_SHARE = 0.35;
 const CLIMB_ACCELERATION = 0.15;
 const BOB_RATE = 1.3;
+/** A fish with no room to swim on turns sharply on the spot, drifting
+ * forward a little as it goes. */
+const TIGHT_TURN_RATE = 3;
+const TIGHT_TURN_PACE = 0.2;
+/** How far a fish bends, in radians from head to tail, curled up for a
+ * tight turn. */
+export const CURL = 2.8;
+/** The curled body's span along its old length, and how far its head and
+ * tail swing toward the turn, as shares of its length. The middle of the
+ * body stays where it is. */
+export const CURLED_LENGTH = Math.sin(CURL / 2) / (CURL / 2);
+export const CURLED_BOW = (1 - Math.cos(CURL / 2)) / CURL;
 /** Probe angles, nearest first, for finding open water when the shore is ahead. */
 const ESCAPE_ANGLES = [0.5, -0.5, 1, -1, 1.6, -1.6, 2.4, -2.4, Math.PI];
 
@@ -75,14 +97,15 @@ export interface Swimmer extends Fish {
   climb: number;
   /** Where the bob is in its cycle. */
   bobPhase: number;
-  retreatFor: number;
-  stillFor: number;
-  retreatDistance: number;
+  /** Which way it is turning on the spot: 1 left, -1 right, 0 not. */
+  tightTurn: number;
+  /** Which way it is curled up from a tight turn, 0 once it has room to
+   * straighten out again. */
+  curl: number;
   /** Which way, and how strongly, it drifts away from something beside it. */
   shy: number;
-  /** Set when it has had to back out of a dead end. */
+  /** Set when it has had to turn out of a dead end. */
   blocked: boolean;
-  trail: Array<Pick<Fish, "x" | "y" | "z" | "heading">>;
 }
 
 export function newSwimmer(fish: Fish, random: () => number): Swimmer {
@@ -100,12 +123,10 @@ export function newSwimmer(fish: Fish, random: () => number): Swimmer {
     turnRate: 0,
     climb: 0,
     bobPhase: random() * Math.PI * 2,
-    retreatFor: 0,
-    stillFor: 0,
-    retreatDistance: 0,
+    tightTurn: 0,
+    curl: 0,
     shy: 0,
     blocked: false,
-    trail: [],
   };
 }
 
@@ -167,53 +188,14 @@ export class Steering {
     goal: Vec3 | undefined,
     dt: number,
   ) {
-    if (f.retreatFor > 0) {
-      f.retreatFor -= dt;
-      f.climb = 0;
-      // A newly placed fish may already face a dead end, with no earlier
-      // poses to retrace. Continue straight backward only through clear water.
-      const backward = direction(f.heading);
-      const previous = f.trail.at(-1) ?? {
-        x: f.x - backward.x * LOOK_AHEAD,
-        y: f.y,
-        z: f.z - backward.z * LOOK_AHEAD,
-        heading: f.heading,
-      };
-      const distance = Math.hypot(previous.x - f.x, previous.z - f.z);
-      const turn = turnBetween(f.heading, previous.heading);
-      const fraction =
-        1 /
-        Math.max(
-          1,
-          distance / (f.speed * f.pace * 0.5 * dt),
-          Math.abs(turn) / (TURN_RATE * dt),
-        );
-      const x = f.x + (previous.x - f.x) * fraction;
-      const y = f.y + (previous.y - f.y) * fraction;
-      const z = f.z + (previous.z - f.z) * fraction;
-      const heading = f.heading + turn * fraction;
-      if (this.pathClear(f, x, y, z, heading)) {
-        f.x = x;
-        f.y = y;
-        f.z = z;
-        f.heading = heading;
-        f.retreatDistance += distance * fraction;
-        if (fraction === 1) f.trail.pop();
-        // Back out of a narrow lane until there is room to turn around
-        // toward where it is going, not just far enough to try again.
-        if (f.retreatDistance >= LOOK_AHEAD) {
-          const toGoal = goal && Math.atan2(f.x - goal.x, f.z - goal.z);
-          if (
-            toGoal === undefined ||
-            this.route(f, toGoal, LOOK_AHEAD, 0.55) === LOOK_AHEAD
-          ) {
-            f.retreatFor = 0;
-            f.avoidHeading = toGoal ?? f.avoidHeading;
-          }
-        }
-      } else f.retreatFor = 0;
-      f.untilProbe = 0;
-      f.turnRate = 0;
+    if (
+      f.curl &&
+      !f.tightTurn &&
+      this.water.canSwim(f.id, f.x, f.y, f.z, f.heading)
+    )
+      f.curl = 0;
+    if (f.tightTurn) {
+      this.turnTight(f, dt);
       return;
     }
     f.untilChange -= dt;
@@ -370,13 +352,22 @@ export class Steering {
       z += forward.z * step;
       const y = this.height(f, x, z, traveled / speed);
       const padding = 0.012 * Math.min(1, traveled / 0.08);
-      if (!this.water.canSwim(f.id, x, y, z, heading, padding)) return traveled;
+      const clearance = { padding, curl: f.curl };
+      if (!this.water.canSwim(f.id, x, y, z, heading, clearance))
+        return traveled;
       traveled += step;
     }
     return reach;
   }
 
-  private pathClear(f: Fish, x: number, y: number, z: number, heading: number) {
+  private pathClear(
+    f: Swimmer,
+    x: number,
+    y: number,
+    z: number,
+    heading: number,
+    curl = f.curl,
+  ) {
     // Sweep both translation and rotation so a fin or tail cannot cut
     // through a thin branch between two otherwise clear positions.
     const samples = Math.max(
@@ -393,6 +384,7 @@ export class Steering {
           f.y + (y - f.y) * t,
           f.z + (z - f.z) * t,
           f.heading + (heading - f.heading) * t,
+          { curl },
         )
       )
         return false;
@@ -407,29 +399,16 @@ export class Steering {
       z = f.z + step.z * distance;
     const y = this.height(f, x, z, dt);
     if (this.pathClear(f, x, y, z, turning.heading)) {
-      this.remember(f);
       f.x = x;
       f.y = y;
       f.z = z;
       f.heading = turning.heading;
       f.turnRate = turning.rate;
-      f.stillFor = 0;
       return;
     }
     f.untilProbe = 0;
-    f.stillFor += dt;
-    f.climb = 0;
-    if (
-      f.stillFor < 0.8 &&
-      Math.abs(turning.heading - f.heading) > 0.001 &&
-      this.pathClear(f, f.x, f.y, f.z, turning.heading)
-    ) {
-      this.remember(f);
-      f.heading = turning.heading;
-      f.turnRate = turning.rate;
-      return;
-    }
     f.turnRate = 0;
+    // The turn may be what swings the tail into something.
     const forward = direction(f.heading);
     const ahead = {
       x: f.x + forward.x * distance,
@@ -437,25 +416,58 @@ export class Steering {
     };
     const level = this.height(f, ahead.x, ahead.z, 0);
     if (this.pathClear(f, ahead.x, level, ahead.z, f.heading)) {
-      this.remember(f);
       f.x = ahead.x;
       f.y = level;
       f.z = ahead.z;
-      f.stillFor = 0;
       return;
     }
-    // A tall fish can enter a gap it cannot turn around in. Retrace its
-    // recent poses, including the turn, rather than backing into another
-    // leaf at its current heading. Every retreat step is checked again.
-    // Back up through a full steering probe, not just enough to re-enter
-    // the same blocked turn. Allow time to retrace rotations along the way.
-    f.retreatFor = 2 + LOOK_AHEAD / (f.speed * f.pace * 0.5);
-    f.blocked = true;
-    f.retreatDistance = 0;
-    f.stillFor = 0;
-    // Try the other side next time, once it has backed out.
-    f.avoidSide = -f.avoidSide || -1;
+    f.climb = 0;
+    f.tightTurn = Math.sign(turnBetween(f.heading, target)) || f.avoidSide || 1;
     f.avoidHeading = undefined;
+  }
+
+  /** Turn on the spot until there is a body length of open water ahead,
+   * drifting forward a little where there is room, and curling up where
+   * there is not. Pressed into a corner, it sculls a little to the side, or
+   * back, as it turns. A turn that would still swing the body into something
+   * carries on the other way. */
+  private turnTight(f: Swimmer, dt: number) {
+    const heading = f.heading + f.tightTurn * TIGHT_TURN_RATE * dt;
+    const drift = f.speed * f.pace * TIGHT_TURN_PACE * dt;
+    // Sculling clears as much as the turn sweeps the tail toward something.
+    const scull = this.water.reach(f.id) * TIGHT_TURN_RATE * dt;
+    const moves = [
+      { angle: 0, distance: drift },
+      { angle: 0, distance: 0 },
+      { angle: Math.PI / 2, distance: scull },
+      { angle: -Math.PI / 2, distance: scull },
+      { angle: Math.PI, distance: scull },
+    ];
+    // Already curled the other way, it can unwind through the turn.
+    const curls = [...new Set([0, f.tightTurn, f.curl])];
+    const next = curls
+      .flatMap((curl) =>
+        moves.map(({ angle, distance }) => {
+          const step = direction(f.heading + angle);
+          const x = f.x + step.x * distance,
+            z = f.z + step.z * distance;
+          return { x, y: this.water.steady(f.id, x, z, f.y).y, z, curl };
+        }),
+      )
+      .find(({ x, y, z, curl }) => this.pathClear(f, x, y, z, heading, curl));
+    if (!next) {
+      f.tightTurn = -f.tightTurn;
+      return;
+    }
+    Object.assign(f, next, { heading });
+    const length = this.water.reach(f.id) * 2;
+    if (this.route(f, f.heading, length, 0.55) === length) {
+      f.tightTurn = 0;
+      // Swim on the way it now faces, and choose somewhere new from here.
+      f.blocked = true;
+      f.avoidHeading = f.heading;
+      f.avoidFor = 0.6;
+    }
   }
 
   /** Feel half a body length to either side, the room a fish needs to turn
@@ -473,10 +485,5 @@ export class Steering {
         f.heading,
       );
     return Number(open(1)) - Number(open(-1));
-  }
-
-  private remember(f: Swimmer) {
-    f.trail.push({ x: f.x, y: f.y, z: f.z, heading: f.heading });
-    if (f.trail.length > 120) f.trail.shift();
   }
 }

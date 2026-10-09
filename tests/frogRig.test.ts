@@ -16,14 +16,14 @@ function walking(): FrogActivity {
   return {
     activity: "exploring",
     moving: true,
-    motion: { progress: 0.5, lift: 0, tilt: 0, hop: false },
+    motion: { progress: 0.5, lift: 0, tilt: 0, hop: false, bend: 0 },
   };
 }
 function hopping(progress: number): FrogActivity {
   return {
     activity: "exploring",
     moving: true,
-    motion: { progress, lift: 0, tilt: 0, hop: true },
+    motion: { progress, lift: 0, tilt: 0, hop: true, bend: 0 },
   };
 }
 function world(model: THREE.Object3D, name: string) {
@@ -113,7 +113,7 @@ describe("frog rig", () => {
     const still = (activity: FrogActivity["activity"]): FrogActivity => ({
       activity,
       moving: false,
-      motion: { progress: 0, lift: 0, tilt: 0, hop: false },
+      motion: { progress: 0, lift: 0, tilt: 0, hop: false, bend: 0 },
     });
     for (let frame = 0; frame < 120; frame++)
       rig.update(still("resting"), FRAME);
