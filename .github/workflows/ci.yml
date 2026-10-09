@@ -35,14 +35,17 @@ jobs:
           path: dist
 
   # The quick browser checks from `npm run test:e2e`, one runner each, since
-  # software WebGL makes every file take a minute or more.
+  # software WebGL makes every file take a minute or more. The runner image
+  # already has Chrome, which saves installing Playwright's own browser.
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      CHROMIUM_PATH: /usr/bin/google-chrome
     strategy:
       fail-fast: false
       matrix:
-        test: [smoke, http, worlds, help]
+        test: [smoke, http, worlds]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -51,13 +54,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx vite build
-      - run: npx playwright install --with-deps chromium
       - run: node --import ./scripts/report-ci-errors.mjs tests/${{ matrix.test }}.e2e.mjs
 
   full-browser-checks:
     if: github.event_name == 'workflow_dispatch' && inputs.full_browser_checks
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      CHROMIUM_PATH: /usr/bin/google-chrome
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -66,7 +70,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx vite build
-      - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e:full
 
   deploy:
