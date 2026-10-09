@@ -16,6 +16,7 @@ import {
 import { plantCondition } from "../model/plants";
 import { groundHeight, swimmingHeight } from "../model/terrain";
 import { objectBase } from "../model/stacking";
+import { streamSurface } from "../model/streams";
 import { transformPlantPoint } from "../model/plantSurfaces";
 import type { Fish } from "./fish";
 import { SwimSpace } from "./swimSpace";
@@ -114,6 +115,7 @@ export function buildHabitat(world: World): HabitatGraph {
   const nx = Math.ceil((env.width - 2 * margin) / spacing),
     nz = Math.ceil((env.depth - 2 * margin) / spacing);
   const surfaces = new LandSurfaces(world);
+  const streamLevelAt = streamSurface(env);
   // A struggling plant still gives some cover, just much less.
   const shelters = world.objects
     .filter((o) => assets[o.kind].shelter)
@@ -138,12 +140,17 @@ export function buildHabitat(world: World): HabitatGraph {
           ),
         0,
       );
+      // Animals wade in streams rather than swim, so a stream bed is wet
+      // but never submerged.
+      const streamLevel = streamLevelAt(x, z);
       const node: HabitatNode = {
         id: `g:${ix}:${iz}`,
         position: { x, y, z },
         normal: { x: 0, y: 1, z: 0 },
         surface: "ground",
-        wet: env.water > 0 && y <= env.water + 0.065,
+        wet:
+          (env.water > 0 && y <= env.water + 0.065) ||
+          (streamLevel !== null && y <= streamLevel + 0.065),
         // Shallow shoreline is dry enough for land animals.
         submerged: env.water - y > 0.025,
         shelter,

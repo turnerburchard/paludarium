@@ -98,7 +98,7 @@ try {
       { timeout: 30000 },
     );
     return page.evaluate(() =>
-      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v4"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -112,7 +112,7 @@ try {
         return groundHeight(
           x,
           z,
-          JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
+          JSON.parse(localStorage.getItem("little-worlds:v4"), (key, value) =>
             key === "" && value.worlds
               ? value.worlds.find((entry) => entry.id === value.activeId).world
               : value,

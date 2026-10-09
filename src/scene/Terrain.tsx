@@ -11,7 +11,8 @@ import type { Environment } from "../model/schema";
 import { surfaceGrid, type Terrain as TerrainData } from "../model/terrainData";
 import { changedArea, drawTerrain, hash, makeTerrain } from "./groundSurface";
 import { groundHeight, hasDryGround } from "../model/terrain";
-import { makeWaterMaterial } from "./waterMaterial";
+import { makeStreamMaterial, makeWaterMaterial } from "./waterMaterial";
+import { StreamWater } from "./StreamWater";
 import { makeGroundMoss } from "./groundMoss";
 import { groundScatter, makeLeafGeometry, scatterSpots } from "./groundScatter";
 
@@ -209,12 +210,36 @@ export function Water({
 }) {
   const time = useRef({ value: 0 });
   const material = useMemo(() => makeWaterMaterial(time.current), []);
+  const streamMaterial = useMemo(() => makeStreamMaterial(time.current), []);
   material.opacity = hasDryGround(env) ? 0.47 : 0.22;
   useEffect(() => () => material.dispose(), [material]);
+  useEffect(() => () => streamMaterial.dispose(), [streamMaterial]);
   useFrame((_, dt) => {
     if (!paused) time.current.value += Math.min(dt, 0.05);
   });
-  if (env.water <= 0) return null;
+  return (
+    <group>
+      {env.streams.map((stream, i) => (
+        <StreamWater
+          key={i}
+          stream={stream}
+          environment={env}
+          material={streamMaterial}
+        />
+      ))}
+      {env.water > 0 && <Pool environment={env} material={material} />}
+    </group>
+  );
+}
+
+/** Still water at the tank's water level, seen from above and through the glass. */
+function Pool({
+  environment: env,
+  material,
+}: {
+  environment: Environment;
+  material: THREE.Material;
+}) {
   return (
     <group>
       {[-1, 1].map((side) => (

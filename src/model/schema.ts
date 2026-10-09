@@ -158,6 +158,17 @@ export const objectSchema = z.object({
   lift: finite.min(0).max(4).optional(),
 });
 export type HabitatObject = z.infer<typeof objectSchema>;
+/** Running water down a path from its source. Points are fractions of the
+ * tank's width and depth, so a stream stretches with the terrain it runs
+ * through when the tank is resized. */
+const streamSchema = z.object({
+  path: z
+    .array(z.tuple([finite.min(-0.5).max(0.5), finite.min(-0.5).max(0.5)]))
+    .min(2)
+    .max(24),
+  width: finite.min(0.1).max(1.2),
+});
+export type Stream = z.infer<typeof streamSchema>;
 export const environmentSchema = z
   .object({
     width: finite.min(5).max(MAX_TANK_WIDTH),
@@ -168,6 +179,7 @@ export const environmentSchema = z
       .default(DEFAULT_TANK_HEIGHT),
     substrate: finite.min(0.12).max(0.55),
     water: finite.min(0).max(waterCeiling({ height: MAX_TANK_HEIGHT })),
+    streams: z.array(streamSchema).max(6),
     light: z.enum(["day", "golden", "moon"]),
     warmth: finite.min(0).max(1).default(0.45),
     brightness: finite.min(0.4).max(1.6).default(1),
@@ -227,6 +239,7 @@ export const defaultEnvironment: Environment = {
   height: DEFAULT_TANK_HEIGHT,
   substrate: 0.25,
   water: 0.44,
+  streams: [],
   light: "day",
   warmth: 0.45,
   brightness: 1,

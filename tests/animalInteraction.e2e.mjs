@@ -5,7 +5,7 @@ import { chromium } from "playwright";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const url = "http://127.0.0.1:5200";
-const storageKey = "little-worlds:v3";
+const storageKey = "little-worlds:v4";
 const server = spawn(
   process.execPath,
   [
@@ -61,6 +61,7 @@ try {
           depth: 4.5,
           substrate: 0.25,
           water,
+          streams: [],
           light: "day",
           warmth: 0.45,
           brightness: 1,
