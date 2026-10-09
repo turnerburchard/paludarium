@@ -99,6 +99,7 @@ try {
     "Alpine creek",
     "Desert spring",
     "Limestone grotto",
+    "Tropical island",
     "Aquarium",
   ]) {
     await page.getByRole("button", { name: "Worlds", exact: true }).tap();

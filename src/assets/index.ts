@@ -14,6 +14,7 @@ import type { Den, PlantPerch, PlantPoint } from "../model/plantSurfaces";
 import { growMoss } from "./landscape/mossCover";
 import {
   bluePoisonDartFrog,
+  goldenMantella,
   canyonTreeFrog,
   chorusFrog,
   europeanTreeFrog,
@@ -151,6 +152,7 @@ export const assets = {
   "tree-frog": treeFrog,
   "dart-frog": strawberryPoisonFrog,
   "blue-dart-frog": bluePoisonDartFrog,
+  "golden-mantella": goldenMantella,
   "mossy-frog": mossyFrog,
   "chorus-frog": chorusFrog,
   "european-tree-frog": europeanTreeFrog,

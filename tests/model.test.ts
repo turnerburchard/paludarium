@@ -66,7 +66,7 @@ describe("editor history", () => {
   });
 });
 describe("safe files and valid habitat", () => {
-  it.each(["tropical", "mountain", "aquarium"] as const)(
+  it.each(["tropical", "mountain", "aquarium", "island"] as const)(
     "round trips the %s preset and places every inhabitant in its habitat",
     (preset) => {
       const world = makePreset(preset);
