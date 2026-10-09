@@ -75,7 +75,7 @@ export const prebuilts: Prebuilt[] = [
     pieces: [
       { kind: "stone-block", x: -0.3, z: 0, rotation: 0.2 },
       { kind: "stone-block", x: 0.3, z: 0.02, rotation: 1.1 },
-      { kind: "stone-slab", x: 0, z: 0, moss: "cushion", on: 0, height: 0.27 },
+      { kind: "stone-slab", x: 0, z: 0, moss: "cushion", on: 0, height: 0.22 },
       { kind: "cobble", x: 0.55, z: 0.35 },
       { kind: "cobble", x: -0.5, z: 0.38, rotation: 2, scale: 0.85 },
       { kind: "cobble", x: 0.72, z: -0.08, rotation: 0.7, scale: 0.7 },
