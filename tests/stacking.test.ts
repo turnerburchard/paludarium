@@ -70,7 +70,9 @@ describe("stacked objects", () => {
     expect(carried.x).toBeCloseTo(-1);
     expect(carried.z).toBeCloseTo(-0.2);
     expect(carried.rotation).toBeCloseTo(Math.PI / 2);
-    expect(above(carried, rock)).toBeCloseTo(above(fern, rock) * 2);
+    expect(above(carried, find(turned, "rock"))).toBeCloseTo(
+      above(fern, rock) * 2,
+    );
   });
 
   it("settle to the ground when their support is removed", () => {
