@@ -137,8 +137,8 @@ export function Library({
         </p>
       )}
       <div className="asset-grid" ref={grid}>
-        {/* Prebuilts lead the landscape, unless filters narrow it down. */}
-        {activeCategory === "Landscape" && filterCount === 0 && (
+        {/* Prebuilts lead the hardscape, unless filters narrow it down. */}
+        {activeCategory === "Hardscape" && filterCount === 0 && (
           <>
             <h3 className="asset-heading">Prebuilt</h3>
             {prebuilts.map((prebuilt) => (
