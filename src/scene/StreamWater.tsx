@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import type { Environment, Stream } from "../model/schema";
 import { streamCourse, type CoursePoint } from "../model/streams";
+import { clamp, groundHeight } from "../model/terrain";
 
 /** How fast water runs on the flat, and how much faster down a fall. */
 const FLAT_SPEED = 0.3;
@@ -13,11 +14,24 @@ const FALL_SLOPE = 0.8;
 const FOAM_REACH = 0.3;
 /** Distance over which the water fades in at its source and out into the pool. */
 const FADE = 0.2;
+/** Vertices across the stream, so its edges can follow the bed. */
+const ACROSS = 7;
+/** Water shallower than this thins out toward clear. */
+const SHALLOW = 0.04;
+/** The outer part of each side, as a share of half the width, that fades
+ * out so the water never ends in a hard line on a wide, flat bed. */
+const EDGE = 0.25;
 
 /** A ribbon along the stream's course, flat across like a water surface.
  * Each vertex carries how far the water has travelled in time rather than
- * distance, so ripples scroll faster down falls without stretching. */
-function streamGeometry(course: CoursePoint[], width: number) {
+ * distance, so ripples scroll faster down falls without stretching. Where the
+ * bed comes up to the surface, or the ribbon nears its sides, the water fades
+ * out, so it meets any bank softly. */
+function streamGeometry(
+  course: CoursePoint[],
+  width: number,
+  env: Environment,
+) {
   const positions: number[] = [],
     flow: number[] = [],
     foam: number[] = [],
@@ -36,29 +50,45 @@ function streamGeometry(course: CoursePoint[], width: number) {
     if (i > 0) {
       const run = point.along - before.along,
         drop = before.y - point.y;
-      const steep = Math.min(
+      const steep = clamp(
+        (drop / run - RAPID_SLOPE) / (FALL_SLOPE - RAPID_SLOPE),
+        0,
         1,
-        Math.max(0, (drop / run - RAPID_SLOPE) / (FALL_SLOPE - RAPID_SLOPE)),
       );
       white = Math.max(steep, white * Math.exp(-run / FOAM_REACH));
       travel +=
         Math.hypot(run, drop) /
         (FLAT_SPEED + (FALL_SPEED - FLAT_SPEED) * steep);
     }
-    const alpha = Math.min(1, point.along / FADE, (end - point.along) / FADE);
-    for (const across of [-1, 1]) {
-      positions.push(
-        point.x + (side.x * across * width) / 2,
-        point.y,
-        point.z + (side.z * across * width) / 2,
-      );
+    const ends = Math.min(1, point.along / FADE, (end - point.along) / FADE);
+    for (let j = 0; j < ACROSS; j++) {
+      const across = (2 * j) / (ACROSS - 1) - 1;
+      // Kept inside the glass where a stream runs along or off the tank's edge.
+      const x = clamp(
+          point.x + (side.x * across * width) / 2,
+          -env.width / 2,
+          env.width / 2,
+        ),
+        z = clamp(
+          point.z + (side.z * across * width) / 2,
+          -env.depth / 2,
+          env.depth / 2,
+        );
+      const depth = point.y - groundHeight(x, z, env);
+      positions.push(x, point.y, z);
       flow.push((across + 1) / 2, travel);
       foam.push(white);
-      fade.push(alpha);
+      // Falling water leaves its bed, so white water keeps its body.
+      const body = Math.max(clamp(depth / SHALLOW, 0, 1), white);
+      fade.push(Math.min(ends, body, (1 - Math.abs(across)) / EDGE));
     }
     if (i > 0) {
-      const a = 2 * (i - 1);
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      const row = ACROSS * (i - 1);
+      for (let j = 0; j < ACROSS - 1; j++) {
+        const a = row + j,
+          b = a + ACROSS;
+        indices.push(a, a + 1, b, a + 1, b + 1, b);
+      }
     }
   });
   const geometry = new THREE.BufferGeometry();
@@ -85,7 +115,7 @@ export function StreamWater({
 }) {
   const geometry = useMemo(() => {
     const course = streamCourse(stream, env);
-    return course.length > 1 ? streamGeometry(course, stream.width) : null;
+    return course.length > 1 ? streamGeometry(course, stream.width, env) : null;
   }, [stream, env]);
   useEffect(() => () => geometry?.dispose(), [geometry]);
   if (!geometry) return null;
