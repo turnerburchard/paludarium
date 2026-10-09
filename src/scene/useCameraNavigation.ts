@@ -1,5 +1,5 @@
 import { useEffect, useRef, type RefObject } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { OrbitControls } from "three-stdlib";
 
@@ -10,6 +10,7 @@ export function useCameraNavigation(
   onNavigate: () => void,
 ) {
   const keys = useRef(new Set<string>());
+  const invalidate = useThree((state) => state.invalidate);
   const vectors = useRef({
     forward: new THREE.Vector3(),
     right: new THREE.Vector3(),
@@ -37,6 +38,8 @@ export function useCameraNavigation(
       ) {
         event.preventDefault();
         keys.current.add(event.code);
+        // Paused, nothing else draws the frame that starts moving.
+        invalidate();
       }
     }
     const keyup = (event: KeyboardEvent) => keys.current.delete(event.code);
@@ -54,7 +57,7 @@ export function useCameraNavigation(
       document.removeEventListener("focusin", clear);
       clear();
     };
-  }, [enabled]);
+  }, [enabled, invalidate]);
   useFrame((_, delta) => {
     const orbit = controls.current;
     if (!orbit || !enabled || keys.current.size === 0) return;

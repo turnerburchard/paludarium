@@ -87,10 +87,11 @@ export function useEcosystem(
     setSnapshot(live.current.engine.snapshot());
   }, [world]);
   useEffect(() => {
-    const timer = setInterval(
-      () => setSnapshot(live.current!.engine.snapshot()),
-      250,
-    );
+    const timer = setInterval(() => {
+      const next = live.current!.engine.snapshot();
+      // Paused life keeps the same snapshot, so the paused scene stops drawing.
+      setSnapshot((shown) => (shown.elapsed === next.elapsed ? shown : next));
+    }, 250);
     return () => clearInterval(timer);
   }, []);
   /** Whether the animal has anywhere it can live: ground it can walk, or

@@ -41,7 +41,7 @@ export function useCameraLayout(
     orbit.target.set(0, 0.8 + rise, 0);
     orbit.update();
   }, [reset, size.width, size.height, height, reach]);
-  useFrame((_, dt) => {
+  useFrame(({ invalidate }, dt) => {
     if (!(camera instanceof THREE.PerspectiveCamera)) return;
     const desktopBuild = !view && size.width > 760;
     const x = desktopBuild ? -150 : 0;
@@ -68,5 +68,6 @@ export function useCameraLayout(
       size.width,
       size.height,
     );
+    if (offset.current.x !== x || offset.current.y !== y) invalidate();
   });
 }

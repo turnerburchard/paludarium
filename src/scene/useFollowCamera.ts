@@ -71,7 +71,9 @@ export function useFollowCamera(
       setReturning(false);
     }
   }, [animalId, controls]);
-  useFrame((_, delta) => {
+  useFrame((_, frameDelta) => {
+    // The first frame after a paused stretch would otherwise jump.
+    const delta = Math.min(frameDelta, 0.1);
     const orbit = controls.current;
     if (orbit && returning && home.current) {
       const ease = 1 - Math.exp(-delta * 5);
