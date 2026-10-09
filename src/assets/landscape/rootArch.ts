@@ -1,28 +1,32 @@
 import * as THREE from "three";
-import { branchLimbs, branchPerches } from "../../model/woodSurfaces";
+import { archLimbs, archPerches } from "../../model/woodSurfaces";
 import type { Point } from "../faceted";
 import type { AssetDefinition } from "../types";
 import { barkLimb, barkMaterials } from "./bark";
 
-export const branch: AssetDefinition = {
-  kind: "branch",
-  name: "Leaning branch",
+export const rootArch: AssetDefinition = {
+  kind: "root-arch",
+  name: "Root arch",
   group: "Wood",
-  biomes: ["Temperate", "Desert"],
+  biomes: ["Tropical", "Temperate"],
   description:
-    "A branch rising from the ground. Frogs walk up it to a lookout.",
-  radius: 0.55,
+    "A root arching out of the ground and back in. Frogs cross over the top and rest in the shade beneath.",
+  radius: 0.66,
   habitat: "either",
   hardscape: "wood",
-  groundPoints: [{ x: -0.52, z: 0 }],
-  perches: branchPerches,
+  shelter: true,
+  groundPoints: [
+    { x: -0.66, z: 0 },
+    { x: 0.66, z: 0 },
+  ],
+  perches: archPerches,
   build,
 };
 
 function build(random: () => number) {
   const root = new THREE.Group();
   const wood = barkMaterials();
-  for (const limb of branchLimbs(random))
+  for (const limb of archLimbs(random))
     barkLimb(
       root,
       limb.points.map((p): Point => [p.x, p.y, p.z]),

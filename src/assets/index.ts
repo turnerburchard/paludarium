@@ -14,6 +14,7 @@ import type { Den, PlantPerch, PlantPoint } from "../model/plantSurfaces";
 import { growMoss } from "./landscape/mossCover";
 import {
   bluePoisonDartFrog,
+  goldenMantella,
   canyonTreeFrog,
   chorusFrog,
   europeanTreeFrog,
@@ -94,6 +95,9 @@ import { rock } from "./landscape/rock";
 import { wood } from "./landscape/wood";
 import { branch } from "./landscape/branch";
 import { log } from "./landscape/log";
+import { rootArch } from "./landscape/rootArch";
+import { forkedBranch } from "./landscape/forkedBranch";
+import { spiderwood } from "./landscape/spiderwood";
 import { capstone, standingStone } from "./landscape/shelterStones";
 import {
   cobble,
@@ -148,6 +152,7 @@ export const assets = {
   "tree-frog": treeFrog,
   "dart-frog": strawberryPoisonFrog,
   "blue-dart-frog": bluePoisonDartFrog,
+  "golden-mantella": goldenMantella,
   "mossy-frog": mossyFrog,
   "chorus-frog": chorusFrog,
   "european-tree-frog": europeanTreeFrog,
@@ -229,6 +234,9 @@ export const assets = {
   wood,
   branch,
   log,
+  "root-arch": rootArch,
+  "forked-branch": forkedBranch,
+  spiderwood,
   "fungus-log": fungusLog,
   snag,
   stump,

@@ -59,6 +59,100 @@ export function branchPerches(random: () => number): PlantPerch[] {
   ];
 }
 
+/** A root arching out of the substrate and back in, low enough at each end
+ * for any frog to walk over. */
+export function archLimbs(random: () => number): Limb[] {
+  const jitter = () => (random() - 0.5) * 0.06;
+  const arch: Limb = {
+    points: [
+      { x: -0.66, y: -0.06, z: 0 },
+      { x: -0.46, y: 0.12, z: 0.02 },
+      { x: -0.26, y: 0.28 + jitter(), z: 0.04 },
+      { x: 0, y: 0.36 + jitter(), z: jitter() },
+      { x: 0.26, y: 0.28 + jitter(), z: -0.04 },
+      { x: 0.46, y: 0.12, z: -0.02 },
+      { x: 0.66, y: -0.06, z: 0 },
+    ],
+    radii: [0.08, 0.07, 0.064, 0.058, 0.062, 0.068, 0.076],
+  };
+  const top = arch.points[3];
+  const stub: Limb = {
+    points: [
+      { x: top.x + 0.05, y: top.y, z: top.z },
+      { x: top.x + 0.12, y: top.y + 0.14, z: top.z + 0.1 },
+    ],
+    radii: [0.026, 0.008],
+  };
+  return [arch, stub];
+}
+
+export function archPerches(random: () => number): PlantPerch[] {
+  const [arch] = archLimbs(random);
+  const up = alongTop(arch, [0.05, 0.18, 0.33]);
+  const top = alongTop(arch, [0.5]);
+  return [
+    {
+      stem: up.points,
+      barkNormals: up.normals,
+      perch: top.points[0],
+      perchNormal: top.normals[0],
+    },
+  ];
+}
+
+/** An upright branch that splits in two, too steep for frogs that can't
+ * climb. */
+export function forkedBranchLimbs(random: () => number): Limb[] {
+  const jitter = () => (random() - 0.5) * 0.06;
+  const main: Limb = {
+    points: [
+      { x: -0.22, y: -0.05, z: 0 },
+      { x: -0.1, y: 0.25, z: jitter() },
+      { x: 0, y: 0.52, z: jitter() },
+    ],
+    radii: [0.09, 0.074, 0.06],
+  };
+  const fork = main.points[2];
+  const right: Limb = {
+    points: [
+      { x: fork.x, y: fork.y - 0.03, z: fork.z },
+      { x: fork.x + 0.12, y: fork.y + 0.2, z: fork.z + 0.08 },
+      { x: fork.x + 0.2, y: fork.y + 0.4 + jitter(), z: fork.z + 0.12 },
+    ],
+    radii: [0.05, 0.036, 0.016],
+  };
+  const left: Limb = {
+    points: [
+      { x: fork.x - 0.02, y: fork.y - 0.03, z: fork.z },
+      { x: fork.x - 0.15, y: fork.y + 0.16, z: fork.z - 0.1 },
+      { x: fork.x - 0.32, y: fork.y + 0.28 + jitter(), z: fork.z - 0.2 },
+    ],
+    radii: [0.044, 0.03, 0.012],
+  };
+  const twig: Limb = {
+    points: [
+      { x: -0.12, y: 0.2, z: main.points[1].z },
+      { x: -0.02, y: 0.3, z: main.points[1].z + 0.16 },
+    ],
+    radii: [0.022, 0.007],
+  };
+  return [main, right, left, twig];
+}
+
+export function forkedBranchPerches(random: () => number): PlantPerch[] {
+  const [main, right, left] = forkedBranchLimbs(random);
+  const up = alongTop(main, [0.06, 0.4, 0.75]);
+  return [right, left].map((arm) => {
+    const along = alongTop(arm, [0.35, 0.85]);
+    return {
+      stem: [...up.points, along.points[0]],
+      barkNormals: [...up.normals, along.normals[0]],
+      perch: along.points[1],
+      perchNormal: along.normals[1],
+    };
+  });
+}
+
 /** A hollow log lying half sunk in the substrate along X. */
 export function logShape(random: () => number) {
   const wobble = () => (random() - 0.5) * 0.03;

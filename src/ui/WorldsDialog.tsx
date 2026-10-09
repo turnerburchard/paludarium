@@ -45,6 +45,7 @@ export function WorldsDialog({
         <button onClick={() => onPreset("mountain")}>Alpine creek</button>
         <button onClick={() => onPreset("desert")}>Desert spring</button>
         <button onClick={() => onPreset("grotto")}>Limestone grotto</button>
+        <button onClick={() => onPreset("island")}>Tropical island</button>
         <button onClick={() => onPreset("empty")}>Empty tank</button>
       </div>
       <div className="world-library-actions">
