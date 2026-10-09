@@ -801,7 +801,7 @@ function level(env: Environment, ground: number): Environment {
   };
 }
 
-/** Dark soil sloping up toward the back glass under warm, dim light, like
+/** Pale sand sloping up toward the back glass under warm, dim light, like
  * tea-stained blackwater. */
 function blackwater(): Environment {
   const env = sculpt(
@@ -827,7 +827,7 @@ function blackwater(): Environment {
   );
   return {
     ...env,
-    terrain: { ...env.terrain!, paint: env.terrain!.paint.map(() => "soil") },
+    terrain: { ...env.terrain!, paint: env.terrain!.paint.map(() => "sand") },
   };
 }
 
