@@ -29,49 +29,18 @@ jobs:
       - run: npm run format:check
       - run: npm test
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - run: npm run test:e2e:full
+        if: github.event_name == 'workflow_dispatch' && inputs.full_browser_checks
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
         with:
           path: dist
 
-  # The quick browser checks from `npm run test:e2e`, one runner each, since
-  # software WebGL makes every file take a minute or more.
-  e2e:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        test: [smoke, http, worlds, help]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npx vite build
-      - run: npx playwright install --with-deps chromium
-      - run: node --import ./scripts/report-ci-errors.mjs tests/${{ matrix.test }}.e2e.mjs
-
-  full-browser-checks:
-    if: github.event_name == 'workflow_dispatch' && inputs.full_browser_checks
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npx vite build
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e:full
-
   deploy:
     if: github.ref == 'refs/heads/main'
-    needs: [check, e2e]
+    needs: check
     runs-on: ubuntu-latest
     permissions:
       pages: write
