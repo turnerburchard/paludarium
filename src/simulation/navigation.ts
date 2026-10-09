@@ -46,6 +46,7 @@ export class HabitatGraph {
   }
   allowed(id: string, species: SpeciesProfile) {
     const node = this.node(id);
+    if ((node.room ?? Infinity) < (species.radius ?? 0)) return false;
     if (node.submerged ? !species.water : species.water === "lives")
       return false;
     if (node.surface === "ground") return true;

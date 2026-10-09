@@ -115,13 +115,14 @@ export const MAX_TANK_DEPTH = 14;
 export const TANK_HEIGHT = DEFAULT_TANK_HEIGHT;
 export const AQUARIUM_WATER = waterCeiling({ height: TANK_HEIGHT });
 const finite = z.number().finite();
+export const MAX_SCALE = 2;
 export const objectSchema = z.object({
   id: z.string().min(1).max(100),
   kind: z.enum(assetKinds),
   x: finite.min(-MAX_TANK_WIDTH / 2).max(MAX_TANK_WIDTH / 2),
   z: finite.min(-MAX_TANK_DEPTH / 2).max(MAX_TANK_DEPTH / 2),
   rotation: finite.min(-100).max(100),
-  scale: finite.min(0.4).max(2),
+  scale: finite.min(0.4).max(MAX_SCALE),
   seed: z.number().int().min(0).max(2147483647),
   life: z
     .object({
