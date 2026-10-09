@@ -41,7 +41,7 @@ describe("shared world snapshots", () => {
       ).toEqual(world);
     },
   );
-  it.each(["empty", "tropical", "mountain", "aquarium"] as const)(
+  it.each(["empty", "tropical", "mountain", "amazon"] as const)(
     "round trips the %s layout in a URL-safe fragment",
     async (preset) => {
       const world = makePreset(preset);

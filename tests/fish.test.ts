@@ -207,7 +207,7 @@ function fishIn(world: World, engine: ReturnType<typeof createWorldEcosystem>) {
 }
 
 describe("fish in a real tank", () => {
-  it.each(["tropical", "aquarium"] as const)(
+  it.each(["tropical", "amazon", "asian"] as const)(
     "stay in the %s water and inside the glass, and keep exploring",
     (preset) => {
       const world = makePreset(preset);
@@ -236,7 +236,7 @@ describe("fish in a real tank", () => {
           );
         }
       }
-      if (preset === "aquarium")
+      if (preset === "amazon")
         for (const { object } of fish)
           expect(
             traveled.get(object.id),
@@ -249,7 +249,7 @@ describe("fish in a real tank", () => {
     // Windows of six seconds a fish spent stuck in place, by species.
     const stuck = new Map<string, { stuck: number; windows: number }>();
     for (const seed of [1, 2]) {
-      const world = makePreset("aquarium");
+      const world = makePreset("amazon");
       const engine = createWorldEcosystem(
         world,
         undefined,
@@ -282,7 +282,7 @@ describe("fish in a real tank", () => {
   }, 30_000);
 
   it("use their whole depth range in a deep tank", () => {
-    const world = makePreset("aquarium");
+    const world = makePreset("amazon");
     const engine = createWorldEcosystem(world, undefined, randomFromSeed(4));
     const fish = fishIn(world, engine);
     const heights = new Map(
@@ -376,7 +376,8 @@ describe("fish in a real tank", () => {
   );
 
   it.each([
-    "aquarium",
+    "amazon",
+    "asian",
     "tropical",
     "mountain",
     "grotto",

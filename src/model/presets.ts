@@ -22,7 +22,8 @@ export type Preset =
   | "desert"
   | "grotto"
   | "island"
-  | "aquarium";
+  | "amazon"
+  | "asian";
 type Add = (
   kind: AssetKind,
   x: number,
@@ -80,7 +81,7 @@ export function makePreset(preset: Preset): World {
       piece.lift =
         objectBase(support, env) + height - groundHeight(piece.x, piece.z, env);
     };
-  if (preset === "aquarium") {
+  if (preset === "amazon") {
     add("wood", -1.45, -0.35, 1.1, -0.5);
     add("rock", -2.45, -0.95, 1.3, 0.5);
     add("rock", -1.95, 0.85, 0.85, 2);
@@ -120,17 +121,13 @@ export function makePreset(preset: Preset): World {
     ] as const)
       for (let i = 0; i < 6; i++)
         add(kind, x + (i % 3) * 0.3, z + Math.floor(i / 3) * 0.3, 1, heading);
-    // Bigger fish: angelfish and gouramis in the open water, a rainbow shark
-    // and a group of corydoras along the bottom.
-    for (const [kind, x, z, heading] of [
-      ["angelfish", -1.0, -0.2, 0.6],
-      ["angelfish", -0.8, -0.7, 0.8],
-      ["angelfish", -1.5, -0.9, 0.5],
-      ["pearl-gourami", 1.6, 0.2, 3.6],
-      ["pearl-gourami", 0.4, 1.1, 2.4],
-      ["rainbow-shark", 0.8, 0.3, 1.8],
-    ] as const)
-      add(kind, x, z, 1, heading);
+    // Angelfish in the open water and a group of corydoras along the bottom.
+    for (const [x, z, heading] of [
+      [-1.0, -0.2, 0.6],
+      [-0.8, -0.7, 0.8],
+      [-1.5, -0.9, 0.5],
+    ])
+      add("angelfish", x, z, 1, heading);
     for (let i = 0; i < 6; i++)
       add(
         "corydoras",
@@ -158,11 +155,18 @@ export function makePreset(preset: Preset): World {
       add("dwarf-sagittaria", x, z, 1.1);
     return {
       version: 1,
-      name: "Aquarium",
+      name: "Amazon river",
       environment: aquascape(),
       objects,
     };
   }
+  if (preset === "asian")
+    return {
+      version: 1,
+      name: "Asian stream",
+      environment: streambed(),
+      objects: asianStream(add, objects),
+    };
   if (preset === "island")
     return {
       version: 1,
@@ -285,6 +289,87 @@ function cloudForest(add: Add, shelter: Shelter, objects: HabitatObject[]) {
     add("convict-cichlid", x, z, 0.8, turn);
   add("micro-crab", 0.9, 1.45, 1, 0.6);
   add("micro-crab", 0.2, 1.1, 1, 2.5);
+  return objects;
+}
+
+/** A rocky stream from tropical Asia: stones banked along the back with
+ * ferns and moss on them, crypts in the gravel, and open water for the
+ * gouramis, barbs and rasboras. */
+function asianStream(add: Add, objects: HabitatObject[]) {
+  // River stones up the bank, with java fern and java moss growing on some.
+  add("rock", -2.6, -1.4, 1.2, 0.4, "java");
+  add("rock", -1.35, -1.65, 0.9, 2.1);
+  add("cobble", -0.25, -1.3, 1, 1);
+  add("rock", 0.95, -1.55, 1.1, 2.8, "java");
+  add("cobble", 2.15, -1.15, 0.9, 0.5);
+  add("rock", 2.95, -1.75, 0.8, 1.6);
+  add("java-fern", -2.2, -0.85, 1.1);
+  add("java-fern", 0.55, -1.05, 1);
+  add("java-fern", 2.65, -1.2, 0.9);
+  for (const [x, z, scale] of [
+    [-2.95, -0.85, 1],
+    [-1.6, -1.05, 1.1],
+    [0.0, -0.75, 1],
+    [1.35, -0.95, 1.1],
+    [2.35, -0.55, 0.9],
+    [-1.85, 1.3, 1],
+    [2.1, 1.15, 0.9],
+  ])
+    add("java-moss", x, z, scale);
+  // Smaller stones and pebbles out in the gravel.
+  add("rock", -2.3, 1.0, 0.6, 1.2);
+  add("pebbles", -1.0, 1.3, 1);
+  add("pebbles", 1.5, 0.8, 0.9, 2.2);
+  add("rock", 2.6, 1.35, 0.55, 3);
+  // Rotala and eelgrass along the back glass, crypts through the middle.
+  for (const [x, z] of [
+    [-3.0, -1.95],
+    [-0.75, -1.95],
+    [1.7, -1.95],
+  ])
+    add("rotala", x, z, 1.1);
+  for (const [x, z] of [
+    [-2.0, -1.95],
+    [0.35, -1.95],
+    [3.1, -1.1],
+  ])
+    add("vallisneria", x, z, 1.1);
+  for (const [x, z, scale] of [
+    [-1.65, 0.35, 1],
+    [-1.25, 0.7, 0.85],
+    [0.25, 0.95, 0.9],
+    [1.9, 0.2, 1],
+    [2.25, 0.55, 0.85],
+  ])
+    add("cryptocoryne", x, z, scale, x * 2);
+  // A school each of rasboras and tiger barbs, two gouramis and a rainbow
+  // shark in the open water, and cherry shrimp on the stones.
+  for (let i = 0; i < 8; i++)
+    add(
+      "harlequin-rasbora",
+      -1.1 + (i % 4) * 0.25,
+      -0.2 + Math.floor(i / 4) * 0.3,
+      1,
+      1.2,
+    );
+  for (let i = 0; i < 6; i++)
+    add(
+      "tiger-barb",
+      0.8 + (i % 3) * 0.3,
+      -0.4 + Math.floor(i / 3) * 0.3,
+      1,
+      4.2,
+    );
+  add("pearl-gourami", -0.1, 0.5, 1, 2.4);
+  add("pearl-gourami", -2.0, -0.2, 1, 0.8);
+  add("rainbow-shark", 1.0, 1.3, 1, 1.8);
+  for (const [x, z, heading] of [
+    [-2.6, -0.85, 0.4],
+    [-0.3, -0.85, 2.2],
+    [1.6, -1.0, 5.1],
+    [-0.8, 1.55, 3],
+  ])
+    add("cherry-shrimp", x, z, 1, heading);
   return objects;
 }
 
@@ -720,6 +805,29 @@ function aquascape() {
       ],
     ],
   ]);
+}
+
+/** A gravel streambed with a stony bank rising toward the back glass. */
+function streambed() {
+  const env = { ...defaultEnvironment, water: AQUARIUM_WATER };
+  const smooth = (t: number) => {
+    t = Math.min(1, Math.max(0, t));
+    return t * t * (3 - 2 * t);
+  };
+  const terrain = newTerrain(
+    env,
+    (x, z) => {
+      const bank = smooth((-z - 0.3) / 1.7);
+      const height =
+        0.3 + 0.04 * Math.sin(x * 1.7) + (0.85 + 0.25 * Math.sin(x + 1)) * bank;
+      // `|| 0` turns -0 into 0, which a saved world can't tell apart.
+      return (
+        Math.round((height - baseGroundHeight(x, z, env)) * 100) / 100 || 0
+      );
+    },
+    "sand",
+  );
+  return { ...env, terrain };
 }
 
 /** A wide tank with a hill along the back and a stream running down into a

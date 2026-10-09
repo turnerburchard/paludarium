@@ -21,7 +21,7 @@ describe("saved world collection", () => {
     for (let i = 0; i < 100; i++)
       library = openLibraryWorld(library, {
         id: `preset-${i}`,
-        world: makePreset(i % 2 ? "aquarium" : "tropical"),
+        world: makePreset(i % 2 ? "amazon" : "tropical"),
         preview: true,
       });
     expect(library.worlds).toHaveLength(2);
@@ -31,7 +31,7 @@ describe("saved world collection", () => {
     expect(library.worlds).toEqual(saved.worlds);
   });
   it("keeps a preview's life on reload and only promotes a manual edit", () => {
-    const library = createLibrary(makePreset("aquarium"), true);
+    const library = createLibrary(makePreset("amazon"), true);
     const evolved = { ...activeWorld(library), objects: [] };
     const watched = updateLibrary(library, evolved);
     const reloaded = parseLibrary(JSON.stringify(watched));
@@ -45,7 +45,7 @@ describe("saved world collection", () => {
     expect(edited.worlds[0].preview).toBeUndefined();
     const next = openLibraryWorld(edited, {
       id: "new-preset",
-      world: makePreset("aquarium"),
+      world: makePreset("amazon"),
       preview: true,
     });
     expect(next.worlds).toHaveLength(2);
@@ -55,7 +55,7 @@ describe("saved world collection", () => {
   it("puts recently opened worlds first without losing any saves", () => {
     let library = createLibrary(makePreset("empty"));
     const first = library.worlds[0];
-    const second = { id: "second", world: makePreset("aquarium") };
+    const second = { id: "second", world: makePreset("amazon") };
     library = openLibraryWorld(library, second);
     expect(library.worlds.map((entry) => entry.id)).toEqual([
       second.id,
@@ -72,7 +72,7 @@ describe("saved world collection", () => {
     const loaded = loadLibrary();
     expect(loaded.library.worlds).toHaveLength(1);
     expect(loaded.library.worlds[0].preview).toBe(true);
-    expect(activeWorld(loaded.library).name).toBe("Aquarium");
+    expect(activeWorld(loaded.library).name).toBe("Amazon river");
   });
   it("migrates an existing world without losing its layout or life", () => {
     const world = makePreset("tropical");
@@ -83,7 +83,7 @@ describe("saved world collection", () => {
   });
   it("updates only the active world and preserves the others", () => {
     const first = makePreset("tropical");
-    const second = makePreset("aquarium");
+    const second = makePreset("amazon");
     const original = createLibrary(first);
     const library = {
       ...original,
@@ -149,7 +149,7 @@ describe("saved world collection", () => {
   });
   it("clears undo history when opening another world", () => {
     const first = makePreset("tropical");
-    const second = makePreset("aquarium");
+    const second = makePreset("amazon");
     const history = historyReducer(
       { past: [first], present: second, future: [first] },
       { type: "open", world: first },
