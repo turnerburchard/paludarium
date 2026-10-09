@@ -831,7 +831,7 @@ function blackwater(): Environment {
   };
 }
 
-/** A gravel streambed with a stony bank rising toward the back glass. */
+/** A dark soil streambed with a bank rising toward the back glass. */
 function streambed() {
   const env: Environment = {
     ...defaultEnvironment,
@@ -853,7 +853,7 @@ function streambed() {
         Math.round((height - baseGroundHeight(x, z, env)) * 100) / 100 || 0
       );
     },
-    "stone",
+    "soil",
   );
   return { ...env, terrain };
 }
