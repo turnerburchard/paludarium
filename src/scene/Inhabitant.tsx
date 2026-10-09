@@ -23,7 +23,6 @@ import { arthropodRigs } from "../assets/animals/arthropods";
 import { TurtleRig } from "./turtleRig";
 import { SwimRig } from "./swimRig";
 import { barbSwim } from "../assets/animals/barb";
-import { SWIM_BOB } from "../simulation/swimSpace";
 import { juvenileScale } from "../simulation/lifeCycle";
 import { FoliageMotion, type FoliageVisitor } from "./foliageMotion";
 
@@ -120,7 +119,7 @@ export function Inhabitant({
   const ground = objectBase(object, environment);
   const swims = assets[object.kind].swims;
   const baseY = swims
-    ? swimmingHeight(object.x, object.z, environment, swims.depth, -0.01)
+    ? swimmingHeight(object.x, object.z, environment, swims.depth)
     : ground;
   const framePriority = plant ? -0.5 : 0;
   useFrame((_, frameDelta) => {
@@ -239,16 +238,28 @@ export function Inhabitant({
       return;
     }
     if (swims) {
-      const fish = ecosystem?.live.current!.fish.get(object.id, environment);
-      if (fish) {
-        // Swim below the surface, but never sink into the ground.
-        group.position.set(
-          fish.x,
-          (fish.y ?? swimmingHeight(fish.x, fish.z, environment, swims.depth)) +
-            Math.sin(t * 1.3) * (fish.bob ?? SWIM_BOB),
-          fish.z,
+      const live = ecosystem?.live.current;
+      const fish = live?.engine.observeRenderedAnimal(object.id);
+      if (live && fish) {
+        const { position, direction } = fish;
+        // A terrain preview can raise the ground before the habitat is
+        // rebuilt. Lift the fish with it rather than sinking it in the sand.
+        const raised = Math.max(
+          0,
+          groundHeight(position.x, position.z, environment) -
+            groundHeight(position.x, position.z, live.world.environment),
         );
-        group.rotation.y = fish.heading;
+        group.position.set(
+          position.x,
+          position.y + fish.motion.lift + raised,
+          position.z,
+        );
+        group.rotation.set(
+          Math.asin(direction.y),
+          Math.atan2(-direction.x, -direction.z),
+          0,
+          "YXZ",
+        );
       }
       // The tail beats side to side, faster for quicker fish.
       const tail = model.getObjectByName("tail");

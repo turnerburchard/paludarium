@@ -283,7 +283,6 @@ function Scene({
       </group>
       <EcosystemLife
         ecosystem={ecosystem}
-        environment={env}
         foliageVisitors={foliageVisitors}
         paused={
           editor.paused ||

@@ -27,6 +27,7 @@ function habitat(): World {
       { ...frog, id: "plant", kind: "fern", x: 0 },
       frog,
       { ...frog, id: "other-frog", x: -2 },
+      { ...frog, id: "fish", kind: "fish" },
     ],
   };
 }
@@ -44,12 +45,12 @@ describe("reusing habitat navigation", () => {
       }),
     ],
     [
-      "adding a fish",
+      "adding another fish",
       (world: World) => ({
         ...world,
         objects: [
           ...world.objects,
-          { ...frog, id: "fish", kind: "fish" as const },
+          { ...frog, id: "other-fish", kind: "fish" as const },
         ],
       }),
     ],
@@ -73,6 +74,13 @@ describe("reusing habitat navigation", () => {
   });
 
   it.each([
+    [
+      "removing the last fish",
+      (world: World) => ({
+        ...world,
+        objects: world.objects.filter((o) => o.kind !== "fish"),
+      }),
+    ],
     [
       "removing the last large footprint",
       (world: World) => ({

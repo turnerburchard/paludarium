@@ -3,7 +3,6 @@ import { Ecosystem } from "../src/simulation/engine";
 import { HabitatGraph } from "../src/simulation/navigation";
 import {
   buildHabitat,
-  createFishSchool,
   createWorldEcosystem,
   insectColonies,
 } from "../src/simulation/worldHabitat";
@@ -383,7 +382,8 @@ describe("live ecosystem behavior", () => {
       const engine = createWorldEcosystem(makePreset(preset));
       const colonies = new Set(engine.snapshot().food.map((p) => p.nodeId));
       for (const animal of engine.snapshot().animals) {
-        if (assets[animal.speciesId as AssetKind].behavior?.grazes) continue;
+        const asset = assets[animal.speciesId as AssetKind];
+        if (asset.swims || asset.behavior?.grazes) continue;
         const paths = engine.graph.paths(
           animal.nodeId,
           frogProfile(animal.speciesId as AssetKind),
@@ -444,7 +444,10 @@ describe("insect colonies", () => {
 
   // This covers six simulated hours; allow for concurrent CI workers.
   it("can keep a frog fed without help in a planted tank", () => {
-    const engine = createWorldEcosystem(makePreset("mountain"));
+    // Fish are costly to steer for hours and play no part in this.
+    const world = makePreset("mountain");
+    world.objects = world.objects.filter((o) => !assets[o.kind].swims);
+    const engine = createWorldEcosystem(world);
     run(engine, 3600);
     const frogs = engine
       .snapshot()
@@ -464,6 +467,7 @@ describe("preset habitats", () => {
     ] as const) {
       const engine = createWorldEcosystem(makePreset(preset));
       for (const animal of engine.snapshot().animals) {
+        if (assets[animal.speciesId as AssetKind].swims) continue;
         const routes = engine.graph.paths(
           animal.nodeId,
           frogProfile(animal.speciesId as AssetKind),
@@ -891,9 +895,8 @@ describe("animals and water", () => {
     const living = (water: number) => {
       const tank = { ...world, environment: { ...world.environment, water } };
       const engine = createWorldEcosystem(tank);
-      const fish = createFishSchool(tank);
       return world.objects
-        .filter((o) => engine.observeAnimal(o.id) || fish.get(o.id))
+        .filter((o) => engine.observeAnimal(o.id))
         .map((o) => o.kind);
     };
     expect(living(world.environment.water)).toEqual([

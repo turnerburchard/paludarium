@@ -275,7 +275,6 @@ export default function App({
       {dialog === "about" && (
         <AboutDialog
           onHelp={() => setDialog("help")}
-          world={world}
           ecosystem={ecosystem}
           onWatch={(id) => {
             setDialog(null);
