@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import type { AssetDefinition } from "../types";
+import { buildSkinned } from "../skinned";
+import europeanTreeFrogModel from "./europeanTreeFrog.json";
 import frogModel from "./frog.json";
 
 interface Appearance {
@@ -227,6 +229,47 @@ export const chorusFrog: AssetDefinition = {
       },
       random,
     ),
+};
+
+export const europeanTreeFrog: AssetDefinition = {
+  kind: "european-tree-frog",
+  name: "European tree frog",
+  scientificName: "Hyla arborea",
+  group: "Amphibians",
+  biomes: ["Temperate"],
+  description:
+    "A small, bright green frog with a dark stripe from the nostril back through the eye. Climbs reeds and shrubs around ponds and calls loudly on spring nights.",
+  radius: 0.24,
+  size: 0.7,
+  habitat: "land",
+  behavior: { nocturnal: true, climbs: true, speed: 0.045, movement: "hop" },
+  build: (random) => {
+    // Its own mesh, fitted to the shared frog skeleton so the shared clips and
+    // rig drive it. scripts/prepare-european-tree-frog-model.mjs bakes it.
+    const model = buildSkinned(
+      europeanTreeFrogModel,
+      (region) => {
+        const color = EUROPEAN_TREE_FROG[region];
+        if (!color) throw new Error(`Unexpected frog region ${region}.`);
+        return new THREE.Color(color);
+      },
+      random,
+      "pupil",
+    );
+    // Scaled from outside the skeleton, since the clips move the body and
+    // feet to fixed places in the shared rig's own units.
+    model.scale.setScalar(0.75);
+    return model;
+  },
+};
+
+/** Flat colors for the baked regions of the European tree frog. */
+const EUROPEAN_TREE_FROG: Record<string, string> = {
+  back: "#4fa82a",
+  belly: "#d9d38f",
+  stripe: "#3b3020",
+  iris: "#d9c46a",
+  pupil: "#141210",
 };
 
 export const westernToad: AssetDefinition = {

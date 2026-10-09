@@ -1,9 +1,16 @@
 import * as THREE from "three";
 
 /** A model baked with its own skeleton: bones as offsets from their parent,
- * and faces grouped by source color with skin weights per corner. */
+ * and faces grouped by source color with skin weights per corner. Bones fitted
+ * from another rig keep that rig's rest rotation and scale so its clips apply. */
 export interface SkinnedModel {
-  bones: { name: string; parent: number; position: number[] }[];
+  bones: {
+    name: string;
+    parent: number;
+    position: number[];
+    quaternion?: number[];
+    scale?: number[];
+  }[];
   parts: {
     color: string;
     positions: number[];
@@ -35,6 +42,8 @@ export function buildSkinned(
     const bone = new THREE.Bone();
     bone.name = data.name;
     bone.position.fromArray(data.position);
+    if (data.quaternion) bone.quaternion.fromArray(data.quaternion);
+    if (data.scale) bone.scale.fromArray(data.scale);
     return bone;
   });
   model.bones.forEach((data, i) =>

@@ -122,4 +122,31 @@ describe("frog rig", () => {
       rig.update(still("sleeping"), FRAME);
     expect(bodyHeight(model)).toBeLessThan(awake);
   });
+
+  it("keeps the European tree frog's skin whole through a hop", () => {
+    const model = buildAsset("european-tree-frog", 3);
+    const rig = new FrogRig(model);
+    const meshes: THREE.SkinnedMesh[] = [];
+    model.traverse((object) => {
+      if (object instanceof THREE.SkinnedMesh) meshes.push(object);
+    });
+    const edges = () =>
+      meshes.flatMap((mesh) => {
+        const count = mesh.geometry.getAttribute("position").count;
+        const corner = (i: number) =>
+          mesh.getVertexPosition(i, new THREE.Vector3());
+        return Array.from({ length: count }, (_, i) =>
+          corner(i).distanceTo(corner(i - (i % 3) + ((i + 1) % 3))),
+        );
+      });
+    rig.update(undefined, FRAME);
+    const rest = edges();
+    for (const progress of [0.1, 0.3, 0.55, 0.95]) {
+      rig.update(hopping(progress), FRAME);
+      // Kicking legs stretch the skin a little, but a face bound to bones
+      // that move apart tears into a sheet twice as long as this.
+      const stretch = edges().map((length, i) => length - rest[i]);
+      expect(Math.max(...stretch)).toBeLessThan(0.12);
+    }
+  });
 });
