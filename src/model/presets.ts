@@ -316,19 +316,24 @@ function tropicalIsland(add: Add, objects: HabitatObject[]) {
   for (const [kind, x, z, scale, rotation] of [
     ["grass", -2.6, -1.3, 1, 0.5],
     ["grass", -2.1, -0.15, 0.9, 2.1],
-    ["grass", 1.25, -1.0, 0.9, 3.7],
-    ["rock", 1.15, -0.55, 0.7, 1.3],
-    ["pebbles", 1.2, 0.35, 1, 0.8],
     ["anubias", -2.75, -0.5, 1, 0.6],
-    ["anubias", 1.35, -1.6, 1, 4.5],
     ["java-fern", -2.45, 0.1, 1, 2.8],
+  ] as const)
+    add(kind, x, z, scale, rotation);
+  // River stones and pebbles resting on the ledges down the island's sides.
+  for (const [kind, x, z, scale, rotation] of [
+    ["rock", 0.85, 0.45, 0.6, 0.4],
+    ["pebbles", 0.55, 0.6, 0.9, 2.1],
+    ["pebbles", -1.6, 0.65, 1, 0.8],
+    ["rock", 1.4, -0.2, 0.55, 2.7],
+    ["pebbles", -3.05, -0.45, 0.9, 4.0],
   ] as const)
     add(kind, x, z, scale, rotation);
   // Tall vallisneria in the open water, swords and rotala in front.
   for (const [kind, x, z, scale, rotation] of [
-    ["vallisneria", 2.55, -1.2, 1, 0],
-    ["vallisneria", 2.95, -0.55, 1.1, 1.4],
-    ["vallisneria", 2.1, -1.75, 0.9, 2.9],
+    ["vallisneria", 3.05, 0.2, 1, 0],
+    ["vallisneria", 2.75, 0.75, 1.1, 1.4],
+    ["vallisneria", 2.6, 0.35, 0.9, 2.9],
     ["spiderwood", 2.3, 1.1, 1, 0.9],
     ["amazon-sword", -1.1, 1.05, 1, 0.9],
     ["amazon-sword", -0.3, 1.35, 0.9, 3.3],
@@ -344,8 +349,13 @@ function tropicalIsland(add: Add, objects: HabitatObject[]) {
     add("golden-mantella", x, z, 1, heading);
   add("gecko", -1.95, -1.25, 1, 1.2);
   add("gecko", 0.15, -1.1, 1, 3.9);
-  add("vampire-crab", 1.35, -0.25, 1, 2.4);
-  add("vampire-crab", -2.2, -1.25, 1, 5.6);
+  // The vampire crabs get the islet to themselves, with a stone to hide
+  // under and sedge and anubias around its edge.
+  add("rock", 3.1, -1.5, 0.55, 1.3);
+  add("grass", 2.3, -1.0, 0.9, 3.7);
+  add("anubias", 2.05, -1.45, 1, 4.5);
+  add("vampire-crab", 2.5, -0.95, 1, 2.4);
+  add("vampire-crab", 2.6, -1.5, 1, 5.6);
   for (let i = 0; i < 6; i++)
     add(
       "cardinal-tetra",
@@ -354,7 +364,7 @@ function tropicalIsland(add: Add, objects: HabitatObject[]) {
       1,
       0.4,
     );
-  add("pearl-gourami", 2.5, -0.1, 1, 3.6);
+  add("pearl-gourami", 2.1, 0.0, 1, 3.6);
   add("pearl-gourami", 1.4, 1.5, 1, 2.2);
   for (const [kind, x, z, heading] of [
     ["cherry-shrimp", -1.15, 0.8, 1.1],
@@ -957,41 +967,66 @@ function islandLagoon() {
   // 1 on a mound's top, sloping away to 0 well past its shore.
   const mound = (x: number, z: number, rx: number, rz: number) =>
     smooth((1.3 - Math.hypot(x / rx, z / rz)) / 0.95);
+  const ridge: [number, number][] = [
+    [-2.6, -1.25],
+    [-1.3, -1.5],
+    [0.2, -1.35],
+  ];
+  const ledges = [
+    { x: 0.75, z: 0.5, y: 1.0, radius: 0.4 },
+    { x: -1.6, z: 0.65, y: 1.08, radius: 0.35 },
+    { x: 1.4, z: -0.2, y: 1.08, radius: 0.35 },
+    { x: -3.05, z: -0.45, y: 1.0, radius: 0.35 },
+  ];
   const terrain = newTerrain(
     env,
     (x, z) => {
       const floor = 0.14 + 0.04 * Math.sin(x * 1.3 + z * 0.9);
+      // The island climbs from a low beach in front to a ridge along the
+      // back, above a shelf partway down that breaks up its underwater slope.
       const island = Math.max(
-        mound(x + 0.4, z + 0.55, 3.1, 1.75),
-        mound(x + 1.9, z + 0.9, 1.7, 1.4),
+        mound(x + 0.7, z + 0.55, 2.9, 1.8),
+        mound(x + 2.0, z + 0.9, 1.6, 1.4),
       );
-      const peak = 0.12 * smooth(1 - Math.hypot(x + 0.9, z + 1.0) / 1.3);
-      const height = floor + (1.58 + peak - floor) * island;
+      const top = 1.45 + 0.32 * smooth(1 - distanceToPath(x, z, ridge) / 1.2);
+      const shelf = mound(x + 0.7, z + 0.45, 3.5, 2.3);
+      const islet = mound(x - 2.6, z + 1.05, 1.6, 1.3);
+      let height = Math.max(
+        floor + (top - floor) * island,
+        floor + (0.85 - floor) * shelf,
+        floor + (1.5 - floor) * islet,
+      );
+      // Small flat ledges stepped into the slope, for stones to sit on.
+      for (const ledge of ledges) {
+        const distance = Math.hypot(x - ledge.x, z - ledge.z) - ledge.radius;
+        height = Math.max(height, ledge.y - 0.6 * smooth(distance / 0.5));
+      }
       return Math.round((height - baseGroundHeight(x, z, env)) * 100) / 100;
     },
     "sand",
   );
-  // Moss over the island, with bare soil around its back edge.
+  // Moss over the island, bare soil up the ridge, and stone on the shelf.
   return sculpt({ ...env, terrain }, [
     [
-      "soil",
-      0.6,
+      "stone",
+      0.5,
       [
-        [-2.9, -1.4],
-        [-1.5, -1.85],
-        [0.5, -1.85],
-        [1.3, -1.3],
+        [1.0, 0.9],
+        [-1.0, 1.15],
+        [-2.9, 0.6],
       ],
     ],
+    ["soil", 0.6, ridge],
     [
       "moss",
       1.0,
       [
-        [-2.1, -0.9],
-        [-0.9, -0.8],
-        [0.4, -0.9],
+        [-2.1, -0.8],
+        [-0.9, -0.6],
+        [0.2, -0.8],
       ],
     ],
+    ["moss", 0.5, [[2.65, -1.25]]],
   ]);
 }
 
