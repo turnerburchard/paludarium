@@ -53,6 +53,9 @@ const LARGEST_FOOTPRINT =
     ...assetKinds.filter(isLandAnimal).map((kind) => assetRadius(kind)),
   ) * MAX_SCALE;
 
+/** The widest gap of water a hopping frog leaps. */
+const LEAP = 0.6;
+
 /** Larger animals step off stone, reach plants and climb the glass from
  * farther out. Rather than a way for every size, each band of room gets
  * one, each band half again as wide as the last. */
@@ -343,6 +346,24 @@ export function buildHabitat(world: World): HabitatGraph {
         band = Math.max(band, roomBand(ground.room!));
     }
   }
+  // Frogs cross a narrow channel by leaping between dry ground and the flat
+  // tops of stone and wood on either side, rather than wading.
+  const landings = [...groundNodes, ...hardscapeNodes].filter(
+    (node) => !node.submerged && node.normal.y >= 0.85,
+  );
+  const landingGrid = new HabitatNodeGrid(landings, LEAP);
+  for (const node of landings)
+    for (const other of landingGrid.near(node.position, LEAP))
+      if (
+        node.id < other.id &&
+        distance(node.position, other.position) <= LEAP &&
+        Math.abs(node.position.y - other.position.y) <= 0.18 &&
+        !overLand(node.position, other.position) &&
+        surfaces.clearRoute(node.position, other.position)
+      ) {
+        (node.leaps ??= []).push(other.id);
+        (other.leaps ??= []).push(node.id);
+      }
   const anchors = new HabitatNodeGrid(
     [...groundNodes, ...hardscapeNodes],
     0.65,

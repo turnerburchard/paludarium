@@ -29,6 +29,8 @@ export interface HabitatNode {
    * wood. Unset where size doesn't matter, as on plants and the glass. */
   room?: number;
   neighbors: string[];
+  /** Dry surfaces across a short gap of water, for animals that hop. */
+  leaps?: string[];
   perchHeight?: number;
   /** Open water: how far below the surface, on the scale of `swims.depth`,
    * whether this is the bottom of the water column, and the widest fish body
