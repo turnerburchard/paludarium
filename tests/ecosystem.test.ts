@@ -442,7 +442,6 @@ describe("insect colonies", () => {
     for (const patch of food) expect(patch.amount).toBe(patch.capacity);
   });
 
-  // This covers six simulated hours; allow for concurrent CI workers.
   it("can keep a frog fed without help in a planted tank", () => {
     // Fish are costly to steer for hours and play no part in this.
     const world = makePreset("mountain");
@@ -454,7 +453,7 @@ describe("insect colonies", () => {
       .animals.filter((animal) => animal.speciesId === "canyon-tree-frog");
     expect(frogs).toHaveLength(1);
     expect(frogs[0].needs.hunger).toBeLessThan(0.8);
-  }, 20_000);
+  });
 });
 
 describe("preset habitats", () => {
