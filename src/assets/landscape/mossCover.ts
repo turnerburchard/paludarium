@@ -93,11 +93,12 @@ export function growMoss(
             THICKNESS,
           ),
       );
-    const tone = mossTone(species, random);
+    // The skin is the shaded floor between tufts, so it sits darker.
+    const tone = mossTone(species, random).multiplyScalar(0.7);
     for (let k = 0; k < 3; k++) colors.push(tone.r, tone.g, tone.b);
     const [a, b, c] = corners;
     const area = b.clone().sub(a).cross(c.clone().sub(a)).length() / 2;
-    let count = area * 400 * growth;
+    let count = area * 900 * growth;
     while (random() < count--) {
       // A random point on the face, where a tuft pushes up through the skin.
       let u = random(),
