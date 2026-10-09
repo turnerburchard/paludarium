@@ -100,7 +100,8 @@ try {
     "Desert spring",
     "Limestone grotto",
     "Tropical island",
-    "Aquarium",
+    "Amazon river",
+    "Asian stream",
   ]) {
     await page.getByRole("button", { name: "Worlds", exact: true }).tap();
     const dialog = page.getByRole("dialog", { name: "Worlds" });

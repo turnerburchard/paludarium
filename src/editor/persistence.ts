@@ -124,7 +124,7 @@ export function loadLibrary(): {
     return {
       library: saved
         ? parseLibrary(saved)
-        : createLibrary(makePreset("aquarium"), true),
+        : createLibrary(makePreset("amazon"), true),
       warning: null,
     };
   } catch {

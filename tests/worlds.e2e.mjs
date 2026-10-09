@@ -91,7 +91,7 @@ try {
       .click();
     await page.getByRole("button", { name: "Pause life (Space)" }).click();
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
-    assert.equal(await page.locator(".preset-options button").count(), 7);
+    assert.equal(await page.locator(".preset-options button").count(), 8);
     await page
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -119,10 +119,10 @@ try {
     );
     await page
       .locator(".preset-options")
-      .getByRole("button", { name: "Aquarium", exact: true })
+      .getByRole("button", { name: "Amazon river", exact: true })
       .click();
     await page.waitForFunction(
-      () => document.title === "paludarium · Aquarium",
+      () => document.title === "paludarium · Amazon river",
     );
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     await page.getByRole("button", { name: "My creek", exact: true }).click();
