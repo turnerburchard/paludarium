@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import type { Environment, Stream } from "../model/schema";
-import { streamCourse, type CoursePoint } from "../model/streams";
+import { STREAM_DEPTH, streamCourse, type CoursePoint } from "../model/streams";
 import { clamp, groundHeight } from "../model/terrain";
 
 /** How fast water runs on the flat, and how much faster down a fall. */
@@ -16,16 +16,15 @@ const FOAM_REACH = 0.3;
 const FADE = 0.2;
 /** Vertices across the stream, so its edges can follow the bed. */
 const ACROSS = 7;
-/** Water shallower than this thins out toward clear. */
-const SHALLOW = 0.04;
 /** The outer part of each side, as a share of half the width, that fades
  * out so the water never ends in a hard line on a wide, flat bed. */
 const EDGE = 0.25;
 
-/** A ribbon along the stream's course, flat across like a water surface.
+/** A ribbon along the stream's course. It lies on the bed rather than level
+ * across, so it never hangs over a hollow or the low side of a slope.
  * Each vertex carries how far the water has travelled in time rather than
  * distance, so ripples scroll faster down falls without stretching. Where the
- * bed comes up to the surface, or the ribbon nears its sides, the water fades
+ * bed rises above the surface, or the ribbon nears its sides, the water fades
  * out, so it meets any bank softly. */
 function streamGeometry(
   course: CoursePoint[],
@@ -74,12 +73,13 @@ function streamGeometry(
           -env.depth / 2,
           env.depth / 2,
         );
-      const depth = point.y - groundHeight(x, z, env);
-      positions.push(x, point.y, z);
+      const ground = groundHeight(x, z, env);
+      const y = Math.min(point.y, ground + STREAM_DEPTH);
+      positions.push(x, y, z);
       flow.push((across + 1) / 2, travel);
       foam.push(white);
       // Falling water leaves its bed, so white water keeps its body.
-      const body = Math.max(clamp(depth / SHALLOW, 0, 1), white);
+      const body = Math.max(clamp((y - ground) / STREAM_DEPTH, 0, 1), white);
       fade.push(Math.min(ends, body, (1 - Math.abs(across)) / EDGE));
     }
     if (i > 0) {

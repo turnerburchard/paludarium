@@ -2,7 +2,7 @@ import type { Environment, Stream } from "./schema";
 import { groundHeight } from "./terrain";
 
 /** Running water this deep over its bed. */
-const DEPTH = 0.04;
+export const STREAM_DEPTH = 0.04;
 /** A course gets a point about this often along its path. */
 const STEP = 0.05;
 
@@ -37,7 +37,7 @@ export function streamCourse(stream: Stream, env: Environment): CoursePoint[] {
       const t = s / steps,
         x = x0 + (x1 - x0) * t,
         z = z0 + (z1 - z0) * t;
-      surface = Math.min(surface, groundHeight(x, z, env) + DEPTH);
+      surface = Math.min(surface, groundHeight(x, z, env) + STREAM_DEPTH);
       if (surface <= env.water) {
         course.push({ x, z, y: env.water, along: along + length * t });
         return course;
