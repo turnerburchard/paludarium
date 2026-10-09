@@ -240,6 +240,13 @@ for (const side of [-1, 1]) {
   const facing = (f) => middle(f).sub(ball).normalize().dot(gaze);
   eye.sort((a, b) => facing(b) - facing(a));
   eye.forEach((f, i) => (f.region = i < painted.length ? PUPIL : IRIS));
+  // The source's right eye is wound inside out, so it would show the inside
+  // of its far half. Every eye face turns to face out of its eyeball.
+  for (const f of eye) {
+    const [a, b, c] = f.corners;
+    const normal = b.clone().sub(a).cross(c.clone().sub(a));
+    if (normal.dot(middle(f).sub(ball)) < 0) f.corners = [a, c, b];
+  }
 }
 
 // The thighs fold flat against the flanks as one surface, so nearest-bone
