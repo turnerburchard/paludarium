@@ -132,17 +132,6 @@ try {
           .evaluate((el) => el === document.activeElement),
         true,
       );
-      if (method === "close") {
-        await page.screenshot({
-          path: `/tmp/paludarium-help-${viewport.width}.png`,
-        });
-        await page.getByRole("dialog").evaluate((el) => {
-          el.scrollTop = el.scrollHeight;
-        });
-        await page.screenshot({
-          path: `/tmp/paludarium-help-${viewport.width}-bottom.png`,
-        });
-      }
       const saved = await page.evaluate(
         (key) => localStorage.getItem(key),
         storageKey,
