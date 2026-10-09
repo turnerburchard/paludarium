@@ -44,10 +44,11 @@ describe("prebuilts", () => {
     ).toBe("Find a dry spot on the bank.");
   });
   it("builds preset shelters from separate stones, with moss on the capstone", () => {
+    // The grotto also has a loose capstone lying on the ground.
     const capstones = makePreset("grotto").objects.filter(
-      (o) => o.kind === "capstone",
+      (o) => o.kind === "capstone" && o.support,
     );
     expect(capstones).toHaveLength(2);
-    expect(capstones.every((o) => o.support && o.moss)).toBe(true);
+    expect(capstones.every((o) => o.moss)).toBe(true);
   });
 });
