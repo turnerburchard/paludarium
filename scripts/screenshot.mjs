@@ -70,7 +70,7 @@ try {
     // Start with an empty tank so opening the menus does not wait on a full habitat.
     await page.addInitScript(() => {
       localStorage.setItem(
-        "little-worlds:v2",
+        "little-worlds:v3",
         JSON.stringify({
           version: 1,
           name: "Screenshot",

@@ -7,7 +7,7 @@ import { chromium } from "playwright";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const url = "http://127.0.0.1:5197";
-const storageKey = "little-worlds:v2";
+const storageKey = "little-worlds:v3";
 const started = Date.now();
 const original = {
   version: 1,

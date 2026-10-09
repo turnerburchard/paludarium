@@ -32,6 +32,7 @@ import { historyReducer } from "./history";
 import { TerrainStroke } from "./terrainStroke";
 import type { TerrainBrush } from "../model/terrainBrush";
 import { makePreset, type Preset } from "../model/presets";
+import { prebuiltObjects, type Prebuilt } from "../model/prebuilts";
 import {
   activeWorld,
   loadLibrary,
@@ -43,6 +44,7 @@ import {
 export type Tool =
   | { type: "select" }
   | { type: "place"; kind: AssetKind; scale: number }
+  | { type: "prebuilt"; prebuilt: Prebuilt }
   | { type: "move"; id: string }
   | { type: "copy"; id: string }
   | ({ type: "terrain" } & TerrainBrush);
@@ -258,9 +260,18 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     select(null);
     setPlacementRotation(0);
   }
+  function choosePrebuilt(prebuilt: Prebuilt) {
+    setTool({ type: "prebuilt", prebuilt });
+    select(null);
+    setPlacementRotation(0);
+  }
   /** Places the tool's object at a spot on the ground, or on top of a stone
    * or wood piece when `surface` names one and the height of the spot. */
   function placeAt(x: number, z: number, surface?: Surface) {
+    if (tool.type === "prebuilt") {
+      placePrebuilt(tool.prebuilt, x, z);
+      return;
+    }
     const moving =
       tool.type === "move" || tool.type === "copy"
         ? world.objects.find((o) => o.id === tool.id)
@@ -330,6 +341,22 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     }
     if (tool.type === "place")
       setTool({ ...tool, scale: placementScale(kind) });
+  }
+  /** Adds every piece of a prebuilt at once, so one undo takes it away. */
+  function placePrebuilt(prebuilt: Prebuilt, x: number, z: number) {
+    const position = boundedPosition(x, z, world.environment, prebuilt.radius);
+    const pieces = prebuiltObjects(
+      prebuilt,
+      position.x,
+      position.z,
+      placementRotation,
+      world.environment,
+    );
+    if (world.objects.length + pieces.length > MAX_OBJECTS) {
+      setPlacementError("This world is full. Remove an object to make room.");
+      return;
+    }
+    commit({ ...world, objects: [...world.objects, ...pieces] });
   }
   function changeEnvironment(patch: Partial<Environment>) {
     commit(withEnvironment(world, patch));
@@ -445,6 +472,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     setPaused,
     placementRotation,
     choose,
+    choosePrebuilt,
     finish,
     placeAt,
     changeEnvironment,

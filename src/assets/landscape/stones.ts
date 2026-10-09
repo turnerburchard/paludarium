@@ -321,7 +321,8 @@ export const stoneBlock: AssetDefinition = {
   blocksMovement: true,
   build: (random) => {
     const root = new THREE.Group();
-    const height = 0.24 + random() * 0.08;
+    // Every block is the same height, so courses stacked on them stay level.
+    const height = 0.28;
     const geo = slab(0.4 + random() * 0.06, height, 0.34, random, 0.15);
     const tone = BUILDING_STONE[Math.floor(random() * BUILDING_STONE.length)];
     paint(geo, (_, normal) => (normal.y > 0.5 ? BUILDING_STONE[3] : tone));

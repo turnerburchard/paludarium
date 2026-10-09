@@ -1,22 +1,25 @@
 import * as THREE from "three";
-import type { AssetKind } from "../model/schema";
+import { emptyWorld } from "../model/schema";
 import { buildAsset, catalog, disposeAsset, isAnimal } from "../assets";
+import { prebuiltObjects, prebuilts } from "../model/prebuilts";
+import { objectBase } from "../model/stacking";
 
-export type Thumbnails = Partial<Record<AssetKind, string>>;
+/** Pictures by asset kind, or by `prebuilt:` and a prebuilt's id. */
+export type Thumbnails = Partial<Record<string, string>>;
 
 const thumbnails: Thumbnails = {};
 let pending: Promise<Thumbnails> = Promise.resolve({});
 
 /** Serialize batches so scrolling and tab changes never compete for WebGL contexts. */
 export function loadThumbnails(
-  kinds: AssetKind[],
+  keys: string[],
   signal: AbortSignal,
 ): Promise<Thumbnails> {
   pending = pending.then(async () => {
-    const missing = kinds.filter((kind) => !thumbnails[kind]);
+    const missing = keys.filter((key) => !thumbnails[key]);
     if (missing.length && !signal.aborted)
       Object.assign(thumbnails, await renderThumbnails(missing, signal));
-    return Object.fromEntries(kinds.map((kind) => [kind, thumbnails[kind]]));
+    return Object.fromEntries(keys.map((key) => [key, thumbnails[key]]));
   });
   return pending;
 }
@@ -26,7 +29,7 @@ const nextFrame = () =>
 
 /** Uses the real asset builders, a few assets per frame so the scene keeps drawing. */
 async function renderThumbnails(
-  kinds: AssetKind[],
+  keys: string[],
   signal: AbortSignal,
 ): Promise<Thumbnails> {
   const output: Thumbnails = {};
@@ -49,13 +52,12 @@ async function renderThumbnails(
     const fill = new THREE.DirectionalLight("#b7d9cc", 2);
     fill.position.set(3, 2, -2);
     scene.add(fill);
-    for (const [i, kind] of kinds.entries()) {
-      const asset = catalog.find((asset) => asset.kind === kind)!;
+    for (const [i, key] of keys.entries()) {
       // A few per frame: each wait also renders the full scene, which is
       // slow on software rendering.
       if (i % 2 === 0) await nextFrame();
       if (signal.aborted) break;
-      const model = buildAsset(asset.kind, 173),
+      const { model, back } = thumbnailModel(key),
         box = new THREE.Box3().setFromObject(model),
         center = box.getCenter(new THREE.Vector3()),
         size = box.getSize(new THREE.Vector3());
@@ -66,13 +68,13 @@ async function renderThumbnails(
           new THREE.Vector3(
             radius * 0.65,
             radius * 0.5,
-            isAnimal(asset.kind) ? -radius : radius,
+            back ? -radius : radius,
           ),
         );
       camera.lookAt(center);
       scene.add(model);
       renderer.render(scene, camera);
-      output[asset.kind] = renderer.domElement.toDataURL();
+      output[key] = renderer.domElement.toDataURL();
       scene.remove(model);
       disposeAsset(model);
     }
@@ -83,4 +85,23 @@ async function renderThumbnails(
     renderer?.forceContextLoss();
   }
   return output;
+}
+
+/** An asset's model, or a prebuilt's pieces stacked as they would be in a
+ * tank. Animals are pictured from behind. */
+function thumbnailModel(key: string) {
+  const asset = catalog.find((asset) => asset.kind === key);
+  if (asset)
+    return { model: buildAsset(asset.kind, 173), back: isAnimal(asset.kind) };
+  const prebuilt = prebuilts.find((p) => `prebuilt:${p.id}` === key)!;
+  const env = emptyWorld().environment;
+  const model = new THREE.Group();
+  for (const piece of prebuiltObjects(prebuilt, 0, 0, 0, env, () => 0.3)) {
+    const part = buildAsset(piece.kind, 173);
+    part.position.set(piece.x, objectBase(piece, env), piece.z);
+    part.rotation.y = piece.rotation;
+    part.scale.multiplyScalar(piece.scale);
+    model.add(part);
+  }
+  return { model, back: false };
 }

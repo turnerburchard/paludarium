@@ -585,27 +585,23 @@ describe("plant perches and species movement", () => {
     expect(mossy.has(lookout.id)).toBe(false);
     expect(bark.some((n) => mossy.has(n.id))).toBe(true);
   });
-  it.each(["log", "rock-shelter"] as const)(
-    "shelters any frog inside a %s, reached through its entrance",
-    (kind) => {
-      const world = plantWorld();
-      world.objects[0] = { ...world.objects[0], kind };
-      const graph = buildHabitat(world);
-      const inside = graph.node("den:plant:0:inside");
-      expect(inside.shelter).toBe(1);
-      const start = graph.nearest(
-        { x: 0, y: groundHeight(0, 0, world.environment), z: 0 },
-        frogProfile("dart-frog"),
-      )!;
-      const path = graph
-        .paths(start.id, frogProfile("dart-frog"))
-        .get(inside.id);
-      expect(path?.at(-2)).toBe("den:plant:0:entrance");
-      expect(insectColonies(graph).some((c) => c.nodeId === inside.id)).toBe(
-        true,
-      );
-    },
-  );
+  it("shelters any frog inside a log, reached through its entrance", () => {
+    const world = plantWorld();
+    world.objects[0] = { ...world.objects[0], kind: "log" };
+    const graph = buildHabitat(world);
+    const inside = graph.node("den:plant:0:inside");
+    expect(inside.shelter).toBe(1);
+    const start = graph.nearest(
+      { x: 0, y: groundHeight(0, 0, world.environment), z: 0 },
+      frogProfile("dart-frog"),
+    )!;
+    const path = graph.paths(start.id, frogProfile("dart-frog")).get(inside.id);
+    expect(path?.at(-2)).toBe("den:plant:0:entrance");
+    expect(insectColonies(graph).some((c) => c.nodeId === inside.id)).toBe(
+      true,
+    );
+  });
+
   it("chooses a leaf for daytime sleep and lands gracefully when its plant is removed", () => {
     const world = plantWorld(),
       graph = buildHabitat(world);

@@ -16,6 +16,7 @@ import {
   groundHeight,
   placementProblem,
 } from "../model/terrain";
+import { prebuiltObjects } from "../model/prebuilts";
 import { restingOn, type Surface } from "../model/stacking";
 import { useCameraNavigation } from "./useCameraNavigation";
 import { useFollowCamera } from "./useFollowCamera";
@@ -89,10 +90,12 @@ function Scene({
       : null;
   const kind = tool.type === "place" ? tool.kind : moving?.kind;
   const scale = tool.type === "place" ? tool.scale : (moving?.scale ?? 1);
+  const prebuilt = tool.type === "prebuilt" ? tool.prebuilt : null;
+  const placing = !!kind || !!prebuilt;
   const reach = tankReach(env);
   useCameraLayout(controls, resetCamera, view, env.height, reach);
   useEffect(() => setCursor(null), [tool]);
-  useSceneTouch(controls, !!kind, (event) => {
+  useSceneTouch(controls, placing, (event) => {
     if (!inhabitants.current) return;
     const box = gl.domElement.getBoundingClientRect();
     // Native client coordinates stay correct when Safari resizes its browser bars.
@@ -116,12 +119,12 @@ function Scene({
     setCursor(null);
   });
   const point =
-    cursor && (kind || tool.type === "terrain")
+    cursor && (placing || tool.type === "terrain")
       ? boundedPosition(
           cursor.x,
           cursor.z,
           env,
-          kind ? assetRadius(kind) * scale : 0,
+          prebuilt ? prebuilt.radius : kind ? assetRadius(kind) * scale : 0,
         )
       : null;
   const lift = point
@@ -153,9 +156,9 @@ function Scene({
     return e.intersections.find((hit) => hit.object === terrain.current)?.point;
   }
   function track(e: ThreeEvent<PointerEvent>) {
-    if (!kind && tool.type !== "terrain") return;
+    if (!placing && tool.type !== "terrain") return;
     e.stopPropagation();
-    if (kind && e.nativeEvent.pointerType === "touch") return;
+    if (placing && e.nativeEvent.pointerType === "touch") return;
     if (tool.type === "terrain") {
       const point = groundUnder(e);
       if (!point) return;
@@ -170,7 +173,7 @@ function Scene({
     if (e.delta > 6) return;
     e.stopPropagation();
     if (tool.type === "terrain") return;
-    if (!kind) {
+    if (!placing) {
       editor.select(null);
       return;
     }
@@ -266,7 +269,7 @@ function Scene({
               paused={editor.paused}
               selected={!view && editor.selectedId === object.id}
               onSelect={(e) => {
-                if (e.delta > 6 || kind || tool.type === "terrain") return;
+                if (e.delta > 6 || placing || tool.type === "terrain") return;
                 e.stopPropagation();
                 onActivateObject(object.id);
               }}
@@ -322,10 +325,22 @@ function Scene({
           invalid={!!problem}
         />
       )}
+      {point &&
+        prebuilt &&
+        prebuiltObjects(
+          prebuilt,
+          point.x,
+          point.z,
+          editor.placementRotation,
+          env,
+          () => 0.3,
+        ).map((piece, i) => (
+          <Inhabitant key={i} object={piece} environment={env} paused ghost />
+        ))}
       {point && tool.type === "terrain" && (
         <TerrainBrushCursor {...point} radius={tool.radius} environment={env} />
       )}
-      {point && kind && (
+      {point && placing && (
         <mesh
           position={[
             point.x,
@@ -364,7 +379,7 @@ function Scene({
         enablePan
         screenSpacePanning={false}
         touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
-        enableRotate={!kind && tool.type !== "terrain"}
+        enableRotate={!placing && tool.type !== "terrain"}
         enableDamping
         dampingFactor={0.09}
         autoRotate={view && !editor.paused && !followCamera.active}

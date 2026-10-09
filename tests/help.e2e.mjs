@@ -8,7 +8,7 @@ const full = process.argv.includes("--full");
 const root = fileURLToPath(new URL("../", import.meta.url));
 const url = process.env.HELP_TEST_URL || "http://127.0.0.1:5199";
 const helpKey = "paludarium:help-dismissed";
-const storageKey = "little-worlds:v2";
+const storageKey = "little-worlds:v3";
 const world = {
   version: 1,
   name: "Kept world",
