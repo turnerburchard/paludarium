@@ -3,7 +3,7 @@ import { Copy, Eye, Move, RotateCw, Skull, Trash2, X } from "lucide-react";
 import { assets, isAnimal } from "../assets";
 import type { Editor } from "../editor/useEditor";
 import { plantCondition } from "../model/plants";
-import type { HabitatObject } from "../model/schema";
+import { MAX_SCALE, type HabitatObject } from "../model/schema";
 import { IconButton } from "./IconButton";
 import { MossPicker } from "./MossPicker";
 import { RangeControl } from "./RangeControl";
@@ -149,7 +149,7 @@ export function Inspector({
             label="Size"
             value={object.scale}
             min={0.4}
-            max={2}
+            max={MAX_SCALE}
             step={0.05}
             format={(n) => `${Math.round(n * 100)}%`}
             onPreview={(scale) => editor.previewObject(object.id, { scale })}
