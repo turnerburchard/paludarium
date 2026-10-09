@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { bakedGeometry, type BakedModel } from "../baked";
 import { mesh } from "../geometry";
 import type { AssetDefinition } from "../types";
+import { weatheredStone } from "./rock";
 import flagstoneModel from "./flagstone.json";
 import graniteModel from "./granite.json";
 import limestonePinnacleModel from "./limestonePinnacle.json";
@@ -276,6 +277,81 @@ export const scree: AssetDefinition = {
       if (normal.y < 0) return "#4f545b";
       return n > 0.4 ? "#6d737a" : "#5f656c";
     });
+  },
+};
+
+/** Grey river stone tones shared by the small building stones, so a pile
+ * of them reads as one kind of rock. */
+const BUILDING_STONE = ["#6d6a64", "#7d786f", "#5f5d59", "#8a8478"];
+
+export const cobble: AssetDefinition = {
+  kind: "cobble",
+  name: "Cobble",
+  group: "Stone",
+  biomes: ["Tropical", "Temperate", "Desert"],
+  description:
+    "A single fist-sized stone. Scatter a few, or wedge them under larger stones.",
+  radius: 0.16,
+  scaleRange: [0.8, 1.25],
+  habitat: "either",
+  hardscape: "stone",
+  build: (random) => {
+    const root = new THREE.Group();
+    const geo = weatheredStone(random() * 10);
+    const tone = BUILDING_STONE[Math.floor(random() * BUILDING_STONE.length)];
+    paint(geo, (center) => (center.y < -0.1 ? BUILDING_STONE[2] : tone));
+    const part = mesh(geo, stoneSkin(), root, [0, 0.07, 0]);
+    part.scale.set(0.3 + random() * 0.08, 0.3, 0.3 + random() * 0.06);
+    part.rotation.y = random() * Math.PI;
+    return root;
+  },
+};
+
+export const stoneBlock: AssetDefinition = {
+  kind: "stone-block",
+  name: "Stone block",
+  group: "Stone",
+  biomes: ["Tropical", "Temperate", "Desert"],
+  description:
+    "A squat, chunky stone with a flat top. Stack them into walls, or use two to hold up a slab.",
+  radius: 0.22,
+  scaleRange: [0.85, 1.15],
+  habitat: "either",
+  hardscape: "stone",
+  blocksMovement: true,
+  build: (random) => {
+    const root = new THREE.Group();
+    const height = 0.24 + random() * 0.08;
+    const geo = slab(0.4 + random() * 0.06, height, 0.34, random, 0.15);
+    const tone = BUILDING_STONE[Math.floor(random() * BUILDING_STONE.length)];
+    paint(geo, (_, normal) => (normal.y > 0.5 ? BUILDING_STONE[3] : tone));
+    const part = mesh(geo, stoneSkin(), root, [0, height / 2, 0]);
+    part.rotation.y = random() * Math.PI;
+    return root;
+  },
+};
+
+export const stoneSlab: AssetDefinition = {
+  kind: "stone-slab",
+  name: "Stone slab",
+  group: "Stone",
+  biomes: ["Tropical", "Temperate", "Desert"],
+  description:
+    "One thin, broad plate of stone. Lay it across two blocks to roof a hiding place.",
+  radius: 0.38,
+  scaleRange: [0.85, 1.15],
+  habitat: "either",
+  hardscape: "stone",
+  build: (random) => {
+    const root = new THREE.Group();
+    const height = 0.05 + random() * 0.02;
+    const geo = slab(0.78 + random() * 0.1, height, 0.56, random, 0.2);
+    paint(geo, (_, normal) =>
+      normal.y > 0.5 ? BUILDING_STONE[1] : BUILDING_STONE[2],
+    );
+    const part = mesh(geo, stoneSkin(), root, [0, height / 2, 0]);
+    part.rotation.y = random() * Math.PI;
+    return root;
   },
 };
 

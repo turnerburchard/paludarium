@@ -91,6 +91,7 @@ import { branch } from "./landscape/branch";
 import { log } from "./landscape/log";
 import { rockShelter } from "./landscape/rockShelter";
 import {
+  cobble,
   flagstone,
   granite,
   limestone,
@@ -101,6 +102,8 @@ import {
   sandstonePillar,
   scree,
   slate,
+  stoneBlock,
+  stoneSlab,
 } from "./landscape/stones";
 import { fungusLog } from "./landscape/fungusLog";
 import { snag } from "./landscape/snag";
@@ -187,6 +190,9 @@ export const assets = {
   flagstone,
   scree,
   pebbles,
+  cobble,
+  "stone-block": stoneBlock,
+  "stone-slab": stoneSlab,
   wood,
   branch,
   log,
