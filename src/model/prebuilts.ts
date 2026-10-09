@@ -1,4 +1,5 @@
 import { createObjectId } from "./objectId";
+import type { Biome } from "../assets/types";
 import type { MossSpecies } from "./moss";
 import type { AssetKind, Environment, HabitatObject } from "./schema";
 import { objectBase } from "./stacking";
@@ -23,6 +24,7 @@ export interface Prebuilt {
   id: string;
   name: string;
   description: string;
+  biomes: readonly [Biome, ...Biome[]];
   /** How far the pieces reach from the center, to keep them inside the tank. */
   radius: number;
   pieces: Piece[];
@@ -33,6 +35,7 @@ export const rockShelter: Prebuilt = {
   id: "rock-shelter",
   name: "Rock shelter",
   description: "A capstone resting on standing stones.",
+  biomes: ["Tropical", "Temperate", "Desert"],
   radius: 0.66,
   pieces: [
     { kind: "standing-stone", x: -0.44, z: 0, rotation: 0.3 },
@@ -53,6 +56,7 @@ export const prebuilts: Prebuilt[] = [
   {
     id: "mossy-shelter",
     name: "Mossy shelter",
+    biomes: ["Tropical"],
     description:
       "A moss-topped capstone on standing stones, with a fern and fittonia at its sides and leaf litter at the mouth.",
     radius: 1.05,
@@ -69,6 +73,7 @@ export const prebuilts: Prebuilt[] = [
   {
     id: "slab-cave",
     name: "Slab cave",
+    biomes: ["Tropical", "Temperate"],
     description:
       "A cushion-mossed slab laid across two blocks, with cobbles scattered at the mouth.",
     radius: 0.9,
@@ -85,6 +90,7 @@ export const prebuilts: Prebuilt[] = [
   {
     id: "granite-outcrop",
     name: "Granite outcrop",
+    biomes: ["Temperate"],
     description:
       "Two granite boulders, one cushioned with moss, above a spill of scree, a flat stone and tufts of grass.",
     radius: 1.1,
@@ -101,6 +107,7 @@ export const prebuilts: Prebuilt[] = [
   {
     id: "desert-ledge",
     name: "Desert ledge",
+    biomes: ["Desert"],
     description:
       "A banded sandstone boulder beside a stepped ledge, with pebbles and a pair of hedgehog cacti.",
     radius: 1.1,
@@ -115,6 +122,7 @@ export const prebuilts: Prebuilt[] = [
   {
     id: "root-tangle",
     name: "Root tangle",
+    biomes: ["Tropical"],
     description:
       "Gnarled tree roots over a patch of moss, with mushrooms, leaf litter and a fern.",
     radius: 1.1,

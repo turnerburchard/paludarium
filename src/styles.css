@@ -256,7 +256,7 @@ button:hover:not(:disabled) {
   display: flex;
   justify-content: center;
   gap: 6px;
-  margin: 0 18px 14px;
+  margin: 0 8px 14px;
 }
 .category-tabs button {
   min-width: 0;
@@ -267,8 +267,9 @@ button:hover:not(:disabled) {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 5px 11px;
-  font-size: var(--text-small);
+  justify-content: center;
+  padding: 7px 10px;
+  font-size: var(--text-body);
 }
 .category-tabs button:hover {
   color: #dfebcc;

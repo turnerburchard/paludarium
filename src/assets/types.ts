@@ -21,6 +21,7 @@ export const groupCategories = {
   Mushrooms: "Plants",
   Stone: "Hardscape",
   Wood: "Hardscape",
+  Prebuilt: "Hardscape",
   Amphibians: "Animals",
   Reptiles: "Animals",
   Fish: "Animals",
