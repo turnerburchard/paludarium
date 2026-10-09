@@ -96,6 +96,84 @@ try {
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
     await page.getByRole("button", { name: "Build", exact: true }).click();
+    if (viewport.width <= 760)
+      await page
+        .getByRole("navigation", { name: "Tools" })
+        .getByRole("button", { name: "Add", exact: true })
+        .click();
+    await page.getByRole("button", { name: "Hardscape", exact: true }).click();
+    const prebuiltCards = page.locator('[data-kind^="prebuilt:"]');
+    assert.equal(await prebuiltCards.count(), 5);
+    await page.getByRole("button", { name: "Filter objects" }).click();
+    const filters = page.getByRole("dialog", { name: "Filter objects" });
+    await filters.getByRole("button", { name: "Desert", exact: true }).click();
+    await filters.getByRole("button", { name: "Done", exact: true }).click();
+    assert.deepEqual(
+      await prebuiltCards.locator(".asset-name").allTextContents(),
+      ["Desert ledge"],
+    );
+    await page.getByRole("button", { name: "Filter objects" }).click();
+    await filters
+      .getByRole("button", { name: "Prebuilt", exact: true })
+      .click();
+    await filters.getByRole("button", { name: "Done", exact: true }).click();
+    assert.equal(await page.locator(".asset-card").count(), 1);
+    assert.equal(await page.locator(".library-empty").count(), 0);
+    await prebuiltCards.locator("img").waitFor();
+    await page.screenshot({
+      path: `/tmp/paludarium-prebuilt-filter-${viewport.width}.png`,
+    });
+    await page.locator('[data-kind="prebuilt:desert-ledge"]').click();
+    await page.getByRole("button", { name: "Done", exact: true }).click();
+    if (viewport.width <= 760)
+      await page
+        .getByRole("navigation", { name: "Tools" })
+        .getByRole("button", { name: "Add", exact: true })
+        .click();
+    await page.getByRole("button", { name: "Filter objects" }).click();
+    await filters.getByRole("button", { name: "Desert", exact: true }).click();
+    await filters.getByRole("button", { name: "Done", exact: true }).click();
+    assert.equal(await page.locator(".asset-card").count(), 5);
+    await page.getByRole("button", { name: "Filter objects" }).click();
+    await filters
+      .getByRole("button", { name: "Tropical", exact: true })
+      .click();
+    await filters.getByRole("button", { name: "Done", exact: true }).click();
+    assert.deepEqual(
+      await prebuiltCards.locator(".asset-name").allTextContents(),
+      ["Mossy shelter", "Slab cave", "Root tangle"],
+    );
+    await page.getByRole("button", { name: "Filter objects" }).click();
+    await filters.getByRole("button", { name: "Clear", exact: true }).click();
+    await filters.getByRole("button", { name: "Stone", exact: true }).click();
+    await filters.getByRole("button", { name: "Done", exact: true }).click();
+    assert.equal(await prebuiltCards.count(), 0);
+    assert.ok(await page.locator(".asset-card").count());
+    await page.getByRole("button", { name: "Filter objects" }).click();
+    await filters
+      .getByRole("button", { name: "Prebuilt", exact: true })
+      .click();
+    await filters.getByRole("button", { name: "Done", exact: true }).click();
+    assert.equal(await prebuiltCards.count(), 5);
+    await page.getByRole("button", { name: "Filter objects" }).click();
+    await filters.getByRole("button", { name: "Clear", exact: true }).click();
+    await filters
+      .getByRole("button", { name: "Prebuilt", exact: true })
+      .click();
+    await filters
+      .getByRole("button", { name: "Underwater", exact: true })
+      .click();
+    await filters.getByRole("button", { name: "Done", exact: true }).click();
+    assert.equal(await page.locator(".asset-card").count(), 0);
+    await page
+      .getByRole("button", { name: "Clear filters", exact: true })
+      .click();
+    assert.equal(await prebuiltCards.count(), 5);
+    await page.getByRole("button", { name: "Plants", exact: true }).click();
+    if (viewport.width <= 760)
+      await page
+        .getByRole("button", { name: "Close panel", exact: true })
+        .click();
     assert.equal(
       await page
         .getByRole("button", { name: /Redo/, includeHidden: true })
@@ -389,7 +467,7 @@ try {
   }
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: desktop and phone save migration, preset switching, immediate save, reload, scoped Undo, export/import, confirmed deletion, storage failure, file sharing, and minimal closed UI",
+    "PASS: desktop and phone prebuilt biome/type filters, save migration, preset switching, immediate save, reload, scoped Undo, export/import, confirmed deletion, storage failure, file sharing, and minimal closed UI",
   );
 } finally {
   await browser?.close();

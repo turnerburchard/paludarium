@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Plus, ListFilter } from "lucide-react";
 import {
+  assets,
   catalog,
   categoryOf,
   groupCategories,
@@ -39,6 +40,11 @@ export function Library({
   const available = catalog.filter(
     (asset) => dryGround || (asset.habitat !== "land" && !asset.soil),
   );
+  const availablePrebuilts = prebuilts.filter((prebuilt) =>
+    prebuilt.pieces.every((piece) =>
+      available.some((asset) => asset.kind === piece.kind),
+    ),
+  );
   const activeCategory = available.some(
     (asset) => categoryOf(asset) === category,
   )
@@ -51,12 +57,27 @@ export function Library({
   const groups = [...new Set(available.map((asset) => asset.group))].filter(
     (group) => groupCategories[group] === activeCategory,
   );
+  if (activeCategory === "Hardscape" && availablePrebuilts.length)
+    groups.push("Prebuilt");
   const activeGroups = chosenGroups.filter((group) => groups.includes(group));
   const shown = available.filter(
     (asset) =>
       categoryOf(asset) === activeCategory &&
       (places.length === 0 || places.some((place) => livesIn(asset, place))) &&
       (activeGroups.length === 0 || activeGroups.includes(asset.group)),
+  );
+  const shownPrebuilts = availablePrebuilts.filter(
+    (prebuilt) =>
+      activeCategory === "Hardscape" &&
+      (places.length === 0 ||
+        places.some((place) =>
+          place === "Underwater"
+            ? prebuilt.pieces.every((piece) =>
+                livesIn(assets[piece.kind], place),
+              )
+            : prebuilt.biomes.includes(place),
+        )) &&
+      (activeGroups.length === 0 || activeGroups.includes("Prebuilt")),
   );
   const filterCount = places.length + activeGroups.length;
   const clearFilters = () => {
@@ -130,38 +151,31 @@ export function Library({
           onClose={() => setFiltering(false)}
         />
       )}
-      {shown.length === 0 && (
+      {shown.length === 0 && shownPrebuilts.length === 0 && (
         <p className="library-empty">
           Nothing here matches.{" "}
           <button onClick={clearFilters}>Clear filters</button>
         </p>
       )}
       <div className="asset-grid" ref={grid}>
-        {/* Prebuilts lead the hardscape, unless filters narrow it down. */}
-        {activeCategory === "Hardscape" && filterCount === 0 && (
+        {shownPrebuilts.length > 0 && (
           <>
             <h3 className="asset-heading">Prebuilt</h3>
-            {prebuilts
-              .filter((prebuilt) =>
-                prebuilt.pieces.every((piece) =>
-                  available.some((asset) => asset.kind === piece.kind),
-                ),
-              )
-              .map((prebuilt) => (
-                <Card
-                  key={prebuilt.id}
-                  id={`prebuilt:${prebuilt.id}`}
-                  name={prebuilt.name}
-                  description={prebuilt.description}
-                  thumbnails={thumbnails}
-                  chosen={
-                    editor.tool.type === "prebuilt" &&
-                    editor.tool.prebuilt.id === prebuilt.id
-                  }
-                  onChoose={() => editor.choosePrebuilt(prebuilt)}
-                />
-              ))}
-            <h3 className="asset-heading">Pieces</h3>
+            {shownPrebuilts.map((prebuilt) => (
+              <Card
+                key={prebuilt.id}
+                id={`prebuilt:${prebuilt.id}`}
+                name={prebuilt.name}
+                description={prebuilt.description}
+                thumbnails={thumbnails}
+                chosen={
+                  editor.tool.type === "prebuilt" &&
+                  editor.tool.prebuilt.id === prebuilt.id
+                }
+                onChoose={() => editor.choosePrebuilt(prebuilt)}
+              />
+            ))}
+            {shown.length > 0 && <h3 className="asset-heading">Pieces</h3>}
           </>
         )}
         {shown.map((asset) => (
