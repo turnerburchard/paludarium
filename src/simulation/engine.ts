@@ -1,4 +1,5 @@
 import { discoveryFor, type Discovery } from "./discoveries";
+import { Steering, newSwimmer, type SwimWater, type Swimmer } from "./fish";
 import {
   HabitatGraph,
   copyVector,
@@ -16,6 +17,8 @@ import type {
 } from "./types";
 
 const STEP = 0.1;
+/** Simulated seconds in each real second. */
+export const NORMAL_SPEED = 6;
 const DAY_LENGTH = 1800;
 /** Hunger gained per simulated second, and removed by eating one insect portion. */
 const HUNGER_RATE = 0.002;
@@ -32,6 +35,12 @@ const INSECT_ARRIVALS = 0.05;
  * from where they face, at TURN_RATE radians per simulated second. */
 const TURN_START = 0.18;
 const TURN_RATE = 0.9;
+/** A fish moves on to the next node of its route once it is this close. */
+const WAYPOINT_REACH = 0.3;
+/** How far a fish sets out to explore, and how near its school mates must be
+ * for it to follow them. */
+const SWIM_RANGE = [1, 3.5];
+const SCHOOL_RANGE = 1.3;
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const validAmount = (n: number) => Number.isFinite(n) && n >= 0;
 interface Agent {
@@ -59,9 +68,15 @@ interface Agent {
     lift: number;
   };
   turning?: boolean;
+  /** Fish swim freely rather than walking node to node. */
+  swimmer?: Swimmer;
+  /** Whether the fish was keeping with its school when it chose its route. */
+  schooling?: boolean;
 }
 export interface SimulationOptions {
   random?: () => number;
+  /** The water fish swim in. */
+  water?: SwimWater;
   speed?: number;
   elapsed?: number;
   food?: FoodPatch[];
@@ -76,6 +91,9 @@ export class Ecosystem {
   private remainder = 0;
   private elapsed: number;
   private readonly random: () => number;
+  private readonly steering?: Steering;
+  /** Every fish, for schooling. */
+  private readonly fish: Swimmer[] = [];
   readonly speed: number;
   constructor(
     readonly graph: HabitatGraph,
@@ -91,7 +109,9 @@ export class Ecosystem {
       )
       .map((note) => ({ ...note }));
     this.random = options.random ?? Math.random;
-    this.speed = options.speed ?? 6;
+    this.speed = options.speed ?? NORMAL_SPEED;
+    if (options.water)
+      this.steering = new Steering(options.water, () => this.roll());
     this.elapsed = options.elapsed ?? DAY_LENGTH * 0.42;
     if (
       !Number.isFinite(this.speed) ||
@@ -120,7 +140,14 @@ export class Ecosystem {
         )
       )
         throw new Error("Invalid needs.");
+      const swimmer = animal.swimmer
+        ? structuredClone(animal.swimmer)
+        : animal.fish && newSwimmer(animal.fish, () => this.roll());
+      if (animal.species.swims && !(swimmer && this.steering))
+        throw new Error("A fish needs water to swim in.");
+      if (swimmer) this.fish.push(swimmer);
       this.agents.set(animal.id, {
+        swimmer,
         profile: { ...animal.species },
         path: [],
         arrival: "resting",
@@ -148,6 +175,12 @@ export class Ecosystem {
           motion: { progress: 0, lift: 0, tilt: 0, hop: false },
         },
       });
+      if (swimmer) {
+        const agent = this.agents.get(animal.id)!;
+        // Spread out the first routes, rather than planning them all at once.
+        agent.reconsiderAt = this.elapsed + this.roll() * 3;
+        this.showSwimmer(agent, swimmer, 0);
+      }
     }
     for (const patch of options.food ?? []) {
       this.graph.node(patch.nodeId);
@@ -164,6 +197,11 @@ export class Ecosystem {
   }
   get phase(): "day" | "night" {
     return this.elapsed % DAY_LENGTH < DAY_LENGTH / 2 ? "day" : "night";
+  }
+  /** A fish's swimming state, to carry on where it left off in a rebuilt habitat. */
+  swimmer(id: string): Swimmer | undefined {
+    const swimmer = this.agents.get(id)?.swimmer;
+    return swimmer && structuredClone(swimmer);
   }
   getAnimal(id: string): AnimalState | undefined {
     const state = this.agents.get(id)?.state;
@@ -268,6 +306,10 @@ export class Ecosystem {
     }
   }
   private update(agent: Agent) {
+    if (agent.swimmer) {
+      this.swim(agent, agent.swimmer);
+      return;
+    }
     const state = agent.state,
       needs = state.needs;
     // Grazers feed as they go, on algae the simulation doesn't track.
@@ -495,13 +537,8 @@ export class Ecosystem {
           fresh * perch * dip * (0.5 + ahead) * (0.3 + lengths.get(id)! / range)
         );
       });
-      let choice =
-        this.roll() * weights.reduce((sum, weight) => sum + weight, 0);
-      let index = 0;
-      while (index < weights.length - 1 && choice >= weights[index])
-        choice -= weights[index++];
       go(
-        candidates[index],
+        this.pick(candidates, weights),
         "resting",
         "exploring",
         unmet || "Exploring the habitat",
@@ -515,6 +552,125 @@ export class Ecosystem {
         unmet || "Watching the habitat",
         5 + this.roll() * 25,
       );
+  }
+  private swim(agent: Agent, fish: Swimmer) {
+    if (fish.roaming === agent.schooling || this.elapsed >= agent.reconsiderAt)
+      this.chooseWater(agent, fish);
+    // Head for the next node, moving on once it is near or already passed,
+    // so a route reads as one sweeping course rather than a series of legs.
+    while (agent.path.length) {
+      const next = this.graph.node(agent.path[0]).position;
+      const after = agent.path[1] && this.graph.node(agent.path[1]).position;
+      const near =
+        Math.hypot(next.x - fish.x, next.z - fish.z) < WAYPOINT_REACH;
+      if (!near && !(after && distance(fish, after) < distance(next, after)))
+        break;
+      agent.path.shift();
+      // Arriving is no reason to stop; choose somewhere else straight away.
+      if (!agent.path.length) agent.reconsiderAt = this.elapsed;
+    }
+    const goal = agent.path.length
+      ? this.graph.node(agent.path[0]).position
+      : undefined;
+    const lift = this.steering!.swim(
+      fish,
+      this.fish,
+      goal,
+      STEP / NORMAL_SPEED,
+    );
+    this.showSwimmer(agent, fish, lift);
+  }
+  private showSwimmer(agent: Agent, fish: Swimmer, lift: number) {
+    const state = agent.state;
+    const pitch = this.steering!.pitch(fish);
+    state.position = { x: fish.x, y: fish.y, z: fish.z };
+    state.direction = {
+      x: -Math.sin(fish.heading) * Math.cos(pitch),
+      y: Math.sin(pitch),
+      z: -Math.cos(fish.heading) * Math.cos(pitch),
+    };
+    state.motion = { progress: 0, lift, tilt: 0, hop: false };
+    state.moving = true;
+    state.activity = "swimming";
+    state.reason = fish.roaming
+      ? "Exploring on its own"
+      : "Swimming with the school";
+  }
+  /** A schooled fish follows where its nearest school mate is heading. A
+   * fish on its own, or with no one to follow, sets out somewhere new. */
+  private chooseWater(agent: Agent, fish: Swimmer) {
+    agent.schooling = !fish.roaming;
+    agent.path = [];
+    const start = this.graph.nearest(fish, agent.profile);
+    if (!start) {
+      agent.reconsiderAt = this.elapsed + 30;
+      return;
+    }
+    agent.state.nodeId = start.id;
+    const navigation = this.graph.routes(start.id, agent.profile);
+    const lengths = navigation.distances;
+    let target: string | undefined;
+    let nearest = SCHOOL_RANGE;
+    for (const other of fish.roaming ? [] : this.agents.values()) {
+      const mate = other.swimmer;
+      const goal = other.path.at(-1);
+      if (
+        !mate ||
+        mate === fish ||
+        mate.roaming ||
+        mate.species !== fish.species ||
+        !goal ||
+        // Set out afresh rather than join the end of a trip.
+        (lengths.get(goal) ?? 0) < SWIM_RANGE[0]
+      )
+        continue;
+      const d = Math.hypot(mate.x - fish.x, mate.z - fish.z);
+      if (d < nearest) {
+        nearest = d;
+        target = goal;
+      }
+    }
+    if (!target) {
+      // Favor water it hasn't visited and that lies ahead, so a fish makes
+      // long, purposeful outings rather than doubling back.
+      const candidates = [...lengths.keys()].filter((id) => {
+        const length = lengths.get(id)!;
+        return length >= SWIM_RANGE[0] && length <= SWIM_RANGE[1];
+      });
+      const weights = candidates.map((id) => {
+        const node = this.graph.node(id).position;
+        const dx = node.x - fish.x,
+          dz = node.z - fish.z;
+        // 1 straight ahead, 0 straight behind.
+        const ahead =
+          (1 -
+            (dx * Math.sin(fish.heading) + dz * Math.cos(fish.heading)) /
+              Math.max(Math.hypot(dx, dz), 0.001)) /
+          2;
+        return (agent.recent.includes(id) ? 0.12 : 1) * (0.2 + ahead);
+      });
+      target = this.pick(candidates, weights);
+    }
+    if (!target) {
+      agent.reconsiderAt = this.elapsed + 30;
+      return;
+    }
+    agent.path = navigation.pathTo(target);
+    agent.recent.push(target);
+    if (agent.recent.length > 20) agent.recent.shift();
+    // Choose again if the route takes far longer than it should.
+    agent.reconsiderAt =
+      this.elapsed +
+      (3 * NORMAL_SPEED * lengths.get(target)!) / (fish.speed * fish.pace) +
+      10;
+  }
+  /** One of the items, at random in proportion to its weight. */
+  private pick<T>(items: readonly T[], weights: readonly number[]) {
+    let choice = this.roll() * weights.reduce((sum, weight) => sum + weight, 0);
+    let index = 0;
+    while (index < weights.length - 1 && choice >= weights[index])
+      choice -= weights[index++];
+    return items[index];
   }
   /** Small graph cells describe the surface, not separate steps. Combine
    * straight, gently sloping stretches without cutting across corners. */

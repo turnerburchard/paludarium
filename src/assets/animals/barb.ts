@@ -12,7 +12,7 @@ export const tigerBarb: AssetDefinition = {
     "A lively gold fish with four black bands, quick in a busy school.",
   radius: 0.19,
   habitat: "water",
-  swims: { speed: 0.32, depth: 0.16 },
+  swims: { speed: 0.32, depth: [0.08, 0.24] },
   build,
 };
 

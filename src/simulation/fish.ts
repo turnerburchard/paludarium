@@ -1,8 +1,30 @@
-/** Fish swim in open water as a loose school. Like the frog engine, this owns
- * positions and decisions; the renderer only reads them. Units are scene
- * units and real seconds. */
+/** How fish move through the water. The engine chooses where each fish is
+ * going; this turns that into fluid swimming: capped turning, a loose school,
+ * a meandering wander, and avoiding obstacles with the fish's real body.
+ * Times are real seconds at normal simulation speed. */
 
-import type { Environment } from "../model/schema";
+import type { Vec3 } from "./types";
+
+/** The water fish swim in. Heights are steady swimming heights, before the
+ * bob that is drawn on top. */
+export interface SwimWater {
+  /** The nearest height to `wanted` that keeps the body off the floor and
+   * below the surface, and how far it can bob there. */
+  steady(
+    id: string,
+    x: number,
+    z: number,
+    wanted: number,
+  ): { y: number; bob: number };
+  canSwim(
+    id: string,
+    x: number,
+    y: number,
+    z: number,
+    heading: number,
+    padding?: number,
+  ): boolean;
+}
 
 export interface Fish {
   id: string;
@@ -11,27 +33,10 @@ export interface Fish {
   /** Cruising speed in scene units per second. */
   speed: number;
   x: number;
+  y: number;
   z: number;
-  /** Steady swimming height, when supplied by the habitat. */
-  y?: number;
-  /** Available vertical motion without touching the floor or surface. */
-  bob?: number;
   /** Swimming direction in radians; 0 points toward -z. */
   heading: number;
-}
-
-export interface SchoolOptions {
-  random?: () => number;
-  previous?: FishSchool;
-  canSwim?: (
-    fish: Fish,
-    x: number,
-    z: number,
-    heading: number,
-    padding?: number,
-  ) => boolean;
-  height?: (fish: Fish, x: number, z: number, preview?: Environment) => number;
-  bob?: (fish: Fish, x: number, z: number, preview?: Environment) => number;
 }
 
 const TURN_RATE = 2.2;
@@ -39,13 +44,19 @@ const TURN_ACCELERATION = 6;
 const NEIGHBOR_RANGE = 1.3;
 const PERSONAL_SPACE = 0.3;
 const LOOK_AHEAD = 0.4;
+/** How strongly a fish heads for where it is going, against schooling. */
+const GOAL_PULL = 1.5;
+/** Climbing and diving are slower than swimming forward, and ease in. */
+const CLIMB_SHARE = 0.35;
+const CLIMB_ACCELERATION = 0.15;
+const BOB_RATE = 1.3;
 /** Probe angles, nearest first, for finding open water when the shore is ahead. */
 const ESCAPE_ANGLES = [0.5, -0.5, 1, -1, 1.6, -1.6, 2.4, -2.4, Math.PI];
 
-/** Internal per-fish state: a slightly different pace, a gentle turning
- * rate (radians per second) that drifts so each fish meanders its own way,
- * and a clock for when it next leaves or rejoins the others. */
-interface Swimmer extends Fish {
+/** A fish with its swimming state: a slightly different pace, a gentle
+ * turning rate (radians per second) that drifts so each fish meanders its
+ * own way, and a clock for when it next leaves or rejoins the others. */
+export interface Swimmer extends Fish {
   pace: number;
   wander: number;
   roaming: boolean;
@@ -56,10 +67,36 @@ interface Swimmer extends Fish {
   avoidHeading?: number;
   avoidFor: number;
   turnRate: number;
+  /** Vertical speed. */
+  climb: number;
+  /** Where the bob is in its cycle. */
+  bobPhase: number;
   retreatFor: number;
   stillFor: number;
   retreatDistance: number;
-  trail: Array<Pick<Fish, "x" | "z" | "heading">>;
+  trail: Array<Pick<Fish, "x" | "y" | "z" | "heading">>;
+}
+
+export function newSwimmer(fish: Fish, random: () => number): Swimmer {
+  return {
+    ...fish,
+    pace: 0.85 + random() * 0.3,
+    wander: 0,
+    roaming: false,
+    // Fish start schooled, then each drifts off on its own schedule.
+    untilChange: 3 + random() * 15,
+    avoidSide: 0,
+    clearFor: 0,
+    untilProbe: 0,
+    avoidFor: 0,
+    turnRate: 0,
+    climb: 0,
+    bobPhase: random() * Math.PI * 2,
+    retreatFor: 0,
+    stillFor: 0,
+    retreatDistance: 0,
+    trail: [],
+  };
 }
 
 const direction = (heading: number) => ({
@@ -69,6 +106,8 @@ const direction = (heading: number) => ({
 /** Smallest signed angle from a to b. */
 const turnBetween = (a: number, b: number) =>
   Math.atan2(Math.sin(b - a), Math.cos(b - a));
+const clamp = (value: number, limit: number) =>
+  Math.max(-limit, Math.min(limit, value));
 
 function turnToward(
   heading: number,
@@ -77,9 +116,8 @@ function turnToward(
   seconds: number,
 ) {
   const turn = turnBetween(heading, target);
-  const wanted = Math.max(-TURN_RATE, Math.min(TURN_RATE, turn / seconds));
-  const acceleration = TURN_ACCELERATION * seconds;
-  rate += Math.max(-acceleration, Math.min(acceleration, wanted - rate));
+  const wanted = clamp(turn / seconds, TURN_RATE);
+  rate += clamp(wanted - rate, TURN_ACCELERATION * seconds);
   const rotation = rate * seconds;
   if (
     Math.sign(rotation) === Math.sign(turn) &&
@@ -89,96 +127,48 @@ function turnToward(
   return { heading: heading + rotation, rate };
 }
 
-export class FishSchool {
-  private readonly fish = new Map<string, Swimmer>();
-  private readonly random: () => number;
-  private readonly options: Pick<SchoolOptions, "canSwim" | "height" | "bob">;
-
+export class Steering {
   constructor(
-    fish: readonly Fish[],
-    /** Whether a point is open water a fish can be in. */
-    private readonly isWater: (x: number, z: number) => boolean,
-    options: SchoolOptions = {},
+    private readonly water: SwimWater,
+    private readonly random: () => number,
+  ) {}
+
+  /** Swim for `dt` seconds toward `goal`, among the rest of the `fish`.
+   * Returns how far the bob lifts the body. */
+  swim(
+    f: Swimmer,
+    fish: Iterable<Swimmer>,
+    goal: Vec3 | undefined,
+    dt: number,
   ) {
-    this.random = options.random ?? options.previous?.random ?? Math.random;
-    this.options = {
-      canSwim: options.canSwim,
-      height: options.height,
-      bob: options.bob,
-    };
-    for (const f of fish) {
-      const old = options.previous?.fish.get(f.id);
-      const unchanged =
-        old &&
-        old.species === f.species &&
-        old.x === f.x &&
-        old.z === f.z &&
-        old.heading === f.heading;
-      this.fish.set(
-        f.id,
-        unchanged
-          ? { ...old, ...f, trail: old.trail.map((pose) => ({ ...pose })) }
-          : {
-              ...f,
-              pace: 0.85 + this.random() * 0.3,
-              wander: 0,
-              roaming: false,
-              // Fish start schooled, then each drifts off on its own schedule.
-              untilChange: 3 + this.random() * 15,
-              avoidSide: 0,
-              clearFor: 0,
-              untilProbe: 0,
-              avoidFor: 0,
-              turnRate: 0,
-              retreatFor: 0,
-              stillFor: 0,
-              retreatDistance: 0,
-              trail: [],
-            },
-      );
-    }
+    f.bobPhase += BOB_RATE * dt;
+    this.steer(f, fish, goal, dt);
+    return Math.sin(f.bobPhase) * this.water.steady(f.id, f.x, f.z, f.y).bob;
   }
 
-  get(id: string, preview?: Environment): Fish | undefined {
-    const f = this.fish.get(id);
-    return (
-      f && {
-        id: f.id,
-        species: f.species,
-        speed: f.speed,
-        x: f.x,
-        z: f.z,
-        heading: f.heading,
-        ...(this.options.height && {
-          y: this.options.height(f, f.x, f.z, preview),
-        }),
-        ...(this.options.bob && {
-          bob: this.options.bob(f, f.x, f.z, preview),
-        }),
-      }
-    );
+  /** The slope of the fish's climb or dive. */
+  pitch(f: Swimmer) {
+    return Math.atan2(f.climb, f.speed * f.pace);
   }
 
-  all(): Fish[] {
-    return [...this.fish.keys()].map((id) => this.get(id)!);
-  }
-
-  /** Long frames are capped, like the frog engine, so a hidden tab can't jump. */
-  advance(realSeconds: number, paused = false, heldIds?: ReadonlySet<string>) {
-    if (paused || realSeconds <= 0) return;
-    const dt = Math.min(realSeconds, 0.1);
-    for (const f of this.fish.values())
-      if (!heldIds?.has(f.id)) this.swim(f, dt);
-  }
-
-  private swim(f: Swimmer, dt: number) {
+  private steer(
+    f: Swimmer,
+    fish: Iterable<Swimmer>,
+    goal: Vec3 | undefined,
+    dt: number,
+  ) {
+    const climbLimit = f.speed * f.pace * CLIMB_SHARE;
+    const climb = clamp(((goal?.y ?? f.y) - f.y) * 0.8, climbLimit);
+    f.climb += clamp(climb - f.climb, CLIMB_ACCELERATION * dt);
     if (f.retreatFor > 0) {
       f.retreatFor -= dt;
+      f.climb = 0;
       // A newly placed fish may already face a dead end, with no earlier
       // poses to retrace. Continue straight backward only through clear water.
       const backward = direction(f.heading);
       const previous = f.trail.at(-1) ?? {
         x: f.x - backward.x * LOOK_AHEAD,
+        y: f.y,
         z: f.z - backward.z * LOOK_AHEAD,
         heading: f.heading,
       };
@@ -192,10 +182,12 @@ export class FishSchool {
           Math.abs(turn) / (TURN_RATE * dt),
         );
       const x = f.x + (previous.x - f.x) * fraction;
+      const y = f.y + (previous.y - f.y) * fraction;
       const z = f.z + (previous.z - f.z) * fraction;
       const heading = f.heading + turn * fraction;
-      if (this.pathClear(f, x, z, heading)) {
+      if (this.pathClear(f, x, y, z, heading)) {
         f.x = x;
+        f.y = y;
         f.z = z;
         f.heading = heading;
         f.retreatDistance += distance * fraction;
@@ -223,7 +215,7 @@ export class FishSchool {
       alignZ = 0,
       centerX = 0,
       centerZ = 0;
-    for (const other of this.fish.values()) {
+    for (const other of fish) {
       if (other === f || other.species !== f.species) continue;
       const dx = other.x - f.x,
         dz = other.z - f.z,
@@ -247,6 +239,15 @@ export class FishSchool {
       steerZ += (alignZ / neighbors) * 0.6;
       steerX += (centerX / neighbors - f.x) * 0.5;
       steerZ += (centerZ / neighbors - f.z) * 0.5;
+    }
+    if (goal) {
+      const dx = goal.x - f.x,
+        dz = goal.z - f.z,
+        d = Math.hypot(dx, dz);
+      if (d > 0.001) {
+        steerX += (dx / d) * GOAL_PULL;
+        steerZ += (dz / d) * GOAL_PULL;
+      }
     }
 
     // A roaming fish meanders more widely than one keeping with the school.
@@ -303,11 +304,9 @@ export class FishSchool {
     );
   }
 
-  private open(f: Fish, x: number, z: number, heading: number, padding = 0) {
-    return (
-      this.isWater(x, z) &&
-      (this.options.canSwim?.(f, x, z, heading, padding) ?? true)
-    );
+  /** The steady height at a point, continuing the current climb. */
+  private height(f: Swimmer, x: number, z: number, seconds: number) {
+    return this.water.steady(f.id, x, z, f.y + f.climb * seconds).y;
   }
 
   /** Probe the arc the fish can actually turn through, not a ray it would
@@ -334,27 +333,29 @@ export class FishSchool {
       const forward = direction(heading);
       x += forward.x * step;
       z += forward.z * step;
-      if (!this.open(f, x, z, heading, 0.012 * Math.min(1, traveled / 0.08)))
-        return traveled;
+      const y = this.height(f, x, z, traveled / speed);
+      const padding = 0.012 * Math.min(1, traveled / 0.08);
+      if (!this.water.canSwim(f.id, x, y, z, heading, padding)) return traveled;
       traveled += step;
     }
     return reach;
   }
 
-  private pathClear(f: Fish, x: number, z: number, heading: number) {
+  private pathClear(f: Fish, x: number, y: number, z: number, heading: number) {
     // Sweep both translation and rotation so a fin or tail cannot cut
     // through a thin branch between two otherwise clear positions.
     const samples = Math.max(
       1,
-      Math.ceil(Math.hypot(x - f.x, z - f.z) / 0.01),
+      Math.ceil(Math.hypot(x - f.x, y - f.y, z - f.z) / 0.01),
       Math.ceil(Math.abs(heading - f.heading) / 0.04),
     );
     for (let i = 1; i <= samples; i++) {
       const t = i / samples;
       if (
-        !this.open(
-          f,
+        !this.water.canSwim(
+          f.id,
           f.x + (x - f.x) * t,
+          f.y + (y - f.y) * t,
           f.z + (z - f.z) * t,
           f.heading + (heading - f.heading) * t,
         )
@@ -369,9 +370,11 @@ export class FishSchool {
     const step = direction(turning.heading);
     const x = f.x + step.x * distance,
       z = f.z + step.z * distance;
-    if (this.pathClear(f, x, z, turning.heading)) {
+    const y = this.height(f, x, z, dt);
+    if (this.pathClear(f, x, y, z, turning.heading)) {
       this.remember(f);
       f.x = x;
+      f.y = y;
       f.z = z;
       f.heading = turning.heading;
       f.turnRate = turning.rate;
@@ -380,10 +383,11 @@ export class FishSchool {
     }
     f.untilProbe = 0;
     f.stillFor += dt;
+    f.climb = 0;
     if (
       f.stillFor < 0.8 &&
       Math.abs(turning.heading - f.heading) > 0.001 &&
-      this.pathClear(f, f.x, f.z, turning.heading)
+      this.pathClear(f, f.x, f.y, f.z, turning.heading)
     ) {
       this.remember(f);
       f.heading = turning.heading;
@@ -392,17 +396,16 @@ export class FishSchool {
     }
     f.turnRate = 0;
     const forward = direction(f.heading);
-    if (
-      this.pathClear(
-        f,
-        f.x + forward.x * distance,
-        f.z + forward.z * distance,
-        f.heading,
-      )
-    ) {
+    const ahead = {
+      x: f.x + forward.x * distance,
+      z: f.z + forward.z * distance,
+    };
+    const level = this.height(f, ahead.x, ahead.z, 0);
+    if (this.pathClear(f, ahead.x, level, ahead.z, f.heading)) {
       this.remember(f);
-      f.x += forward.x * distance;
-      f.z += forward.z * distance;
+      f.x = ahead.x;
+      f.y = level;
+      f.z = ahead.z;
       f.stillFor = 0;
       return;
     }
@@ -420,7 +423,7 @@ export class FishSchool {
   }
 
   private remember(f: Swimmer) {
-    f.trail.push({ x: f.x, z: f.z, heading: f.heading });
+    f.trail.push({ x: f.x, y: f.y, z: f.z, heading: f.heading });
     if (f.trail.length > 120) f.trail.shift();
   }
 }

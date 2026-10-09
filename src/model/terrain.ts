@@ -65,19 +65,38 @@ export function groundNormal(x: number, z: number, env: Environment) {
   const length = Math.hypot(dx, 2 * step, dz);
   return { x: -dx / length, y: (2 * step) / length, z: -dz / length };
 }
-/** Stretch each species' preferred depth in a deep tank, keeping shallow
- * pond behavior unchanged and enough clearance above the substrate. */
-export function swimmingHeight(
+/** Depths below the surface are given as in water 0.4 deep. Deeper water
+ * stretches them in proportion, so schools spread through a deep tank, while
+ * shallow ponds keep their real depths. */
+function depthScale(x: number, z: number, env: Environment) {
+  return Math.max(1, (env.water - groundHeight(x, z, env)) / 0.4);
+}
+/** The height at a depth, on that 0.4-deep scale. */
+export function heightAtDepth(
   x: number,
   z: number,
   env: Environment,
   depth: number,
-  bob = 0,
+) {
+  return env.water - depth * depthScale(x, z, env);
+}
+/** The depth of a height, on that 0.4-deep scale. */
+export function depthAt(x: number, z: number, env: Environment, y: number) {
+  return (env.water - y) / depthScale(x, z, env);
+}
+/** The middle of a species' depth range, with clearance above the substrate. */
+export function swimmingHeight(
+  x: number,
+  z: number,
+  env: Environment,
+  depth: readonly [number, number],
   clearance = 0.05,
 ): number {
-  const ground = groundHeight(x, z, env);
-  const preferredDepth = depth * Math.max(1, (env.water - ground) / 0.4);
-  return Math.max(ground + clearance, env.water - preferredDepth + bob);
+  const middle = (depth[0] + Math.min(depth[1], 0.4)) / 2;
+  return Math.max(
+    groundHeight(x, z, env) + clearance,
+    heightAtDepth(x, z, env, middle),
+  );
 }
 export function boundedPosition(
   x: number,

@@ -3,31 +3,26 @@ import { useFrame } from "@react-three/fiber";
 import type { EcosystemController } from "../simulation/useEcosystem";
 import * as THREE from "three";
 import type { Vec3 } from "../simulation/types";
-import { assetRadius, assets, isAnimal } from "../assets";
+import { assetRadius, isAnimal } from "../assets";
 import { juvenileScale } from "../simulation/lifeCycle";
-import { swimmingHeight } from "../model/terrain";
-import type { Environment } from "../model/schema";
 import type { FoliageVisitor } from "./foliageMotion";
 
 export function EcosystemLife({
   ecosystem,
-  environment,
   foliageVisitors,
   paused,
   heldId,
 }: {
   ecosystem: EcosystemController;
-  environment: Environment;
   foliageVisitors: RefObject<FoliageVisitor[]>;
   paused: boolean;
   heldId: string | null;
 }) {
   const held = useMemo(() => new Set(heldId ? [heldId] : []), [heldId]);
   useFrame((_, dt) => {
-    const { engine, fish } = ecosystem.live.current!;
+    const { engine } = ecosystem.live.current!;
     const stopped = paused || document.hidden;
     engine.advance(dt, stopped, held);
-    fish.advance(dt, stopped, held);
     ecosystem.advanceLife(dt, stopped);
     if (document.hidden) return;
     const live = ecosystem.live.current!;
@@ -37,30 +32,16 @@ export function EcosystemLife({
     for (const animal of live.world.objects) {
       if (!isAnimal(animal.kind)) continue;
       const state = live.engine.observeRenderedAnimal(animal.id);
-      const swimmer = state ? undefined : live.fish.get(animal.id, environment);
-      if (!state && !swimmer) continue;
+      if (!state) continue;
       const visitor = (visitors[count++] ??= {
         position: { x: 0, y: 0, z: 0 },
         radius: 0,
       });
-      if (state) {
-        visitor.position.x = state.position.x;
-        visitor.position.y = state.position.y + state.motion.lift;
-        visitor.position.z = state.position.z;
-      } else if (swimmer) {
-        visitor.position.x = swimmer.x;
-        visitor.position.y =
-          swimmer.y ??
-          swimmingHeight(
-            swimmer.x,
-            swimmer.z,
-            environment,
-            assets[animal.kind].swims!.depth,
-          );
-        visitor.position.z = swimmer.z;
-      }
+      visitor.position.x = state.position.x;
+      visitor.position.y = state.position.y + state.motion.lift;
+      visitor.position.z = state.position.z;
       visitor.perchedOn =
-        state?.surface === "leaf" && !state.motion.hop
+        state.surface === "leaf" && !state.motion.hop
           ? live.engine.graph.node(state.nodeId).plantId
           : undefined;
       visitor.radius =

@@ -48,6 +48,15 @@ export interface AnimalBehavior {
   water?: "visits" | "lives";
 }
 
+/** How a fish swims. Speed is in scene units per real second at normal
+ * simulation speed. Depth is the range below the surface it keeps to, as in
+ * water 0.4 deep: deeper water stretches it, so schools spread through a deep
+ * tank. Anything past 0.4 reaches the bottom. */
+export interface Swimming {
+  speed: number;
+  depth: readonly [number, number];
+}
+
 /** Everything the app knows about one kind of placeable thing. */
 export interface AssetDefinition {
   kind: AssetKind;
@@ -79,8 +88,7 @@ export interface AssetDefinition {
   hardscape?: "stone" | "wood";
   behavior?: AnimalBehavior;
   perches?(random: () => number): PlantPerch[];
-  /** How a fish swims: cruising speed, and how far below the surface it keeps. */
-  swims?: { speed: number; depth: number };
+  swims?: Swimming;
   /** Sheltered spots inside the object, such as under a rock overhang. */
   dens?(random: () => number): Den[];
   /** Builds a fresh model. The same seed always gives the same shape. */

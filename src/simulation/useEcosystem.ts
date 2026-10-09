@@ -1,15 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { assets, isAnimal } from "../assets";
+import { isAnimal } from "../assets";
 import type { HabitatObject, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
-import {
-  groundHeight,
-  onlyPaintDiffers,
-  swimmingHeight,
-} from "../model/terrain";
-import { createFishSchool, createWorldEcosystem } from "./worldHabitat";
+import { groundHeight, onlyPaintDiffers } from "../model/terrain";
+import { createWorldEcosystem } from "./worldHabitat";
 import type { Ecosystem } from "./engine";
-import type { FishSchool } from "./fish";
 import { advanceLife as evolveLife, habitatSupport } from "./lifeCycle";
 import type { Vec3 } from "./types";
 
@@ -31,14 +26,12 @@ export function useEcosystem(
   const live = useRef<{
     world: World;
     engine: Ecosystem;
-    fish: FishSchool;
     lifeRemainder: number;
   } | null>(null);
   if (!live.current)
     live.current = {
       world,
       engine: createWorldEcosystem(world),
-      fish: createFishSchool(world),
       lifeRemainder: 0,
     };
   const [snapshot, setSnapshot] = useState(() =>
@@ -89,7 +82,6 @@ export function useEcosystem(
     live.current = {
       world,
       engine: createWorldEcosystem(world, sharesAnimals ? previous : undefined),
-      fish: createFishSchool(world, sharesAnimals ? previous : undefined),
       lifeRemainder: 0,
     };
     setSnapshot(live.current.engine.snapshot());
@@ -104,24 +96,12 @@ export function useEcosystem(
   /** Whether the animal has anywhere it can live: ground it can walk, or
    * water it can swim. */
   function canLive(id: string) {
-    const { engine, fish } = live.current!;
-    return !!engine.observeAnimal(id) || !!fish.get(id);
+    return !!live.current!.engine.observeAnimal(id);
   }
   /** Where the animal was last drawn, before the habitat forgets it. */
   function remainsOf(object: HabitatObject): Remains {
-    const { engine, fish, world } = live.current!;
+    const { engine, world } = live.current!;
     const env = world.environment;
-    const swimmer = fish.get(object.id);
-    if (swimmer) {
-      const { x, z } = swimmer;
-      const depth = assets[object.kind].swims!.depth;
-      return {
-        object,
-        position: { x, y: swimmer.y ?? swimmingHeight(x, z, env, depth), z },
-        heading: swimmer.heading,
-        restY: groundHeight(x, z, env),
-      };
-    }
     const animal = engine.observeRenderedAnimal(object.id);
     if (!animal) {
       const y = objectBase(object, env);
@@ -135,6 +115,7 @@ export function useEcosystem(
     const { position, direction, surface } = animal;
     const falls =
       animal.grounded ||
+      surface === "water" ||
       surface === "leaf" ||
       surface === "stem" ||
       surface === "glass";
@@ -175,7 +156,6 @@ export function useEcosystem(
       const bodies = died.map(remainsOf);
       if (bodies.length) setRemains((r) => [...r, ...bodies]);
       current.engine = createWorldEcosystem(next, current);
-      current.fish = createFishSchool(next, current);
     }
     current.world = next;
     onLifeChange(previous, next);

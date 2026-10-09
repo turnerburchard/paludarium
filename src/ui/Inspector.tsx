@@ -109,7 +109,8 @@ export function Inspector({
               time to recover.
             </p>
           ) : null}
-          {state && <AnimalStatus animal={state} compact />}
+          {/* Fish have no needs yet. */}
+          {state && !asset.swims && <AnimalStatus animal={state} compact />}
         </div>
       )}
       {!view && (

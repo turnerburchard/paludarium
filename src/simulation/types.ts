@@ -1,5 +1,6 @@
 import type { Discovery } from "./discoveries";
-import type { AnimalBehavior } from "../assets/types";
+import type { AnimalBehavior, Swimming } from "../assets/types";
+import type { Fish, Swimmer } from "./fish";
 
 /** Engine units are scene units and simulated seconds. Needs are normalized to 0–1. */
 export interface Vec3 {
@@ -7,7 +8,14 @@ export interface Vec3 {
   y: number;
   z: number;
 }
-export type Surface = "ground" | "glass" | "stem" | "leaf" | "bark" | "stone";
+export type Surface =
+  | "ground"
+  | "glass"
+  | "stem"
+  | "leaf"
+  | "bark"
+  | "stone"
+  | "water";
 export interface HabitatNode {
   id: string;
   position: Vec3;
@@ -19,11 +27,17 @@ export interface HabitatNode {
   shelter: number;
   neighbors: string[];
   perchHeight?: number;
+  /** Open water: how far below the surface, on the scale of `swims.depth`,
+   * whether this is the bottom of the water column, and the widest fish body
+   * that fits here. */
+  swim?: { depth: number; bottom: boolean; room: number };
   plantId?: string;
   supportId?: string;
 }
 export interface SpeciesProfile extends AnimalBehavior {
   id: string;
+  /** Fish swim through open water, and fit where there is `room` for them. */
+  swims?: Swimming & { room: number };
 }
 export interface Needs {
   hunger: number;
@@ -38,13 +52,17 @@ export type Activity =
   | "bathing"
   | "seeking-shelter"
   | "sleeping"
-  | "resting";
+  | "resting"
+  | "swimming";
 export interface AnimalSeed {
   id: string;
   species: SpeciesProfile;
   nodeId: string;
   needs?: Needs;
   direction?: Vec3;
+  /** A fish starts swimming from here, or carries on as it was. */
+  fish?: Fish;
+  swimmer?: Swimmer;
 }
 export interface AnimalState {
   id: string;

@@ -1,4 +1,4 @@
-import type { World } from "../model/schema";
+import type { HabitatObject, World } from "../model/schema";
 import {
   assetRadius,
   assets,
@@ -8,11 +8,12 @@ import {
   plantPerches,
 } from "../assets";
 import { plantCondition } from "../model/plants";
-import { groundHeight, placementProblem } from "../model/terrain";
+import { groundHeight, swimmingHeight } from "../model/terrain";
 import { objectBase } from "../model/stacking";
 import { transformPlantPoint } from "../model/plantSurfaces";
-import { FishSchool } from "./fish";
+import type { Fish } from "./fish";
 import { SwimSpace } from "./swimSpace";
+import { WIDEST_ROOM, waterNodes } from "./waterNodes";
 import { HabitatNodeGrid } from "./nodeGrid";
 import { LandSurfaces } from "./landSurfaces";
 import { Ecosystem } from "./engine";
@@ -45,11 +46,16 @@ function habitatClearance(world: World) {
   );
 }
 
-// Moving animals leaves surfaces intact; a changed maximum footprint does not.
+const hasFish = (world: World) =>
+  world.objects.some((object) => assets[object.kind].swims);
+
+// Moving animals leaves surfaces intact; a changed maximum footprint does
+// not, and nor does the first fish or the last, which open or close the water.
 function sameHabitat(a: World, b: World) {
   if (
     a.environment !== b.environment ||
-    habitatClearance(a) !== habitatClearance(b)
+    habitatClearance(a) !== habitatClearance(b) ||
+    hasFish(a) !== hasFish(b)
   )
     return false;
   const objects = a.objects.filter((object) => !isAnimal(object.kind));
@@ -377,6 +383,7 @@ export function buildHabitat(world: World): HabitatGraph {
         perch.neighbors.push(other.id);
         other.neighbors.push(perch.id);
       }
+  if (hasFish(world)) nodes.push(...waterNodes(world, new SwimSpace(world)));
   return new HabitatGraph(nodes);
 }
 
@@ -401,6 +408,7 @@ function blend(a: Vec3, b: Vec3, t: number): Vec3 {
 export function createWorldEcosystem(
   world: World,
   previous?: { world: World; engine: Ecosystem },
+  random?: () => number,
 ): Ecosystem {
   const graph =
       previous && sameHabitat(previous.world, world)
@@ -408,7 +416,10 @@ export function createWorldEcosystem(
         : buildHabitat(world),
     snapshot = previous?.engine.snapshot();
   const animals: AnimalSeed[] = [];
+  const water = hasFish(world) ? new SwimSpace(world) : undefined;
   for (const object of world.objects) {
+    const fish = water && swimmingFish(world, object, water, graph, previous);
+    if (fish) animals.push(fish);
     const behavior = assets[object.kind].behavior;
     if (!behavior) continue;
     const species: SpeciesProfile = { id: object.kind, ...behavior };
@@ -475,72 +486,96 @@ export function createWorldEcosystem(
     food.set(nodeId, target);
   }
   return new Ecosystem(graph, animals, {
+    random,
+    water,
     elapsed: snapshot?.elapsed,
     discoveries: snapshot?.discoveries,
     food: [...food.values()],
   });
 }
 /** Ordinary edits preserve live fish. A moved fish starts where it was
- * placed; a newly blocked fish finds nearby clear water. */
-export function createFishSchool(
+ * placed; a newly blocked fish finds nearby clear water. A fish with no open
+ * water anywhere is stranded and left out. */
+function swimmingFish(
   world: World,
-  previous?: { world: World; fish: FishSchool },
-  random?: () => number,
-): FishSchool {
+  object: HabitatObject,
+  water: SwimSpace,
+  graph: HabitatGraph,
+  previous?: { world: World; engine: Ecosystem },
+): AnimalSeed | undefined {
+  const swims = assets[object.kind].swims;
+  if (!swims) return undefined;
   const env = world.environment;
-  const swimmers = world.objects.flatMap((object) => {
-    const swims = assets[object.kind].swims;
-    return swims ? [{ object, swims }] : [];
-  });
-  // Every swimmer shares the open-water placement rule.
-  const isWater = (x: number, z: number) =>
-    Math.abs(x) < env.width / 2 &&
-    Math.abs(z) < env.depth / 2 &&
-    !placementProblem("fish", x, z, env);
-  if (!swimmers.length) return new FishSchool([], isWater);
-  const space = new SwimSpace(world);
-  // A fish with no open water anywhere is stranded and left out.
-  const fish = swimmers.flatMap(({ object, swims }) => {
-    const old = previous?.world.objects.find((o) => o.id === object.id);
-    const swimming = previous?.fish.get(object.id);
-    const unmoved =
-      old &&
-      old.kind === object.kind &&
-      old.x === object.x &&
-      old.z === object.z;
-    const fish = {
-      id: object.id,
-      species: object.kind,
-      speed: swims.speed,
-      x: swimming && unmoved ? swimming.x : object.x,
-      z: swimming && unmoved ? swimming.z : object.z,
-      heading:
-        swimming && unmoved
-          ? swimming.heading + (object.rotation - old.rotation)
-          : object.rotation,
-    };
-    const clear = (x: number, z: number, heading: number) =>
-      isWater(x, z) && space.canStart(fish, x, z, heading);
-    if (clear(fish.x, fish.z, fish.heading)) return [fish];
-    // An edit may put stone or wood around a live fish. Only that fish
-    // moves to the nearest available gap; the rest of the school stays put.
-    const reach = Math.hypot(env.width, env.depth);
-    for (let radius = 0.08; radius < reach; radius += 0.08)
-      for (let i = 0; i < 32; i++) {
-        const angle = (i * Math.PI * 2) / 32;
-        const x = fish.x + Math.cos(angle) * radius;
-        const z = fish.z + Math.sin(angle) * radius;
-        if (clear(x, z, fish.heading)) return [{ ...fish, x, z }];
+  const species: SpeciesProfile = {
+    id: object.kind,
+    nocturnal: false,
+    climbs: false,
+    speed: swims.speed,
+    water: "lives",
+    swims: {
+      ...swims,
+      room: Math.min(water.room(object.id), WIDEST_ROOM),
+    },
+  };
+  const old = previous?.world.objects.find((o) => o.id === object.id);
+  const swimming = previous?.engine.swimmer(object.id);
+  const unmoved =
+    swimming &&
+    old &&
+    old.kind === object.kind &&
+    old.x === object.x &&
+    old.z === object.z;
+  const fish: Fish = unmoved
+    ? {
+        id: object.id,
+        species: object.kind,
+        speed: swims.speed,
+        x: swimming.x,
+        y: swimming.y,
+        z: swimming.z,
+        heading: swimming.heading + (object.rotation - old.rotation),
       }
-    return [];
-  });
-  return new FishSchool(fish, isWater, {
-    random,
-    previous: previous?.fish,
-    canSwim: space.canSwim,
-    height: space.height,
-    bob: space.bob,
-  });
+    : {
+        id: object.id,
+        species: object.kind,
+        speed: swims.speed,
+        x: object.x,
+        y: swimmingHeight(object.x, object.z, env, swims.depth),
+        z: object.z,
+        heading: object.rotation,
+      };
+  const start = (x: number, z: number, wanted: number) => {
+    const y = water.steady(object.id, x, z, wanted).y;
+    if (!water.canStart(object.id, x, y, z, fish.heading)) return undefined;
+    const position = { ...fish, x, y, z };
+    const node = graph.nearest(position, species);
+    return node && { position, node };
+  };
+  let found = start(fish.x, fish.z, fish.y);
+  // An edit may put stone or wood around a live fish. Only that fish moves
+  // to the nearest available gap; the rest of the school stays put.
+  const reach = Math.hypot(env.width, env.depth);
+  for (let radius = 0.08; !found && radius < reach; radius += 0.08)
+    for (let i = 0; !found && i < 32; i++) {
+      const angle = (i * Math.PI * 2) / 32;
+      const x = fish.x + Math.cos(angle) * radius;
+      const z = fish.z + Math.sin(angle) * radius;
+      found = start(x, z, swimmingHeight(x, z, env, swims.depth));
+    }
+  if (!found) return undefined;
+  const carriesOn =
+    unmoved &&
+    found.position.x === swimming.x &&
+    found.position.y === swimming.y &&
+    found.position.z === swimming.z &&
+    fish.heading === swimming.heading;
+  return {
+    id: object.id,
+    species,
+    nodeId: found.node.id,
+    needs: previous?.engine.getAnimal(object.id)?.needs,
+    ...(carriesOn ? { swimmer: swimming } : { fish: found.position }),
+  };
 }
 
 /** Insects breed under cover: well-sheltered dry ground becomes a colony whose
