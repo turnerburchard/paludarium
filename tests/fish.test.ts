@@ -273,6 +273,9 @@ describe("fish in a real tank", () => {
     "Fish from older Cloud Forest saves escape tight starting spots and keep exploring (seed %s)",
     (seed) => {
       const world = makePreset("tropical");
+      // Fixed ids, since crowded fish break ties by id and fresh random ids
+      // made each run a different simulation.
+      world.objects.forEach((o, i) => (o.id = `object-${i}`));
       // Preserve the full-size fish and placements from older saved worlds,
       // before the preset was changed to start smaller fish in open water.
       const poses = [
