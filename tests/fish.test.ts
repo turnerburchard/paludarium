@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  CURLED_LENGTH,
   Steering,
   newSwimmer,
   type Fish,
@@ -12,7 +13,7 @@ import { createWorldEcosystem } from "../src/simulation/worldHabitat";
 import { SwimSpace } from "../src/simulation/swimSpace";
 import { assets } from "../src/assets";
 import type { World } from "../src/model/schema";
-import type { Vec3 } from "../src/simulation/types";
+import type { AnimalState, Vec3 } from "../src/simulation/types";
 
 /** A round pond of radius 1 centered on the origin, at any depth. */
 const pond: SwimWater = {
@@ -197,7 +198,48 @@ describe("fish steering", () => {
     expect(steepest).toBeGreaterThan(0.1);
     expect(steepest).toBeLessThan(0.4);
   });
+
+  it("curls up to turn around at the end of a channel narrower than itself", () => {
+    // A pond with a dead-end channel off it, a little wider than a curled
+    // fish but narrower than a straight one.
+    const open = (x: number, z: number) =>
+      Math.hypot(x, z - 1) < 1 || (Math.abs(x) < 0.08 && z > -0.8);
+    const channel: SwimWater = {
+      ...pond,
+      canSwim: (_id, x, _y, z, heading, clearance) => {
+        const half = 0.1 * (clearance?.curl ? CURLED_LENGTH : 1);
+        const dx = -Math.sin(heading) * half,
+          dz = -Math.cos(heading) * half;
+        return open(x + dx, z + dz) && open(x - dx, z - dz);
+      },
+    };
+    const s = school([{ ...five()[0], x: 0, z: -0.3, heading: 0 }], channel);
+    for (let i = 0; i < 15 * 30 && s.get("f0").z < 0.3; i++) {
+      const before = s.get("f0");
+      const { x, z, heading } = before;
+      s.advance(1 / 30);
+      const after = s.get("f0");
+      // Never swims backward.
+      expect(
+        (after.x - x) * -Math.sin(heading) + (after.z - z) * -Math.cos(heading),
+      ).toBeGreaterThanOrEqual(-1e-9);
+    }
+    expect(s.get("f0").z).toBeGreaterThanOrEqual(0.3);
+  });
 });
+
+/** A fish never overlaps anything, except that one curled up from a tight
+ * turn pushes leaves aside. */
+function expectClear(
+  space: SwimSpace,
+  id: string,
+  { position: { x, y, z }, direction, motion }: AnimalState,
+) {
+  const heading = Math.atan2(-direction.x, -direction.z);
+  expect(
+    space.canStart(id, x, y, z, heading, { curl: Math.sign(motion.bend) }),
+  ).toBe(true);
+}
 
 /** Every fish's position, by id. */
 function fishIn(world: World, engine: ReturnType<typeof createWorldEcosystem>) {
@@ -223,12 +265,11 @@ describe("fish in a real tank", () => {
         engine.advance(0.25);
         engine.advance(0.25);
         for (const [i, { object, state }] of fish.entries()) {
-          const { x, y, z } = state.position;
-          const heading = Math.atan2(-state.direction.x, -state.direction.z);
+          const { x, z } = state.position;
           expect(Math.abs(x)).toBeLessThan(env.width / 2);
           expect(Math.abs(z)).toBeLessThan(env.depth / 2);
           expect(placementProblem("fish", x, z, env)).toBeNull();
-          expect(space.canStart(object.id, x, y, z, heading)).toBe(true);
+          expectClear(space, object.id, state);
           traveled.set(
             object.id,
             traveled.get(object.id)! +
@@ -356,14 +397,13 @@ describe("fish in a real tank", () => {
         for (let tick = 0; tick < 60 * 30; tick++) {
           engine.advance(1 / 30);
           fish.forEach(({ object, state }, i) => {
-            const { x, y, z } = state.position;
+            const { x, z } = state.position;
             const range = ranges[i];
             range.minX = Math.min(range.minX, x);
             range.maxX = Math.max(range.maxX, x);
             range.minZ = Math.min(range.minZ, z);
             range.maxZ = Math.max(range.maxZ, z);
-            const heading = Math.atan2(-state.direction.x, -state.direction.z);
-            expect(space.canStart(object.id, x, y, z, heading)).toBe(true);
+            expectClear(space, object.id, state);
           });
         }
         for (const range of ranges)

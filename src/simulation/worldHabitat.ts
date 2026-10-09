@@ -656,6 +656,7 @@ function swimmingFish(
     swims: {
       ...swims,
       room: Math.min(water.room(object.id), WIDEST_ROOM),
+      height: water.height(object.id),
     },
   };
   const old = previous?.world.objects.find((o) => o.id === object.id);
