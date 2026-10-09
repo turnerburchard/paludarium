@@ -57,6 +57,8 @@ export const assetKinds = [
   "fence-lizard",
   "canyon-tree-frog",
   "chorus-frog",
+  "western-toad",
+  "horned-frog",
   "tiger-salamander",
   "chuckwalla",
   "desert-tortoise",
