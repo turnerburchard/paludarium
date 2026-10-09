@@ -8,7 +8,7 @@ const full = process.argv.includes("--full");
 const root = fileURLToPath(new URL("../", import.meta.url));
 const url = process.env.HELP_TEST_URL || "http://127.0.0.1:5199";
 const helpKey = "paludarium:help-dismissed";
-const storageKey = "little-worlds:v2";
+const storageKey = "little-worlds:v3";
 const world = {
   version: 1,
   name: "Kept world",
@@ -189,18 +189,18 @@ try {
           .getByRole("navigation", { name: "Tools" })
           .getByRole("button", { name: "Add", exact: true })
           .click();
-      await page.getByRole("button", { name: "Controls and help" }).click();
+      await reopen(page);
       await closeHelp(page, "escape");
       if (method === "escape" && viewport.width > 760) {
         await page
-          .getByRole("button", { name: "Landscape", exact: true })
+          .getByRole("button", { name: "Hardscape", exact: true })
           .click();
         await page
           .getByRole("button", { name: "River stone", exact: true })
           .click();
         await page.getByRole("button", { name: "Done", exact: true }).waitFor();
         for (let i = 0; i < 2; i++) {
-          await page.getByRole("button", { name: "Controls and help" }).click();
+          await reopen(page);
           await closeHelp(page, "escape");
           assert.equal(
             await page

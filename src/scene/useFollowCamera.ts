@@ -8,8 +8,6 @@ import {
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { OrbitControls } from "three-stdlib";
-import { assets } from "../assets";
-import { swimmingHeight } from "../model/terrain";
 import type { EcosystemController } from "../simulation/useEcosystem";
 
 /** Where the camera settles when watching starts: this far away, looking
@@ -73,7 +71,9 @@ export function useFollowCamera(
       setReturning(false);
     }
   }, [animalId, controls]);
-  useFrame((_, delta) => {
+  useFrame((_, frameDelta) => {
+    // The first frame after a paused stretch would otherwise jump.
+    const delta = Math.min(frameDelta, 0.1);
     const orbit = controls.current;
     if (orbit && returning && home.current) {
       const ease = 1 - Math.exp(-delta * 5);
@@ -123,20 +123,7 @@ export function useFollowCamera(
   return { active: !!animalId || returning || !!home.current, interrupt };
 }
 
-/** Where a watched land animal or fish is now. */
+/** Where a watched animal or fish is now. */
 function watchedPosition(ecosystem: EcosystemController, id: string) {
-  const { engine, fish, world } = ecosystem.live.current!;
-  const animal = engine.observeAnimal(id);
-  if (animal) return animal.position;
-  const swimmer = fish.get(id);
-  const object = world.objects.find((o) => o.id === id);
-  const swims = object && assets[object.kind].swims;
-  if (!swimmer || !swims) return undefined;
-  return {
-    x: swimmer.x,
-    y:
-      swimmer.y ??
-      swimmingHeight(swimmer.x, swimmer.z, world.environment, swims.depth),
-    z: swimmer.z,
-  };
+  return ecosystem.live.current!.engine.observeAnimal(id)?.position;
 }

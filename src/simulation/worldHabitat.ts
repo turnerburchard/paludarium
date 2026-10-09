@@ -2,6 +2,7 @@ import {
   MAX_SCALE,
   assetKinds,
   type Environment,
+  type HabitatObject,
   type World,
 } from "../model/schema";
 import {
@@ -13,11 +14,12 @@ import {
   plantPerches,
 } from "../assets";
 import { plantCondition } from "../model/plants";
-import { groundHeight, placementProblem } from "../model/terrain";
+import { groundHeight, swimmingHeight } from "../model/terrain";
 import { objectBase } from "../model/stacking";
 import { transformPlantPoint } from "../model/plantSurfaces";
-import { FishSchool } from "./fish";
+import type { Fish } from "./fish";
 import { SwimSpace } from "./swimSpace";
+import { WIDEST_ROOM, waterNodes } from "./waterNodes";
 import { HabitatNodeGrid } from "./nodeGrid";
 import { LandSurfaces } from "./landSurfaces";
 import { Ecosystem } from "./engine";
@@ -51,6 +53,12 @@ const LARGEST_FOOTPRINT =
     ...assetKinds.filter(isLandAnimal).map((kind) => assetRadius(kind)),
   ) * MAX_SCALE;
 
+/** Larger animals step off stone, reach plants and climb the glass from
+ * farther out. Rather than a way for every size, each band of room gets
+ * one, each band half again as wide as the last. */
+const roomBand = (room: number) =>
+  Math.floor(Math.log(room / CLEARANCE) / Math.log(1.5));
+
 /** Room left before an animal's footprint, plus a little air, meets the glass. */
 function wallRoom(x: number, z: number, env: Environment) {
   return (
@@ -79,10 +87,15 @@ function groundRoom(
   return wall;
 }
 
+const hasFish = (world: World) =>
+  world.objects.some((object) => assets[object.kind].swims);
+
 /** Animals come and go without changing the surfaces, since each one checks
- * the room it needs as it moves. */
+ * the room it needs as it moves. Only the first fish or the last changes
+ * them, by opening or closing the water. */
 function sameHabitat(a: World, b: World) {
-  if (a.environment !== b.environment) return false;
+  if (a.environment !== b.environment || hasFish(a) !== hasFish(b))
+    return false;
   const objects = a.objects.filter((object) => !isAnimal(object.kind));
   const next = b.objects.filter((object) => !isAnimal(object.kind));
   return (
@@ -225,19 +238,19 @@ export function buildHabitat(world: World): HabitatGraph {
     for (const side of sides) {
       // Larger climbers can't stand on the edge cell, so the first cells in
       // from it with more room get ladders of their own.
-      let room = 0;
-      for (let step = 0; room < LARGEST_FOOTPRINT; step++) {
+      let band = -1;
+      for (let step = 0; band < roomBand(LARGEST_FOOTPRINT); step++) {
         const cell = grid.get(
           `${ix + side.inward.x * step}:${iz + side.inward.z * step}`,
         );
         if (!cell || cell.submerged) break;
         const foot = { x: side.x, y: cell.position.y, z: side.z };
         if (
-          cell.room! <= room ||
+          roomBand(cell.room!) <= band ||
           (step && !surfaces.clearRoute(cell.position, foot))
         )
           continue;
-        room = cell.room!;
+        band = roomBand(cell.room!);
         let previous = cell;
         for (let level = 0; level < 5; level++) {
           const node: HabitatNode = {
@@ -305,24 +318,29 @@ export function buildHabitat(world: World): HabitatGraph {
     const bucket = buckets.get(key);
     if (bucket) bucket.push(node);
     else buckets.set(key, [node]);
-    // Ground right beside the stone, then the nearest ground with more room
-    // for each larger animal, which has to step off from farther away.
-    let room = 0;
+    // Ground right beside the stone, then the nearest ground in each wider
+    // band of room, for larger animals that step off from farther away.
+    let band = -1;
     for (const { ground, d } of groundGrid
       .near(node.position, reach(LARGEST_FOOTPRINT))
       .map((ground) => ({
         ground,
         d: distance(node.position, ground.position),
       }))
-      .sort((a, b) => a.d - b.d)) {
-      if (
-        d > reach(ground.room!) ||
-        (d > reach(CLEARANCE) && ground.room! <= room) ||
-        Math.abs(node.position.y - ground.position.y) > 0.18 ||
-        (!ground.submerged && !overLand(node.position, ground.position))
+      .filter(
+        ({ ground, d }) =>
+          d <= reach(ground.room!) &&
+          Math.abs(node.position.y - ground.position.y) <= 0.18,
       )
+      .sort((a, b) => a.d - b.d)) {
+      const beside = d <= reach(CLEARANCE);
+      if (!beside && roomBand(ground.room!) <= band) continue;
+      if (!ground.submerged && !overLand(node.position, ground.position))
         continue;
-      if (connect(node, ground)) room = Math.max(room, ground.room!);
+      // One try per band keeps far sides of the stone from retrying every
+      // cell out to the glass.
+      if (connect(node, ground) || !beside)
+        band = Math.max(band, roomBand(ground.room!));
     }
   }
   const anchors = new HabitatNodeGrid(
@@ -349,7 +367,8 @@ export function buildHabitat(world: World): HabitatGraph {
           distance(a.position, point) - distance(b.position, point),
       ))
       if (
-        (!found.length || node.room! > found[found.length - 1].room!) &&
+        (!found.length ||
+          roomBand(node.room!) > roomBand(found[found.length - 1].room!)) &&
         surfaces.clearRoute(node.position, point)
       )
         found.push(node);
@@ -480,6 +499,7 @@ export function buildHabitat(world: World): HabitatGraph {
         perch.neighbors.push(other.id);
         other.neighbors.push(perch.id);
       }
+  if (hasFish(world)) nodes.push(...waterNodes(world, new SwimSpace(world)));
   return new HabitatGraph(nodes);
 }
 
@@ -504,6 +524,7 @@ function blend(a: Vec3, b: Vec3, t: number): Vec3 {
 export function createWorldEcosystem(
   world: World,
   previous?: { world: World; engine: Ecosystem },
+  random?: () => number,
 ): Ecosystem {
   const graph =
       previous && sameHabitat(previous.world, world)
@@ -511,7 +532,10 @@ export function createWorldEcosystem(
         : buildHabitat(world),
     snapshot = previous?.engine.snapshot();
   const animals: AnimalSeed[] = [];
+  const water = hasFish(world) ? new SwimSpace(world) : undefined;
   for (const object of world.objects) {
+    const fish = water && swimmingFish(world, object, water, graph, previous);
+    if (fish) animals.push(fish);
     const behavior = assets[object.kind].behavior;
     if (!behavior) continue;
     const species: SpeciesProfile = {
@@ -582,72 +606,96 @@ export function createWorldEcosystem(
     food.set(nodeId, target);
   }
   return new Ecosystem(graph, animals, {
+    random,
+    water,
     elapsed: snapshot?.elapsed,
     discoveries: snapshot?.discoveries,
     food: [...food.values()],
   });
 }
 /** Ordinary edits preserve live fish. A moved fish starts where it was
- * placed; a newly blocked fish finds nearby clear water. */
-export function createFishSchool(
+ * placed; a newly blocked fish finds nearby clear water. A fish with no open
+ * water anywhere is stranded and left out. */
+function swimmingFish(
   world: World,
-  previous?: { world: World; fish: FishSchool },
-  random?: () => number,
-): FishSchool {
+  object: HabitatObject,
+  water: SwimSpace,
+  graph: HabitatGraph,
+  previous?: { world: World; engine: Ecosystem },
+): AnimalSeed | undefined {
+  const swims = assets[object.kind].swims;
+  if (!swims) return undefined;
   const env = world.environment;
-  const swimmers = world.objects.flatMap((object) => {
-    const swims = assets[object.kind].swims;
-    return swims ? [{ object, swims }] : [];
-  });
-  // Every swimmer shares the open-water placement rule.
-  const isWater = (x: number, z: number) =>
-    Math.abs(x) < env.width / 2 &&
-    Math.abs(z) < env.depth / 2 &&
-    !placementProblem("fish", x, z, env);
-  if (!swimmers.length) return new FishSchool([], isWater);
-  const space = new SwimSpace(world);
-  // A fish with no open water anywhere is stranded and left out.
-  const fish = swimmers.flatMap(({ object, swims }) => {
-    const old = previous?.world.objects.find((o) => o.id === object.id);
-    const swimming = previous?.fish.get(object.id);
-    const unmoved =
-      old &&
-      old.kind === object.kind &&
-      old.x === object.x &&
-      old.z === object.z;
-    const fish = {
-      id: object.id,
-      species: object.kind,
-      speed: swims.speed,
-      x: swimming && unmoved ? swimming.x : object.x,
-      z: swimming && unmoved ? swimming.z : object.z,
-      heading:
-        swimming && unmoved
-          ? swimming.heading + (object.rotation - old.rotation)
-          : object.rotation,
-    };
-    const clear = (x: number, z: number, heading: number) =>
-      isWater(x, z) && space.canStart(fish, x, z, heading);
-    if (clear(fish.x, fish.z, fish.heading)) return [fish];
-    // An edit may put stone or wood around a live fish. Only that fish
-    // moves to the nearest available gap; the rest of the school stays put.
-    const reach = Math.hypot(env.width, env.depth);
-    for (let radius = 0.08; radius < reach; radius += 0.08)
-      for (let i = 0; i < 32; i++) {
-        const angle = (i * Math.PI * 2) / 32;
-        const x = fish.x + Math.cos(angle) * radius;
-        const z = fish.z + Math.sin(angle) * radius;
-        if (clear(x, z, fish.heading)) return [{ ...fish, x, z }];
+  const species: SpeciesProfile = {
+    id: object.kind,
+    nocturnal: false,
+    climbs: false,
+    speed: swims.speed,
+    water: "lives",
+    swims: {
+      ...swims,
+      room: Math.min(water.room(object.id), WIDEST_ROOM),
+    },
+  };
+  const old = previous?.world.objects.find((o) => o.id === object.id);
+  const swimming = previous?.engine.swimmer(object.id);
+  const unmoved =
+    swimming &&
+    old &&
+    old.kind === object.kind &&
+    old.x === object.x &&
+    old.z === object.z;
+  const fish: Fish = unmoved
+    ? {
+        id: object.id,
+        species: object.kind,
+        speed: swims.speed,
+        x: swimming.x,
+        y: swimming.y,
+        z: swimming.z,
+        heading: swimming.heading + (object.rotation - old.rotation),
       }
-    return [];
-  });
-  return new FishSchool(fish, isWater, {
-    random,
-    previous: previous?.fish,
-    canSwim: space.canSwim,
-    height: space.height,
-    bob: space.bob,
-  });
+    : {
+        id: object.id,
+        species: object.kind,
+        speed: swims.speed,
+        x: object.x,
+        y: swimmingHeight(object.x, object.z, env, swims.depth),
+        z: object.z,
+        heading: object.rotation,
+      };
+  const start = (x: number, z: number, wanted: number) => {
+    const y = water.steady(object.id, x, z, wanted).y;
+    if (!water.canStart(object.id, x, y, z, fish.heading)) return undefined;
+    const position = { ...fish, x, y, z };
+    const node = graph.nearest(position, species);
+    return node && { position, node };
+  };
+  let found = start(fish.x, fish.z, fish.y);
+  // An edit may put stone or wood around a live fish. Only that fish moves
+  // to the nearest available gap; the rest of the school stays put.
+  const reach = Math.hypot(env.width, env.depth);
+  for (let radius = 0.08; !found && radius < reach; radius += 0.08)
+    for (let i = 0; !found && i < 32; i++) {
+      const angle = (i * Math.PI * 2) / 32;
+      const x = fish.x + Math.cos(angle) * radius;
+      const z = fish.z + Math.sin(angle) * radius;
+      found = start(x, z, swimmingHeight(x, z, env, swims.depth));
+    }
+  if (!found) return undefined;
+  const carriesOn =
+    unmoved &&
+    found.position.x === swimming.x &&
+    found.position.y === swimming.y &&
+    found.position.z === swimming.z &&
+    fish.heading === swimming.heading;
+  return {
+    id: object.id,
+    species,
+    nodeId: found.node.id,
+    needs: previous?.engine.getAnimal(object.id)?.needs,
+    ...(carriesOn ? { swimmer: swimming } : { fish: found.position }),
+  };
 }
 
 /** Insects breed under cover: well-sheltered dry ground becomes a colony whose

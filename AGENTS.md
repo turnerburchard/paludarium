@@ -46,7 +46,7 @@ Rules that keep this working:
 - `groundHeight` is the single source of truth for terrain: rendering, placement, navigation all use it.
 - World objects are plain serializable data with a seed. Never store Three.js objects in the model.
 - Simulation randomness goes through an injected random source so behavior is testable.
-- Changing the save schema needs validation. There are no users yet, so with the owner's OK an incompatible change can bump the storage key (now `little-worlds:v2`) and drop old saves instead of migrating them. Once people rely on their saves, incompatible changes need a migration.
+- Changing the save schema needs validation. There are no users yet, so with the owner's OK an incompatible change can bump the storage key (now `little-worlds:v3`) and drop old saves instead of migrating them. Once people rely on their saves, incompatible changes need a migration.
 
 ## Workflow
 

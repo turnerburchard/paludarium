@@ -17,12 +17,31 @@ export function makeTerrain(env: Environment) {
   const { columns, rows } = surfaceGrid(env);
   const geo = new THREE.PlaneGeometry(env.width, env.depth, columns, rows);
   geo.rotateX(-Math.PI / 2);
-  const count = geo.getAttribute("position").count;
-  geo.setAttribute(
+  // Nudge inner points so facets are uneven triangles instead of a ruled
+  // grid. Edge points stay on the walls so the sides still meet the surface.
+  const p = geo.getAttribute("position");
+  const step = Math.min(env.width / columns, env.depth / rows);
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i),
+      z = p.getZ(i);
+    if (
+      Math.abs(x) >= env.width / 2 - 1e-6 ||
+      Math.abs(z) >= env.depth / 2 - 1e-6
+    )
+      continue;
+    p.setX(i, x + (hash(x, z) - 0.5) * 0.6 * step);
+    p.setZ(i, z + (hash(z, x) - 0.5) * 0.6 * step);
+  }
+  // Unshared vertices let every facet carry its own flat color, like the
+  // low-poly rocks and plants sitting on it.
+  const faceted = geo.toNonIndexed();
+  geo.dispose();
+  const count = faceted.getAttribute("position").count;
+  faceted.setAttribute(
     "color",
     new THREE.Float32BufferAttribute(new Float32Array(count * 3), 3),
   );
-  return geo;
+  return faceted;
 }
 const soil = new THREE.Color("#443c2b"),
   sand = new THREE.Color("#a5936a");
@@ -46,15 +65,22 @@ export function drawTerrain(
     spot = new THREE.Vector2();
   const coverage = new Map<GroundMaterial, number>();
   let reshaped = false;
-  for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i),
-      z = p.getZ(i);
-    if (area && !area.containsPoint(spot.set(x, z))) continue;
-    const h = groundHeight(x, z, env);
-    if (Math.fround(h) !== p.getY(i)) {
-      p.setY(i, h);
-      reshaped = true;
+  for (let i = 0; i < p.count; i += 3) {
+    let x = 0,
+      z = 0;
+    for (let v = i; v < i + 3; v++) {
+      x += p.getX(v) / 3;
+      z += p.getZ(v) / 3;
     }
+    if (area && !area.containsPoint(spot.set(x, z))) continue;
+    for (let v = i; v < i + 3; v++) {
+      const h = groundHeight(p.getX(v), p.getZ(v), env);
+      if (Math.fround(h) !== p.getY(v)) {
+        p.setY(v, h);
+        reshaped = true;
+      }
+    }
+    const h = groundHeight(x, z, env);
     natural
       .copy(soil)
       .lerp(sand, THREE.MathUtils.clamp((0.55 - h) * 2.3, 0, 1));
@@ -76,8 +102,12 @@ export function drawTerrain(
         color.b += (source.b * weight ** 3) / total;
       }
     }
-    color.multiplyScalar(0.89 + 0.12 * grain(x, z));
-    colors.setXYZ(i, color.r, color.g, color.b);
+    // Broad mottling plus a tone of its own for every facet, so the ground
+    // reads as loose low-poly substrate rather than one smooth sheet.
+    color.multiplyScalar(
+      0.86 + 0.14 * grain(x, z, 0.18) + 0.14 * (hash(x, z) - 0.5),
+    );
+    for (let v = i; v < i + 3; v++) colors.setXYZ(v, color.r, color.g, color.b);
   }
   colors.needsUpdate = true;
   if (!reshaped) return;
@@ -112,10 +142,9 @@ export function changedArea(
     2 * Math.max(env.width / grid.columns, env.depth / grid.rows),
   );
 }
-/** Smooth value noise between 0 and 1 for gentle mottling. It changes over
- * several vertices, so it never aliases against the mesh into a pattern. */
-function grain(x: number, z: number) {
-  const cell = 0.18;
+/** Smooth value noise between 0 and 1 that changes over about `cell`. Kept
+ * wider than the mesh spacing so it never aliases into a pattern. */
+export function grain(x: number, z: number, cell: number) {
   const gx = x / cell,
     gz = z / cell,
     ix = Math.floor(gx),
@@ -131,4 +160,10 @@ function grain(x: number, z: number) {
     THREE.MathUtils.lerp(corner(ix, iz + 1), corner(ix + 1, iz + 1), tx),
     tz,
   );
+}
+
+/** A stable pseudo-random value between 0 and 1 for one spot. */
+export function hash(x: number, z: number) {
+  const n = Math.sin(x * 127.1 + z * 311.7) * 43758.5453;
+  return n - Math.floor(n);
 }

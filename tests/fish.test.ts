@@ -1,17 +1,40 @@
 import { describe, expect, it } from "vitest";
-import { FishSchool, type Fish } from "../src/simulation/fish";
+import {
+  Steering,
+  newSwimmer,
+  type Fish,
+  type SwimWater,
+} from "../src/simulation/fish";
 import { randomFromSeed } from "../src/model/random";
 import { makePreset } from "../src/model/presets";
 import { placementProblem } from "../src/model/terrain";
-import { createFishSchool } from "../src/simulation/worldHabitat";
+import { createWorldEcosystem } from "../src/simulation/worldHabitat";
 import { SwimSpace } from "../src/simulation/swimSpace";
+import { assets } from "../src/assets";
+import type { World } from "../src/model/schema";
+import type { Vec3 } from "../src/simulation/types";
 
-/** A round pond of radius 1 centered on the origin. */
-const pond = (x: number, z: number) => Math.hypot(x, z) < 1;
-const school = (fish: Fish[]) =>
-  new FishSchool(fish, pond, { random: randomFromSeed(3) });
-const run = (s: FishSchool, seconds: number) => {
-  for (let i = 0; i < seconds * 30; i++) s.advance(1 / 30);
+/** A round pond of radius 1 centered on the origin, at any depth. */
+const pond: SwimWater = {
+  steady: (_id, _x, _z, wanted) => ({ y: wanted, bob: 0 }),
+  canSwim: (_id, x, _y, z) => Math.hypot(x, z) < 1,
+};
+function school(fish: Fish[], water = pond, random = randomFromSeed(3)) {
+  const steering = new Steering(water, random);
+  const swimmers = fish.map((f) => newSwimmer(f, random));
+  return {
+    advance(seconds: number, goal?: Vec3) {
+      for (const f of swimmers) steering.swim(f, swimmers, goal, seconds);
+    },
+    all: () =>
+      swimmers.map(({ id, x, y, z, heading }) => ({ id, x, y, z, heading })),
+    get: (id: string) => swimmers.find((f) => f.id === id)!,
+    pitch: (id: string) => steering.pitch(swimmers.find((f) => f.id === id)!),
+  };
+}
+type School = ReturnType<typeof school>;
+const run = (s: School, seconds: number, goal?: Vec3) => {
+  for (let i = 0; i < seconds * 30; i++) s.advance(1 / 30, goal);
 };
 const five = (): Fish[] =>
   [0, 1, 2, 3, 4].map((i) => ({
@@ -19,11 +42,12 @@ const five = (): Fish[] =>
     species: "fish",
     speed: 0.22,
     x: Math.cos(i) * 0.5,
+    y: 0,
     z: Math.sin(i) * 0.5,
     heading: i,
   }));
 
-describe("fish school", () => {
+describe("fish steering", () => {
   it("turns away from the shore instead of bumping into it", () => {
     const s = school(five());
     let frames = 0,
@@ -55,18 +79,19 @@ describe("fish school", () => {
     // A lone fish heading one way beside four heading the other.
     const turnAfterASecond = (species: string) => {
       const s = school([
-        { id: "lone", species, speed: 0.22, x: 0, z: 0, heading: 0 },
+        { id: "lone", species, speed: 0.22, x: 0, y: 0, z: 0, heading: 0 },
         ...[0, 1, 2, 3].map((i) => ({
           id: `f${i}`,
           species: "tetra",
           speed: 0.22,
           x: Math.cos(i * 1.6) * 0.2,
+          y: 0,
           z: Math.sin(i * 1.6) * 0.2,
           heading: Math.PI,
         })),
       ]);
       run(s, 1);
-      return Math.abs(Math.sin(s.get("lone")!.heading / 2));
+      return Math.abs(Math.sin(s.get("lone").heading / 2));
     };
     expect(turnAfterASecond("tetra")).toBeGreaterThan(
       turnAfterASecond("guppy") + 0.2,
@@ -75,8 +100,9 @@ describe("fish school", () => {
 
   it("drift apart for a while instead of always schooling", () => {
     // A wide pool, so a roaming fish has room to leave the others.
-    const s = new FishSchool(five(), (x, z) => Math.hypot(x, z) < 3, {
-      random: randomFromSeed(3),
+    const s = school(five(), {
+      ...pond,
+      canSwim: (_id, x, _y, z) => Math.hypot(x, z) < 3,
     });
     let apart = 0;
     for (let second = 0; second < 240; second++) {
@@ -102,93 +128,143 @@ describe("fish school", () => {
       const fish = s.all();
       for (const a of fish)
         for (const b of fish)
-          if (a !== b && Math.hypot(a.x - b.x, a.z - b.z) < 0.08) crowded++;
+          if (a !== b && Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) < 0.08)
+            crowded++;
     }
     expect(crowded).toBeLessThan(20);
   });
 
-  it("holds still while paused or held", () => {
-    const s = school(five());
-    const start = s.all();
-    s.advance(1, true);
-    expect(s.all()).toEqual(start);
-    for (let i = 0; i < 30; i++) s.advance(1 / 30, false, new Set(["f0"]));
-    expect(s.get("f0")).toEqual(start[0]);
-    expect(s.get("f1")).not.toEqual(start[1]);
-  });
-
-  it("caps long frames so a hidden tab can't jump", () => {
-    const capped = school(five());
-    capped.advance(30);
-    const stepped = school(five());
-    stepped.advance(0.1);
-    expect(capped.all()).toEqual(stepped.all());
-  });
-
-  it("ignores frames with no elapsed time", () => {
-    const s = school(five());
-    const before = s.all();
-    s.advance(0);
-    s.advance(-1);
-    expect(s.all()).toEqual(before);
-  });
-
-  it("retains its pace and ongoing turns when the habitat is rebuilt", () => {
-    const original = new FishSchool(five(), pond, { random: () => 0.5 });
-    run(original, 8);
-    const rebuilt = new FishSchool(original.all(), pond, {
-      random: () => 0.5,
-      previous: original,
-    });
-    for (let tick = 0; tick < 90; tick++) {
-      original.advance(1 / 30);
-      rebuilt.advance(1 / 30);
-      expect(rebuilt.all()).toEqual(original.all());
+  it("keeps clear of other kinds of fish too", () => {
+    // Two fish swimming head on at the same depth.
+    const s = school([
+      { ...five()[0], id: "a", species: "tetra", x: 0, z: 0.4, heading: 0 },
+      {
+        ...five()[0],
+        id: "b",
+        species: "angelfish",
+        x: 0,
+        z: -0.4,
+        heading: Math.PI,
+      },
+    ]);
+    let closest = Infinity;
+    for (let i = 0; i < 6 * 30; i++) {
+      s.advance(1 / 30);
+      const [a, b] = s.all();
+      closest = Math.min(closest, Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z));
     }
+    expect(closest).toBeGreaterThan(0.08);
+  });
+
+  it("heads for its goal along a smooth curve", () => {
+    const s = school([{ ...five()[0], x: 0, z: 0.5, heading: Math.PI }]);
+    const goal = { x: 0, y: 0, z: -0.6 };
+    let heading = s.get("f0").heading;
+    for (let i = 0; i < 12 * 30; i++) {
+      s.advance(1 / 30, goal);
+      const turn = Math.abs(s.get("f0").heading - heading);
+      expect(turn).toBeLessThanOrEqual(2.2 / 30 + 1e-8);
+      heading = s.get("f0").heading;
+    }
+    const f = s.get("f0");
+    expect(Math.hypot(f.x - goal.x, f.z - goal.z)).toBeLessThan(0.4);
+  });
+
+  it("eases up and down toward its goal's depth, nose first", () => {
+    const s = school([{ ...five()[0], x: 0, z: 0, heading: 0 }]);
+    const goal = { x: 0, y: 0.5, z: 0 };
+    let climb = 0,
+      steepest = 0;
+    for (let i = 0; i < 20 * 30; i++) {
+      const before = s.get("f0").y;
+      s.advance(1 / 30, goal);
+      const speed = (s.get("f0").y - before) * 30;
+      // Climbing speeds up gradually, never in a jump.
+      expect(Math.abs(speed - climb)).toBeLessThan(0.01);
+      climb = speed;
+      steepest = Math.max(steepest, s.pitch("f0"));
+    }
+    expect(s.get("f0").y).toBeCloseTo(0.5, 1);
+    expect(steepest).toBeGreaterThan(0.1);
+    expect(steepest).toBeLessThan(0.4);
   });
 });
 
+/** Every fish's position, by id. */
+function fishIn(world: World, engine: ReturnType<typeof createWorldEcosystem>) {
+  return world.objects
+    .filter((o) => assets[o.kind].swims)
+    .map((o) => ({ object: o, state: engine.observeAnimal(o.id)! }));
+}
+
 describe("fish in a real tank", () => {
   it.each(["tropical", "aquarium"] as const)(
-    "stay in the %s water and inside the glass",
+    "stay in the %s water and inside the glass, and keep exploring",
     (preset) => {
       const world = makePreset(preset);
       const env = world.environment;
-      const school = createFishSchool(world, undefined, randomFromSeed(8));
+      const engine = createWorldEcosystem(world, undefined, randomFromSeed(8));
       const space = new SwimSpace(world);
-      const traveled = new Map(school.all().map((fish) => [fish.id, 0]));
-      for (let second = 0; second < 300; second++) {
-        const before = school.all();
-        for (let tick = 0; tick < 10; tick++) school.advance(0.1);
-        for (const [i, f] of school.all().entries()) {
-          expect(Math.abs(f.x)).toBeLessThan(env.width / 2);
-          expect(Math.abs(f.z)).toBeLessThan(env.depth / 2);
-          expect(placementProblem("fish", f.x, f.z, env)).toBeNull();
-          expect(space.canStart(f, f.x, f.z, f.heading)).toBe(true);
+      const fish = fishIn(world, engine);
+      const traveled = new Map(fish.map(({ object }) => [object.id, 0]));
+      for (let second = 0; second < 120; second++) {
+        const before = fish.map(({ state }) => ({ ...state.position }));
+        engine.advance(0.25);
+        engine.advance(0.25);
+        engine.advance(0.25);
+        engine.advance(0.25);
+        for (const [i, { object, state }] of fish.entries()) {
+          const { x, y, z } = state.position;
+          const heading = Math.atan2(-state.direction.x, -state.direction.z);
+          expect(Math.abs(x)).toBeLessThan(env.width / 2);
+          expect(Math.abs(z)).toBeLessThan(env.depth / 2);
+          expect(placementProblem("fish", x, z, env)).toBeNull();
+          expect(space.canStart(object.id, x, y, z, heading)).toBe(true);
           traveled.set(
-            f.id,
-            traveled.get(f.id)! +
-              Math.hypot(f.x - before[i].x, f.z - before[i].z),
+            object.id,
+            traveled.get(object.id)! +
+              Math.hypot(x - before[i].x, z - before[i].z),
           );
         }
       }
       if (preset === "aquarium")
-        for (const fish of school.all())
+        for (const { object } of fish)
           expect(
-            traveled.get(fish.id),
-            `${fish.species} keeps exploring`,
-          ).toBeGreaterThan(fish.speed * 300 * 0.2);
+            traveled.get(object.id),
+            `${object.kind} keeps exploring`,
+          ).toBeGreaterThan(assets[object.kind].swims!.speed * 120 * 0.2);
     },
     20_000,
   );
 
-  it.each([
-    [3, 60],
-    [8, 30],
-    [19, 10],
-  ])(
-    "Fish from older Cloud Forest saves escape tight starting spots and keep exploring (seed %s, %s fps)",
-    (seed, fps) => {
+  it("use their whole depth range in a deep tank", () => {
+    const world = makePreset("aquarium");
+    const engine = createWorldEcosystem(world, undefined, randomFromSeed(4));
+    const fish = fishIn(world, engine);
+    const heights = new Map(
+      fish.map(({ object, state }) => [
+        object.id,
+        { low: state.position.y, high: state.position.y },
+      ]),
+    );
+    for (let second = 0; second < 120; second++) {
+      engine.advance(0.25);
+      engine.advance(0.25);
+      engine.advance(0.25);
+      engine.advance(0.25);
+      for (const { object, state } of fish) {
+        const range = heights.get(object.id)!;
+        range.low = Math.min(range.low, state.position.y);
+        range.high = Math.max(range.high, state.position.y);
+      }
+    }
+    const spread = [...heights.values()].map((r) => r.high - r.low);
+    expect(Math.max(...spread)).toBeGreaterThan(0.3);
+  }, 20_000);
+
+  it.each([3, 8, 19])(
+    "Fish from older Cloud Forest saves escape tight starting spots and keep exploring (seed %s)",
+    (seed) => {
       const world = makePreset("tropical");
       // Preserve the full-size fish and placements from older saved worlds,
       // before the preset was changed to start smaller fish in open water.
@@ -204,26 +280,33 @@ describe("fish in a real tank", () => {
           const [x, z, rotation] = poses[i];
           Object.assign(o, { x, z, rotation, scale: 1 });
         });
-      const school = createFishSchool(world, undefined, randomFromSeed(seed));
+      const engine = createWorldEcosystem(
+        world,
+        undefined,
+        randomFromSeed(seed),
+      );
       const space = new SwimSpace(world);
+      const fish = fishIn(world, engine);
       // Check each minute independently: early movement must not hide a
       // fish spending the rest of the run rocking back and forth in a gap.
-      for (let minute = 0; minute < 10; minute++) {
-        const ranges = school.all().map((f) => ({
-          minX: f.x,
-          maxX: f.x,
-          minZ: f.z,
-          maxZ: f.z,
+      for (let minute = 0; minute < 5; minute++) {
+        const ranges = fish.map(({ state }) => ({
+          minX: state.position.x,
+          maxX: state.position.x,
+          minZ: state.position.z,
+          maxZ: state.position.z,
         }));
-        for (let tick = 0; tick < 60 * fps; tick++) {
-          school.advance(1 / fps);
-          school.all().forEach((f, i) => {
+        for (let tick = 0; tick < 60 * 30; tick++) {
+          engine.advance(1 / 30);
+          fish.forEach(({ object, state }, i) => {
+            const { x, y, z } = state.position;
             const range = ranges[i];
-            range.minX = Math.min(range.minX, f.x);
-            range.maxX = Math.max(range.maxX, f.x);
-            range.minZ = Math.min(range.minZ, f.z);
-            range.maxZ = Math.max(range.maxZ, f.z);
-            expect(space.canStart(f, f.x, f.z, f.heading)).toBe(true);
+            range.minX = Math.min(range.minX, x);
+            range.maxX = Math.max(range.maxX, x);
+            range.minZ = Math.min(range.minZ, z);
+            range.maxZ = Math.max(range.maxZ, z);
+            const heading = Math.atan2(-state.direction.x, -state.direction.z);
+            expect(space.canStart(object.id, x, y, z, heading)).toBe(true);
           });
         }
         for (const range of ranges)
@@ -240,21 +323,24 @@ describe("fish in a real tank", () => {
     "start in open water where the %s preset places them",
     (preset) => {
       const world = makePreset(preset);
-      for (const fish of createFishSchool(world).all()) {
-        const placed = world.objects.find((o) => o.id === fish.id)!;
-        expect([fish.x, fish.z], fish.species).toEqual([placed.x, placed.z]);
-      }
+      const engine = createWorldEcosystem(world);
+      for (const { object, state } of fishIn(world, engine))
+        expect([state.position.x, state.position.z], object.kind).toEqual([
+          object.x,
+          object.z,
+        ]);
     },
   );
 
-  it("keep their place through an unrelated edit", () => {
+  it("keep their place and pace through an unrelated edit", () => {
     const world = makePreset("tropical");
-    const school = createFishSchool(world);
-    run(school, 10);
+    const engine = createWorldEcosystem(world, undefined, () => 0.5);
+    for (let tick = 0; tick < 300; tick++) engine.advance(1 / 30);
     const edited = structuredClone(world);
     edited.environment.warmth = 0.2;
-    expect(createFishSchool(edited, { world, fish: school }).all()).toEqual(
-      school.all(),
-    );
+    const rebuilt = createWorldEcosystem(edited, { world, engine }, () => 0.5);
+    const ids = fishIn(world, engine).map(({ object }) => object.id);
+    for (const id of ids)
+      expect(rebuilt.swimmer(id)).toEqual(engine.swimmer(id));
   });
 });

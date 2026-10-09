@@ -107,7 +107,7 @@ try {
       fiberUrl = response.url();
   });
   await page.addInitScript(
-    (world) => localStorage.setItem("little-worlds:v2", JSON.stringify(world)),
+    (world) => localStorage.setItem("little-worlds:v3", JSON.stringify(world)),
     world,
   );
   await page.goto(url);
@@ -160,7 +160,7 @@ try {
   await page.waitForTimeout(400);
   assert.deepEqual(
     await page.evaluate(() =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -287,7 +287,7 @@ try {
   await page.keyboard.press("Tab");
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -298,7 +298,7 @@ try {
     .click();
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -373,7 +373,7 @@ try {
   assert.deepEqual(
     await page.evaluate(
       () =>
-        JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+        JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
           key === "" && value.worlds
             ? value.worlds.find((entry) => entry.id === value.activeId).world
             : value,
@@ -406,7 +406,7 @@ try {
   assert.equal(
     await page.evaluate(
       () =>
-        JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+        JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
           key === "" && value.worlds
             ? value.worlds.find((entry) => entry.id === value.activeId).world
             : value,
@@ -419,7 +419,7 @@ try {
   await page.mouse.up();
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -430,7 +430,7 @@ try {
     .click();
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -747,7 +747,7 @@ try {
     ],
   };
   await fishPage.addInitScript(
-    (world) => localStorage.setItem("little-worlds:v2", JSON.stringify(world)),
+    (world) => localStorage.setItem("little-worlds:v3", JSON.stringify(world)),
     fishWorld,
   );
   await fishPage.goto(url);
@@ -801,7 +801,7 @@ try {
   await fishPage.getByRole("button", { name: "Golden", exact: true }).click();
   await fishPage.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v2"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,

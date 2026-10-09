@@ -9,6 +9,7 @@ export const activityLabels: Record<Activity, string> = {
   "seeking-shelter": "Finding a resting spot",
   sleeping: "Sleeping",
   resting: "Resting",
+  swimming: "Swimming",
 };
 
 /** What an animal is doing, why, and how its needs stand. */

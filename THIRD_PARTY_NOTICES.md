@@ -37,6 +37,7 @@ The original GLBs are in `docs/inspiration/models/`.
 - The flat stone is derived from ["Rock Flat" by Kenney](https://poly.pizza/m/CrSoV13mCU), released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/), rescaled and repainted.
 - The granite boulder, spruce snag and tree roots are derived from ["Rock"](https://poly.pizza/m/dmRuyy1VXEv), ["Log"](https://poly.pizza/m/dkRLlPSdgdR) and ["Tree roots"](https://poly.pizza/m/eYfjQLsebfA) by Poly by Google, the fungus log from ["log with fungus" by sirkitree](https://poly.pizza/m/32czhZtc7oY) and the dead tree from ["Dead Tree Trunk" by Zsky](https://poly.pizza/m/HdJ7JoEvKR), all licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), rescaled and recolored.
 - The king bolete and fly agaric are derived from ["Mushroom" by Сергей Тиньков](https://poly.pizza/m/1CZoDfdfHl_) and ["Mushroom" by jeremy](https://poly.pizza/m/2DAaKHD48ZP), licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), and the bonnet mushrooms from ["Mushroom" by Quaternius](https://poly.pizza/m/aOW08oSrd4), released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/). All are rescaled and recolored.
+- The chicken of the woods is derived from "Mushroom_Laetiporus" in the [Stylized Nature MegaKit](https://quaternius.com) by Quaternius, released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/), simplified, rescaled and recolored.
 - The mossy stump is derived from ["Tree Stump with Moss" by Quaternius](https://poly.pizza/m/nFvEbUX6LE), released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/), rescaled and recolored.
 
 The original GLBs are in `docs/inspiration/models/`.
@@ -48,3 +49,9 @@ Dependencies are installed from `package-lock.json` and keep their own copyright
 ## Fraunces font
 
 [Fraunces](https://github.com/google/fonts/tree/main/ofl/fraunces) is licensed under the SIL Open Font License 1.1. The bundled Latin font and its copyright notice and license are in `public/fonts/`.
+
+The faceted stones use `Rock_1` through `Rock_7` (pillar, wedge, dome, outcrop, block, crag, ledge), and the saguaro, organ pipe and beavertail cacti use `CactusFlowers_2` to `CactusFlowers_4`, from [Quaternius Ultimate Nature Pack](https://quaternius.com/packs/ultimatenature.html), [CC0](https://creativecommons.org/publicdomain/zero/1.0/). Downloaded from [Quaternius’s official itch.io mirror](https://quaternius.itch.io/150-lowpoly-nature-models). Original OBJ/MTL files and license are in `docs/inspiration/models/quaternius-nature/`.
+
+The cholla uses `Cactus_4` from Quaternius [Nature Crops Pack](https://quaternius.com), [CC0](https://creativecommons.org/publicdomain/zero/1.0/). Original OBJ/MTL files and license are in `docs/inspiration/models/quaternius-crops/`.
+
+`scripts/prepare-quaternius-stones.mjs` centers and scales both packs' models, keeping one part per source material. Stones keep their source color; the cacti are recolored to the app's cactus palette.

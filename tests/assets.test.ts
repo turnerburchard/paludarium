@@ -65,7 +65,9 @@ describe("land animal assets", () => {
           ),
         ).toBe(true);
       });
-      expect(triangles).toBeLessThan(2500);
+      // Warty frogs carry about 1,600 triangles of tubercles over the
+      // shared 2,300-triangle body.
+      expect(triangles).toBeLessThan(4500);
       disposeAsset(model);
     },
   );
@@ -104,5 +106,22 @@ describe("turtle model", () => {
         expect(normal.dot(a.clone().sub(center))).toBeGreaterThan(0);
       }
     }
+  });
+});
+
+describe("Quaternius stones", () => {
+  it.each([
+    "quaternius-boulder",
+    "quaternius-outcrop",
+    "quaternius-crag",
+  ] as const)("grounds %s within its placement footprint", (kind) => {
+    const model = buildAsset(kind, 7);
+    const box = new Box3().setFromObject(model);
+    expect(box.min.y).toBeCloseTo(0, 4);
+    expect(box.max.y).toBeGreaterThan(0.1);
+    for (const x of [box.min.x, box.max.x])
+      for (const z of [box.min.z, box.max.z])
+        expect(Math.hypot(x, z)).toBeLessThanOrEqual(assetRadius(kind));
+    disposeAsset(model);
   });
 });

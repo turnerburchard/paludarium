@@ -37,7 +37,11 @@ export default function App({
     document.title = `paludarium · ${world.name}`;
   }, [world.name]);
   // Life follows committed edits, not intermediate brush or slider previews.
-  const ecosystem = useEcosystem(editor.savedWorld, editor.updateLife);
+  const ecosystem = useEcosystem(
+    editor.savedWorld,
+    editor.updateLife,
+    tool.type === "terrain",
+  );
   const [panel, setPanel] = useState<Panel>("objects");
   // On phones the sidebar is a sheet, closed until a dock button opens it.
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -170,7 +174,7 @@ export default function App({
           ecosystem={ecosystem}
           panel={panel}
           onPanel={setPanel}
-          onHelp={() => setDialog("help")}
+          onAbout={() => setDialog("about")}
           onWatch={inspectAnimal}
           onClose={() => setSheetOpen(false)}
         />
@@ -275,7 +279,6 @@ export default function App({
       {dialog === "about" && (
         <AboutDialog
           onHelp={() => setDialog("help")}
-          world={world}
           ecosystem={ecosystem}
           onWatch={(id) => {
             setDialog(null);

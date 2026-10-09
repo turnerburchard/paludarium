@@ -13,10 +13,7 @@ import { withEnvironment } from "../src/editor/useEditor";
 import { objectBase } from "../src/model/stacking";
 import { parseWorld } from "../src/editor/persistence";
 import { historyReducer } from "../src/editor/history";
-import {
-  createFishSchool,
-  createWorldEcosystem,
-} from "../src/simulation/worldHabitat";
+import { createWorldEcosystem } from "../src/simulation/worldHabitat";
 
 /** The grid point nearest x = -1.75 in the default tank. The brush gives a
  * grid point its full step, and ground between points is interpolated. */
@@ -63,20 +60,15 @@ describe("adjustable tank height", () => {
         seed: 2,
       },
     ];
-    const engine = createWorldEcosystem(original),
-      fish = createFishSchool(original);
+    const engine = createWorldEcosystem(original);
     const before = engine.getAnimal("frog")!;
     expect(before.position.y).toBeGreaterThan(4);
     const shrunk = withEnvironment(original, { height: 1.5 });
-    const after = createWorldEcosystem(shrunk, {
-      world: original,
-      engine,
-    }).getAnimal("frog")!;
+    const resized = createWorldEcosystem(shrunk, { world: original, engine });
+    const after = resized.getAnimal("frog")!;
     expect(after.position.y).toBeLessThan(shrunk.environment.height);
     expect(after.needs).toEqual(before.needs);
-    const swimmer = createFishSchool(shrunk, { world: original, fish }).get(
-      "fish",
-    )!;
+    const swimmer = resized.getAnimal("fish")!.position;
     expect(swimmer.y).toBeLessThan(shrunk.environment.water);
     expect(swimmer.y).toBeGreaterThan(
       groundHeight(swimmer.x, swimmer.z, shrunk.environment),

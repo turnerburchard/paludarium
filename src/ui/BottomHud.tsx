@@ -14,6 +14,13 @@ export function BottomHud({ editor }: { editor: Editor }) {
       : tool.type === "move" || tool.type === "copy"
         ? world.objects.find((o) => o.id === tool.id)?.kind
         : undefined;
+  const name =
+    tool.type === "prebuilt"
+      ? tool.prebuilt.name
+      : kind
+        ? assets[kind].name
+        : "";
+  const adding = tool.type === "place" || tool.type === "prebuilt";
   const verb =
     tool.type === "move"
       ? "Moving"
@@ -38,7 +45,7 @@ export function BottomHud({ editor }: { editor: Editor }) {
           <strong>
             {tool.type === "terrain"
               ? terrainTools.find((brush) => brush.mode === tool.mode)?.label
-              : `${verb} ${kind ? assets[kind].name.toLowerCase() : ""}`}
+              : `${verb} ${name.toLowerCase()}`}
           </strong>
           <span role="status" aria-live="polite">
             {editor.placementError ||
@@ -49,12 +56,12 @@ export function BottomHud({ editor }: { editor: Editor }) {
         </div>
         {tool.type !== "terrain" && <PlacementRotation editor={editor} />}
         <button className="finish-button" onClick={editor.finish}>
-          {tool.type === "place" || tool.type === "terrain" ? (
+          {adding || tool.type === "terrain" ? (
             <Check size={16} />
           ) : (
             <X size={16} />
           )}
-          {tool.type === "place" || tool.type === "terrain" ? "Done" : "Cancel"}
+          {adding || tool.type === "terrain" ? "Done" : "Cancel"}
         </button>
       </div>
     </div>

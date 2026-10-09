@@ -1,6 +1,4 @@
 import { Binoculars, Eye, Hammer, HelpCircle, X } from "lucide-react";
-import { assets } from "../assets";
-import type { World } from "../model/schema";
 import type { EcosystemController } from "../simulation/useEcosystem";
 import { IconButton } from "./IconButton";
 import { Modal } from "./Modal";
@@ -8,22 +6,15 @@ import { Modal } from "./Modal";
 export function AboutDialog({
   onClose,
   onHelp,
-  world,
   ecosystem,
   onWatch,
 }: {
   onClose: () => void;
   onHelp: () => void;
-  world: World;
   ecosystem: EcosystemController;
   onWatch: (id: string) => void;
 }) {
-  const creatureIds = [
-    ...ecosystem.snapshot.animals.map((animal) => animal.id),
-    ...world.objects
-      .filter((object) => assets[object.kind].swims)
-      .map((object) => object.id),
-  ];
+  const creatureIds = ecosystem.snapshot.animals.map((animal) => animal.id);
   return (
     <Modal label="About Paludarium" onClose={onClose}>
       <div className="modal-heading">

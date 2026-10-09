@@ -8,39 +8,94 @@ import {
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Environment } from "../model/schema";
-import { randomFromSeed } from "../model/random";
 import { surfaceGrid, type Terrain as TerrainData } from "../model/terrainData";
-import { changedArea, drawTerrain, makeTerrain } from "./groundSurface";
+import { changedArea, drawTerrain, hash, makeTerrain } from "./groundSurface";
 import { groundHeight, hasDryGround } from "../model/terrain";
 import { makeWaterMaterial } from "./waterMaterial";
 import { makeGroundMoss } from "./groundMoss";
+import { groundScatter, makeLeafGeometry, scatterSpots } from "./groundScatter";
 
+const soilColors = ["#4a3d2e", "#544534", "#423527", "#5d4c38"].map(
+  (hex) => new THREE.Color(hex),
+);
+/** Soil seen through the glass is split into rows about this tall. */
+const SOIL_ROW = 0.07;
+
+/** The soil seen through the glass, as uneven low-poly facets. */
 function makeSkirt(env: Environment) {
-  const vertices: number[] = [],
-    indices: number[] = [];
-  const corners = [
-    [-env.width / 2, -env.depth / 2],
-    [env.width / 2, -env.depth / 2],
-    [env.width / 2, env.depth / 2],
-    [-env.width / 2, env.depth / 2],
-    [-env.width / 2, -env.depth / 2],
-  ];
+  const positions: number[] = [],
+    colors: number[] = [];
+  const color = new THREE.Color();
   const { columns, rows } = surfaceGrid(env);
-  for (let edge = 0; edge < 4; edge++) {
-    // Match surface subdivisions so the bank and sidewall share their silhouette.
-    const segments = edge % 2 === 0 ? columns : rows;
-    for (let i = 0; i <= segments; i++) {
+  const x = env.width / 2,
+    z = env.depth / 2;
+  // Each wall is split like the ground's edge so its top meets the surface.
+  const walls = [
+    { from: [-x, -z], to: [x, -z], segments: columns },
+    { from: [x, -z], to: [x, z], segments: rows },
+    { from: [x, z], to: [-x, z], segments: columns },
+    { from: [-x, z], to: [-x, -z], segments: rows },
+  ];
+  for (const { from, to, segments } of walls) {
+    const at = (t: number, y: number) =>
+      new THREE.Vector3(
+        THREE.MathUtils.lerp(from[0], to[0], t),
+        y,
+        THREE.MathUtils.lerp(from[1], to[1], t),
+      );
+    const ground = (t: number) => {
+      const { x, z } = at(t, 0);
+      return groundHeight(x, z, env);
+    };
+    let highest = 0;
+    for (let i = 0; i <= segments; i++)
+      highest = Math.max(highest, ground(i / segments));
+    const soilRows = Math.max(1, Math.ceil(highest / SOIL_ROW));
+    // Rows follow the surface like strata. Inside points shift a little so
+    // the facets look loose and uneven, but the corners, the bottom and the
+    // top edge stay put so the walls meet cleanly.
+    const point = (i: number, row: number) => {
       const t = i / segments,
-        x = THREE.MathUtils.lerp(corners[edge][0], corners[edge + 1][0], t),
-        z = THREE.MathUtils.lerp(corners[edge][1], corners[edge + 1][1], t);
-      const n = vertices.length / 3;
-      vertices.push(x, 0, z, x, groundHeight(x, z, env), z);
-      if (i < segments) indices.push(n, n + 1, n + 2, n + 1, n + 3, n + 2);
+        top = ground(t);
+      let y = (top * row) / soilRows,
+        shift = 0;
+      if (row > 0 && row < soilRows) {
+        y += (hash(t * 31, row) - 0.5) * 0.5 * (top / soilRows);
+        if (i > 0 && i < segments) shift = (hash(row, t * 17) - 0.5) * 0.6;
+      }
+      return at((i + shift) / segments, y);
+    };
+    for (let i = 0; i < segments; i++) {
+      for (let row = 0; row < soilRows; row++) {
+        const a = point(i, row),
+          b = point(i + 1, row),
+          c = point(i, row + 1),
+          d = point(i + 1, row + 1);
+        for (const triangle of [
+          [a, c, b],
+          [b, c, d],
+        ]) {
+          const middle = triangle[0].clone().add(triangle[1]).add(triangle[2]);
+          color
+            .copy(
+              soilColors[
+                Math.floor(
+                  hash(middle.x + middle.z, middle.y) * soilColors.length,
+                )
+              ],
+            )
+            .multiplyScalar(0.92 + 0.16 * hash(middle.y, middle.x - middle.z));
+          for (const corner of triangle) {
+            positions.push(corner.x, corner.y, corner.z);
+            colors.push(color.r, color.g, color.b);
+          }
+        }
+      }
     }
   }
   const geo = new THREE.BufferGeometry();
-  geo.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
-  geo.setIndex(indices);
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   geo.computeVertexNormals();
   return geo;
 }
@@ -72,35 +127,33 @@ export function Terrain({
     () => makeSkirt(env),
     [env.width, env.depth, env.height, env.substrate, heights],
   );
-  const stones = useMemo(() => {
-    const random = randomFromSeed(84);
-    return Array.from({ length: 160 }, () => ({
-      x: (random() - 0.5) * (env.width - 0.1),
-      z: (random() - 0.5) * (env.depth - 0.1),
-      size: 0.013 + random() * 0.035,
-    }));
-  }, [env.width, env.depth]);
+  const scatter = useMemo(
+    () => groundScatter(env),
+    [env.width, env.depth, env.height, env.substrate, env.terrain],
+  );
+  const capacity = scatterSpots(env);
+  const leaves = useRef<THREE.InstancedMesh>(null),
+    chips = useRef<THREE.InstancedMesh>(null);
+  const leafShape = useMemo(makeLeafGeometry, []);
+  useEffect(() => () => leafShape.dispose(), [leafShape]);
   useEffect(() => {
-    const mesh = pebbles.current;
-    if (!mesh) return;
-    const transform = new THREE.Object3D();
-    const pale = new THREE.Color("#c4b991"),
-      dark = new THREE.Color("#867c5b");
-    stones.forEach((stone, index) => {
-      transform.position.set(
-        stone.x,
-        groundHeight(stone.x, stone.z, env) + 0.005,
-        stone.z,
-      );
-      transform.scale.set(stone.size, stone.size * 0.5, stone.size);
-      transform.updateMatrix();
-      mesh.setMatrixAt(index, transform.matrix);
-      mesh.setColorAt(index, index % 3 === 0 ? pale : dark);
-    });
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    mesh.computeBoundingSphere();
-  }, [stones, env.width, env.depth, env.height, env.substrate, heights]);
+    for (const [kind, mesh] of [
+      ["leaf", leaves.current],
+      ["chip", chips.current],
+      ["pebble", pebbles.current],
+    ] as const) {
+      if (!mesh) continue;
+      const pieces = scatter.filter((piece) => piece.kind === kind);
+      pieces.forEach((piece, index) => {
+        mesh.setMatrixAt(index, piece.matrix);
+        mesh.setColorAt(index, piece.color);
+      });
+      mesh.count = pieces.length;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      mesh.computeBoundingSphere();
+    }
+  }, [scatter]);
   const carpet = useMemo(
     () => makeGroundMoss(env),
     [env.width, env.depth, env.height, env.substrate, env.terrain, env.water],
@@ -115,17 +168,32 @@ export function Terrain({
       </mesh>
       <mesh geometry={skirt}>
         <meshStandardMaterial
-          color="#443829"
+          vertexColors
           roughness={0.95}
           side={THREE.DoubleSide}
         />
       </mesh>
       {carpet && (
         <mesh geometry={carpet} receiveShadow>
-          <meshStandardMaterial vertexColors roughness={1} />
+          <meshStandardMaterial vertexColors flatShading roughness={1} />
         </mesh>
       )}
-      <instancedMesh ref={pebbles} args={[undefined, undefined, stones.length]}>
+      <instancedMesh ref={pebbles} args={[undefined, undefined, capacity]}>
+        <icosahedronGeometry args={[1, 0]} />
+        <meshStandardMaterial roughness={1} />
+      </instancedMesh>
+      <instancedMesh
+        ref={leaves}
+        args={[leafShape, undefined, capacity]}
+        receiveShadow
+      >
+        <meshStandardMaterial roughness={0.9} side={THREE.DoubleSide} />
+      </instancedMesh>
+      <instancedMesh
+        ref={chips}
+        args={[undefined, undefined, capacity]}
+        receiveShadow
+      >
         <icosahedronGeometry args={[1, 0]} />
         <meshStandardMaterial roughness={1} />
       </instancedMesh>
