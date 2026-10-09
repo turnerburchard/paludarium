@@ -28,7 +28,7 @@ const world = {
     height: 2.9,
     substrate: 0.25,
     water: 0,
-    streams: [],
+    springs: [],
     light: "day",
     warmth: 0.45,
     brightness: 1,

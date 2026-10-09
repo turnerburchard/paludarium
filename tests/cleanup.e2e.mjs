@@ -87,7 +87,7 @@ try {
           depth: 4.5,
           substrate: 0.25,
           water: 0,
-          streams: [],
+          springs: [],
           light: "day",
           warmth: 0.45,
           brightness: 1,

@@ -10,9 +10,11 @@ import * as THREE from "three";
 import type { Environment } from "../model/schema";
 import { surfaceGrid, type Terrain as TerrainData } from "../model/terrainData";
 import { changedArea, drawTerrain, hash, makeTerrain } from "./groundSurface";
-import { groundHeight, hasDryGround } from "../model/terrain";
+import { hasDryGround, waterMap } from "../model/water";
+import { groundHeight } from "../model/terrain";
 import { makeStreamMaterial, makeWaterMaterial } from "./waterMaterial";
 import { StreamWater } from "./StreamWater";
+import { PoolWater } from "./PoolWater";
 import { makeGroundMoss } from "./groundMoss";
 import { groundScatter, makeLeafGeometry, scatterSpots } from "./groundScatter";
 
@@ -157,7 +159,15 @@ export function Terrain({
   }, [scatter]);
   const carpet = useMemo(
     () => makeGroundMoss(env),
-    [env.width, env.depth, env.height, env.substrate, env.terrain, env.water],
+    [
+      env.width,
+      env.depth,
+      env.height,
+      env.substrate,
+      env.terrain,
+      env.water,
+      env.springs,
+    ],
   );
   useEffect(() => () => surface.dispose(), [surface]);
   useEffect(() => () => skirt.dispose(), [skirt]);
@@ -210,35 +220,68 @@ export function Water({
 }) {
   const time = useRef({ value: 0 });
   const material = useMemo(() => makeWaterMaterial(time.current), []);
+  const poolMaterial = useMemo(
+    () => makeWaterMaterial(time.current, { shore: true }),
+    [],
+  );
   const streamMaterial = useMemo(() => makeStreamMaterial(time.current), []);
+  const glass = useMemo(() => makeGlassWater(), []);
   material.opacity = hasDryGround(env) ? 0.47 : 0.22;
   useEffect(() => () => material.dispose(), [material]);
+  useEffect(() => () => poolMaterial.dispose(), [poolMaterial]);
   useEffect(() => () => streamMaterial.dispose(), [streamMaterial]);
+  useEffect(() => () => glass.dispose(), [glass]);
+  const map = waterMap(env);
   useFrame((_, dt) => {
     if (!paused) time.current.value += Math.min(dt, 0.05);
   });
   return (
     <group>
-      {env.streams.map((stream, i) => (
+      {map.streams.map((course, i) => (
         <StreamWater
           key={i}
-          stream={stream}
+          course={course}
           environment={env}
           material={streamMaterial}
         />
       ))}
-      {env.water > 0 && <Pool environment={env} material={material} />}
+      {map.pools.map((_, i) => (
+        <PoolWater
+          key={i}
+          index={i}
+          map={map}
+          environment={env}
+          material={poolMaterial}
+          glass={glass}
+        />
+      ))}
+      {env.water > 0 && (
+        <Pool environment={env} material={material} glass={glass} />
+      )}
     </group>
   );
+}
+
+/** Water seen through the glass, faint so the tank's inside shows. */
+function makeGlassWater() {
+  return new THREE.MeshBasicMaterial({
+    color: "#60adab",
+    transparent: true,
+    opacity: 0.07,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
 }
 
 /** Still water at the tank's water level, seen from above and through the glass. */
 function Pool({
   environment: env,
   material,
+  glass,
 }: {
   environment: Environment;
   material: THREE.Material;
+  glass: THREE.Material;
 }) {
   return (
     <group>
@@ -249,31 +292,19 @@ function Pool({
             // Unit-high planes scaled to the level, so dragging it doesn't
             // rebuild their geometry every step.
             scale={[1, env.water, 1]}
+            material={glass}
             renderOrder={3}
           >
             <planeGeometry args={[env.width - 0.015, 1]} />
-            <meshBasicMaterial
-              color="#60adab"
-              transparent
-              opacity={0.07}
-              depthWrite={false}
-              side={THREE.DoubleSide}
-            />
           </mesh>
           <mesh
             position={[side * (env.width / 2 - 0.008), env.water / 2, 0]}
             rotation={[0, Math.PI / 2, 0]}
             scale={[1, env.water, 1]}
+            material={glass}
             renderOrder={3}
           >
             <planeGeometry args={[env.depth - 0.015, 1]} />
-            <meshBasicMaterial
-              color="#60adab"
-              transparent
-              opacity={0.07}
-              depthWrite={false}
-              side={THREE.DoubleSide}
-            />
           </mesh>
         </group>
       ))}

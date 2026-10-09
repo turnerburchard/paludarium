@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { Environment } from "../model/schema";
 import { groundHeight } from "../model/terrain";
 import { paintSamples, surfaceGrid } from "../model/terrainData";
+import { waterLevel } from "../model/water";
 import { MOSS_COLORS } from "../assets/landscape/mosses";
 
 /** How far apart tufts grow on the carpet, and how tall the biggest stand. */
@@ -34,7 +35,8 @@ export function makeGroundMoss(env: Environment) {
     const edge = 0.25 + 0.4 * hash(Math.floor(x / 0.1), Math.floor(z / 0.1), 7);
     return THREE.MathUtils.clamp((coverage - edge) / 0.3, 0, 1);
   };
-  const underwater = (ground: number) => ground < env.water + 0.025;
+  const underwater = (x: number, z: number, ground: number) =>
+    ground < waterLevel(x, z, env) + 0.025;
   // Points are shared between faces to keep the carpet light enough to
   // rebuild on every brush dab. The material shades each face flat.
   const positions: number[] = [],
@@ -54,7 +56,7 @@ export function makeGroundMoss(env: Environment) {
       z = (row / rows - 0.5) * env.depth;
     if (growth(x, z) === 0) return -1;
     const ground = groundHeight(x, z, env);
-    if (underwater(ground)) return -1;
+    if (underwater(x, z, ground)) return -1;
     return addPoint(
       x,
       ground + 0.003,
@@ -82,7 +84,7 @@ export function makeGroundMoss(env: Environment) {
       const thickness = growth(x, z);
       if (thickness === 0) continue;
       const ground = groundHeight(x, z, env);
-      if (underwater(ground)) continue;
+      if (underwater(x, z, ground)) continue;
       // Tufts swell into hummocks in some places and sink into hollows in
       // others, so the carpet rolls instead of growing like a lawn.
       const rise = hummocks(x, z);

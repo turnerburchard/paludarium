@@ -6,7 +6,7 @@ import {
   type AssetKind,
   type Environment,
   type HabitatObject,
-  type Stream,
+  type Spring,
   type World,
 } from "./schema";
 import type { MossSpecies } from "./moss";
@@ -257,7 +257,7 @@ function cloudForest(add: Add, shelter: Shelter, objects: HabitatObject[]) {
   add("rock", 2.0, -0.4, 0.6, 1);
   add("fern-moss", -0.1, -1.0, 0.8);
   add("grass", 2.2, 0.6, 0.9);
-  add("grass", 1.1, -1.3, 0.8);
+  add("grass", 0.8, -1.5, 0.8);
   // Ferns, bromeliads and a calathea on the far side of the pool.
   add("fern", 2.9, 0.9, 1.1, 2.2);
   add("bromeliad", 3.4, -0.3, 0.85, 1.2);
@@ -736,13 +736,13 @@ function forestFloor() {
     { ...defaultEnvironment, width: 8, height: 4, water: 0.6 },
     0.9,
   );
-  return sculpt({ ...env, streams: [streamAlong(env, brook, 0.3)] }, [
+  return sculpt({ ...env, springs: [springAt(env, brook[0], 0.5)] }, [
     ["raise", 1.8, [[-2.4, -1.7]], 2],
     ["raise", 1.5, [[2.6, -1.6]], 3],
     ["raise", 1.6, [[3.0, 1.2]], 2],
     // A rise at the back for the brook to come down from.
     ["raise", 1.3, [[1.5, -1.8]], 4],
-    ["lower", 0.75, brook, 2],
+    ["lower", 0.75, brook],
     ["smooth", 0.6, brook, 2],
     ["pool", 1.9, [[0.7, 0.9]]],
     ["lower", 1.4, [[0.7, 1.0]], 5],
@@ -761,6 +761,8 @@ function grottoFloor() {
     [-1.3, 1.3],
   ];
   const pool = { x: -1.6, z: 1.55 };
+  const plunge = { x: 0.75, z: -0.75 };
+  const pond = { x: -0.3, z: 0.4 };
   const env: Environment = {
     ...defaultEnvironment,
     width: 6,
@@ -782,22 +784,23 @@ function grottoFloor() {
       smooth((foot - z) / 1.3);
     const terrace = 0.15 * smooth(1 - Math.hypot(x - 2.2, z - 0.4) / 1.3);
     const ground = 0.82 + 0.05 * Math.sin(x * 1.7 - z * 1.3) + wall + terrace;
-    // The seep cuts a gully down the wall, then runs as a shallow stream
-    // across the bank.
+    // The seep cuts a gully down the wall and a shallow bed across the
+    // bank, filling a plunge pool at the wall's foot and a second pool on
+    // the bank on its way to the water.
     const channel =
       1 - smooth((nearestOnPath(x, z, seep).distance - 0.15) / 0.3);
-    const stream = smooth((z - foot) / 0.4);
-    const bed = ground + (env.water - 0.2 - ground) * stream;
-    const basin = 1 - smooth((Math.hypot(x - pool.x, z - pool.z) - 0.85) / 0.6);
+    const dip = (at: { x: number; z: number }, radius: number) =>
+      1 - smooth((Math.hypot(x - at.x, z - at.z) - radius) / 0.35);
+    const basin = dip(pool, 0.85);
     const height = Math.min(
-      ground + (Math.min(bed, ground - 0.2) - ground) * channel,
+      ground - 0.12 * channel - 0.22 * dip(plunge, 0.2) - 0.1 * dip(pond, 0.3),
       ground + (env.water - 0.45 - ground) * basin,
     );
     return Math.round((height - baseGroundHeight(x, z, env)) * 100) / 100;
   });
   // Bare stone up the wall and along the seep, moss on the ledges and
   // carpeting the bank.
-  return sculpt({ ...env, terrain, streams: [streamAlong(env, seep, 0.3)] }, [
+  return sculpt({ ...env, terrain, springs: [springAt(env, seep[0], 0.5)] }, [
     [
       "moss",
       1.3,
@@ -925,56 +928,53 @@ function creekBed() {
     [3.4, -0.2],
     [4.3, 0.7],
   ];
-  return sculpt(
-    { ...env, terrain, streams: [streamAlong(env, upstream, 0.5)] },
+  return sculpt({ ...env, terrain, springs: [springAt(env, creek[0], 1)] }, [
+    ["moss", 1.2, meadow],
+    ["moss", 0.8, creekside],
+    ["moss", 0.7, farBank],
     [
-      ["moss", 1.2, meadow],
-      ["moss", 0.8, creekside],
-      ["moss", 0.7, farBank],
+      "moss",
+      0.6,
       [
-        "moss",
-        0.6,
-        [
-          [-1.2, -1.0],
-          [-0.6, -0.7],
-        ],
-      ],
-      [
-        "moss",
-        0.6,
-        [
-          [2.6, -1.4],
-          [3.9, -1.2],
-        ],
-      ],
-      [
-        "moss",
-        0.5,
-        [
-          [-0.6, -1.95],
-          [1.1, -1.95],
-        ],
-      ],
-      [
-        "moss",
-        0.6,
-        [
-          [-3.9, -1.9],
-          [-3.0, -1.8],
-        ],
-      ],
-      ["stone", 0.75, creek],
-      ["stone", 1.3, [[pool.x, pool.z]]],
-      [
-        "stone",
-        0.6,
-        [
-          [0.4, -1.5],
-          [0.9, -1.2],
-        ],
+        [-1.2, -1.0],
+        [-0.6, -0.7],
       ],
     ],
-  );
+    [
+      "moss",
+      0.6,
+      [
+        [2.6, -1.4],
+        [3.9, -1.2],
+      ],
+    ],
+    [
+      "moss",
+      0.5,
+      [
+        [-0.6, -1.95],
+        [1.1, -1.95],
+      ],
+    ],
+    [
+      "moss",
+      0.6,
+      [
+        [-3.9, -1.9],
+        [-3.0, -1.8],
+      ],
+    ],
+    ["stone", 0.75, creek],
+    ["stone", 1.3, [[pool.x, pool.z]]],
+    [
+      "stone",
+      0.6,
+      [
+        [0.4, -1.5],
+        [0.9, -1.2],
+      ],
+    ],
+  ]);
 }
 
 /** A tank of deep water around a raised island toward the back. */
@@ -1042,21 +1042,15 @@ function islandLagoon() {
   ]);
 }
 
-/** A stream down a path given in tank coordinates. */
-function streamAlong(
+/** A spring at a spot given in tank coordinates. */
+function springAt(
   env: Environment,
-  path: [number, number][],
-  width: number,
-): Stream {
+  [x, z]: [number, number],
+  flow: number,
+): Spring {
   // Rounded to keep preset share links short.
   const fraction = (n: number) => Math.round(n * 1000) / 1000;
-  return {
-    path: path.map(([x, z]) => [
-      fraction(x / env.width),
-      fraction(z / env.depth),
-    ]),
-    width,
-  };
+  return { x: fraction(x / env.width), z: fraction(z / env.depth), flow };
 }
 
 /** How far a spot is from the nearest point on a path, and how far along

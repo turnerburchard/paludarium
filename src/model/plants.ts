@@ -1,9 +1,9 @@
 import { assets } from "../assets";
 import type { Environment, HabitatObject } from "./schema";
 import { objectBase } from "./stacking";
-import { streamSurface } from "./streams";
+import { waterNear } from "./water";
 
-/** How far beyond a stream's edge a plant's roots still find its water. */
+/** How far beyond the water's edge a plant's roots still find it. */
 const ROOT_REACH = 0.5;
 
 /** How wet a plant likes its roots, as height of its spot above the waterline. */
@@ -29,8 +29,8 @@ export function plantCondition(
   const soil = assets[object.kind].soil;
   if (!soil) return null;
   const { min, max, likes } = soils[soil];
-  const stream = streamSurface(env, ROOT_REACH)(object.x, object.z);
-  const height = objectBase(object, env) - Math.max(env.water, stream ?? 0);
+  const height =
+    objectBase(object, env) - waterNear(object.x, object.z, env, ROOT_REACH);
   if (height < min)
     return {
       thriving: false,

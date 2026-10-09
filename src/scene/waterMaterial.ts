@@ -1,8 +1,13 @@
 import * as THREE from "three";
 
 /** Keep the existing ripple shape, but calculate it on the GPU instead of
- * rebuilding and uploading the water mesh and its normals every frame. */
-export function makeWaterMaterial(time: THREE.IUniform<number>) {
+ * rebuilding and uploading the water mesh and its normals every frame. With
+ * `shore`, a `fade` attribute thins the water out toward its edge, for a
+ * pool whose shape follows the ground. */
+export function makeWaterMaterial(
+  time: THREE.IUniform<number>,
+  { shore = false } = {},
+) {
   const material = new THREE.MeshStandardMaterial({
     color: "#60adab",
     transparent: true,
@@ -18,7 +23,8 @@ export function makeWaterMaterial(time: THREE.IUniform<number>) {
       .replace(
         "#include <common>",
         `#include <common>
-        uniform float waterTime;`,
+        uniform float waterTime;
+        ${shore ? "attribute float fade; varying float vFade;" : ""}`,
       )
       .replace(
         "#include <beginnormal_vertex>",
@@ -32,10 +38,24 @@ export function makeWaterMaterial(time: THREE.IUniform<number>) {
       .replace(
         "#include <begin_vertex>",
         `#include <begin_vertex>
-        transformed.z += sin(rippleX) * cos(rippleY) * 0.008;`,
+        transformed.z += sin(rippleX) * cos(rippleY) * 0.008;
+        ${shore ? "vFade = fade;" : ""}`,
       );
+    if (shore)
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          "#include <common>",
+          `#include <common>
+          varying float vFade;`,
+        )
+        .replace(
+          "#include <color_fragment>",
+          `#include <color_fragment>
+          diffuseColor.a *= vFade;`,
+        );
   };
-  material.customProgramCacheKey = () => "water-ripples-v1";
+  material.customProgramCacheKey = () =>
+    shore ? "water-ripples-shore-v1" : "water-ripples-v1";
   return material;
 }
 

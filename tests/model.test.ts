@@ -9,12 +9,8 @@ import {
   type World,
 } from "../src/model/schema";
 import { makePreset } from "../src/model/presets";
-import {
-  boundedPosition,
-  groundHeight,
-  placementProblem,
-  swimmingHeight,
-} from "../src/model/terrain";
+import { placementProblem, swimmingHeight } from "../src/model/water";
+import { boundedPosition, groundHeight } from "../src/model/terrain";
 import { assets, buildAsset, disposeAsset } from "../src/assets";
 import { Box3 } from "three";
 import {

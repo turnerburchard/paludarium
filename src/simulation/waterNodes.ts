@@ -1,5 +1,6 @@
 import type { World } from "../model/schema";
-import { depthAt, groundHeight, placementProblem } from "../model/terrain";
+import { depthAt, placementProblem, waterLevel } from "../model/water";
+import { groundHeight } from "../model/terrain";
 import type { SwimSpace } from "./swimSpace";
 import type { HabitatNode, Vec3 } from "./types";
 
@@ -24,8 +25,9 @@ export function waterNodes(world: World, space: SwimSpace): HabitatNode[] {
   // water is as tall as it gets, so a big fish can still cross a creek.
   const fits = (point: Vec3, half: number) => {
     const ground = groundHeight(point.x, point.z, env);
-    const height = Math.min(half, (env.water - ground) / 2 - 0.001);
-    const y = Math.max(ground + height, Math.min(env.water - height, point.y));
+    const surface = waterLevel(point.x, point.z, env);
+    const height = Math.min(half, (surface - ground) / 2 - 0.001);
+    const y = Math.max(ground + height, Math.min(surface - height, point.y));
     return space.open({ ...point, y }, half, height);
   };
   for (let ix = 0; ix < nx; ix++)
@@ -34,8 +36,9 @@ export function waterNodes(world: World, space: SwimSpace): HabitatNode[] {
       const z = -env.depth / 2 + (iz + 0.5) * (env.depth / nz);
       if (placementProblem("fish", x, z, env)) continue;
       const ground = groundHeight(x, z, env);
+      const surface = waterLevel(x, z, env);
       for (let level = 0; level < LEVELS; level++) {
-        const y = env.water - ((env.water - ground) * level) / (LEVELS - 1);
+        const y = surface - ((surface - ground) * level) / (LEVELS - 1);
         const position = { x, y, z };
         const room = ROOMS.find((half) => fits(position, half));
         if (room === undefined) continue;

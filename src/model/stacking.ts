@@ -1,6 +1,7 @@
 import { assets } from "../assets";
 import type { Environment, HabitatObject } from "./schema";
 import { groundHeight } from "./terrain";
+import { waterLevel } from "./water";
 
 /** Where an object's base sits: on the ground, on the stone or wood it was
  * placed on, or on the surface for floating plants. */
@@ -11,7 +12,9 @@ export function objectBase(object: HabitatObject, env: Environment) {
       ? lowestGround(object, asset.groundPoints, env)
       : groundHeight(object.x, object.z, env);
   const base = ground + (object.lift ?? 0);
-  return asset.floats ? Math.max(base, env.water) : base;
+  return asset.floats
+    ? Math.max(base, waterLevel(object.x, object.z, env))
+    : base;
 }
 
 /** The lowest ground under points on a model, after it is turned and

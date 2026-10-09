@@ -1,7 +1,7 @@
 import { assets, categoryOf, isAnimal } from "../assets";
 import { plantCondition } from "../model/plants";
 import { randomFromSeed } from "../model/random";
-import { placementProblem } from "../model/terrain";
+import { placementProblem } from "../model/water";
 import {
   LOG_LENGTH,
   MAX_OBJECTS,

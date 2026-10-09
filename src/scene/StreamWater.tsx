@@ -1,8 +1,8 @@
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
-import type { Environment, Stream } from "../model/schema";
-import { STREAM_DEPTH, streamCourse, type CoursePoint } from "../model/streams";
+import type { Environment } from "../model/schema";
 import { clamp, groundHeight } from "../model/terrain";
+import { STREAM_DEPTH, type CoursePoint } from "../model/water";
 
 /** How fast water runs on the flat, and how much faster down a fall. */
 const FLAT_SPEED = 0.3;
@@ -26,11 +26,7 @@ const EDGE = 0.25;
  * distance, so ripples scroll faster down falls without stretching. Where the
  * bed rises above the surface, or the ribbon nears its sides, the water fades
  * out, so it meets any bank softly. */
-function streamGeometry(
-  course: CoursePoint[],
-  width: number,
-  env: Environment,
-) {
+function streamGeometry(course: CoursePoint[], env: Environment) {
   const positions: number[] = [],
     flow: number[] = [],
     foam: number[] = [],
@@ -64,12 +60,12 @@ function streamGeometry(
       const across = (2 * j) / (ACROSS - 1) - 1;
       // Kept inside the glass where a stream runs along or off the tank's edge.
       const x = clamp(
-          point.x + (side.x * across * width) / 2,
+          point.x + (side.x * across * point.width) / 2,
           -env.width / 2,
           env.width / 2,
         ),
         z = clamp(
-          point.z + (side.z * across * width) / 2,
+          point.z + (side.z * across * point.width) / 2,
           -env.depth / 2,
           env.depth / 2,
         );
@@ -105,19 +101,15 @@ function streamGeometry(
 }
 
 export function StreamWater({
-  stream,
+  course,
   environment: env,
   material,
 }: {
-  stream: Stream;
+  course: CoursePoint[];
   environment: Environment;
   material: THREE.Material;
 }) {
-  const geometry = useMemo(() => {
-    const course = streamCourse(stream, env);
-    return course.length > 1 ? streamGeometry(course, stream.width, env) : null;
-  }, [stream, env]);
-  useEffect(() => () => geometry?.dispose(), [geometry]);
-  if (!geometry) return null;
+  const geometry = useMemo(() => streamGeometry(course, env), [course, env]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
   return <mesh geometry={geometry} material={material} renderOrder={2} />;
 }

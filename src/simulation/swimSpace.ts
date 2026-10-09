@@ -7,7 +7,8 @@ import {
 } from "../assets/collisionTree";
 import type { Environment, HabitatObject, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
-import { groundHeight, placementProblem } from "../model/terrain";
+import { highestWater, placementProblem, waterLevel } from "../model/water";
+import { groundHeight } from "../model/terrain";
 import type { Vec3 } from "./types";
 
 const CLEARANCE = 0.015;
@@ -83,6 +84,8 @@ export class SwimSpace {
 
   private buildScenery(objects: HabitatObject[]): Scenery {
     const env = this.world.environment;
+    // Only what reaches into some water can get in a fish's way.
+    const surface = highestWater(env);
     const faces: CollisionFace[] = [];
     const solids: CollisionTree[] = [];
     for (const object of objects) {
@@ -93,7 +96,7 @@ export class SwimSpace {
       );
       const geometry = collisionShape(object);
       const submergedBounds = geometry.bounds.clone().applyMatrix4(this.matrix);
-      if (submergedBounds.min.y >= env.water) continue;
+      if (submergedBounds.min.y >= surface) continue;
       const transformed = geometry.faces.map(({ triangle }) => {
         const moved = triangle.clone();
         for (const point of [moved.a, moved.b, moved.c])
@@ -103,9 +106,7 @@ export class SwimSpace {
           bounds: new THREE.Box3().setFromPoints([moved.a, moved.b, moved.c]),
         };
       });
-      faces.push(
-        ...transformed.filter((face) => face.bounds.min.y < env.water),
-      );
+      faces.push(...transformed.filter((face) => face.bounds.min.y < surface));
       if (assets[object.kind].hardscape)
         solids.push(buildCollisionTree(transformed));
     }
@@ -135,7 +136,7 @@ export class SwimSpace {
   ) => {
     const body = this.bodies.get(id)!;
     const floor = groundHeight(x, z, env) - body.min.y + 0.005;
-    const ceiling = env.water - body.max.y - 0.005;
+    const ceiling = waterLevel(x, z, env) - body.max.y - 0.005;
     const bob = Math.max(0, Math.min(SWIM_BOB, (ceiling - floor) / 2));
     return {
       y: Math.max(floor + bob, Math.min(ceiling - bob, wanted)),
@@ -195,7 +196,12 @@ export class SwimSpace {
       this.query.max.x >= env.width / 2 ||
       this.query.min.z <= -env.depth / 2 ||
       this.query.max.z >= env.depth / 2 ||
-      this.query.max.y >= env.water
+      this.query.max.y >=
+        waterLevel(
+          (this.query.min.x + this.query.max.x) / 2,
+          (this.query.min.z + this.query.max.z) / 2,
+          env,
+        )
     )
       return false;
     return !this.intersects(this.obstacles, this.bodyBox);

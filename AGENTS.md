@@ -27,7 +27,7 @@ This matters more than speed. The owner reads the code and wants it to look like
 
 - Simple and readable over clever. Plain names, small functions, obvious data flow.
 - No speculative abstraction, defensive boilerplate, or "just in case" options. Delete code rather than add layers.
-- Comments explain *why*, not *what*. Most lines need none.
+- Comments explain _why_, not _what_. Most lines need none.
 - Fix root causes. Don't silence warnings, widen types, or add `as` casts to make errors go away.
 - Match the surrounding style. Prettier owns formatting.
 - Leave things cleaner than you found them, but keep each commit focused on one change.
@@ -46,7 +46,7 @@ Rules that keep this working:
 - `groundHeight` is the single source of truth for terrain: rendering, placement, navigation all use it.
 - World objects are plain serializable data with a seed. Never store Three.js objects in the model.
 - Simulation randomness goes through an injected random source so behavior is testable.
-- Changing the save schema needs validation. There are no users yet, so with the owner's OK an incompatible change can bump the storage key (now `little-worlds:v3`) and drop old saves instead of migrating them. Once people rely on their saves, incompatible changes need a migration.
+- Changing the save schema needs validation. There are no users yet, so with the owner's OK an incompatible change can bump the storage key (now `little-worlds:v4`) and drop old saves instead of migrating them. Once people rely on their saves, incompatible changes need a migration.
 
 ## Testing
 
@@ -60,6 +60,6 @@ Rules that keep this working:
 - Commit straight to `main` in small, focused commits with clear messages. `git pull --rebase` before pushing; another agent may be working at the same time.
 - Never push with failing checks. If CI fails after your push, fixing it is your top priority.
 - Work is tracked in GitHub issues. Take issues labeled for you (`agent:claude` or `agent:codex`); leave the others alone unless asked. Close issues with a short note when done.
-- Art direction (how frogs, plants, and terrain *look*) is decided with the owner. Agents can make art easier to work on, but don't change the look of existing assets on your own. Issues labeled `art` need the owner.
+- Art direction (how frogs, plants, and terrain _look_) is decided with the owner. Agents can make art easier to work on, but don't change the look of existing assets on your own. Issues labeled `art` need the owner.
 - For visual or layout changes, run `npm run screenshot` and look at the images before committing.
 - Keep `README.md` short. Track planned work in GitHub issues.
