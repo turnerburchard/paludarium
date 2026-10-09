@@ -122,7 +122,7 @@ export function Terrain({
       </mesh>
       {carpet && (
         <mesh geometry={carpet} receiveShadow>
-          <meshStandardMaterial vertexColors roughness={1} />
+          <meshStandardMaterial vertexColors flatShading roughness={1} />
         </mesh>
       )}
       <instancedMesh ref={pebbles} args={[undefined, undefined, stones.length]}>
