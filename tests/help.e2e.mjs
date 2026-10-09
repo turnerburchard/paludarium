@@ -193,7 +193,7 @@ try {
       await closeHelp(page, "escape");
       if (method === "escape" && viewport.width > 760) {
         await page
-          .getByRole("button", { name: "Landscape", exact: true })
+          .getByRole("button", { name: "Hardscape", exact: true })
           .click();
         await page
           .getByRole("button", { name: "River stone", exact: true })

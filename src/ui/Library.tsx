@@ -13,7 +13,7 @@ import { loadThumbnails, type Thumbnails } from "../scene/thumbnails";
 import { hasDryGround } from "../model/terrain";
 import { prebuilts } from "../model/prebuilts";
 import { LibraryFilter, type Place } from "./LibraryFilter";
-const categories: Category[] = ["Plants", "Landscape", "Animals"];
+const categories: Category[] = ["Plants", "Hardscape", "Animals"];
 export function Library({
   editor,
   hidden,

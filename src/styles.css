@@ -254,6 +254,7 @@ button:hover:not(:disabled) {
    as a second row of panel tabs. */
 .category-tabs {
   display: flex;
+  justify-content: center;
   gap: 6px;
   margin: 0 18px 14px;
 }
@@ -282,7 +283,6 @@ button:hover:not(:disabled) {
   color: #e3edcc;
 }
 .category-tabs .category-filter {
-  margin-left: auto;
   padding: 5px 8px;
 }
 .category-tabs button.filtered {
