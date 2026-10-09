@@ -12,7 +12,6 @@ export type TerrainMode =
   | "lower"
   | "smooth"
   | "pool"
-  | "stream"
   | Exclude<GroundMaterial, "natural">;
 export interface TerrainBrush {
   mode: TerrainMode;
@@ -38,10 +37,7 @@ export function applyTerrainBrush(
   // only on the ground's shape can skip rebuilding.
   const heights = painting ? terrain.heights : [...terrain.heights],
     paint = [...terrain.paint];
-  const water =
-    brush.mode === "pool" || brush.mode === "stream"
-      ? Math.max(0.35, env.water)
-      : env.water;
+  const water = brush.mode === "pool" ? Math.max(0.35, env.water) : env.water;
   let changed = water !== env.water;
   for (let index = 0; index < heights.length; index++) {
     const point = terrainPoint(index, sculpted);
@@ -53,7 +49,7 @@ export function applyTerrainBrush(
     let delta = terrain.heights[index];
     if (brush.mode === "raise" || brush.mode === "lower")
       delta += (brush.mode === "raise" ? heightStep : -heightStep) * weight;
-    else if (brush.mode === "pool" || brush.mode === "stream")
+    else if (brush.mode === "pool")
       delta += Math.min(0, water - 0.2 - height) * weight;
     else if (brush.mode === "smooth") {
       const col = index % (columns + 1),
