@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Plus, ListFilter } from "lucide-react";
 import {
-  assets,
   catalog,
   categoryOf,
   groupCategories,
   livesIn,
+  prebuiltLivesIn,
   type Category,
   type Group,
 } from "../assets";
@@ -70,13 +70,7 @@ export function Library({
     (prebuilt) =>
       activeCategory === "Hardscape" &&
       (places.length === 0 ||
-        places.some((place) =>
-          place === "Underwater"
-            ? prebuilt.pieces.every((piece) =>
-                livesIn(assets[piece.kind], place),
-              )
-            : prebuilt.biomes.includes(place),
-        )) &&
+        places.some((place) => prebuiltLivesIn(prebuilt, place))) &&
       (activeGroups.length === 0 || activeGroups.includes("Prebuilt")),
   );
   const filterCount = places.length + activeGroups.length;
