@@ -10,6 +10,10 @@ The frog mesh is derived from [Quaternius Frog](https://poly.pizza/m/9Z2V8fpazF)
 
 The gecko mesh is derived from ["Salamander" by Poly by Google](https://poly.pizza/m/eqjMAgmr-pM), licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). It was reposed, rigged, rescaled and recolored for this project. The original GLB is at `docs/inspiration/models/gecko-poly-google.glb`.
 
+## European tree frog model
+
+The European tree frog mesh is derived from ["Frog" by Poly by Google](https://poly.pizza/m/97NtujixdN7), licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). It was rescaled, rigged to the shared frog skeleton and recolored in flat colors. The original GLB is at `docs/inspiration/models/european-tree-frog-poly-google.glb`.
+
 ## Fish model
 
 The tiger barb is derived from ["Fish" by Quaternius](https://poly.pizza/m/BEcU9rjiAq), released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/), recolored. The original GLB is at `docs/inspiration/models/fish-quaternius.glb`.
