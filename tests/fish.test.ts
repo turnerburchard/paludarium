@@ -269,13 +269,23 @@ describe("fish in a real tank", () => {
     expect(Math.max(...spread)).toBeGreaterThan(0.3);
   });
 
-  it.each([3, 8, 19])(
-    "Fish from older Cloud Forest saves escape tight starting spots and keep exploring (seed %s)",
-    (seed) => {
+  it.each([
+    [3, 0],
+    [8, 0],
+    [19, 0],
+    [19, 3],
+  ])(
+    "Fish from older Cloud Forest saves escape tight starting spots and keep exploring (seed %s, ids %s)",
+    (seed, idSeed) => {
       const world = makePreset("tropical");
       // Fixed ids, since crowded fish break ties by id and fresh random ids
       // made each run a different simulation.
-      world.objects.forEach((o, i) => (o.id = `object-${i}`));
+      const ids = randomFromSeed(idSeed);
+      // ID seed 3 reproduces #57: a retreat with an exhausted trail backed
+      // into the bank near (0.54, 1.83), then stalled for whole minutes.
+      world.objects.forEach((o, i) => {
+        o.id = idSeed ? `id-${Math.floor(ids() * 1e9)}` : `object-${i}`;
+      });
       // Preserve the full-size fish and placements from older saved worlds,
       // before the preset was changed to start smaller fish in open water.
       const poses = [

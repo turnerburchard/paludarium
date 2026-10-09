@@ -98,6 +98,15 @@ describe("fish-sized water clearance", () => {
     expect(shown.y).toBeGreaterThan(groundHeight(2, 0.7, preview) + 0.05);
   });
 
+  it("rejects a retained swimming height below the floor", () => {
+    const fish = object("convict-cichlid", 2, 0.7);
+    const world = tank(fish);
+    const space = new SwimSpace(world);
+    const { y } = space.steady(fish.id, fish.x, fish.z, -10);
+    expect(space.canSwim(fish.id, fish.x, y, fish.z, 0)).toBe(true);
+    expect(space.canSwim(fish.id, fish.x, y - 0.05, fish.z, 0)).toBe(false);
+  });
+
   it("blocks low fish at a stone while allowing fish to swim above it", () => {
     const low = object("rainbow-shark");
     const high = object("ember-tetra");
