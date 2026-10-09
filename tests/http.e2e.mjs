@@ -62,6 +62,8 @@ try {
     ...devices["iPhone 13"],
     deviceScaleFactor: 1,
   });
+  // Software WebGL on CI can take half a minute to compile a new world's shaders.
+  page.setDefaultTimeout(90_000);
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   // Serve the production files on a genuinely untrusted HTTP origin. Loopback

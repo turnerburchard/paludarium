@@ -69,6 +69,8 @@ try {
       viewport,
       hasTouch: viewport.width < 760,
     });
+    // Software WebGL on CI can take half a minute to compile a new world's shaders.
+    context.setDefaultTimeout(90_000);
     const page = await context.newPage();
     page.on("pageerror", (error) => errors.push(error.message));
     await page.addInitScript(
@@ -132,17 +134,6 @@ try {
           .evaluate((el) => el === document.activeElement),
         true,
       );
-      if (method === "close") {
-        await page.screenshot({
-          path: `/tmp/paludarium-help-${viewport.width}.png`,
-        });
-        await page.getByRole("dialog").evaluate((el) => {
-          el.scrollTop = el.scrollHeight;
-        });
-        await page.screenshot({
-          path: `/tmp/paludarium-help-${viewport.width}-bottom.png`,
-        });
-      }
       const saved = await page.evaluate(
         (key) => localStorage.getItem(key),
         storageKey,

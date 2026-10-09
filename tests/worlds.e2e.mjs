@@ -62,6 +62,8 @@ try {
     { width: 390, height: 844 },
   ]) {
     const page = await browser.newPage({ viewport });
+    // Software WebGL on CI can take half a minute to compile a new world's shaders.
+    page.setDefaultTimeout(90_000);
     page.on("pageerror", (error) => errors.push(error.message));
     await page.addInitScript(
       ({ storageKey, original }) => {
