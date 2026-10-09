@@ -22,6 +22,10 @@ export interface Remains {
 export function useEcosystem(
   world: World,
   onLifeChange: (base: World, next: World) => void,
+  /** Life is paused while sculpting, so the habitat rebuild, which takes a
+   * noticeable moment, waits until the terrain tool closes rather than
+   * following every stroke. */
+  holding = false,
 ) {
   const live = useRef<{
     world: World;
@@ -41,7 +45,7 @@ export function useEcosystem(
   const habitat = useMemo(() => habitatSupport(world), [world]);
   useEffect(() => {
     const previous = live.current!;
-    if (previous.world === world) return;
+    if (holding || previous.world === world) return;
     if (
       onlyPaintDiffers(previous.world.environment, world.environment) &&
       previous.world.objects === world.objects
@@ -85,7 +89,7 @@ export function useEcosystem(
       lifeRemainder: 0,
     };
     setSnapshot(live.current.engine.snapshot());
-  }, [world]);
+  }, [world, holding]);
   useEffect(() => {
     const timer = setInterval(() => {
       const next = live.current!.engine.snapshot();
