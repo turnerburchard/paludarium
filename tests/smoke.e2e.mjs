@@ -61,6 +61,8 @@ try {
     viewport: { width: 390, height: 844 },
     hasTouch: true,
   });
+  // Software WebGL on CI can take half a minute to compile a new world's shaders.
+  context.setDefaultTimeout(90_000);
   context.on("page", (page) => {
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("console", (message) => {
@@ -334,6 +336,7 @@ try {
     { ...original, environment: { ...original.environment, height: 2.9 } },
   );
   const unreadable = await browser.newPage();
+  unreadable.setDefaultTimeout(90_000);
   await unreadable.addInitScript((key) => {
     // Seed once, so a reload can't hide an overwrite.
     if (sessionStorage.getItem("seeded")) return;

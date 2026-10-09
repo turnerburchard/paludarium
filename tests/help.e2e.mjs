@@ -69,6 +69,8 @@ try {
       viewport,
       hasTouch: viewport.width < 760,
     });
+    // Software WebGL on CI can take half a minute to compile a new world's shaders.
+    context.setDefaultTimeout(90_000);
     const page = await context.newPage();
     page.on("pageerror", (error) => errors.push(error.message));
     await page.addInitScript(
