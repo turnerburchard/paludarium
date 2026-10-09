@@ -9,6 +9,7 @@ import {
 } from "./types";
 import { batchStaticAsset } from "./batch";
 import type { MossSpecies } from "../model/moss";
+import type { Prebuilt } from "../model/prebuilts";
 import type { Den, PlantPerch, PlantPoint } from "../model/plantSurfaces";
 import { growMoss } from "./landscape/mossCover";
 import {
@@ -270,6 +271,15 @@ export function livesIn(asset: AssetDefinition, place: Biome | "Underwater") {
   return place === "Underwater"
     ? asset.habitat !== "land"
     : asset.biomes.includes(place);
+}
+/** A prebuilt counts as underwater only when every piece can live there. */
+export function prebuiltLivesIn(
+  prebuilt: Prebuilt,
+  place: Biome | "Underwater",
+) {
+  return place === "Underwater"
+    ? prebuilt.pieces.every((piece) => livesIn(assets[piece.kind], place))
+    : prebuilt.biomes.includes(place);
 }
 /** Animals living on the habitat's surfaces, simulated by the ecosystem.
  * Fish swim separately. */
