@@ -9,7 +9,7 @@ import {
   type World,
 } from "./schema";
 import type { MossSpecies } from "./moss";
-import { prebuiltObjects, prebuilts } from "./prebuilts";
+import { prebuiltObjects, rockShelter } from "./prebuilts";
 import { randomFromSeed } from "./random";
 import { baseGroundHeight } from "./terrain";
 import { applyTerrainBrush, type TerrainMode } from "./terrainBrush";
@@ -29,9 +29,8 @@ type Add = (
   rotation?: number,
   moss?: MossSpecies,
 ) => void;
-/** Adds a prebuilt's pieces, with any moss on its top stone. */
-type Build = (
-  id: string,
+/** Adds a rock shelter's stones, with any moss on its capstone. */
+type Shelter = (
   x: number,
   z: number,
   rotation?: number,
@@ -52,17 +51,16 @@ export function makePreset(preset: Preset): World {
       seed: ++serial * 173,
       ...(moss && { moss }),
     });
-  const builder =
-    (env: Environment): Build =>
-    (id, x, z, rotation = 0, moss) => {
-      const prebuilt = prebuilts.find((p) => p.id === id)!;
+  const shelters =
+    (env: Environment): Shelter =>
+    (x, z, rotation = 0, moss) => {
       const pieces = prebuiltObjects(
-        prebuilt,
+        rockShelter,
         x,
         z,
         rotation,
         env,
-        // One serial per prebuilt, as for any other object, so adding one
+        // One serial per shelter, as for any other object, so adding one
         // leaves the seeds of everything after it unchanged.
         randomFromSeed(++serial * 173),
       );
@@ -158,7 +156,7 @@ export function makePreset(preset: Preset): World {
       version: 1,
       name: "Cloud forest",
       environment,
-      objects: cloudForest(add, builder(environment), objects),
+      objects: cloudForest(add, shelters(environment), objects),
     };
   }
   if (preset === "mountain")
@@ -174,7 +172,7 @@ export function makePreset(preset: Preset): World {
       version: 1,
       name: "Limestone grotto",
       environment,
-      objects: limestoneGrotto(add, builder(environment), objects),
+      objects: limestoneGrotto(add, shelters(environment), objects),
     };
   }
   const environment = desertBasin();
@@ -182,13 +180,13 @@ export function makePreset(preset: Preset): World {
     version: 1,
     name: "Desert spring",
     environment,
-    objects: desertSpring(add, builder(environment), objects),
+    objects: desertSpring(add, shelters(environment), objects),
   };
 }
 
 /** Costa Rican cloud forest: broad leaves, orchids and poison frogs above a
  * pond of convict cichlids. */
-function cloudForest(add: Add, build: Build, objects: HabitatObject[]) {
+function cloudForest(add: Add, shelter: Shelter, objects: HabitatObject[]) {
   // Dense understory on the high ground to the left of the pool.
   add("monstera", -2.75, -1.15, 1.25, 0.3);
   add("monstera", -1.25, -1.45, 0.85, 2.4);
@@ -228,7 +226,7 @@ function cloudForest(add: Add, build: Build, objects: HabitatObject[]) {
   add("dart-frog", -3.2, 0.6, 1.15, 1);
   add("turtle", -0.9, 1.6, 1, 2.4);
   // Mossy stones where the stream comes down off the hill.
-  build("rock-shelter", 2.7, -1.4, 3.6, "sheet");
+  shelter(2.7, -1.4, 3.6, "sheet");
   add("rock", 0.35, -1.2, 0.8, 1.6, "cushion");
   add("rock", 2.0, -0.4, 0.6, 1);
   add("fern-moss", -0.1, -1.0, 0.8);
@@ -326,10 +324,10 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
 
 /** A shady Vietnamese limestone grotto for mossy frogs: mossy stone and
  * caves, elephant ears and begonias, and harlequin rasboras in the pool. */
-function limestoneGrotto(add: Add, build: Build, objects: HabitatObject[]) {
+function limestoneGrotto(add: Add, shelter: Shelter, objects: HabitatObject[]) {
   // Two caves against the back wall, where the mossy frogs rest by day.
-  build("rock-shelter", -1.6, -1.2, 0.3, "cushion");
-  build("rock-shelter", 0.9, -1.2, 2.2, "sheet");
+  shelter(-1.6, -1.2, 0.3, "cushion");
+  shelter(0.9, -1.2, 2.2, "sheet");
   add("limestone-pinnacle", -0.3, -1.9, 1, 0.6, "java");
   add("limestone", 2.3, -1.25, 1.2, 1, "cushion");
   add("limestone", -2.4, -2.05, 1, 2.5, "sheet");
@@ -379,14 +377,14 @@ function limestoneGrotto(add: Add, build: Build, objects: HabitatObject[]) {
  * ridge along the back, open dunes in front, and a spring in the middle with
  * pupfish, cattails and canyon tree frogs. Lizards, two tortoises, a scorpion
  * and a tarantula live on the dry ground around it. */
-function desertSpring(add: Add, build: Build, objects: HabitatObject[]) {
+function desertSpring(add: Add, shelter: Shelter, objects: HabitatObject[]) {
   // The mesa, with a cave at its foot.
   add("sandstone", -5.3, -2.9, 1.8, 0.4);
   add("sandstone", -3.7, -2.8, 1.4, 1.9);
   add("sandstone-pillar", -4.5, -3.0, 1.3, 0.8);
   add("sandstone-ledge", -2.5, -2.2, 1.2, 2.1);
   add("sandstone-ledge", -5.7, -1.4, 1, 0.3);
-  build("rock-shelter", -3.5, -1.2, 1.4);
+  shelter(-3.5, -1.2, 1.4);
   add("dead-tree", -4.7, -2.0, 1.2, 0.9);
   add("agave", -2.9, -3.1, 1.1, 0.6);
   add("hedgehog-cactus", -5.7, -2.3, 1, 0.5);
@@ -405,7 +403,7 @@ function desertSpring(add: Add, build: Build, objects: HabitatObject[]) {
   add("branch", 2.9, -1.4, 1.2, 0.9);
   // The ridge, with a second cave and an agave stand.
   add("sandstone", 4.8, -2.8, 1.5, 1.2);
-  build("rock-shelter", 3.6, -2.6, 3.4);
+  shelter(3.6, -2.6, 3.4);
   add("sandstone-pillar", 5.8, -2.2, 0.9, 2.8);
   add("agave", 5.5, -1.0, 1.2, 2.2);
   add("agave", 4.1, -1.6, 0.8, 1);

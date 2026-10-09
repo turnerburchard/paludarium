@@ -32,7 +32,11 @@ import { historyReducer } from "./history";
 import { TerrainStroke } from "./terrainStroke";
 import type { TerrainBrush } from "../model/terrainBrush";
 import { makePreset, type Preset } from "../model/presets";
-import { prebuiltObjects, type Prebuilt } from "../model/prebuilts";
+import {
+  prebuiltObjects,
+  prebuiltProblem,
+  type Prebuilt,
+} from "../model/prebuilts";
 import {
   activeWorld,
   loadLibrary,
@@ -352,6 +356,11 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       placementRotation,
       world.environment,
     );
+    const problem = prebuiltProblem(pieces, world.environment);
+    if (problem) {
+      setPlacementError(problem);
+      return;
+    }
     if (world.objects.length + pieces.length > MAX_OBJECTS) {
       setPlacementError("This world is full. Remove an object to make room.");
       return;

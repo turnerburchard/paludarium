@@ -141,20 +141,26 @@ export function Library({
         {activeCategory === "Hardscape" && filterCount === 0 && (
           <>
             <h3 className="asset-heading">Prebuilt</h3>
-            {prebuilts.map((prebuilt) => (
-              <Card
-                key={prebuilt.id}
-                id={`prebuilt:${prebuilt.id}`}
-                name={prebuilt.name}
-                description={prebuilt.description}
-                thumbnails={thumbnails}
-                chosen={
-                  editor.tool.type === "prebuilt" &&
-                  editor.tool.prebuilt.id === prebuilt.id
-                }
-                onChoose={() => editor.choosePrebuilt(prebuilt)}
-              />
-            ))}
+            {prebuilts
+              .filter((prebuilt) =>
+                prebuilt.pieces.every((piece) =>
+                  available.some((asset) => asset.kind === piece.kind),
+                ),
+              )
+              .map((prebuilt) => (
+                <Card
+                  key={prebuilt.id}
+                  id={`prebuilt:${prebuilt.id}`}
+                  name={prebuilt.name}
+                  description={prebuilt.description}
+                  thumbnails={thumbnails}
+                  chosen={
+                    editor.tool.type === "prebuilt" &&
+                    editor.tool.prebuilt.id === prebuilt.id
+                  }
+                  onChoose={() => editor.choosePrebuilt(prebuilt)}
+                />
+              ))}
             <h3 className="asset-heading">Pieces</h3>
           </>
         )}

@@ -16,7 +16,7 @@ import {
   groundHeight,
   placementProblem,
 } from "../model/terrain";
-import { prebuiltObjects } from "../model/prebuilts";
+import { prebuiltObjects, prebuiltProblem } from "../model/prebuilts";
 import { restingOn, type Surface } from "../model/stacking";
 import { useCameraNavigation } from "./useCameraNavigation";
 import { useFollowCamera } from "./useFollowCamera";
@@ -130,8 +130,22 @@ function Scene({
   const lift = point
     ? restingOn(cursor?.surface, point.x, point.z, env).lift
     : undefined;
-  const problem =
-    point && kind ? placementProblem(kind, point.x, point.z, env, lift) : null;
+  const ghostPieces =
+    point && prebuilt
+      ? prebuiltObjects(
+          prebuilt,
+          point.x,
+          point.z,
+          editor.placementRotation,
+          env,
+          () => 0.3,
+        )
+      : null;
+  const problem = ghostPieces
+    ? prebuiltProblem(ghostPieces, env)
+    : point && kind
+      ? placementProblem(kind, point.x, point.z, env, lift)
+      : null;
   /** The ground, or the stone or wood, under the pointer. Plants and animals
    * in the way are looked past, and animals always go on the ground. */
   function spotUnder(e: {
@@ -325,18 +339,16 @@ function Scene({
           invalid={!!problem}
         />
       )}
-      {point &&
-        prebuilt &&
-        prebuiltObjects(
-          prebuilt,
-          point.x,
-          point.z,
-          editor.placementRotation,
-          env,
-          () => 0.3,
-        ).map((piece, i) => (
-          <Inhabitant key={i} object={piece} environment={env} paused ghost />
-        ))}
+      {ghostPieces?.map((piece, i) => (
+        <Inhabitant
+          key={i}
+          object={piece}
+          environment={env}
+          paused
+          ghost
+          invalid={!!problem}
+        />
+      ))}
       {point && tool.type === "terrain" && (
         <TerrainBrushCursor {...point} radius={tool.radius} environment={env} />
       )}
