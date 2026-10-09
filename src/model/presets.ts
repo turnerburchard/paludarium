@@ -233,62 +233,98 @@ function cloudForest(add: Add, objects: HabitatObject[]) {
   return objects;
 }
 
-/** A Rocky Mountain creek: spruce, columbine and kinnikinnick on the bank,
- * frogs, a lizard and a salamander, and trout and sculpins in the water. */
+/** A Rocky Mountain creek running down a stony slope, past a granite knoll
+ * and a wildflower meadow, into a trout pool. */
 function alpineCreek(add: Add, objects: HabitatObject[]) {
-  // Spruce and granite on the high bank behind the creek.
-  add("spruce", -2.5, -1.38, 1.4, 0.3);
-  add("spruce", 0.5, -1.4, 1.2, 1.2);
-  add("granite", -1.6, -0.35, 1.5, 0.6, "sheet");
-  add("slate", -0.6, -1.3, 1);
-  add("fern", -2.05, -1.2, 1.1);
-  add("moss", -0.9, -1.05, 1.1);
-  add("fly-agaric", -2.1, -1.45, 1, 0.4);
-  // Wildflowers, a fallen log and the salamander on the broad front bank.
-  add("columbine", -3.4, 0.8, 1.1);
-  add("columbine", -1.6, 1.3, 0.9, 1);
-  add("strawberry", -3.9, 1.4, 0.8, 2);
-  add("kinnikinnick", -2.5, 0.6, 1.1, 0.5);
-  add("spruce", -4.0, 0.2, 0.8, 2);
-  add("snag", -1.4, 0.85, 0.8, 1.2);
-  add("log", -2.6, 1.3, 0.8, 0.1, "sheet");
-  add("leaf-litter", -2.0, 0.9, 0.9);
-  add("tiger-salamander", -2.2, 1.0, 1, 1.4);
-  add("bolete", -0.9, 1.45, 1, 1.8);
+  // Broken stone up the slope behind the creek, with spruce seedlings
+  // coming up between the rocks.
+  add("flagstone", 3.0, -1.5, 1.2, 0.9);
+  add("granite", 3.45, -1.2, 0.9, 1.9, "sheet");
+  add("granite", -1.6, -1.5, 1.1, 0.4, "cushion");
+  add("spruce", 2.2, -1.35, 1, 1.2);
+  add("spruce", -2.15, -1.5, 0.9, 2.4);
+  add("snag", -2.7, -1.3, 1, 1.2);
+  add("stump", 3.6, -0.95, 0.8, 0.4, "sheet");
   for (const [kind, x, z, scale] of [
-    ["sheet-moss", -3.3, 1.3, 1.2],
-    ["fern-moss", -2.9, 0.5, 1.1],
-    ["sheet-moss", -0.6, 0.8, 0.9],
-    ["moss", -3.7, 0.25, 1],
+    ["kinnikinnick", 1.95, -1.45, 1.1],
+    ["kinnikinnick", 2.95, -0.45, 1],
+    ["kinnikinnick", 4.1, -0.2, 1.1],
+    ["kinnikinnick", -3.2, -1.6, 1.1],
+    ["kinnikinnick", -1.1, -1.5, 1],
+    ["kinnikinnick", 3.3, -1.75, 1],
+    ["fly-agaric", 2.5, -1.25, 0.75],
+    ["fly-agaric", 2.66, -1.14, 0.6],
+    ["bolete", -1.35, -1.15, 1],
+    ["fern", -1.5, -0.75, 0.65],
+    ["fern", -0.75, -0.85, 0.75],
+    ["fern", 2.0, -0.45, 0.6],
+    ["fern", 3.3, -0.3, 0.7],
+    ["columbine", 3.65, -0.55, 0.9],
+    ["columbine", 4.2, -0.75, 1],
   ] as const)
-    add(kind, x, z, scale);
-  // Boulders and flat stones at the edge of the pool, where the canyon tree
-  // frog and the fence lizard sit in the sun.
-  add("granite", 0.3, 1.05, 1.1, 2);
-  add("rock", 0.9, -1.0, 0.9, 2, "fern");
-  add("flagstone", 1.2, 1.1, 1, 2.1);
-  add("scree", 0.6, 0.15, 1, 0.8);
-  add("branch", -0.2, 0.05, 1, 2.6);
-  add("hairgrass", -0.3, 1.5, 0.9);
-  add("canyon-tree-frog", 0.75, 1.5, 1.2, 0.4);
-  add("fence-lizard", 1.6, 1.3, 1.1, 2.2);
-  // Cattails and grass where the far bank stays damp.
-  add("cattail", 2.3, -1, 1, 0.4);
-  add("cattail", 3.3, -0.1, 0.85, 2);
-  add("hairgrass", 2.6, -1.2, 1.1);
-  add("rock", 3.2, -1.1, 0.75, 1.2);
-  add("spruce", 3.9, -1.4, 1.3, 0.8);
-  add("spruce", 2.6, -1.5, 0.9, 2.4);
-  add("kinnikinnick", 3.1, -0.85, 1, 1.5);
-  add("columbine", 4.1, -0.6, 0.9, 0.3);
-  add("pebbles", 3.45, 1.05, 1.2, 0.4);
-  add("rock", 1.5, -1.5, 0.6);
-  add("cutthroat-trout", 2.0, 0.0, 0.8, 0);
-  add("cutthroat-trout", 2.7, 0.4, 0.75, 3);
-  add("sculpin", 2.4, -0.1, 1, 3);
-  add("sculpin", 1.9, 0.6, 1, 0.5);
-  add("dwarf-crayfish", 2.2, 0.9, 1, 1.1);
-  add("dwarf-crayfish", 2.6, 0.75, 1, 4);
+    add(kind, x, z, scale, x * 1.7);
+  // A granite knoll where the fence lizard suns itself.
+  add("granite", 0.3, -1.45, 1.3, 0.6, "cushion");
+  add("scree", 1.0, -1.25, 1.1, 2);
+  add("granite", -0.25, -1.15, 0.9, 2.4);
+  add("scree", 0.8, -0.8, 1, 0.8);
+  add("fence-lizard", 0.6, -1.0, 1.1, 2.2);
+  // Boulders, river stones and gravel along the creek, with sedge and
+  // hairgrass on the damp banks.
+  add("granite", -2.9, -0.7, 1, 1.3);
+  add("rock", -1.0, 0.35, 0.7, 2, "fern");
+  add("rock", 0.15, -0.25, 0.6, 0.5);
+  add("granite", 2.4, 1.3, 0.9, 0.2);
+  add("scree", -4.0, -1.3, 1, 1.6);
+  for (const [x, z, scale] of [
+    [-2.0, 0.15, 1.2],
+    [0.0, 0.55, 1.1],
+    [3.05, 1.7, 1.1],
+  ])
+    add("pebbles", x, z, scale, x);
+  add("flagstone", 0.7, 1.4, 1.1, 2.1);
+  add("flagstone", 2.3, -0.15, 0.9, 0.7);
+  for (const [kind, x, z, scale] of [
+    ["grass", -2.35, -0.85, 1],
+    ["grass", -0.8, -0.5, 0.9],
+    ["grass", 2.9, 0.45, 1],
+    ["grass", 3.95, 1.05, 0.9],
+    ["hairgrass", -3.4, 0.55, 1.1],
+    ["hairgrass", -1.9, 0.6, 1],
+    ["hairgrass", -0.6, 0.8, 0.9],
+    ["hairgrass", 0.45, 1.05, 1],
+    ["cattail", 2.45, 0.15, 1],
+    ["cattail", 2.7, 0.35, 0.85],
+    ["cattail", 2.3, -0.05, 0.9],
+  ] as const)
+    add(kind, x, z, scale, x * 2.3);
+  // A wildflower meadow on the front bank, with a fallen log for the
+  // salamander.
+  for (const [kind, x, z, scale] of [
+    ["columbine", -3.7, 1.0, 1.1],
+    ["columbine", -3.3, 1.35, 0.9],
+    ["columbine", -2.9, 1.7, 1],
+    ["columbine", -2.6, 0.95, 1],
+    ["columbine", -1.2, 1.5, 0.9],
+    ["columbine", -0.8, 1.25, 1],
+    ["strawberry", -4.1, 1.2, 1],
+    ["strawberry", -1.6, 1.75, 0.9],
+    ["kinnikinnick", -3.9, 1.65, 1],
+    ["kinnikinnick", -0.95, 1.75, 0.9],
+    ["spruce", -4.1, 0.2, 0.75],
+  ] as const)
+    add(kind, x, z, scale, x * 1.3);
+  add("log", -2.2, 1.35, 1, 0.3, "sheet");
+  add("tiger-salamander", -2.0, 1.0, 1, 1.4);
+  // The pool: trout in open water, sculpins and crayfish on the stones, and
+  // the canyon tree frog on a flat stone at the edge.
+  add("canyon-tree-frog", 0.7, 1.4, 1.2, 0.4);
+  add("cutthroat-trout", 1.3, 0.4, 0.8, 0);
+  add("cutthroat-trout", 1.8, 0.75, 0.75, 3);
+  add("sculpin", 1.2, 0.75, 1, 3);
+  add("sculpin", 1.9, 0.3, 1, 0.5);
+  add("dwarf-crayfish", 1.5, 0.95, 1, 1.1);
+  add("dwarf-crayfish", 1.1, 0.25, 1, 4);
   return objects;
 }
 
@@ -548,19 +584,22 @@ function grottoFloor() {
   ]);
 }
 
-/** A long, shallow tank with a creek winding across it into a pool for the
- * trout, below a ridge along the back. */
+/** A long tank where a creek cuts diagonally from a stony slope at the back
+ * to a meadow at the front, widening into a pool for the trout. */
 function creekBed() {
   const creek: [number, number][] = [
-    [-4.5, -0.9],
-    [-3.2, -0.5],
-    [-1.8, -0.2],
-    [-0.2, -0.1],
-    [1.2, 0.1],
-    [2.3, 0.4],
-    [3.4, 0.9],
-    [4.5, 1.3],
+    [-4.7, -1.6],
+    [-3.6, -1.05],
+    [-2.6, -0.4],
+    [-1.5, -0.05],
+    [-0.4, 0.15],
+    [0.6, 0.35],
+    [1.5, 0.6],
+    [2.5, 0.95],
+    [3.4, 1.4],
+    [4.7, 1.8],
   ];
+  const pool = { x: 1.5, z: 0.55 };
   const env: Environment = {
     ...defaultEnvironment,
     width: 9,
@@ -569,23 +608,105 @@ function creekBed() {
     light: "golden",
     warmth: 0.3,
   };
-  return sculpt(level(env, 0.85), [
+  const smooth = (t: number) => {
+    t = Math.min(1, Math.max(0, t));
+    return t * t * (3 - 2 * t);
+  };
+  const terrain = newTerrain(env, (x, z) => {
+    const slope = 0.4 * smooth((-z - 0.3) / 1.6);
+    const knoll = 0.12 * smooth(1 - Math.hypot(x - 0.4, z + 1.6) / 1.3);
+    const meadow = 0.1 * smooth(1 - Math.hypot(x + 3, z - 1.3) / 1.4);
+    const ground = 0.86 + slope + knoll + meadow;
+    const channel = 1 - smooth((distanceToPath(x, z, creek) - 0.25) / 0.5);
+    const basin = 1 - smooth((Math.hypot(x - pool.x, z - pool.z) - 0.6) / 0.6);
+    const height = Math.min(
+      ground + (env.water - 0.2 - ground) * channel,
+      ground + (env.water - 0.45 - ground) * basin,
+    );
+    return Math.round((height - baseGroundHeight(x, z, env)) * 100) / 100;
+  });
+  // A stony bed and banks along the water, a moss meadow in front, and moss
+  // in patches up the slope.
+  const meadow: [number, number][] = [
+    [-4.2, 1.3],
+    [-1.8, 1.2],
+    [-0.4, 1.4],
+    [0.6, 1.9],
+    [2.1, 1.95],
+  ];
+  const creekside: [number, number][] = [
+    [-4.2, 0.4],
+    [-2.6, 0.5],
+    [-1.4, 0.7],
+  ];
+  const farBank: [number, number][] = [
+    [2.0, -0.5],
+    [3.4, -0.2],
+    [4.3, 0.7],
+  ];
+  return sculpt({ ...env, terrain }, [
+    ["moss", 1.2, meadow],
+    ["moss", 0.8, creekside],
+    ["moss", 0.7, farBank],
     [
-      "raise",
-      1,
+      "moss",
+      0.6,
       [
-        [-4.5, -2.2],
-        [0.5, -2.2],
+        [-1.2, -1.0],
+        [-0.6, -0.7],
       ],
-      2,
     ],
-    ["raise", 1.6, [[3.7, -1.4]], 2],
-    ["stream", 0.6, creek],
-    ["smooth", 0.9, creek, 2],
-    ["lower", 0.5, creek],
-    ["pool", 1.3, [[2.3, 0.3]]],
-    ["lower", 1.1, [[2.3, 0.3]], 5],
+    [
+      "moss",
+      0.6,
+      [
+        [2.6, -1.4],
+        [3.9, -1.2],
+      ],
+    ],
+    [
+      "moss",
+      0.5,
+      [
+        [-0.6, -1.95],
+        [1.1, -1.95],
+      ],
+    ],
+    [
+      "moss",
+      0.6,
+      [
+        [-3.9, -1.9],
+        [-3.0, -1.8],
+      ],
+    ],
+    ["stone", 0.75, creek],
+    ["stone", 1.3, [[pool.x, pool.z]]],
+    [
+      "stone",
+      0.6,
+      [
+        [0.4, -1.5],
+        [0.9, -1.2],
+      ],
+    ],
   ]);
+}
+
+function distanceToPath(x: number, z: number, path: [number, number][]) {
+  let nearest = Infinity;
+  for (let i = 1; i < path.length; i++) {
+    const [x0, z0] = path[i - 1],
+      [x1, z1] = path[i];
+    const dx = x1 - x0,
+      dz = z1 - z0;
+    const t = Math.min(
+      1,
+      Math.max(0, ((x - x0) * dx + (z - z0) * dz) / (dx * dx + dz * dz)),
+    );
+    nearest = Math.min(nearest, Math.hypot(x - x0 - t * dx, z - z0 - t * dz));
+  }
+  return nearest;
 }
 
 /** A wide, low, bright tank of rolling sand that rises into a mesa at the
