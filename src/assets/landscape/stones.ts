@@ -2,7 +2,6 @@ import * as THREE from "three";
 import { bakedGeometry, type BakedModel } from "../baked";
 import { mesh } from "../geometry";
 import type { AssetDefinition } from "../types";
-import { weatheredStone } from "./rock";
 import flagstoneModel from "./flagstone.json";
 import graniteModel from "./granite.json";
 import limestonePinnacleModel from "./limestonePinnacle.json";
@@ -280,9 +279,14 @@ export const scree: AssetDefinition = {
   },
 };
 
-/** Grey river stone tones shared by the small building stones, so a pile
- * of them reads as one kind of rock. */
-const BUILDING_STONE = ["#6d6a64", "#7d786f", "#5f5d59", "#8a8478"];
+/** Grey river stone shared by the small building stones, so a pile of them
+ * reads as one kind of rock: shaded below, weathered paler on top, with
+ * patches of lichen. */
+const BUILDING_STONE = {
+  shade: "#4b4945",
+  pale: ["#837d73", "#8f897d"],
+  lichen: "#8e9476",
+};
 
 export const cobble: AssetDefinition = {
   kind: "cobble",
@@ -295,16 +299,11 @@ export const cobble: AssetDefinition = {
   scaleRange: [0.8, 1.25],
   habitat: "either",
   hardscape: "stone",
-  build: (random) => {
-    const root = new THREE.Group();
-    const geo = weatheredStone(random() * 10);
-    const tone = BUILDING_STONE[Math.floor(random() * BUILDING_STONE.length)];
-    paint(geo, (center) => (center.y < -0.1 ? BUILDING_STONE[2] : tone));
-    const part = mesh(geo, stoneSkin(), root, [0, 0.07, 0]);
-    part.scale.set(0.3 + random() * 0.08, 0.3, 0.3 + random() * 0.06);
-    part.rotation.y = random() * Math.PI;
-    return root;
-  },
+  build: (random) =>
+    roughStone(random, {
+      size: [0.3 + random() * 0.08, 0.2, 0.26 + random() * 0.06],
+      squareness: 2.2,
+    }),
 };
 
 export const stoneBlock: AssetDefinition = {
@@ -313,23 +312,19 @@ export const stoneBlock: AssetDefinition = {
   group: "Stone",
   biomes: ["Tropical", "Temperate", "Desert"],
   description:
-    "A squat, chunky stone with a flat top. Stack them into walls, or use two to hold up a slab.",
+    "A squat, chunky stone with a flat top. Stack them, or use two to hold up a slab.",
   radius: 0.22,
   scaleRange: [0.85, 1.15],
   habitat: "either",
   hardscape: "stone",
   blocksMovement: true,
-  build: (random) => {
-    const root = new THREE.Group();
-    // Every block is the same height, so courses stacked on them stay level.
-    const height = 0.28;
-    const geo = slab(0.4 + random() * 0.06, height, 0.34, random, 0.15);
-    const tone = BUILDING_STONE[Math.floor(random() * BUILDING_STONE.length)];
-    paint(geo, (_, normal) => (normal.y > 0.5 ? BUILDING_STONE[3] : tone));
-    const part = mesh(geo, stoneSkin(), root, [0, height / 2, 0]);
-    part.rotation.y = random() * Math.PI;
-    return root;
-  },
+  // Every block is the same height, so whatever rests on one sits level.
+  build: (random) =>
+    roughStone(random, {
+      size: [0.42 + random() * 0.06, 0.28, 0.34],
+      squareness: 3.5,
+      flatTop: true,
+    }),
 };
 
 export const stoneSlab: AssetDefinition = {
@@ -343,18 +338,84 @@ export const stoneSlab: AssetDefinition = {
   scaleRange: [0.85, 1.15],
   habitat: "either",
   hardscape: "stone",
-  build: (random) => {
-    const root = new THREE.Group();
-    const height = 0.05 + random() * 0.02;
-    const geo = slab(0.78 + random() * 0.1, height, 0.56, random, 0.2);
-    paint(geo, (_, normal) =>
-      normal.y > 0.5 ? BUILDING_STONE[1] : BUILDING_STONE[2],
-    );
-    const part = mesh(geo, stoneSkin(), root, [0, height / 2, 0]);
-    part.rotation.y = random() * Math.PI;
-    return root;
-  },
+  build: (random) =>
+    roughStone(random, {
+      size: [0.8 + random() * 0.1, 0.07, 0.58],
+      squareness: 3,
+      flatTop: true,
+    }),
 };
+
+/** A natural stone `size` across and resting on the ground. Its outline
+ * runs from an egg (squareness 2) to a block (higher), with lumps and chips
+ * from layered noise and a flat underside. A flat top is cut level at the
+ * stone's full height, for stacking. */
+function roughStone(
+  random: () => number,
+  {
+    size,
+    squareness,
+    flatTop = false,
+  }: { size: [number, number, number]; squareness: number; flatTop?: boolean },
+) {
+  const phase = random() * 100,
+    p = squareness;
+  // How far the shape is cut back top and bottom, as a share of its half-height.
+  const floor = -0.8,
+    ceiling = flatTop ? 0.8 : Infinity;
+  const geo = shapedStone(1, 4, (x, y, z) => {
+    const box =
+      (Math.abs(x) ** p + Math.abs(y) ** p + Math.abs(z) ** p) ** (-1 / p);
+    const lumps =
+      0.65 * smoothNoise(x * 2 + phase, y * 2, z * 2) +
+      0.35 * smoothNoise(x * 5, y * 5 + phase, z * 5);
+    const reach = box * (0.8 + 0.4 * lumps);
+    return [
+      (x * reach * size[0]) / 2,
+      (THREE.MathUtils.clamp(y * reach, floor, ceiling) * size[1]) / 2,
+      (z * reach * size[2]) / 2,
+    ];
+  });
+  const shade = new THREE.Color(BUILDING_STONE.shade),
+    pale = new THREE.Color(BUILDING_STONE.pale[Math.floor(random() * 2)]);
+  paint(geo, (center, normal) => {
+    const patch = smoothNoise(center.x * 8 + phase, center.y * 8, center.z * 8);
+    if (normal.y > 0.5 && patch > 0.72) return BUILDING_STONE.lichen;
+    const light = THREE.MathUtils.clamp(
+      0.5 + normal.y * 0.35 + (patch - 0.5) * 0.5,
+      0,
+      1,
+    );
+    return `#${shade.clone().lerp(pale, light).getHexString()}`;
+  });
+  const root = new THREE.Group();
+  const part = mesh(geo, stoneSkin(), root, [0, (-floor * size[1]) / 2, 0]);
+  part.rotation.y = random() * Math.PI;
+  return root;
+}
+
+/** Smooth value noise between 0 and 1, blended between random values at the
+ * corners of a unit grid. */
+function smoothNoise(x: number, y: number, z: number) {
+  const ix = Math.floor(x),
+    iy = Math.floor(y),
+    iz = Math.floor(z);
+  const tx = THREE.MathUtils.smoothstep(x - ix, 0, 1),
+    ty = THREE.MathUtils.smoothstep(y - iy, 0, 1),
+    tz = THREE.MathUtils.smoothstep(z - iz, 0, 1);
+  const corner = (i: number, j: number, k: number) => {
+    const n = Math.sin(i * 127.1 + j * 311.7 + k * 74.7) * 43758.5453;
+    return n - Math.floor(n);
+  };
+  const { lerp } = THREE.MathUtils;
+  const edge = (j: number, k: number) =>
+    lerp(corner(ix, j, k), corner(ix + 1, j, k), tx);
+  return lerp(
+    lerp(edge(iy, iz), edge(iy + 1, iz), ty),
+    lerp(edge(iy, iz + 1), edge(iy + 1, iz + 1), ty),
+    tz,
+  );
+}
 
 /** A baked rock model painted face by face. Each placement stretches it a
  * little differently, so repeats of the same model don't match exactly. */
