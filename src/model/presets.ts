@@ -387,12 +387,12 @@ function limestoneGrotto(
   // Karst stone climbing the wall in broken tiers: pinnacles and stacked
   // outcrops along the top, smaller stones partway up, and loose cobbles
   // near the foot, furred with moss and leaving room for the seep's gully.
-  add("limestone-pinnacle", -2.45, -2.2, 1.35, 0.6, "cushion");
-  add("limestone", -1.35, -2.25, 1, 1);
-  add("limestone-pinnacle", -1.3, -2.3, 0.7, 2.6, "sheet");
+  add("limestone-pinnacle", -2.45, -2.05, 1.35, 0.6, "cushion");
+  add("limestone", -1.35, -2.1, 1, 1);
+  add("limestone-pinnacle", -1.3, -2.25, 0.7, 2.6, "sheet");
   stack(0.7);
-  add("limestone-pinnacle", 0.3, -2.3, 1.2, 2.2, "java");
-  add("limestone", 2.45, -2.2, 1.1, 0.3, "sheet");
+  add("limestone-pinnacle", 0.3, -2.1, 1.2, 2.2, "java");
+  add("limestone", 2.45, -2.05, 1.1, 0.3, "sheet");
   add("limestone", 2.5, -2.15, 0.6, 3.4, "cushion");
   stack(0.8);
   add("limestone", -1.95, -1.65, 0.75, 4.2, "fern");
@@ -404,14 +404,14 @@ function limestoneGrotto(
   stack(0.12);
   add("cobble", -0.95, -1.4, 1, 0.7);
   add("cobble", 2.8, -1.3, 0.9, 3.3);
-  add("tree-roots", -0.95, -1.85, 1, 0.3);
-  add("orchid", -1.75, -1.95, 0.8, 0.9);
-  add("orchid", 2.9, -1.7, 0.75, 2.4);
-  add("nest-fern", -0.2, -2.05, 0.8, 1.3);
-  add("nest-fern", 1.75, -2.15, 0.7, 4);
+  add("tree-roots", 0.35, -1.05, 1, -0.2);
+  add("orchid", -0.75, -1.9, 0.8, 0.9);
+  add("orchid", 2.85, -1.7, 0.75, 2.4);
+  add("nest-fern", -0.2, -1.95, 0.8, 1.3);
+  add("nest-fern", 1.75, -2.05, 0.7, 4);
   for (const [kind, x, z, scale] of [
-    ["sheet-moss", -2.0, -2.35, 1],
-    ["fern-moss", 1.0, -2.3, 0.9],
+    ["sheet-moss", -2.0, -2.1, 1],
+    ["fern-moss", 1.0, -2.2, 0.9],
     ["moss", -0.3, -1.45, 0.8],
   ] as const)
     add(kind, x, z, scale);
@@ -422,8 +422,8 @@ function limestoneGrotto(
   add("mossy-frog", -1.7, -0.6, 1, 0.6);
   add("mossy-frog", 2.0, -0.35, 1, 2.4);
   add("mossy-frog", 0.95, -1.05, 1, 4);
-  add("alocasia", -2.75, -0.85, 1.15, 0.5);
-  add("alocasia", 2.8, -0.15, 0.95, 2.4);
+  add("alocasia", -2.5, -0.85, 1.15, 0.5);
+  add("alocasia", 2.55, -0.15, 0.95, 2.4);
   add("alocasia", -0.6, -1.3, 0.8, 1.6);
   add("begonia", -2.65, -0.15, 1, 0.3);
   add("begonia", -1.05, -0.85, 0.9, 2.8);
@@ -454,7 +454,7 @@ function limestoneGrotto(
   add("bonnet-mushrooms", 1.85, 1.75, 0.9, 1.1);
   add("bonnet-mushrooms", -2.4, -0.45, 0.85, 2.7);
   add("begonia", 0.95, 2.05, 0.8, 0.9);
-  add("nest-fern", 2.75, 2.05, 0.8, 0.2);
+  add("nest-fern", 2.45, 1.95, 0.8, 0.2);
   // The pool, with crypts and java fern along its edge and a school of
   // harlequin rasboras in the open water.
   add("limestone", -0.3, 1.55, 0.6, 0.9, "java");
@@ -471,6 +471,10 @@ function limestoneGrotto(
       1,
       0,
     );
+  // Added after the rest so their seeds leave everything above unchanged.
+  add("limestone-pinnacle", -1.55, -1.5, 1);
+  add("capstone", -1.85, -2.0, 1);
+  add("fittonia", -0.8, -2.15, 1);
   return objects;
 }
 
