@@ -17,6 +17,9 @@ export interface HabitatNode {
   /** Below the waterline, for animals that walk underwater. */
   submerged?: boolean;
   shelter: number;
+  /** The largest footprint that fits here, clear of the glass, stone and
+   * wood. Unset where size doesn't matter, as on plants and the glass. */
+  room?: number;
   neighbors: string[];
   perchHeight?: number;
   plantId?: string;
@@ -24,6 +27,8 @@ export interface HabitatNode {
 }
 export interface SpeciesProfile extends AnimalBehavior {
   id: string;
+  /** This animal's footprint, so it keeps to places it fits. */
+  radius?: number;
 }
 export interface Needs {
   hunger: number;
