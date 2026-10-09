@@ -1005,18 +1005,9 @@ function islandLagoon() {
     },
     "sand",
   );
-  // Moss over the island, bare soil up the ridge, and stone on the shelf.
+  // Moss over the island and the islet. Sand everywhere else keeps to a
+  // single paint edge, at the shore.
   return sculpt({ ...env, terrain }, [
-    [
-      "stone",
-      0.5,
-      [
-        [1.0, 0.9],
-        [-1.0, 1.15],
-        [-2.9, 0.6],
-      ],
-    ],
-    ["soil", 0.6, ridge],
     [
       "moss",
       1.0,
