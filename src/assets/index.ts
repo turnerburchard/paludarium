@@ -94,6 +94,9 @@ import { rock } from "./landscape/rock";
 import { wood } from "./landscape/wood";
 import { branch } from "./landscape/branch";
 import { log } from "./landscape/log";
+import { rootArch } from "./landscape/rootArch";
+import { forkedBranch } from "./landscape/forkedBranch";
+import { spiderwood } from "./landscape/spiderwood";
 import { capstone, standingStone } from "./landscape/shelterStones";
 import {
   cobble,
@@ -229,6 +232,9 @@ export const assets = {
   wood,
   branch,
   log,
+  "root-arch": rootArch,
+  "forked-branch": forkedBranch,
+  spiderwood,
   "fungus-log": fungusLog,
   snag,
   stump,

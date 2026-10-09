@@ -584,6 +584,26 @@ describe("plant perches and species movement", () => {
     expect(mossy.has(lookout.id)).toBe(false);
     expect(bark.some((n) => mossy.has(n.id))).toBe(true);
   });
+  it("lets every frog cross a root arch but only climbers up a fork", () => {
+    const lookouts = (kind: "root-arch" | "forked-branch") => {
+      const world = plantWorld();
+      world.objects[0] = { ...world.objects[0], kind, scale: 1 };
+      const graph = buildHabitat(world);
+      const start = graph.nearest(
+        { x: -1.5, y: groundHeight(-1.5, 0, world.environment), z: 0 },
+        frogProfile("dart-frog"),
+      )!;
+      const reach = (frog: "dart-frog" | "tree-frog") =>
+        [...graph.nodes.values()].filter(
+          (n) =>
+            n.id.startsWith("bark:") &&
+            graph.paths(start.id, frogProfile(frog)).has(n.id),
+        ).length;
+      return { dart: reach("dart-frog"), tree: reach("tree-frog") };
+    };
+    expect(lookouts("root-arch").dart).toBe(1);
+    expect(lookouts("forked-branch")).toEqual({ dart: 0, tree: 2 });
+  });
   it("shelters any frog inside a log, reached through its entrance", () => {
     const world = plantWorld();
     world.objects[0] = { ...world.objects[0], kind: "log" };
