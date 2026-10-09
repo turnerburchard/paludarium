@@ -66,7 +66,9 @@ function Scene({
     env.warmth,
   );
   const controls = useRef<OrbitControlsImpl>(null);
-  const { raycaster, camera, gl } = useThree();
+  const { raycaster, camera, gl, invalidate } = useThree();
+  // Paused, the canvas draws only on request, so every scene change asks for a frame.
+  useEffect(() => invalidate());
   const terrain = useRef<THREE.Mesh>(null);
   const inhabitants = useRef<THREE.Group>(null);
   const foliageVisitors = useRef<FoliageVisitor[]>([]);
@@ -404,6 +406,7 @@ function Scene({
 export function WorldScene(props: SceneProps) {
   return (
     <Canvas
+      frameloop={props.editor.paused ? "demand" : "always"}
       shadows
       dpr={[1, 1.7]}
       camera={{ position: [8, 6.6, 9.8], fov: 36, near: 0.1, far: 100 }}

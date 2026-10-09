@@ -21,7 +21,7 @@ export function useWatchVisibility(
     [],
   );
   useEffect(() => () => visibility.restore(), [visibility, animalId]);
-  useFrame(({ camera }, dt) => {
+  useFrame(({ camera, invalidate }, dt) => {
     if (!animalId || !inhabitants.current) return;
     const animal = ecosystem.live.current!.engine.observeAnimal(animalId);
     if (!animal) return;
@@ -45,5 +45,7 @@ export function useWatchVisibility(
       });
     }
     visibility.update(camera.position, focus, right, up, foliage, dt);
+    // Leaves fade over several frames, even while life is paused.
+    invalidate();
   });
 }
