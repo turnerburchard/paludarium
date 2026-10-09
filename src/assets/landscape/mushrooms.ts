@@ -2,6 +2,7 @@ import { buildBaked, type BakedModel } from "../baked";
 import type { AssetDefinition } from "../types";
 import boleteModel from "./bolete.json";
 import bonnetModel from "./bonnetMushrooms.json";
+import chickenModel from "./chickenOfTheWoods.json";
 import flyAgaricModel from "./flyAgaric.json";
 
 export const bolete: AssetDefinition = {
@@ -57,6 +58,23 @@ export const bonnetMushrooms: AssetDefinition = {
   // Its texture shades each face differently, which reads as a patchwork,
   // so the whole clump takes one grey-brown.
   build: (random) => mushroom(bonnetModel, random, () => "#a38f80"),
+};
+
+export const chickenOfTheWoods: AssetDefinition = {
+  kind: "chicken-of-the-woods",
+  name: "Chicken of the woods",
+  scientificName: "Laetiporus sulphureus",
+  group: "Mushrooms",
+  biomes: ["Temperate"],
+  description:
+    "Overlapping orange shelves with paler, yellowish rims, a bracket fungus that grows in tiers from old hardwood.",
+  radius: 0.22,
+  habitat: "land",
+  /** Model: "Mushroom_Laetiporus" from Quaternius's Stylized Nature MegaKit, CC0. */
+  build: (random) =>
+    mushroom(chickenModel, random, (source) =>
+      source === "rim" ? "#e39a3e" : "#cf6a2c",
+    ),
 };
 
 /** A baked mushroom, each one a little taller or squatter than the last. */

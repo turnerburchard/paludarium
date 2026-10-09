@@ -13,7 +13,7 @@ export const angelfish: AssetDefinition = {
     "A tall, silver disc of a fish with black bars and long trailing fins. It glides slowly through the middle of the water.",
   radius: 0.26,
   habitat: "water",
-  swims: { speed: 0.14, depth: 0.25 },
+  swims: { speed: 0.14, depth: [0.16, 0.34] },
   build: () =>
     fish({
       length: 0.26,
@@ -68,7 +68,7 @@ export const pearlGourami: AssetDefinition = {
     "A peaceful, oval fish dusted with pearly spots, feeling its way with long threadlike fins.",
   radius: 0.22,
   habitat: "water",
-  swims: { speed: 0.16, depth: 0.12 },
+  swims: { speed: 0.16, depth: [0.04, 0.2] },
   build: () =>
     fish({
       length: 0.275,
@@ -126,8 +126,8 @@ export const rainbowShark: AssetDefinition = {
     "Not a shark at all: a sleek black minnow with bright red fins that patrols low over the bottom.",
   radius: 0.26,
   habitat: "water",
-  // Deeper than any pool, so it keeps just above the bottom.
-  swims: { speed: 0.3, depth: 4 },
+  // Keeps to the bottom of any pool.
+  swims: { speed: 0.3, depth: [0.3, 1] },
   build: () =>
     fish({
       length: 0.351,
@@ -180,7 +180,7 @@ export const corydoras: AssetDefinition = {
     "A small armored catfish that roots through the sand in busy little groups. Add several.",
   radius: 0.13,
   habitat: "water",
-  swims: { speed: 0.12, depth: 4 },
+  swims: { speed: 0.12, depth: [0.36, 1] },
   build: () =>
     fish({
       length: 0.143,
@@ -227,7 +227,7 @@ export const cutthroatTrout: AssetDefinition = {
     "A young mountain trout, olive and black-spotted with a red slash under the jaw. It holds in the current and darts after drifting insects.",
   radius: 0.35,
   habitat: "water",
-  swims: { speed: 0.32, depth: 0.3 },
+  swims: { speed: 0.32, depth: [0.2, 0.4] },
   build: () =>
     fish({
       length: 0.448,
@@ -282,7 +282,7 @@ export const sculpin: AssetDefinition = {
     "A big-headed, mottled little fish that hugs the stream bed and hides among the stones.",
   radius: 0.22,
   habitat: "water",
-  swims: { speed: 0.08, depth: 4 },
+  swims: { speed: 0.08, depth: [0.36, 1] },
   build: () =>
     fish({
       length: 0.24,
@@ -339,7 +339,7 @@ export const convictCichlid: AssetDefinition = {
     "A bold little Central American cichlid, pale grey crossed with black bars. Pairs guard their patch of stream bed.",
   radius: 0.27,
   habitat: "water",
-  swims: { speed: 0.2, depth: 0.8 },
+  swims: { speed: 0.2, depth: [0.28, 1] },
   build: () =>
     fish({
       length: 0.255,
@@ -390,7 +390,7 @@ export const harlequinRasbora: AssetDefinition = {
     "A small copper-pink fish with a black wedge on its side. Schools through the shaded streams of Southeast Asia.",
   radius: 0.17,
   habitat: "water",
-  swims: { speed: 0.22, depth: 0.15 },
+  swims: { speed: 0.22, depth: [0.08, 0.22] },
   build: () =>
     fish({
       length: 0.165,
@@ -432,7 +432,7 @@ export const pupfish: AssetDefinition = {
     "A chunky little fish from desert springs. Breeding males turn bright blue and chase each other around the pool.",
   radius: 0.17,
   habitat: "water",
-  swims: { speed: 0.18, depth: 0.5 },
+  swims: { speed: 0.18, depth: [0.25, 1] },
   build: () =>
     fish({
       length: 0.153,

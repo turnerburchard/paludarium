@@ -3,10 +3,10 @@ import { z } from "zod";
 import { makePreset } from "../model/presets";
 import { emptyWorld, worldSchema, type World } from "../model/schema";
 import { fitObject } from "../model/terrain";
-export const STORAGE_KEY = "little-worlds:v2";
-/** Worlds saved before terrain grids grew with the tank. They are not
- * migrated, only cleared. */
-const RETIRED_STORAGE_KEY = "little-worlds:v1";
+export const STORAGE_KEY = "little-worlds:v3";
+/** Worlds saved before the rock shelter split into separate stones. They
+ * are not migrated, only cleared. */
+const RETIRED_STORAGE_KEY = "little-worlds:v2";
 export const MAX_WORLD_SIZE = 250_000;
 export function parseWorld(text: string): World {
   if (text.length > MAX_WORLD_SIZE)

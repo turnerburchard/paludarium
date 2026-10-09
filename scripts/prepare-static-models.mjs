@@ -199,6 +199,14 @@ const MODELS = [
     height: 1.15,
     solid: true,
   },
+  {
+    // "Mushroom_Laetiporus" from Quaternius's Stylized Nature MegaKit, CC0,
+    // cut from 3216 to 400 triangles in Blender.
+    source: "docs/inspiration/models/laetiporus-quaternius.glb",
+    out: "src/assets/landscape/chickenOfTheWoods.json",
+    width: 0.45,
+    roles: { shelf: "b08040", rim: "d0b060" },
+  },
 ];
 
 for (const model of MODELS) {

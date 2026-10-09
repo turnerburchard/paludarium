@@ -250,33 +250,40 @@ button:hover:not(:disabled) {
   scrollbar-width: thin;
   scrollbar-color: #435a43 transparent;
 }
+/* Small pills, so the categories read as a filter on the list below and not
+   as a second row of panel tabs. */
 .category-tabs {
   display: flex;
-  margin: 0 17px 16px;
-  border-bottom: 1px solid var(--line);
-  justify-content: space-between;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 18px 14px;
 }
 .category-tabs button {
-  flex: 1 1 auto;
   min-width: 0;
-  border: 0;
-  border-bottom: 2px solid transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
   background: transparent;
   color: #879e89;
   display: flex;
-  flex-direction: column;
-  gap: 7px;
   align-items: center;
-  padding: 5px 4px 12px;
+  gap: 4px;
+  padding: 5px 11px;
   font-size: var(--text-small);
+}
+.category-tabs button:hover {
+  color: #dfebcc;
 }
 .panel-tabs button svg,
 .category-tabs button svg {
   flex-shrink: 0;
 }
 .category-tabs button.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
+  border-color: var(--line);
+  background: var(--selected);
+  color: #e3edcc;
+}
+.category-tabs .category-filter {
+  padding: 5px 8px;
 }
 .category-tabs button.filtered {
   color: var(--accent);
@@ -286,6 +293,13 @@ button:hover:not(:disabled) {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+.asset-heading {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+  font-size: var(--text-small);
+  font-weight: 500;
+  color: #879e89;
 }
 .asset-card {
   padding: 0 0 12px;
@@ -647,7 +661,6 @@ button:hover:not(:disabled) {
   margin-top: 12px;
 }
 .preset-options button {
-  text-align: left;
   background: var(--surface);
   border: 1px solid #455f3c;
   border-radius: var(--radius);
@@ -655,6 +668,9 @@ button:hover:not(:disabled) {
   min-height: 48px;
   font-size: var(--text-body);
   color: #e1eccf;
+}
+.preset-options button:hover {
+  background: var(--selected);
 }
 .filter-heading {
   font-size: var(--text-body);
@@ -876,31 +892,15 @@ button:hover:not(:disabled) {
     overflow-y: auto;
   }
   .category-tabs {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) 40px;
     position: sticky;
     top: 0;
     z-index: 1;
-    gap: 8px;
-    border: 0;
     margin: 0;
     padding: 0 12px 8px;
     background: var(--panel);
   }
   .category-tabs button {
-    min-height: 40px;
-    padding: 6px 2px;
-    flex-direction: row;
-    justify-content: center;
-    gap: 4px;
-    border-radius: var(--radius);
-  }
-  .category-tabs > button:last-child span {
-    display: none;
-  }
-  .category-tabs button.active {
-    background: var(--selected);
-    border-bottom-color: transparent;
+    min-height: 34px;
   }
   .asset-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -1001,11 +1001,6 @@ button:hover:not(:disabled) {
   }
   .modal {
     padding: 20px;
-  }
-}
-@media (max-width: 360px) {
-  .category-tabs button {
-    flex-direction: column;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1464,10 +1459,13 @@ button:hover:not(:disabled) {
   flex: 1;
   min-width: 0;
   text-align: left;
-  padding: 10px;
+  padding: 10px 0;
   background: transparent;
   border: 0;
   color: inherit;
+}
+.open-world:hover strong {
+  color: var(--accent);
 }
 .open-world strong,
 .open-world span {
@@ -1584,15 +1582,21 @@ button:hover:not(:disabled) {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  min-height: 44px;
-  color: var(--muted);
+  min-height: 40px;
+  color: #d6e1c9;
   background: transparent;
-  border: 0;
-  padding: 8px 10px;
+  border: 1px solid #455f3c;
+  border-radius: 8px;
+  padding: 8px 14px;
   font-size: var(--text-body);
+}
+.world-options button:hover,
+.world-library-actions > button:hover {
+  background: var(--selected);
 }
 .world-options .delete-world {
   color: #d7a29a;
+  border-color: #6b4a44;
   margin-left: auto;
 }
 .world-options > span {

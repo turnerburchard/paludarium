@@ -57,11 +57,12 @@ export const sheetMoss: AssetDefinition = {
     const root = new THREE.Group();
     const skin = mossMaterial();
     mesh(mat(0.36, 0.018, "sheet", random), skin, root);
-    // A crowd of small, low lumps gives the carpet its plush texture.
-    for (let i = 0; i < 26; i++) {
+    // A crowd of small, low lumps gives the carpet its plush texture, smaller
+    // and lower toward the edge where it thins out.
+    for (let i = 0; i < 60; i++) {
       const angle = random() * Math.PI * 2,
-        reach = Math.sqrt(random()) * 0.26;
-      const size = 0.035 + random() * 0.04;
+        reach = Math.sqrt(random()) * 0.3;
+      const size = (0.03 + random() * 0.03) * (1.2 - reach / 0.3 / 2);
       mesh(dome(size, size * 0.45, "sheet", random), skin, root, [
         Math.cos(angle) * reach,
         0.006,
@@ -216,7 +217,10 @@ export function mat(
     }
   const geometry = new THREE.BufferGeometry().setFromPoints(corners);
   geometry.computeVertexNormals();
-  return colorFaces(geometry, () => mossTone(species, random));
+  // The mat is the shaded floor under whatever grows on it, so it sits darker.
+  return colorFaces(geometry, () =>
+    mossTone(species, random).multiplyScalar(0.7),
+  );
 }
 
 /** Tiny branching sprigs, each a stem with paired leaflets, lying over a mat. */

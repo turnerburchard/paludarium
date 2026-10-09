@@ -13,7 +13,7 @@ export const cardinalTetra: AssetDefinition = {
     "A slender schooling fish with an electric blue stripe over a red belly. Add several.",
   radius: 0.12,
   habitat: "water",
-  swims: { speed: 0.3, depth: 0.2 },
+  swims: { speed: 0.3, depth: [0.12, 0.28] },
   build: () =>
     tetra({
       length: 0.17,
@@ -38,7 +38,7 @@ export const emberTetra: AssetDefinition = {
     "A tiny glowing orange fish that drifts in loose groups near the surface.",
   radius: 0.08,
   habitat: "water",
-  swims: { speed: 0.24, depth: 0.09 },
+  swims: { speed: 0.24, depth: [0.04, 0.16] },
   build: () =>
     tetra({
       length: 0.107,

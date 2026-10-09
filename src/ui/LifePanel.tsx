@@ -20,7 +20,10 @@ export function LifePanel({
 }) {
   const { snapshot } = ecosystem;
   const { habitat } = ecosystem;
-  const animals = snapshot.animals;
+  // Fish are listed by species instead.
+  const animals = snapshot.animals.filter(
+    (animal) => animal.surface !== "water",
+  );
   // Fish by species, each with the ids of the fish of that kind.
   const fish = new Map<AssetKind, string[]>();
   for (const object of world.objects)

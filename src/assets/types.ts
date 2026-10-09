@@ -4,7 +4,7 @@ import type { AssetKind } from "../model/schema";
 import type { Den, PlantPerch } from "../model/plantSurfaces";
 import type { Surface } from "../simulation/types";
 
-export type Category = "Plants" | "Landscape" | "Animals";
+export type Category = "Plants" | "Hardscape" | "Animals";
 
 /** Where in the world a thing comes from. Whether it lives underwater is its
  * habitat, not a biome. */
@@ -19,8 +19,8 @@ export const groupCategories = {
   "Aquatic plants": "Plants",
   Mosses: "Plants",
   Mushrooms: "Plants",
-  Stone: "Landscape",
-  Wood: "Landscape",
+  Stone: "Hardscape",
+  Wood: "Hardscape",
   Amphibians: "Animals",
   Reptiles: "Animals",
   Fish: "Animals",
@@ -46,6 +46,15 @@ export interface AnimalBehavior {
   /** Whether it walks underwater: animals that visit still need dry land,
    * and those that live there never leave it or dry out. */
   water?: "visits" | "lives";
+}
+
+/** How a fish swims. Speed is in scene units per real second at normal
+ * simulation speed. Depth is the range below the surface it keeps to, as in
+ * water 0.4 deep: deeper water stretches it, so schools spread through a deep
+ * tank. Anything past 0.4 reaches the bottom. */
+export interface Swimming {
+  speed: number;
+  depth: readonly [number, number];
 }
 
 /** Everything the app knows about one kind of placeable thing. */
@@ -79,8 +88,7 @@ export interface AssetDefinition {
   hardscape?: "stone" | "wood";
   behavior?: AnimalBehavior;
   perches?(random: () => number): PlantPerch[];
-  /** How a fish swims: cruising speed, and how far below the surface it keeps. */
-  swims?: { speed: number; depth: number };
+  swims?: Swimming;
   /** Sheltered spots inside the object, such as under a rock overhang. */
   dens?(random: () => number): Den[];
   /** Builds a fresh model. The same seed always gives the same shape. */

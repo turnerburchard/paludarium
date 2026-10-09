@@ -15,9 +15,11 @@ import {
   bluePoisonDartFrog,
   canyonTreeFrog,
   chorusFrog,
+  hornedFrog,
   mossyFrog,
   strawberryPoisonFrog,
   treeFrog,
+  westernToad,
 } from "./animals/frogs";
 import { fish } from "./animals/fish";
 import {
@@ -84,13 +86,15 @@ import { hairgrass } from "./plants/hairgrass";
 import { orchid } from "./plants/orchid";
 import { waterLily } from "./plants/waterLily";
 import { hedgehogCactus } from "./plants/hedgehogCactus";
+import { beavertail, cholla, organPipe, saguaro } from "./plants/cacti";
 import { cushionMoss, fernMoss, javaMoss, sheetMoss } from "./landscape/mosses";
 import { rock } from "./landscape/rock";
 import { wood } from "./landscape/wood";
 import { branch } from "./landscape/branch";
 import { log } from "./landscape/log";
-import { rockShelter } from "./landscape/rockShelter";
+import { capstone, standingStone } from "./landscape/shelterStones";
 import {
+  cobble,
   flagstone,
   granite,
   limestone,
@@ -101,15 +105,31 @@ import {
   sandstonePillar,
   scree,
   slate,
+  stoneBlock,
+  stoneSlab,
 } from "./landscape/stones";
 import { fungusLog } from "./landscape/fungusLog";
 import { snag } from "./landscape/snag";
 import { treeRoots } from "./landscape/treeRoots";
 import { stump } from "./landscape/stump";
 import { deadTree } from "./landscape/deadTree";
-import { bolete, bonnetMushrooms, flyAgaric } from "./landscape/mushrooms";
+import {
+  bolete,
+  bonnetMushrooms,
+  chickenOfTheWoods,
+  flyAgaric,
+} from "./landscape/mushrooms";
 import { ludwigia } from "./plants/ludwigia";
 import { dwarfSagittaria } from "./plants/dwarfSagittaria";
+import {
+  quaterniusBoulder,
+  quaterniusOutcrop,
+  quaterniusCrag,
+  quaterniusWedge,
+  quaterniusDome,
+  quaterniusBlock,
+  quaterniusLedge,
+} from "./landscape/quaterniusStones";
 import { leafLitter } from "./landscape/leafLitter";
 
 export type {
@@ -129,6 +149,8 @@ export const assets = {
   "mossy-frog": mossyFrog,
   "chorus-frog": chorusFrog,
   "canyon-tree-frog": canyonTreeFrog,
+  "western-toad": westernToad,
+  "horned-frog": hornedFrog,
   gecko,
   "leopard-lizard": leopardLizard,
   "desert-spiny-lizard": desertSpinyLizard,
@@ -158,6 +180,10 @@ export const assets = {
   "prickly-pear": pricklyPear,
   "barrel-cactus": barrelCactus,
   "hedgehog-cactus": hedgehogCactus,
+  saguaro,
+  "organ-pipe": organPipe,
+  beavertail,
+  cholla,
   agave,
   bunchgrass,
   hairgrass,
@@ -178,6 +204,13 @@ export const assets = {
   "java-moss": javaMoss,
   rock,
   granite,
+  "quaternius-boulder": quaterniusBoulder,
+  "quaternius-outcrop": quaterniusOutcrop,
+  "quaternius-crag": quaterniusCrag,
+  "quaternius-wedge": quaterniusWedge,
+  "quaternius-dome": quaterniusDome,
+  "quaternius-block": quaterniusBlock,
+  "quaternius-ledge": quaterniusLedge,
   sandstone,
   "sandstone-pillar": sandstonePillar,
   "sandstone-ledge": sandstoneLedge,
@@ -187,6 +220,9 @@ export const assets = {
   flagstone,
   scree,
   pebbles,
+  cobble,
+  "stone-block": stoneBlock,
+  "stone-slab": stoneSlab,
   wood,
   branch,
   log,
@@ -195,11 +231,13 @@ export const assets = {
   stump,
   "dead-tree": deadTree,
   "tree-roots": treeRoots,
-  "rock-shelter": rockShelter,
+  "standing-stone": standingStone,
+  capstone,
   "leaf-litter": leafLitter,
   "fly-agaric": flyAgaric,
   bolete,
   "bonnet-mushrooms": bonnetMushrooms,
+  "chicken-of-the-woods": chickenOfTheWoods,
   fish,
   "cardinal-tetra": cardinalTetra,
   "ember-tetra": emberTetra,

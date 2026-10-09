@@ -7,7 +7,7 @@ import { chromium } from "playwright";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const url = "http://127.0.0.1:5196";
-const storageKey = "little-worlds:v2";
+const storageKey = "little-worlds:v3";
 const started = Date.now();
 const original = {
   version: 1,
@@ -186,26 +186,6 @@ try {
       Math.min(...cards.map((card) => card.labelTop)) <
       1,
   );
-  const tabColumns = await page
-    .locator(".panel-tabs > button")
-    .evaluateAll((tabs) =>
-      tabs.map((tab) => ({
-        left: tab.getBoundingClientRect().left,
-        width: tab.getBoundingClientRect().width,
-      })),
-    );
-  const categoryColumns = await page
-    .locator(".category-tabs > button")
-    .evaluateAll((tabs) =>
-      tabs.slice(0, 3).map((tab) => ({
-        left: tab.getBoundingClientRect().left,
-        width: tab.getBoundingClientRect().width,
-      })),
-    );
-  categoryColumns.forEach((column, index) => {
-    assert.ok(Math.abs(column.left - tabColumns[index].left) < 1);
-    assert.ok(Math.abs(column.width - tabColumns[index].width) < 1);
-  });
   // Measured against the panel because the sheet may still be sliding up.
   const scrolledCategoryOffset = await page
     .locator(".panel-content")

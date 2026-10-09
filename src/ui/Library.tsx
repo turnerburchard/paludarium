@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Leaf, Mountain, Bird, Plus, ListFilter } from "lucide-react";
+import { Plus, ListFilter } from "lucide-react";
 import {
   catalog,
   categoryOf,
@@ -11,12 +11,9 @@ import {
 import type { Editor } from "../editor/useEditor";
 import { loadThumbnails, type Thumbnails } from "../scene/thumbnails";
 import { hasDryGround } from "../model/terrain";
+import { prebuilts } from "../model/prebuilts";
 import { LibraryFilter, type Place } from "./LibraryFilter";
-const categories: { name: Category; icon: typeof Leaf }[] = [
-  { name: "Plants", icon: Leaf },
-  { name: "Landscape", icon: Mountain },
-  { name: "Animals", icon: Bird },
-];
+const categories: Category[] = ["Plants", "Hardscape", "Animals"];
 export function Library({
   editor,
   hidden,
@@ -72,16 +69,14 @@ export function Library({
     const controller = new AbortController();
     const observer = new IntersectionObserver(
       (entries) => {
-        const kinds = entries
+        const keys = entries
           .filter((entry) => entry.isIntersecting)
           .map((entry) => {
             observer.unobserve(entry.target);
-            return catalog.find(
-              (asset) => asset.kind === entry.target.getAttribute("data-kind"),
-            )!.kind;
+            return entry.target.getAttribute("data-kind")!;
           });
-        if (kinds.length)
-          void loadThumbnails(kinds, controller.signal).then((loaded) => {
+        if (keys.length)
+          void loadThumbnails(keys, controller.signal).then((loaded) => {
             if (!controller.signal.aborted)
               setThumbnails((current) => ({ ...current, ...loaded }));
           });
@@ -100,27 +95,26 @@ export function Library({
     <>
       <div className="category-tabs" aria-label="Object categories">
         {categories
-          .filter(({ name }) =>
+          .filter((name) =>
             available.some((asset) => categoryOf(asset) === name),
           )
-          .map(({ name, icon: Icon }) => (
+          .map((name) => (
             <button
               key={name}
               className={activeCategory === name ? "active" : ""}
               onClick={() => setCategory(name)}
               aria-pressed={activeCategory === name}
             >
-              <Icon size={17} />
-              <span>{name}</span>
+              {name}
             </button>
           ))}
         <button
-          className={filterCount ? "filtered" : ""}
+          className={`category-filter ${filterCount ? "filtered" : ""}`}
           onClick={() => setFiltering(true)}
           aria-label="Filter objects"
         >
-          <ListFilter size={17} />
-          <span>{filterCount ? `Filter · ${filterCount}` : "Filter"}</span>
+          <ListFilter size={16} />
+          {filterCount > 0 && filterCount}
         </button>
       </div>
       {filtering && (
@@ -143,30 +137,85 @@ export function Library({
         </p>
       )}
       <div className="asset-grid" ref={grid}>
+        {/* Prebuilts lead the hardscape, unless filters narrow it down. */}
+        {activeCategory === "Hardscape" && filterCount === 0 && (
+          <>
+            <h3 className="asset-heading">Prebuilt</h3>
+            {prebuilts
+              .filter((prebuilt) =>
+                prebuilt.pieces.every((piece) =>
+                  available.some((asset) => asset.kind === piece.kind),
+                ),
+              )
+              .map((prebuilt) => (
+                <Card
+                  key={prebuilt.id}
+                  id={`prebuilt:${prebuilt.id}`}
+                  name={prebuilt.name}
+                  description={prebuilt.description}
+                  thumbnails={thumbnails}
+                  chosen={
+                    editor.tool.type === "prebuilt" &&
+                    editor.tool.prebuilt.id === prebuilt.id
+                  }
+                  onChoose={() => editor.choosePrebuilt(prebuilt)}
+                />
+              ))}
+            <h3 className="asset-heading">Pieces</h3>
+          </>
+        )}
         {shown.map((asset) => (
-          <button
+          <Card
             key={asset.kind}
-            data-kind={asset.kind}
-            className={`asset-card ${editor.tool.type === "place" && editor.tool.kind === asset.kind ? "chosen" : ""}`}
-            onClick={() => editor.choose(asset.kind)}
-            title={asset.description}
-            aria-pressed={
+            id={asset.kind}
+            name={asset.name}
+            description={asset.description}
+            thumbnails={thumbnails}
+            chosen={
               editor.tool.type === "place" && editor.tool.kind === asset.kind
             }
-          >
-            <span className="asset-picture">
-              {thumbnails[asset.kind] && (
-                <img src={thumbnails[asset.kind]} alt="" draggable={false} />
-              )}
-              <span className="asset-add">
-                <Plus size={13} />
-              </span>
-            </span>
-            <span className="asset-name">{asset.name}</span>
-          </button>
+            onChoose={() => editor.choose(asset.kind)}
+          />
         ))}
       </div>
     </>
+  );
+}
+
+/** A library entry; `id` also names its thumbnail. */
+function Card({
+  id,
+  name,
+  description,
+  thumbnails,
+  chosen,
+  onChoose,
+}: {
+  id: string;
+  name: string;
+  description: string;
+  thumbnails: Thumbnails;
+  chosen: boolean;
+  onChoose: () => void;
+}) {
+  return (
+    <button
+      data-kind={id}
+      className={`asset-card ${chosen ? "chosen" : ""}`}
+      onClick={onChoose}
+      title={description}
+      aria-pressed={chosen}
+    >
+      <span className="asset-picture">
+        {thumbnails[id] && (
+          <img src={thumbnails[id]} alt="" draggable={false} />
+        )}
+        <span className="asset-add">
+          <Plus size={13} />
+        </span>
+      </span>
+      <span className="asset-name">{name}</span>
+    </button>
   );
 }
 

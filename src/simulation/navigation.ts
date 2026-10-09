@@ -46,6 +46,16 @@ export class HabitatGraph {
   }
   allowed(id: string, species: SpeciesProfile) {
     const node = this.node(id);
+    const swims = species.swims;
+    if (node.swim)
+      // Shallow water still lets a fish reach the bottom.
+      return (
+        !!swims &&
+        node.swim.room >= swims.room &&
+        node.swim.depth <= swims.depth[1] &&
+        (node.swim.depth >= swims.depth[0] || node.swim.bottom)
+      );
+    if (swims) return false;
     if ((node.room ?? Infinity) < (species.radius ?? 0)) return false;
     if (node.submerged ? !species.water : species.water === "lives")
       return false;

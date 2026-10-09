@@ -230,21 +230,20 @@ describe("a fully submerged aquarium", () => {
     ).toThrow();
   });
 
-  it("keeps preferred depths in ponds and spreads schools through deep water", () => {
+  it("keeps depth ranges in ponds and spreads schools through deep water", () => {
     const pond = emptyWorld().environment;
-    expect(swimmingHeight(2, 0, pond, 0.13)).toBeCloseTo(
+    expect(swimmingHeight(2, 0, pond, [0.06, 0.2])).toBeCloseTo(
       Math.max(groundHeight(2, 0, pond) + 0.05, pond.water - 0.13),
     );
     const env = makePreset("aquarium").environment;
-    const shallowSwimmer = swimmingHeight(2, 0, env, 0.13);
-    const deepSwimmer = swimmingHeight(2, 0, env, 0.23);
+    const shallowSwimmer = swimmingHeight(2, 0, env, [0.04, 0.16]);
+    const deepSwimmer = swimmingHeight(2, 0, env, [0.16, 0.34]);
     expect(shallowSwimmer - deepSwimmer).toBeGreaterThan(0.5);
     expect(shallowSwimmer).toBeLessThan(env.water - 0.5);
-    for (const depth of [0.13, 0.23])
-      for (const bob of [-0.025, 0.025]) {
-        const y = swimmingHeight(-2, 0, env, depth, bob);
-        expect(y).toBeGreaterThan(groundHeight(-2, 0, env) + 0.05);
-        expect(y).toBeLessThan(env.water - 0.05);
-      }
+    // Ranges past 0.4 reach the bottom of any depth of water.
+    const ground = groundHeight(-2, 0, env);
+    const bottom = swimmingHeight(-2, 0, env, [0.36, 1]);
+    expect(bottom).toBeGreaterThan(ground + 0.05);
+    expect(bottom).toBeLessThan(ground + 0.2);
   });
 });

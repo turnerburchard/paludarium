@@ -7,11 +7,11 @@ import {
 } from "../assets/collisionTree";
 import type { Environment, HabitatObject, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
-import { groundHeight, swimmingHeight } from "../model/terrain";
-import type { Fish } from "./fish";
+import { groundHeight, placementProblem } from "../model/terrain";
+import type { Vec3 } from "./types";
 
 const CLEARANCE = 0.015;
-export const SWIM_BOB = 0.025;
+const SWIM_BOB = 0.025;
 
 /** Collision trees for the plants, wood and stone, which only depend on
  * those objects and the environment. */
@@ -39,10 +39,7 @@ interface Crossing {
 export class SwimSpace {
   private readonly obstacles: CollisionTree;
   private readonly solids: CollisionTree[];
-  private readonly bodies = new Map<
-    string,
-    { bounds: THREE.Box3; depth: number }
-  >();
+  private readonly bodies = new Map<string, THREE.Box3>();
   private readonly position = new THREE.Vector3();
   private readonly rotation = new THREE.Quaternion();
   private readonly matrix = new THREE.Matrix4();
@@ -71,7 +68,7 @@ export class SwimSpace {
       bounds.max.y += CLEARANCE;
       bounds.min.z -= CLEARANCE;
       bounds.max.z += CLEARANCE;
-      this.bodies.set(object.id, { bounds, depth: asset.swims.depth });
+      this.bodies.set(object.id, bounds);
     }
     const objects = world.objects.filter((o) => !isAnimal(o.kind));
     const built = sceneries.get(world.environment);
@@ -115,59 +112,75 @@ export class SwimSpace {
     return { objects, obstacles: buildCollisionTree(faces), solids };
   }
 
-  private vertical(
-    fish: Fish,
-    x: number,
-    z: number,
-    env = this.world.environment,
-  ) {
-    const body = this.bodies.get(fish.id)!;
-    const floor = groundHeight(x, z, env) - body.bounds.min.y + 0.005;
-    const ceiling = env.water - body.bounds.max.y - 0.005;
-    const bob = Math.max(0, Math.min(SWIM_BOB, (ceiling - floor) / 2));
-    const preferred = swimmingHeight(
-      x,
-      z,
-      env,
-      body.depth,
-      0,
-      Math.max(0.05, -body.bounds.min.y + 0.005),
-    );
-    return {
-      y: Math.max(floor + bob, Math.min(ceiling - bob, preferred)),
-      bob,
-    };
+  /** Half the width of a fish's body. Water nodes record how wide a fish
+   * they have room for. */
+  room(id: string) {
+    const body = this.bodies.get(id)!;
+    return Math.max(-body.min.x, body.max.x);
   }
 
-  height = (fish: Fish, x: number, z: number, preview?: Environment) =>
-    this.vertical(fish, x, z, preview).y;
-  bob = (fish: Fish, x: number, z: number, preview?: Environment) =>
-    this.vertical(fish, x, z, preview).bob;
+  /** The nearest steady height to `wanted` that keeps the body clear of the
+   * floor and surface, with room to bob. */
+  steady = (
+    id: string,
+    x: number,
+    z: number,
+    wanted: number,
+    env = this.world.environment,
+  ) => {
+    const body = this.bodies.get(id)!;
+    const floor = groundHeight(x, z, env) - body.min.y + 0.005;
+    const ceiling = env.water - body.max.y - 0.005;
+    const bob = Math.max(0, Math.min(SWIM_BOB, (ceiling - floor) / 2));
+    return {
+      y: Math.max(floor + bob, Math.min(ceiling - bob, wanted)),
+      bob,
+    };
+  };
 
   canSwim = (
-    fish: Fish,
+    id: string,
     x: number,
+    y: number,
     z: number,
     heading: number,
     padding = 0,
   ): boolean => {
-    const body = this.bodies.get(fish.id)!;
-    const pose = this.vertical(fish, x, z);
-    this.bodyBox.copy(body.bounds);
-    this.bodyBox.min.y -= pose.bob;
-    this.bodyBox.max.y += pose.bob;
+    // Every swimmer shares the open-water placement rule.
+    if (placementProblem("fish", x, z, this.world.environment)) return false;
+    const { bob } = this.steady(id, x, z, y);
+    this.bodyBox.copy(this.bodies.get(id)!);
+    this.bodyBox.min.y -= bob;
+    this.bodyBox.max.y += bob;
     // Extra horizontal breathing room for steering, without changing depth.
     this.bodyBox.min.x -= padding;
     this.bodyBox.max.x += padding;
     this.bodyBox.min.z -= padding;
     this.bodyBox.max.z += padding;
     this.matrix.compose(
-      this.position.set(x, pose.y, z),
+      this.position.set(x, y, z),
       this.rotation.setFromAxisAngle(this.up, heading),
       this.unitScale,
     );
     this.inverse.copy(this.matrix).invert();
     this.query.copy(this.bodyBox).applyMatrix4(this.matrix);
+    return this.clear();
+  };
+
+  /** Whether a flat box of open water fits around a point, for the water
+   * graph. The caller keeps it clear of the floor. */
+  open(point: Vec3, half: number, height: number) {
+    this.bodyBox.min.set(-half, -height, -half);
+    this.bodyBox.max.set(half, height, half);
+    this.matrix.makeTranslation(point.x, point.y, point.z);
+    this.inverse.copy(this.matrix).invert();
+    this.query.copy(this.bodyBox).applyMatrix4(this.matrix);
+    return this.clear();
+  }
+
+  /** Whether the posed body in `query` stays inside the tank and water, and
+   * clear of everything in it. */
+  private clear() {
     const env = this.world.environment;
     if (
       this.query.min.x <= -env.width / 2 ||
@@ -178,13 +191,13 @@ export class SwimSpace {
     )
       return false;
     return !this.intersects(this.obstacles, this.bodyBox);
-  };
+  }
 
   /** A new or edited object can surround a fish without crossing its skin.
    * Check solid interiors when finding a starting position, too. Hollow log
    * walls and shelter openings retain their real gaps. */
-  canStart(fish: Fish, x: number, z: number, heading: number) {
-    if (!this.canSwim(fish, x, z, heading)) return false;
+  canStart(id: string, x: number, y: number, z: number, heading: number) {
+    if (!this.canSwim(id, x, y, z, heading)) return false;
     this.ray.set(
       this.position,
       new THREE.Vector3(0.937, 0.213, 0.277).normalize(),

@@ -8,7 +8,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("controls help preference", () => {
   it("remembers dismissal without touching saved worlds", () => {
-    const values = new Map([["little-worlds:v2", "saved world"]]);
+    const values = new Map([["little-worlds:v3", "saved world"]]);
     vi.stubGlobal("localStorage", {
       getItem: (key: string) => values.get(key) ?? null,
       setItem: (key: string, value: string) => values.set(key, value),
@@ -16,7 +16,7 @@ describe("controls help preference", () => {
     expect(hasDismissedHelp()).toBe(false);
     rememberHelpDismissal();
     expect(hasDismissedHelp()).toBe(true);
-    expect(values.get("little-worlds:v2")).toBe("saved world");
+    expect(values.get("little-worlds:v3")).toBe("saved world");
   });
 
   it("still offers help when reading storage is blocked", () => {
