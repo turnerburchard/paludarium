@@ -174,10 +174,10 @@ describe("saved landscape brushes", () => {
         .environment.terrain,
     ).toEqual(painted.terrain);
   });
-  it("carves a continuous stream that supports fish and updates frog shoreline nodes", () => {
+  it("carves a continuous channel that supports fish and updates frog shoreline nodes", () => {
     const world = emptyWorld();
     const before = buildHabitat(world);
-    const stroke = new TerrainStroke(world, { mode: "stream", radius: 0.55 });
+    const stroke = new TerrainStroke(world, { mode: "pool", radius: 0.55 });
     stroke.dab(-2.2, -0.6);
     const result = stroke.dab(-1, 0.6);
     for (let step = 0; step <= 12; step++) {
