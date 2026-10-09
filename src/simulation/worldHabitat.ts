@@ -1,4 +1,10 @@
-import type { HabitatObject, World } from "../model/schema";
+import {
+  MAX_SCALE,
+  assetKinds,
+  type Environment,
+  type HabitatObject,
+  type World,
+} from "../model/schema";
 import {
   assetRadius,
   assets,
@@ -37,26 +43,58 @@ const groundWalker: SpeciesProfile = {
   speed: 1,
 };
 
-function habitatClearance(world: World) {
-  return Math.max(
-    0.16,
-    ...world.objects
-      .filter((o) => isLandAnimal(o.kind))
-      .map((o) => assetRadius(o.kind) * o.scale),
+/** Every land animal gets at least this much room, however small. */
+const CLEARANCE = 0.16;
+/** Room is measured outward in steps of this size. */
+const ROOM_STEP = 0.04;
+/** The most room any animal can need: the biggest at its largest size. */
+const LARGEST_FOOTPRINT =
+  Math.max(
+    ...assetKinds.filter(isLandAnimal).map((kind) => assetRadius(kind)),
+  ) * MAX_SCALE;
+
+/** Larger animals step off stone, reach plants and climb the glass from
+ * farther out. Rather than a way for every size, each band of room gets
+ * one, each band half again as wide as the last. */
+const roomBand = (room: number) =>
+  Math.floor(Math.log(room / CLEARANCE) / Math.log(1.5));
+
+/** Room left before an animal's footprint, plus a little air, meets the glass. */
+function wallRoom(x: number, z: number, env: Environment) {
+  return (
+    Math.min(env.width / 2 - Math.abs(x), env.depth / 2 - Math.abs(z)) - 0.08
   );
+}
+
+/** The largest footprint that fits on the ground here, probing farther out
+ * until stone or wood is in the way. The spot is clear at CLEARANCE. */
+function groundRoom(
+  surfaces: LandSurfaces,
+  x: number,
+  z: number,
+  env: Environment,
+) {
+  const wall = wallRoom(x, z, env);
+  let room = CLEARANCE;
+  for (
+    let r = CLEARANCE + ROOM_STEP;
+    r <= Math.min(wall, LARGEST_FOOTPRINT);
+    r += ROOM_STEP
+  ) {
+    if (surfaces.blocksGround(x, z, r)) return room;
+    room = r;
+  }
+  return wall;
 }
 
 const hasFish = (world: World) =>
   world.objects.some((object) => assets[object.kind].swims);
 
-// Moving animals leaves surfaces intact; a changed maximum footprint does
-// not, and nor does the first fish or the last, which open or close the water.
+/** Animals come and go without changing the surfaces, since each one checks
+ * the room it needs as it moves. Only the first fish or the last changes
+ * them, by opening or closing the water. */
 function sameHabitat(a: World, b: World) {
-  if (
-    a.environment !== b.environment ||
-    habitatClearance(a) !== habitatClearance(b) ||
-    hasFish(a) !== hasFish(b)
-  )
+  if (a.environment !== b.environment || hasFish(a) !== hasFish(b))
     return false;
   const objects = a.objects.filter((object) => !isAnimal(object.kind));
   const next = b.objects.filter((object) => !isAnimal(object.kind));
@@ -71,8 +109,7 @@ export function buildHabitat(world: World): HabitatGraph {
   const env = world.environment,
     nodes: HabitatNode[] = [],
     grid = new Map<string, HabitatNode>();
-  const clearance = habitatClearance(world);
-  const margin = clearance + 0.08,
+  const margin = CLEARANCE + 0.08,
     spacing = 0.32;
   const nx = Math.ceil((env.width - 2 * margin) / spacing),
     nz = Math.ceil((env.depth - 2 * margin) / spacing);
@@ -89,7 +126,7 @@ export function buildHabitat(world: World): HabitatGraph {
       const x = -env.width / 2 + margin + (ix * (env.width - 2 * margin)) / nx;
       const z = -env.depth / 2 + margin + (iz * (env.depth - 2 * margin)) / nz;
       const y = groundHeight(x, z, env);
-      if (surfaces.blocksGround(x, z, clearance)) continue;
+      if (surfaces.blocksGround(x, z, CLEARANCE)) continue;
       const shelter = shelters.reduce(
         (best, o) =>
           Math.max(
@@ -110,6 +147,7 @@ export function buildHabitat(world: World): HabitatGraph {
         // Shallow shoreline is dry enough for land animals.
         submerged: env.water - y > 0.025,
         shelter,
+        room: groundRoom(surfaces, x, z, env),
         neighbors: [],
       };
       grid.set(`${ix}:${iz}`, node);
@@ -130,13 +168,24 @@ export function buildHabitat(world: World): HabitatGraph {
         [-1, -1],
       ]) {
         const neighbor = grid.get(`${ix + dx}:${iz + dz}`);
+        if (!neighbor) continue;
+        // Diagonals cannot cut a corner around blocked cells, or one too
+        // tight for an animal that fits at both ends.
+        const corners = [
+          grid.get(`${ix + dx}:${iz}`),
+          grid.get(`${ix}:${iz + dz}`),
+        ];
         if (
-          neighbor &&
+          dx &&
+          dz &&
+          corners.some(
+            (corner) =>
+              !corner || corner.room! < Math.min(node.room!, neighbor.room!),
+          )
+        )
+          continue;
+        if (
           Math.abs(node.position.y - neighbor.position.y) < 0.2 &&
-          // Diagonals cannot cut a corner around blocked or flooded cells.
-          (!dx ||
-            !dz ||
-            (grid.has(`${ix + dx}:${iz}`) && grid.has(`${ix}:${iz + dz}`))) &&
           surfaces.clearRoute(node.position, neighbor.position)
         )
           node.neighbors.push(neighbor.id);
@@ -152,6 +201,7 @@ export function buildHabitat(world: World): HabitatGraph {
       x: number;
       z: number;
       normal: { x: number; y: number; z: number };
+      inward: { x: number; z: number };
     }> = [];
     if (ix === 0)
       sides.push({
@@ -159,6 +209,7 @@ export function buildHabitat(world: World): HabitatGraph {
         x: -env.width / 2 + 0.05,
         z: ground.position.z,
         normal: { x: 1, y: 0, z: 0 },
+        inward: { x: 1, z: 0 },
       });
     if (ix === nx)
       sides.push({
@@ -166,6 +217,7 @@ export function buildHabitat(world: World): HabitatGraph {
         x: env.width / 2 - 0.05,
         z: ground.position.z,
         normal: { x: -1, y: 0, z: 0 },
+        inward: { x: -1, z: 0 },
       });
     if (iz === 0)
       sides.push({
@@ -173,6 +225,7 @@ export function buildHabitat(world: World): HabitatGraph {
         x: ground.position.x,
         z: -env.depth / 2 + 0.05,
         normal: { x: 0, y: 0, z: 1 },
+        inward: { x: 0, z: 1 },
       });
     if (iz === nz)
       sides.push({
@@ -180,43 +233,72 @@ export function buildHabitat(world: World): HabitatGraph {
         x: ground.position.x,
         z: env.depth / 2 - 0.05,
         normal: { x: 0, y: 0, z: -1 },
+        inward: { x: 0, z: -1 },
       });
     for (const side of sides) {
-      let previous = ground;
-      for (let level = 0; level < 5; level++) {
-        const node: HabitatNode = {
-          id: `wall:${side.tag}:${ground.id}:${level}`,
-          position: {
-            x: side.x,
-            y: ground.position.y + level * 0.28,
-            z: side.z,
-          },
-          normal: side.normal,
-          surface: "glass",
-          wet: false,
-          shelter: ground.shelter * 0.7,
-          neighbors: [previous.id],
-        };
-        previous.neighbors.push(node.id);
-        nodes.push(node);
-        previous = node;
+      // Larger climbers can't stand on the edge cell, so the first cells in
+      // from it with more room get ladders of their own.
+      let band = -1;
+      for (let step = 0; band < roomBand(LARGEST_FOOTPRINT); step++) {
+        const cell = grid.get(
+          `${ix + side.inward.x * step}:${iz + side.inward.z * step}`,
+        );
+        if (!cell || cell.submerged) break;
+        const foot = { x: side.x, y: cell.position.y, z: side.z };
+        if (
+          roomBand(cell.room!) <= band ||
+          (step && !surfaces.clearRoute(cell.position, foot))
+        )
+          continue;
+        band = roomBand(cell.room!);
+        let previous = cell;
+        for (let level = 0; level < 5; level++) {
+          const node: HabitatNode = {
+            id: `wall:${side.tag}:${cell.id}:${level}`,
+            position: { ...foot, y: foot.y + level * 0.28 },
+            normal: side.normal,
+            surface: "glass",
+            wet: false,
+            shelter: cell.shelter * 0.7,
+            neighbors: [previous.id],
+          };
+          previous.neighbors.push(node.id);
+          nodes.push(node);
+          previous = node;
+        }
       }
     }
   }
   const groundNodes = nodes.filter((node) => node.surface === "ground");
   const groundGrid = new HabitatNodeGrid(groundNodes, spacing);
   const hardscapeNodes = surfaces.routes(margin);
+  for (const node of hardscapeNodes)
+    node.room = wallRoom(node.position.x, node.position.z, env);
   nodes.push(...hardscapeNodes);
   const connect = (a: HabitatNode, b: HabitatNode) => {
-    if (!surfaces.clearRoute(a.position, b.position)) return;
+    if (!surfaces.clearRoute(a.position, b.position)) return false;
     a.neighbors.push(b.id);
     b.neighbors.push(a.id);
+    return true;
   };
   // Nearby mesh surfaces can meet across a stack, while isolated or floating
   // pieces remain disconnected. Spatial buckets avoid comparing every pair.
   const buckets = new Map<string, HabitatNode[]>();
   const bucketSize = 0.16;
-  const groundRange = spacing + clearance + 0.06;
+  /** How far an animal steps off stone onto ground with this much room. */
+  const reach = (room: number) => spacing + room + 0.06;
+  /** Stepping off stone onto dry ground keeps to dry ground or the stone
+   * itself, rather than striding over a pond in the air. */
+  const overLand = (from: Vec3, to: Vec3) => {
+    const steps = Math.ceil(distance(from, to) / 0.08);
+    for (let i = 1; i < steps; i++) {
+      const x = from.x + ((to.x - from.x) * i) / steps;
+      const z = from.z + ((to.z - from.z) * i) / steps;
+      if (groundHeight(x, z, env) < env.water - 0.025 && !surfaces.at(x, z))
+        return false;
+    }
+    return true;
+  };
   for (const node of hardscapeNodes) {
     const cell = [node.position.x, node.position.y, node.position.z].map((n) =>
       Math.floor(n / bucketSize),
@@ -236,21 +318,42 @@ export function buildHabitat(world: World): HabitatGraph {
     const bucket = buckets.get(key);
     if (bucket) bucket.push(node);
     else buckets.set(key, [node]);
-    for (const ground of groundGrid.near(node.position, groundRange))
-      if (
-        distance(node.position, ground.position) <= groundRange &&
-        Math.abs(node.position.y - ground.position.y) <= 0.18
+    // Ground right beside the stone, then the nearest ground in each wider
+    // band of room, for larger animals that step off from farther away.
+    let band = -1;
+    for (const { ground, d } of groundGrid
+      .near(node.position, reach(LARGEST_FOOTPRINT))
+      .map((ground) => ({
+        ground,
+        d: distance(node.position, ground.position),
+      }))
+      .filter(
+        ({ ground, d }) =>
+          d <= reach(ground.room!) &&
+          Math.abs(node.position.y - ground.position.y) <= 0.18,
       )
-        connect(node, ground);
+      .sort((a, b) => a.d - b.d)) {
+      const beside = d <= reach(CLEARANCE);
+      if (!beside && roomBand(ground.room!) <= band) continue;
+      if (!ground.submerged && !overLand(node.position, ground.position))
+        continue;
+      // One try per band keeps far sides of the stone from retrying every
+      // cell out to the glass.
+      if (connect(node, ground) || !beside)
+        band = Math.max(band, roomBand(ground.room!));
+    }
   }
   const anchors = new HabitatNodeGrid(
     [...groundNodes, ...hardscapeNodes],
     0.65,
   );
   /** Stems and dens start on a nearby dry surface at their actual base,
-   * including the top of a support. Never bridge up through stacked stone. */
-  const dryAnchor = (point: Vec3, range: number) =>
-    anchors
+   * including the top of a support. Never bridge up through stacked stone.
+   * Larger animals don't fit everywhere, so the base also joins the nearest
+   * surfaces with more room. */
+  const dryAnchors = (point: Vec3, range: number) => {
+    const found: HabitatNode[] = [];
+    for (const node of anchors
       .near(point, range)
       .filter(
         (node) =>
@@ -262,8 +365,19 @@ export function buildHabitat(world: World): HabitatGraph {
         (a, b) =>
           Number(a.surface !== "ground") - Number(b.surface !== "ground") ||
           distance(a.position, point) - distance(b.position, point),
+      ))
+      if (
+        (!found.length ||
+          roomBand(node.room!) > roomBand(found[found.length - 1].room!)) &&
+        surfaces.clearRoute(node.position, point)
       )
-      .find((node) => surfaces.clearRoute(node.position, point));
+        found.push(node);
+    return found;
+  };
+  const link = (a: HabitatNode, b: HabitatNode) => {
+    a.neighbors.push(b.id);
+    b.neighbors.push(a.id);
+  };
   const up = { x: 0, y: 1, z: 0 };
   for (const object of world.objects) {
     const baseY = objectBase(object, env);
@@ -278,7 +392,7 @@ export function buildHabitat(world: World): HabitatGraph {
         Math.abs(perch.z) > env.depth / 2 - 0.08
       )
         continue;
-      const anchor = dryAnchor(
+      const [anchor, ...wider] = dryAnchors(
         transformPlantPoint(route.stem[0], object, baseY),
         0.65,
       );
@@ -318,6 +432,7 @@ export function buildHabitat(world: World): HabitatGraph {
             neighbors: [previous.id],
           };
           previous.neighbors.push(node.id);
+          if (previous === anchor) for (const other of wider) link(other, node);
           nodes.push(node);
           previous = node;
         }
@@ -349,7 +464,7 @@ export function buildHabitat(world: World): HabitatGraph {
           z,
         };
       });
-      const anchor = dryAnchor(entrance, 0.6);
+      const [anchor, ...wider] = dryAnchors(entrance, 0.6);
       if (!anchor || entrance.y < env.water + 0.025) continue;
       let previous = anchor;
       for (const [part, position, shelter] of [
@@ -366,6 +481,7 @@ export function buildHabitat(world: World): HabitatGraph {
           neighbors: [previous.id],
         };
         previous.neighbors.push(node.id);
+        if (previous === anchor) for (const other of wider) link(other, node);
         nodes.push(node);
         previous = node;
       }
@@ -422,7 +538,11 @@ export function createWorldEcosystem(
     if (fish) animals.push(fish);
     const behavior = assets[object.kind].behavior;
     if (!behavior) continue;
-    const species: SpeciesProfile = { id: object.kind, ...behavior };
+    const species: SpeciesProfile = {
+      id: object.kind,
+      ...behavior,
+      radius: assetRadius(object.kind) * object.scale,
+    };
     const oldObject = previous?.world.objects.find((o) => o.id === object.id);
     const oldState = snapshot?.animals.find(
       (a) => a.id === object.id && a.speciesId === object.kind,
