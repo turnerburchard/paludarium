@@ -65,7 +65,9 @@ describe("land animal assets", () => {
           ),
         ).toBe(true);
       });
-      expect(triangles).toBeLessThan(2500);
+      // Warty frogs carry about 1,600 triangles of tubercles over the
+      // shared 2,300-triangle body.
+      expect(triangles).toBeLessThan(4500);
       disposeAsset(model);
     },
   );

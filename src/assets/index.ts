@@ -15,9 +15,11 @@ import {
   bluePoisonDartFrog,
   canyonTreeFrog,
   chorusFrog,
+  hornedFrog,
   mossyFrog,
   strawberryPoisonFrog,
   treeFrog,
+  westernToad,
 } from "./animals/frogs";
 import { fish } from "./animals/fish";
 import {
@@ -132,6 +134,8 @@ export const assets = {
   "mossy-frog": mossyFrog,
   "chorus-frog": chorusFrog,
   "canyon-tree-frog": canyonTreeFrog,
+  "western-toad": westernToad,
+  "horned-frog": hornedFrog,
   gecko,
   "leopard-lizard": leopardLizard,
   "desert-spiny-lizard": desertSpinyLizard,

@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import type { AssetDefinition } from "../types";
 import frogModel from "./frog.json";
 
@@ -10,16 +11,39 @@ interface Appearance {
   height: number;
   size: number;
   roughness: number;
-  /** Number of dark spots scattered over the back. */
+  /** Number of spots scattered over the back. */
   spots?: number;
+  /** Color of the spots. Defaults to near black. */
+  markings?: string;
   /** Moss-like light and dark patches. */
   mottled?: boolean;
   /** Dark stripes down the back and through the eye, as on a chorus frog. */
   striped?: boolean;
-  /** How much deeper and thicker than the slim base model the body and legs
-   * are. Defaults to 1. */
-  stout?: number;
+  /** Bumpy, tubercled skin over the back, as on a mossy frog. */
+  tubercles?: boolean;
+  /** A pointed flap over each eye, as on a horned frog. */
+  horns?: boolean;
+  shape?: Shape;
 }
+
+/** How a frog departs from the slim base model. Width and depth fatten the
+ * trunk, most just behind the shoulders; head broadens the skull and jaw;
+ * legs thickens the limbs. */
+interface Shape {
+  width: number;
+  depth: number;
+  head?: number;
+  legs: number;
+}
+
+/** The forest-floor build most frogs share. */
+const plump: Shape = { width: 0.3, depth: 0.6, legs: 1 };
+/** A lean climber with a narrow waist and slender limbs. */
+const climber: Shape = { width: 0.08, depth: 0.25, legs: 0.45 };
+/** Wide and round from above, on heavy legs, like a toad. */
+const squat: Shape = { width: 0.75, depth: 0.55, legs: 1.4 };
+/** Nearly as wide as long, mostly mouth, on short stubby legs. */
+const globe: Shape = { width: 1, depth: 0.8, head: 0.3, legs: 0.8 };
 
 export const treeFrog: AssetDefinition = {
   kind: "tree-frog",
@@ -43,6 +67,7 @@ export const treeFrog: AssetDefinition = {
         height: 1.08,
         size: 0.8,
         roughness: 0.68,
+        shape: climber,
       },
       random,
     ),
@@ -133,7 +158,8 @@ export const mossyFrog: AssetDefinition = {
         size: 0.95,
         roughness: 0.86,
         mottled: true,
-        stout: 1.1,
+        tubercles: true,
+        shape: squat,
       },
       random,
     ),
@@ -168,6 +194,7 @@ export const canyonTreeFrog: AssetDefinition = {
         size: 0.6,
         roughness: 0.82,
         spots: 30,
+        shape: squat,
       },
       random,
     ),
@@ -196,6 +223,67 @@ export const chorusFrog: AssetDefinition = {
         size: 0.45,
         roughness: 0.72,
         striped: true,
+        shape: squat,
+      },
+      random,
+    ),
+};
+
+export const westernToad: AssetDefinition = {
+  kind: "western-toad",
+  name: "Western toad",
+  scientificName: "Anaxyrus boreas",
+  group: "Amphibians",
+  biomes: ["Temperate"],
+  description:
+    "A warty, olive-brown toad of mountain meadows and forest near water. It walks rather than hops, and hunts at night.",
+  radius: 0.36,
+  habitat: "land",
+  behavior: { nocturnal: true, climbs: false, speed: 0.03, movement: "crawl" },
+  build: (random) =>
+    buildFrog(
+      {
+        back: "#6b6248",
+        belly: "#d8cfb4",
+        iris: "#b08a3a",
+        feet: "#5f573f",
+        height: 0.92,
+        size: 1,
+        roughness: 0.9,
+        spots: 18,
+        markings: "#2e271b",
+        tubercles: true,
+        shape: squat,
+      },
+      random,
+    ),
+};
+
+export const hornedFrog: AssetDefinition = {
+  kind: "horned-frog",
+  name: "Cranwell's horned frog",
+  scientificName: "Ceratophrys cranwelli",
+  group: "Amphibians",
+  biomes: ["Tropical"],
+  description:
+    "A round, wide-mouthed frog from the Gran Chaco, green with brown blotches. It sits half buried in leaf litter and ambushes anything that passes.",
+  radius: 0.36,
+  habitat: "land",
+  behavior: { nocturnal: true, climbs: false, speed: 0.012, movement: "crawl" },
+  build: (random) =>
+    buildFrog(
+      {
+        back: "#7a9a3a",
+        belly: "#d6cfa8",
+        iris: "#a5772e",
+        feet: "#6d8a34",
+        height: 0.95,
+        size: 0.84,
+        roughness: 0.7,
+        spots: 22,
+        markings: "#4a3a22",
+        horns: true,
+        shape: globe,
       },
       random,
     ),
@@ -250,12 +338,15 @@ function buildFrog(appearance: Appearance, random: () => number) {
   );
   root.updateMatrixWorld(true);
   const skeleton = new THREE.Skeleton(bones);
-  const stout = appearance.stout ?? 1;
+  const shape = appearance.shape ?? plump;
   const legs = limbs(root, bones);
   const back = new THREE.Color(appearance.back);
   const belly = new THREE.Color(appearance.belly);
   const feet = new THREE.Color(appearance.feet);
   const dark = new THREE.Color("#112329");
+  const markings = appearance.markings
+    ? new THREE.Color(appearance.markings)
+    : dark;
   const mossLight = new THREE.Color("#7f9a3a");
   const mossDark = new THREE.Color("#141c12");
   const spots = Array.from({ length: appearance.spots ?? 0 }, () => ({
@@ -281,10 +372,22 @@ function buildFrog(appearance: Appearance, random: () => number) {
     );
     indexed.setIndex(part.index);
     if (part.material === "Red" || part.material === "Black")
-      moveEyes(indexed, stout);
-    else reshape(indexed, part.skinIndex, part.skinWeight, stout, legs);
+      moveEyes(indexed, shape);
+    else reshape(indexed, part.skinIndex, part.skinWeight, shape, legs);
     // Separate faces so markings can paint whole facets.
-    const geometry = indexed.toNonIndexed();
+    let geometry = indexed.toNonIndexed();
+    if (part.material === "Green") {
+      const extras = [
+        ...(appearance.tubercles ? [tubercles(indexed, random)] : []),
+        ...(appearance.horns ? [horns(shape)] : []),
+      ];
+      if (extras.length) {
+        const merged = mergeGeometries([geometry, ...extras]);
+        if (!merged) throw new Error("Could not merge frog skin.");
+        [geometry, ...extras].forEach((piece) => piece.dispose());
+        geometry = merged;
+      }
+    }
     indexed.dispose();
     geometry.computeVertexNormals();
     const skin = part.material === "Green";
@@ -333,7 +436,7 @@ function buildFrog(appearance: Appearance, random: () => number) {
               spot.radius,
           )
         )
-          color.copy(dark);
+          color.copy(markings);
         else if (appearance.mottled) {
           const mottling =
             Math.sin(x * 40 + Math.sin(z * 29) * 2) * Math.cos(z * 41 - y * 43);
@@ -379,7 +482,7 @@ function reshape(
   geometry: THREE.BufferGeometry,
   skinIndex: number[],
   skinWeight: number[],
-  stout: number,
+  shape: Shape,
   limbs: THREE.Line3[],
 ) {
   const point = new THREE.Vector3();
@@ -389,7 +492,7 @@ function reshape(
     let trunk = 0;
     for (let k = 0; k < 4; k++)
       if (TRUNK.has(skinIndex[v * 4 + k])) trunk += skinWeight[v * 4 + k];
-    fatten(point.fromBufferAttribute(positions, v), trunk * stout);
+    fatten(point.fromBufferAttribute(positions, v), trunk, shape);
     if (trunk < 0.5) {
       let nearest = { distance: Infinity, along: 0, at: new THREE.Vector3() };
       for (const limb of limbs) {
@@ -402,11 +505,147 @@ function reshape(
       if (nearest.distance < 0.05)
         point.lerp(
           nearest.at,
-          -0.4 * stout * (1 - trunk) * Math.sin(nearest.along * Math.PI),
+          -0.4 * shape.legs * (1 - trunk) * Math.sin(nearest.along * Math.PI),
         );
     }
     positions.setXYZ(v, point.x, point.y, point.z);
   }
+}
+
+/** Warts per unit of skin area on a tubercled frog. */
+const WART_DENSITY = 450;
+
+/** A low dome of unit radius, as a flat list of triangle corners. */
+const WART = (() => {
+  const dome = new THREE.IcosahedronGeometry(1, 0).scale(1, 0.6, 1);
+  const position = dome.getAttribute("position");
+  return Array.from({ length: position.count }, (_, i) =>
+    new THREE.Vector3().fromBufferAttribute(position, i),
+  );
+})();
+
+/** Low warts over the back and flanks, spread evenly by area so the fine mesh
+ * around the head isn't crowded. Each is skinned like the nearest corner of
+ * the face it grows from, so it moves with the body. */
+function tubercles(skin: THREE.BufferGeometry, random: () => number) {
+  const positions = skin.getAttribute("position");
+  const skinIndex = skin.getAttribute("skinIndex");
+  const skinWeight = skin.getAttribute("skinWeight");
+  const index = skin.getIndex()!;
+  const warts = {
+    positions: [] as number[],
+    skinIndex: [] as number[],
+    skinWeight: [] as number[],
+  };
+  const triangle = new THREE.Triangle();
+  const normal = new THREE.Vector3();
+  const up = new THREE.Vector3(0, 1, 0);
+  for (let face = 0; face < index.count; face += 3) {
+    const [a, b, c] = [0, 1, 2].map((k) => index.getX(face + k));
+    triangle.setFromAttributeAndIndices(positions, a, b, c);
+    triangle.getNormal(normal);
+    const count = Math.floor(triangle.getArea() * WART_DENSITY + random());
+    for (let wart = 0; wart < count; wart++) {
+      const u = random(),
+        w = random() * (1 - u);
+      const center = triangle.a
+        .clone()
+        .multiplyScalar(1 - u - w)
+        .addScaledVector(triangle.b, u)
+        .addScaledVector(triangle.c, w);
+      if (center.y < 0.13 || normal.y < 0.1) continue;
+      const shares = [1 - u - w, u, w];
+      const nearest = [a, b, c][shares.indexOf(Math.max(...shares))];
+      const radius = 0.01 + random() * 0.012;
+      const facing = new THREE.Quaternion()
+        .setFromUnitVectors(up, normal)
+        .multiply(
+          new THREE.Quaternion().setFromAxisAngle(up, random() * Math.PI),
+        );
+      for (const corner of WART) {
+        const point = corner
+          .clone()
+          .multiplyScalar(radius)
+          .applyQuaternion(facing)
+          .add(center);
+        warts.positions.push(point.x, point.y, point.z);
+        for (let k = 0; k < 4; k++) {
+          warts.skinIndex.push(skinIndex.getComponent(nearest, k));
+          warts.skinWeight.push(skinWeight.getComponent(nearest, k));
+        }
+      }
+    }
+  }
+  return skinned(warts.positions, warts.skinIndex, warts.skinWeight);
+}
+
+const HEAD = frogModel.bones.findIndex((bone) => bone.name === "Head");
+
+/** Eye centers of the base model. */
+const EYES = [-1, 1].map((side) => {
+  const eye = frogModel.parts.find((part) => part.material === "Red")!;
+  const center = new THREE.Vector3();
+  let count = 0;
+  for (let i = 0; i < eye.positions.length; i += 3)
+    if (Math.sign(eye.positions[i]) === side) {
+      center.add(new THREE.Vector3().fromArray(eye.positions, i));
+      count++;
+    }
+  return center.divideScalar(count);
+});
+
+/** A three-sided point over each eye, swept up and back, riding the head. */
+function horns(shape: Shape) {
+  const positions: number[] = [];
+  for (const eye of EYES) {
+    const center = fatten(eye.clone(), 1, shape);
+    const apex = center.clone().add(new THREE.Vector3(0, 0.085, 0.025));
+    const base = [0, 1, 2].map((i) => {
+      const angle = (i / 3) * Math.PI * 2;
+      return center
+        .clone()
+        .add(
+          new THREE.Vector3(
+            Math.cos(angle) * 0.02,
+            0.03,
+            Math.sin(angle) * 0.02,
+          ),
+        );
+    });
+    for (let i = 0; i < 3; i++)
+      positions.push(
+        ...apex.toArray(),
+        ...base[i].toArray(),
+        ...base[(i + 1) % 3].toArray(),
+      );
+  }
+  const count = positions.length / 3;
+  return skinned(
+    positions,
+    Array.from({ length: count }, () => [HEAD, 0, 0, 0]).flat(),
+    Array.from({ length: count }, () => [1, 0, 0, 0]).flat(),
+  );
+}
+
+function skinned(
+  positions: number[],
+  skinIndex: number[],
+  skinWeight: number[],
+) {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(positions, 3),
+  );
+  geometry.setAttribute(
+    "skinIndex",
+    new THREE.Uint16BufferAttribute(skinIndex, 4),
+  );
+  geometry.setAttribute(
+    "skinWeight",
+    new THREE.Float32BufferAttribute(skinWeight, 4),
+  );
+  return geometry;
 }
 
 /** Upper and lower leg bones as segments in the frog's own space. */
@@ -425,19 +664,24 @@ function limbs(root: THREE.Object3D, bones: THREE.Bone[]) {
     );
 }
 
-/** Deepens and slightly broadens the trunk, most just behind the shoulders
- * and tapering toward the snout. */
-function fatten(point: THREE.Vector3, amount: number) {
-  const girth = amount * Math.max(0, 1 - ((point.z - 0.02) / 0.32) ** 2);
+/** Deepens and broadens the trunk, most just behind the shoulders and
+ * tapering toward the snout, and widens the head of broad-mouthed frogs. */
+function fatten(point: THREE.Vector3, trunk: number, shape: Shape) {
+  const girth = trunk * Math.max(0, 1 - ((point.z - 0.02) / 0.32) ** 2);
+  // The head lies toward -z, from just ahead of the shoulders to the snout.
+  const head = trunk * THREE.MathUtils.clamp((-0.02 - point.z) / 0.15, 0, 1);
+  // Flanks broaden most at mid-height and the back least, so a wide frog
+  // stays domed instead of growing ridges along its shoulders.
+  const flank = THREE.MathUtils.clamp((0.28 - point.y) / 0.12, 0.25, 1);
   return point.set(
-    point.x * (1 + 0.3 * girth),
-    point.y + (point.y - 0.15) * 0.6 * girth,
+    point.x * (1 + (shape.width * girth + (shape.head ?? 0) * head) * flank),
+    point.y + (point.y - 0.15) * shape.depth * girth,
     point.z,
   );
 }
 
 /** Carries each eye with the reshaped head without stretching it. */
-function moveEyes(geometry: THREE.BufferGeometry, stout: number) {
+function moveEyes(geometry: THREE.BufferGeometry, shape: Shape) {
   const positions = geometry.getAttribute("position");
   for (const side of [-1, 1]) {
     const eye = [];
@@ -447,7 +691,7 @@ function moveEyes(geometry: THREE.BufferGeometry, stout: number) {
     for (const v of eye)
       center.add(new THREE.Vector3().fromBufferAttribute(positions, v));
     center.divideScalar(eye.length);
-    const offset = fatten(center.clone(), stout).sub(center);
+    const offset = fatten(center.clone(), 1, shape).sub(center);
     for (const v of eye)
       positions.setXYZ(
         v,
