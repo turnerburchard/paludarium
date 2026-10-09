@@ -554,8 +554,15 @@ export class Ecosystem {
       );
   }
   private swim(agent: Agent, fish: Swimmer) {
-    if (fish.roaming === agent.schooling || this.elapsed >= agent.reconsiderAt)
-      this.chooseWater(agent, fish);
+    // A fish that had to back out of a dead end tries somewhere else, rather
+    // than nosing back into the same spot.
+    if (
+      fish.blocked ||
+      fish.roaming === agent.schooling ||
+      this.elapsed >= agent.reconsiderAt
+    )
+      this.chooseWater(agent, fish, fish.blocked);
+    fish.blocked = false;
     // Head for the next node, moving on once it is near or already passed,
     // so a route reads as one sweeping course rather than a series of legs.
     while (agent.path.length) {
@@ -598,7 +605,7 @@ export class Ecosystem {
   }
   /** A schooled fish follows where its nearest school mate is heading. A
    * fish on its own, or with no one to follow, sets out somewhere new. */
-  private chooseWater(agent: Agent, fish: Swimmer) {
+  private chooseWater(agent: Agent, fish: Swimmer, blocked = false) {
     agent.schooling = !fish.roaming;
     agent.path = [];
     const start = this.graph.nearest(fish, agent.profile);
@@ -611,7 +618,7 @@ export class Ecosystem {
     const lengths = navigation.distances;
     let target: string | undefined;
     let nearest = SCHOOL_RANGE;
-    for (const other of fish.roaming ? [] : this.agents.values()) {
+    for (const other of fish.roaming || blocked ? [] : this.agents.values()) {
       const mate = other.swimmer;
       const goal = other.path.at(-1);
       if (
@@ -632,7 +639,9 @@ export class Ecosystem {
     }
     if (!target) {
       // Favor water it hasn't visited and that lies ahead, so a fish makes
-      // long, purposeful outings rather than doubling back.
+      // long, purposeful outings rather than doubling back. A fish that has
+      // just backed out of a dead end heads back the way it came instead.
+      const facing = blocked ? fish.heading + Math.PI : fish.heading;
       const candidates = [...lengths.keys()].filter((id) => {
         const length = lengths.get(id)!;
         return length >= SWIM_RANGE[0] && length <= SWIM_RANGE[1];
@@ -644,7 +653,7 @@ export class Ecosystem {
         // 1 straight ahead, 0 straight behind.
         const ahead =
           (1 -
-            (dx * Math.sin(fish.heading) + dz * Math.cos(fish.heading)) /
+            (dx * Math.sin(facing) + dz * Math.cos(facing)) /
               Math.max(Math.hypot(dx, dz), 0.001)) /
           2;
         return (agent.recent.includes(id) ? 0.12 : 1) * (0.2 + ahead);

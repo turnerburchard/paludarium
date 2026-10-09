@@ -276,7 +276,8 @@ describe("obstacle-aware swimming", () => {
       expect(
         space.canStart(start.id, after.x, after.y, after.z, after.heading),
       ).toBe(true);
-      expect(Math.abs(after.x)).toBeLessThan(0.06);
+      // Straight through the gap between the stones.
+      if (Math.abs(after.z) < 0.4) expect(Math.abs(after.x)).toBeLessThan(0.06);
     }
     expect(fish.get().z).toBeLessThan(-0.6);
   });
@@ -285,6 +286,7 @@ describe("obstacle-aware swimming", () => {
     const water: SwimWater = {
       steady: (_id, _x, _z, wanted) => ({ y: wanted, bob: 0 }),
       canSwim: (_id, x, _y, z) => Math.abs(z) > 0.006 || Math.abs(x) > 0.5,
+      reach: () => 0.1,
     };
     const steering = new Steering(water, () => 0.5);
     const fish = newSwimmer(

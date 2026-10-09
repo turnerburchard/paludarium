@@ -6,14 +6,12 @@ import type { HabitatNode, Vec3 } from "./types";
 const SPACING = 0.3;
 /** Levels from the surface to the bottom of each water column. */
 const LEVELS = 6;
-/** The half widths of open water a node is checked for, widest first. A fish
- * needs a node with room for its body. */
-const ROOMS = [0.15, 0.1, 0.06, 0.03];
+/** The sizes of open water a node is checked for, widest first, as half the
+ * width and height of a fish body. A fish needs a node with room for it. */
+const ROOMS = [0.3, 0.2, 0.15, 0.1, 0.06, 0.03];
 /** The widest room admits any fish, since the graph only guides routes and
  * steering checks the whole body. */
 export const WIDEST_ROOM = ROOMS[0];
-/** Half the height of the water checked at each node. */
-const HEIGHT = 0.03;
 
 /** A lattice through the open water for fish to route along. Each column
  * follows the ground, so a level keeps the same share of the water's depth. */
@@ -22,11 +20,13 @@ export function waterNodes(world: World, space: SwimSpace): HabitatNode[] {
   const nx = Math.floor(env.width / SPACING),
     nz = Math.floor(env.depth / SPACING);
   const grid = new Map<string, HabitatNode>();
-  // Open water around a point, moved clear of the floor and surface.
+  // Open water around a point, moved clear of the floor and surface. Shallow
+  // water is as tall as it gets, so a big fish can still cross a creek.
   const fits = (point: Vec3, half: number) => {
     const ground = groundHeight(point.x, point.z, env);
-    const y = Math.max(ground + HEIGHT, Math.min(env.water - HEIGHT, point.y));
-    return space.open({ ...point, y }, half, HEIGHT);
+    const height = Math.min(half, (env.water - ground) / 2 - 0.001);
+    const y = Math.max(ground + height, Math.min(env.water - height, point.y));
+    return space.open({ ...point, y }, half, height);
   };
   for (let ix = 0; ix < nx; ix++)
     for (let iz = 0; iz < nz; iz++) {
