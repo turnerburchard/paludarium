@@ -24,6 +24,8 @@ export interface SwimWater {
     heading: number,
     padding?: number,
   ): boolean;
+  /** Half the length of the fish's body. */
+  reach(id: string): number;
 }
 
 export interface Fish {
@@ -46,6 +48,8 @@ const PERSONAL_SPACE = 0.3;
 const LOOK_AHEAD = 0.4;
 /** How strongly a fish heads for where it is going, against schooling. */
 const GOAL_PULL = 1.5;
+/** How sharply (radians) a fish veers away from an obstacle beside it. */
+const SHY_TURN = 0.4;
 /** Climbing and diving are slower than swimming forward, and ease in. */
 const CLIMB_SHARE = 0.35;
 const CLIMB_ACCELERATION = 0.15;
@@ -74,6 +78,10 @@ export interface Swimmer extends Fish {
   retreatFor: number;
   stillFor: number;
   retreatDistance: number;
+  /** Which way, and how strongly, it drifts away from something beside it. */
+  shy: number;
+  /** Set when it has had to back out of a dead end. */
+  blocked: boolean;
   trail: Array<Pick<Fish, "x" | "y" | "z" | "heading">>;
 }
 
@@ -95,6 +103,8 @@ export function newSwimmer(fish: Fish, random: () => number): Swimmer {
     retreatFor: 0,
     stillFor: 0,
     retreatDistance: 0,
+    shy: 0,
+    blocked: false,
     trail: [],
   };
 }
@@ -189,7 +199,18 @@ export class Steering {
         f.heading = heading;
         f.retreatDistance += distance * fraction;
         if (fraction === 1) f.trail.pop();
-        if (f.retreatDistance >= LOOK_AHEAD) f.retreatFor = 0;
+        // Back out of a narrow lane until there is room to turn around
+        // toward where it is going, not just far enough to try again.
+        if (f.retreatDistance >= LOOK_AHEAD) {
+          const toGoal = goal && Math.atan2(f.x - goal.x, f.z - goal.z);
+          if (
+            toGoal === undefined ||
+            this.route(f, toGoal, LOOK_AHEAD, 0.55) === LOOK_AHEAD
+          ) {
+            f.retreatFor = 0;
+            f.avoidHeading = toGoal ?? f.avoidHeading;
+          }
+        }
       } else f.retreatFor = 0;
       f.untilProbe = 0;
       f.turnRate = 0;
@@ -268,6 +289,7 @@ export class Steering {
     // frame. The swept body check still guards every movement step.
     if (f.untilProbe <= 0) {
       f.untilProbe = 0.15;
+      f.shy = this.shyness(f);
       const lookAhead = Math.max(LOOK_AHEAD, f.speed * f.pace * 1.8);
       if (this.route(f, desired, lookAhead) < lookAhead) {
         f.clearFor = 0;
@@ -279,8 +301,12 @@ export class Steering {
           this.route(f, f.avoidHeading, lookAhead, 0.55) === lookAhead;
         if (!continuing) {
           let best = -Infinity;
+          // Heading somewhere, look for a way around nearest to where it
+          // wants to go, or it keeps nosing into the same corner. Just
+          // milling about, look nearest to where it already faces.
+          const around = goal ? desired : f.heading;
           for (const angle of ESCAPE_ANGLES) {
-            const heading = f.heading + angle;
+            const heading = around + angle;
             const side = Math.sign(angle);
             const penalty =
               Math.abs(angle) * 0.025 +
@@ -303,9 +329,11 @@ export class Steering {
         if (f.clearFor > 1) f.avoidSide = 0;
       }
     }
+    // Veer away from glass, stone or leaves alongside, even while steering
+    // around something ahead, so there is always room to turn.
     this.move(
       f,
-      f.avoidHeading ?? desired,
+      (f.avoidHeading ?? desired) + f.shy * SHY_TURN,
       f.speed * f.pace * (f.avoidHeading === undefined ? 1 : 0.55) * dt,
       dt,
     );
@@ -422,11 +450,29 @@ export class Steering {
     // Back up through a full steering probe, not just enough to re-enter
     // the same blocked turn. Allow time to retrace rotations along the way.
     f.retreatFor = 2 + LOOK_AHEAD / (f.speed * f.pace * 0.5);
+    f.blocked = true;
     f.retreatDistance = 0;
     f.stillFor = 0;
+    // Try the other side next time, once it has backed out.
     f.avoidSide = -f.avoidSide || -1;
-    f.avoidHeading = f.heading + f.avoidSide * 1.6;
-    f.avoidFor = 1.2;
+    f.avoidHeading = undefined;
+  }
+
+  /** Feel half a body length to either side, the room a fish needs to turn
+   * around: 1 to move left, -1 to move right, 0 if both sides are clear or
+   * both are blocked. */
+  private shyness(f: Swimmer) {
+    const left = direction(f.heading + Math.PI / 2);
+    const reach = this.water.reach(f.id);
+    const open = (side: number) =>
+      this.water.canSwim(
+        f.id,
+        f.x + left.x * side * reach,
+        f.y,
+        f.z + left.z * side * reach,
+        f.heading,
+      );
+    return Number(open(1)) - Number(open(-1));
   }
 
   private remember(f: Swimmer) {

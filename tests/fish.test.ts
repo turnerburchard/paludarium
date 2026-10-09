@@ -18,6 +18,7 @@ import type { Vec3 } from "../src/simulation/types";
 const pond: SwimWater = {
   steady: (_id, _x, _z, wanted) => ({ y: wanted, bob: 0 }),
   canSwim: (_id, x, _y, z) => Math.hypot(x, z) < 1,
+  reach: () => 0.1,
 };
 function school(fish: Fish[], water = pond, random = randomFromSeed(3)) {
   const steering = new Steering(water, random);
@@ -243,6 +244,42 @@ describe("fish in a real tank", () => {
           ).toBeGreaterThan(assets[object.kind].swims!.speed * 120 * 0.2);
     },
   );
+
+  it("don't get wedged between the glass and the planting", () => {
+    // Windows of six seconds a fish spent stuck in place, by species.
+    const stuck = new Map<string, { stuck: number; windows: number }>();
+    for (const seed of [1, 2]) {
+      const world = makePreset("aquarium");
+      const engine = createWorldEcosystem(
+        world,
+        undefined,
+        randomFromSeed(seed),
+      );
+      const fish = fishIn(world, engine);
+      for (let window = 0; window < 30; window++) {
+        const start = fish.map(({ state }) => ({ ...state.position }));
+        const farthest = fish.map(() => 0);
+        for (let tick = 0; tick < 6 * 30; tick++) {
+          engine.advance(1 / 30);
+          fish.forEach(({ state }, i) => {
+            const { x, z } = state.position;
+            farthest[i] = Math.max(
+              farthest[i],
+              Math.hypot(x - start[i].x, z - start[i].z),
+            );
+          });
+        }
+        fish.forEach(({ object }, i) => {
+          const count = stuck.get(object.kind) ?? { stuck: 0, windows: 0 };
+          count.windows++;
+          if (farthest[i] < 0.25) count.stuck++;
+          stuck.set(object.kind, count);
+        });
+      }
+    }
+    for (const [kind, count] of stuck)
+      expect(count.stuck / count.windows, kind).toBeLessThan(0.1);
+  }, 30_000);
 
   it("use their whole depth range in a deep tank", () => {
     const world = makePreset("aquarium");

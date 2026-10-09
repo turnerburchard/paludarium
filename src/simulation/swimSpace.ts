@@ -112,12 +112,17 @@ export class SwimSpace {
     return { objects, obstacles: buildCollisionTree(faces), solids };
   }
 
-  /** Half the width of a fish's body. Water nodes record how wide a fish
-   * they have room for. */
+  /** How much open water a fish needs around it: its height, and room to
+   * turn around in. Water nodes record how big a fish they have room for. */
   room(id: string) {
     const body = this.bodies.get(id)!;
-    return Math.max(-body.min.x, body.max.x);
+    return Math.max((body.max.y - body.min.y) / 2, this.reach(id) * 0.75);
   }
+
+  reach = (id: string) => {
+    const body = this.bodies.get(id)!;
+    return Math.max(-body.min.z, body.max.z);
+  };
 
   /** The nearest steady height to `wanted` that keeps the body clear of the
    * floor and surface, with room to bob. */
@@ -170,8 +175,8 @@ export class SwimSpace {
     return this.clear();
   };
 
-  /** Whether a flat box of open water fits around a point, for the water
-   * graph. The caller keeps it clear of the floor. */
+  /** Whether a box of open water fits around a point, for the water graph.
+   * The caller keeps it clear of the floor. */
   open(point: Vec3, half: number, height: number) {
     this.bodyBox.min.set(-half, -height, -half);
     this.bodyBox.max.set(half, height, half);
