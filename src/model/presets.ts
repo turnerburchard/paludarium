@@ -11,7 +11,8 @@ import {
 import type { MossSpecies } from "./moss";
 import { prebuiltObjects, rockShelter } from "./prebuilts";
 import { randomFromSeed } from "./random";
-import { baseGroundHeight } from "./terrain";
+import { objectBase } from "./stacking";
+import { baseGroundHeight, groundHeight } from "./terrain";
 import { applyTerrainBrush, type TerrainMode } from "./terrainBrush";
 import { newTerrain } from "./terrainData";
 export type Preset =
@@ -36,6 +37,9 @@ type Shelter = (
   rotation?: number,
   moss?: MossSpecies,
 ) => void;
+/** Rests the last object added on the one added before it, `height` above
+ * that one's base. */
+type Stack = (height: number) => void;
 export function makePreset(preset: Preset): World {
   if (preset === "empty") return emptyWorld();
   let serial = 0;
@@ -66,6 +70,14 @@ export function makePreset(preset: Preset): World {
       );
       if (moss) pieces[pieces.length - 1].moss = moss;
       objects.push(...pieces);
+    };
+  const stacks =
+    (env: Environment): Stack =>
+    (height) => {
+      const [support, piece] = objects.slice(-2);
+      piece.support = support.id;
+      piece.lift =
+        objectBase(support, env) + height - groundHeight(piece.x, piece.z, env);
     };
   if (preset === "aquarium") {
     add("wood", -1.45, -0.35, 1.1, -0.5);
@@ -172,7 +184,12 @@ export function makePreset(preset: Preset): World {
       version: 1,
       name: "Limestone grotto",
       environment,
-      objects: limestoneGrotto(add, shelters(environment), objects),
+      objects: limestoneGrotto(
+        add,
+        shelters(environment),
+        stacks(environment),
+        objects,
+      ),
     };
   }
   const environment = desertBasin();
@@ -361,24 +378,41 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
 /** A shady Vietnamese limestone grotto for mossy frogs: a mossy karst wall
  * with caves at its foot, a seep trickling down past begonias and elephant
  * ears, and a dark pool of harlequin rasboras in the front corner. */
-function limestoneGrotto(add: Add, shelter: Shelter, objects: HabitatObject[]) {
-  // Karst pinnacles and outcrops along the top of the wall, furred with moss.
-  add("limestone-pinnacle", -2.35, -2.05, 1.25, 0.6, "cushion");
-  add("limestone-pinnacle", -0.55, -2.15, 1.05, 2.2, "java");
-  add("limestone-pinnacle", 2.4, -2.0, 1.15, 4.1, "sheet");
-  add("limestone", -1.45, -2.1, 1.1, 1, "sheet");
-  add("limestone", 0.55, -2.2, 0.9, 2.5, "cushion");
-  add("limestone", 1.85, -1.55, 0.8, 0.4, "fern");
-  add("tree-roots", -1.0, -1.75, 1.1, 0.3);
-  add("orchid", -1.9, -1.75, 0.8, 0.9);
-  add("orchid", 2.85, -1.55, 0.75, 2.4);
-  add("nest-fern", 0.1, -1.85, 0.8, 1.3);
-  add("nest-fern", -2.85, -1.55, 0.75, 4);
+function limestoneGrotto(
+  add: Add,
+  shelter: Shelter,
+  stack: Stack,
+  objects: HabitatObject[],
+) {
+  // Karst stone climbing the wall in broken tiers: pinnacles and stacked
+  // outcrops along the top, smaller stones partway up, and loose cobbles
+  // near the foot, furred with moss and leaving room for the seep's gully.
+  add("limestone-pinnacle", -2.45, -2.2, 1.35, 0.6, "cushion");
+  add("limestone", -1.35, -2.25, 1, 1);
+  add("limestone-pinnacle", -1.3, -2.3, 0.7, 2.6, "sheet");
+  stack(0.7);
+  add("limestone-pinnacle", 0.3, -2.3, 1.2, 2.2, "java");
+  add("limestone", 2.45, -2.2, 1.1, 0.3, "sheet");
+  add("limestone", 2.5, -2.15, 0.6, 3.4, "cushion");
+  stack(0.8);
+  add("limestone", -1.95, -1.65, 0.75, 4.2, "fern");
+  add("rock", -0.4, -1.75, 0.55, 2.4, "sheet");
+  add("limestone-pinnacle", 0.75, -1.8, 0.8, 1.2, "cushion");
+  add("limestone", 2.05, -1.6, 0.65, 5.1, "fern");
+  add("slate", -2.65, -1.4, 0.55, 0.9);
+  add("cobble", -2.6, -1.4, 0.9, 2);
+  stack(0.12);
+  add("cobble", -0.95, -1.4, 1, 0.7);
+  add("cobble", 2.8, -1.3, 0.9, 3.3);
+  add("tree-roots", -0.95, -1.85, 1, 0.3);
+  add("orchid", -1.75, -1.95, 0.8, 0.9);
+  add("orchid", 2.9, -1.7, 0.75, 2.4);
+  add("nest-fern", -0.2, -2.05, 0.8, 1.3);
+  add("nest-fern", 1.75, -2.15, 0.7, 4);
   for (const [kind, x, z, scale] of [
-    ["sheet-moss", -2.6, -2.2, 1.1],
-    ["fern-moss", -0.1, -2.3, 1],
-    ["sheet-moss", 1.0, -1.95, 1],
-    ["moss", 2.9, -2.25, 1],
+    ["sheet-moss", -2.0, -2.35, 1],
+    ["fern-moss", 1.0, -2.3, 0.9],
+    ["moss", -0.3, -1.45, 0.8],
   ] as const)
     add(kind, x, z, scale);
   // Two caves at the foot of the wall, where the mossy frogs rest by day,
@@ -639,8 +673,8 @@ function grottoFloor() {
     // its foot pushed forward on the left.
     const foot = -1.1 + 0.25 * smooth((-x - 0.5) / 2);
     const wall =
-      (0.95 + 0.12 * Math.sin(x * 2.3) + 0.06 * Math.sin(x * 5.1 + 1)) *
-      smooth((foot - z) / 0.8);
+      (1.0 + 0.12 * Math.sin(x * 2.3) + 0.06 * Math.sin(x * 5.1 + 1)) *
+      smooth((foot - z) / 1.3);
     const terrace = 0.15 * smooth(1 - Math.hypot(x - 2.2, z - 0.4) / 1.3);
     const ground = 0.82 + 0.05 * Math.sin(x * 1.7 - z * 1.3) + wall + terrace;
     // The seep cuts a gully down the wall, then runs as a shallow stream
