@@ -1,4 +1,4 @@
-import { assets } from "../assets";
+import { assets, modelHeight } from "../assets";
 import type { Environment, HabitatObject } from "./schema";
 import { groundHeight } from "./terrain";
 
@@ -9,10 +9,13 @@ export function objectBase(object: HabitatObject, env: Environment) {
   const asset = assets[object.kind];
   const points =
     asset.groundPoints ?? (asset.hardscape && footprintRing(asset.radius));
-  const ground =
-    points && !object.support
-      ? lowestGround(object, points, env)
-      : groundHeight(object.x, object.z, env);
+  let ground = groundHeight(object.x, object.z, env);
+  if (points && !object.support) {
+    // Never so deep it vanishes, as a stone at the lip of a drop would.
+    const deepest =
+      ground - 0.9 * modelHeight(object.kind, object.seed) * object.scale;
+    ground = Math.max(lowestGround(object, points, env), deepest);
+  }
   const base = ground + (object.lift ?? 0);
   return asset.floats ? Math.max(base, env.water) : base;
 }
