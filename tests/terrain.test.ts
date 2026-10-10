@@ -5,7 +5,7 @@ import {
   baseGroundHeight,
   groundHeight,
   groundNormal,
-  onlyPaintDiffers,
+  onlyAppearanceDiffers,
 } from "../src/model/terrain";
 import { applyTerrainBrush } from "../src/model/terrainBrush";
 import {
@@ -17,6 +17,7 @@ import { TerrainStroke } from "../src/editor/terrainStroke";
 import { historyReducer } from "../src/editor/history";
 import { parseWorld } from "../src/editor/persistence";
 import { buildHabitat } from "../src/simulation/worldHabitat";
+import { makePreset } from "../src/model/presets";
 import { withEnvironment } from "../src/editor/useEditor";
 
 /** The grid point nearest x = -1.75 in the default tank. The brush gives a
@@ -31,6 +32,38 @@ const SPOT = (() => {
 })();
 
 describe("saved landscape brushes", () => {
+  it.each([
+    { light: "golden" as const, warmth: 0.9 },
+    { warmth: 0.8 },
+    { brightness: 1.3 },
+  ])("keeps the landscape and objects unchanged for lighting %j", (patch) => {
+    const world = makePreset("tropical");
+    const next = withEnvironment(world, patch);
+    expect(next.environment).toMatchObject(patch);
+    expect(next.objects).toBe(world.objects);
+    expect(next.environment.terrain).toBe(world.environment.terrain);
+    expect(onlyAppearanceDiffers(world.environment, next.environment)).toBe(
+      true,
+    );
+  });
+  it("invalidates the landscape for physical environment changes", () => {
+    const env = emptyWorld().environment;
+    for (const patch of [
+      { width: env.width + 1 },
+      { depth: env.depth + 1 },
+      { height: env.height + 1 },
+      { substrate: env.substrate + 0.1 },
+      { water: env.water + 0.1 },
+      { springs: [{ x: 0, z: 0, flow: 0.5 }] },
+    ])
+      expect(onlyAppearanceDiffers(env, { ...env, ...patch })).toBe(false);
+    const raised = applyTerrainBrush(env, SPOT.x, SPOT.z, {
+      mode: "raise",
+      radius: 0.65,
+    });
+    expect(onlyAppearanceDiffers(env, raised)).toBe(false);
+  });
+
   it("raises ground above the old ceiling and saves it at the new ceiling", () => {
     let env = emptyWorld().environment;
     for (let i = 0; i < 200; i++)
@@ -155,9 +188,9 @@ describe("saved landscape brushes", () => {
     // The same array, so the ground's shape and the simulation skip
     // rebuilding for paint.
     expect(painted.terrain!.heights).toBe(env.terrain!.heights);
-    expect(onlyPaintDiffers(env, painted)).toBe(true);
-    expect(onlyPaintDiffers(env, { ...painted, water: 0.1 })).toBe(false);
-    expect(onlyPaintDiffers(painted, env)).toBe(true);
+    expect(onlyAppearanceDiffers(env, painted)).toBe(true);
+    expect(onlyAppearanceDiffers(env, { ...painted, water: 0.1 })).toBe(false);
+    expect(onlyAppearanceDiffers(painted, env)).toBe(true);
     expect(painted.terrain!.paint).toContain("sand");
     const resized = { ...painted, width: 9, depth: 6 };
     const beforeDelta =
