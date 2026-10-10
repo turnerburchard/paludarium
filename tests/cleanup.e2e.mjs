@@ -236,13 +236,11 @@ try {
   });
   await page.getByRole("button", { name: "Share this world" }).click();
   await page.getByRole("button", { name: "Share link", exact: true }).click();
-  const link = page.getByRole("textbox", { name: "World link" });
-  await link.waitFor();
-  assert.equal(await link.inputValue(), sharedLink);
-  await link.focus();
+  await page.getByText("World link copied", { exact: true }).waitFor();
   assert.equal(
-    await link.evaluate((input) => input.selectionEnd - input.selectionStart),
-    sharedLink.length,
+    await page.evaluate(() => window.copiedLink),
+    sharedLink,
+    "a failed share sheet falls back to copying",
   );
   await page.getByRole("button", { name: "Close dialog" }).click();
 
@@ -262,10 +260,26 @@ try {
   });
   await page.getByRole("button", { name: "Share this world" }).click();
   await page.getByRole("button", { name: "Share link", exact: true }).click();
+  const link = page.getByRole("textbox", { name: "World link" });
+  assert.equal(await link.inputValue(), sharedLink);
+  await link.focus();
   assert.equal(
-    await page.getByRole("textbox", { name: "World link" }).inputValue(),
-    sharedLink,
+    await link.evaluate((input) => input.selectionEnd - input.selectionStart),
+    sharedLink.length,
   );
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (value) => {
+          window.copiedLink = value;
+        },
+      },
+    });
+  });
+  await page.getByRole("button", { name: "Copy link", exact: true }).click();
+  await page.getByText("World link copied", { exact: true }).waitFor();
+  assert.equal(await page.evaluate(() => window.copiedLink), sharedLink);
   await page.getByRole("button", { name: "Close dialog" }).click();
   await page.evaluate(() => {
     Object.defineProperty(navigator, "share", {
