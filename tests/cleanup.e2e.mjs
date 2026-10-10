@@ -64,7 +64,7 @@ try {
       await crawler
         .locator('meta[property="og:description"]')
         .getAttribute("content")
-    ).includes("Build a planted terrarium"),
+    ).includes("Plant it, shape the shoreline"),
   );
   await crawler.getByRole("heading", { name: /paludarium/i }).waitFor();
   await crawler.close();
