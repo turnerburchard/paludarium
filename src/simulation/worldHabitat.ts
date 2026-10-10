@@ -283,6 +283,12 @@ export function buildHabitat(
             neighbors: [previous.id],
           };
           previous.neighbors.push(node.id);
+          // A climbing frog can leap from the ground straight onto the
+          // glass, and back down, as well as walking up to it.
+          if (level === 1) {
+            (cell.leaps ??= []).push(node.id);
+            node.leaps = [cell.id];
+          }
           nodes.push(node);
           previous = node;
         }

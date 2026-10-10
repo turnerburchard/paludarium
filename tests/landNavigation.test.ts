@@ -320,3 +320,27 @@ describe("solids an animal's body rests on", () => {
     ).toBeUndefined();
   });
 });
+
+describe("leaps onto the glass", () => {
+  it("let climbing frogs jump from the ground onto the glass, and no one else", () => {
+    const world = emptyWorld();
+    world.environment.water = 0;
+    const graph = buildHabitat(world);
+    const leaps = [...graph.nodes.values()].filter(
+      (node) =>
+        node.surface === "ground" &&
+        node.leaps?.some((id) => graph.node(id).surface === "glass"),
+    );
+    expect(leaps.length).toBeGreaterThan(0);
+    const start = leaps[0];
+    const glass = start.leaps!.find(
+      (id) => graph.node(id).surface === "glass",
+    )!;
+    // A climbing frog's shortest way onto the glass is the leap itself.
+    const climber = profile("tree-frog");
+    expect(graph.routes(start.id, climber).pathTo(glass)).toEqual([glass]);
+    expect(
+      graph.routes(start.id, profile("dart-frog")).distances.has(glass),
+    ).toBe(false);
+  });
+});

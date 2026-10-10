@@ -186,7 +186,8 @@ describe("animal movement", () => {
       const pauses: number[] = [];
       let pause = 0,
         last = "a";
-      for (let i = 0; i < 1800; i++) {
+      // Three minutes, as frogs sit a while between outings.
+      for (let i = 0; i < 10800; i++) {
         engine.advance(1 / 60);
         const state = engine.getAnimal("frog")!;
         if (!state.moving) pause++;
@@ -203,6 +204,9 @@ describe("animal movement", () => {
     };
     const first = outings(173);
     expect(new Set(first.visits).size).toBeGreaterThanOrEqual(4);
+    // Like a real frog, it spends most of its time sitting still.
+    const still = first.pauses.reduce((sum, pause) => sum + pause, 0);
+    expect(still / 10800).toBeGreaterThan(0.6);
     expect(new Set(first.pauses).size).toBeGreaterThan(3);
     expect(outings(173)).toEqual(first);
     expect(outings(174).visits).not.toEqual(first.visits);

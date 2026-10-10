@@ -23,13 +23,13 @@ const STEP = 0.1;
 export const NORMAL_SPEED = 6;
 const DAY_LENGTH = 1800;
 /** Hunger gained per simulated second, and removed by eating one insect portion. */
-const HUNGER_RATE = 0.002;
+const HUNGER_RATE = 0.001;
 const HUNGER_PER_PORTION = 0.2;
 /** Energy spent per scene unit walked, on top of what any waking second costs. */
 const WALK_ENERGY = 0.0275;
 /** Hydration lost per simulated second in the open. */
 const HYDRATION_RATE = 0.0014;
-/** Colony growth per simulated second. A full-cover colony feeds about one frog. */
+/** Colony growth per simulated second. A full-cover colony feeds about two frogs. */
 const INSECT_GROWTH = 0.01;
 /** Newcomers let an emptied colony slowly recover instead of dying out. */
 const INSECT_ARRIVALS = 0.05;
@@ -74,6 +74,8 @@ interface Agent {
   swimmer?: Swimmer;
   /** Whether the fish was keeping with its school when it chose its route. */
   schooling?: boolean;
+  /** Sitting about with nothing pressing, so a need can end the sit. */
+  idle?: boolean;
   /** Where the body was drawn for the current and previous steps. */
   pose?: BodyPose;
   previousPose?: BodyPose;
@@ -433,6 +435,11 @@ export class Ecosystem {
         STEP *
           (0.0007 + (state.moving ? WALK_ENERGY * agent.profile.speed : 0)),
     );
+    // A long idle sit ends early once hunger or thirst presses.
+    if (agent.idle && (needs.hunger > 0.7 || needs.hydration < 0.35)) {
+      agent.idle = false;
+      agent.reconsiderAt = Math.min(agent.reconsiderAt, this.elapsed);
+    }
     // Decide at graph nodes, never teleport to a new path while halfway along an edge.
     if (!state.moving && this.elapsed >= agent.reconsiderAt) this.decide(agent);
     if (state.moving) {
@@ -517,6 +524,7 @@ export class Ecosystem {
     ) => {
       agent.path = this.travelPath(state.nodeId, navigation.pathTo(target));
       agent.restFor = duration;
+      agent.idle = false;
       agent.glance = undefined;
       agent.hasTravelled = false;
       agent.turning = false;
@@ -612,6 +620,27 @@ export class Ecosystem {
       );
       return;
     }
+    // Climbers now and then head up the glass to cling there a while, as
+    // frogs in a tank do.
+    const glass = agent.profile.climbs
+      ? reachable.filter(
+          (id) =>
+            id !== state.nodeId &&
+            this.graph.node(id).surface === "glass" &&
+            lengths.get(id)! <= 4,
+        )
+      : [];
+    if (glass.length && this.roll() < 0.15) {
+      go(
+        glass[Math.floor(this.roll() * glass.length)],
+        "resting",
+        "exploring",
+        unmet || "Climbing the glass",
+        this.sit("glass"),
+      );
+      agent.idle = !unmet;
+      return;
+    }
     // Vary the reach of each outing and favor unfamiliar spots, with a mild
     // bias toward the current heading. Needs still take precedence over curiosity.
     const range = 0.7 + this.roll() * 2.1;
@@ -634,19 +663,22 @@ export class Ecosystem {
           direction && facing ? (dot(direction, facing) + 1) / 2 : 0.5;
         const fresh = agent.recent.includes(id) ? 0.12 : 1;
         const node = this.graph.node(id);
-        const perch = node.surface === "leaf" ? 1.5 : 1;
+        // Frogs in a tank love a leaf or the glass to cling to.
+        const perch =
+          node.surface === "leaf" || node.surface === "glass" ? 1.5 : 1;
         // Animals that visit the water like to poke around underwater.
         const dip = agent.profile.water === "visits" && node.submerged ? 3 : 1;
         return (
           fresh * perch * dip * (0.5 + ahead) * (0.3 + lengths.get(id)! / range)
         );
       });
+      const chosen = this.pick(candidates, weights);
       go(
-        this.pick(candidates, weights),
+        chosen,
         "resting",
         "exploring",
         unmet || "Exploring the habitat",
-        3 + this.roll() * 21,
+        this.sit(this.graph.node(chosen).surface),
       );
     } else
       go(
@@ -654,8 +686,18 @@ export class Ecosystem {
         "resting",
         "exploring",
         unmet || "Watching the habitat",
-        5 + this.roll() * 25,
+        this.sit(state.surface),
       );
+    // With every need met, a need can cut the sit short.
+    agent.idle = !unmet;
+  }
+  /** How long an animal sits after an outing, in simulated seconds. Like
+   * real frogs, it mostly sits still for a good while, now and then only
+   * pausing, and longest where it clings to the glass or a leaf. */
+  private sit(surface: AnimalState["surface"]) {
+    const perch = surface === "glass" || surface === "leaf" ? 1.6 : 1;
+    if (this.roll() < 0.25) return 6 + this.roll() * 18;
+    return perch * (40 + this.roll() ** 2 * 230);
   }
   private swim(agent: Agent, fish: Swimmer) {
     // A fish that had to turn out of a dead end tries somewhere else, rather
@@ -867,7 +909,9 @@ export class Ecosystem {
     if (this.elapsed < agent.pauseUntil) return;
     const target = this.graph.node(agent.path[0]);
     const style = agent.profile.movement;
-    const leap = state.surface === "leaf" && target.surface === "leaf";
+    const leap =
+      (state.surface === "leaf" && target.surface === "leaf") ||
+      !!this.graph.node(state.nodeId).leaps?.includes(target.id);
     const walks = (surface: AnimalState["surface"]) =>
       ["ground", "stone", "bark"].includes(surface);
     const hopping =
@@ -875,7 +919,7 @@ export class Ecosystem {
       (leap ||
         (walks(state.surface) &&
           walks(target.surface) &&
-          Math.min(state.normal.y, target.normal.y) >= 0.85));
+          Math.min(state.normal.y, target.normal.y) >= 0.7));
     if (
       !agent.edge &&
       this.turnToward(
