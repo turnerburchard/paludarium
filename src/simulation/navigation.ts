@@ -59,6 +59,11 @@ export class HabitatGraph {
       );
     if (swims) return false;
     if ((node.room ?? Infinity) < (species.radius ?? 0)) return false;
+    if (
+      (node.headroom ?? Infinity) < (species.body?.height ?? 0) ||
+      (node.width ?? Infinity) < (species.body?.width ?? 0)
+    )
+      return false;
     if (node.submerged ? !species.water : species.water === "lives")
       return false;
     if (node.surface === "ground") return true;
