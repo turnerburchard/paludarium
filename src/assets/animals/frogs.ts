@@ -173,7 +173,7 @@ export const mossyFrog: AssetDefinition = {
     nocturnal: true,
     climbs: true,
     speed: 0.025,
-    movement: "crawl",
+    movement: "climb",
     maxPerchHeight: 0.65,
   },
   build: (random) =>
