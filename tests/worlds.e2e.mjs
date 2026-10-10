@@ -170,9 +170,7 @@ try {
       .getByRole("button", { name: "Options for My creek", exact: true })
       .click();
     const downloadPromise = page.waitForEvent("download");
-    await page
-      .getByRole("button", { name: "Export file", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Export", exact: true }).click();
     const download = await downloadPromise;
     assert.equal(download.suggestedFilename(), "my-creek.json");
     await page.getByRole("button", { name: "Import", exact: true }).click();
@@ -230,9 +228,7 @@ try {
     await page
       .getByRole("button", { name: "Options for Imported creek", exact: true })
       .click();
-    await page
-      .getByRole("button", { name: "Delete world", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Delete", exact: true }).click();
     assert.equal(
       await page.evaluate(
         (key) => JSON.parse(localStorage.getItem(key)).worlds.length,

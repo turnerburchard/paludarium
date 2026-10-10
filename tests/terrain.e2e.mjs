@@ -272,7 +272,7 @@ try {
     .getByRole("button", { name: /^Options for/ })
     .last()
     .click();
-  await page.getByRole("button", { name: "Export file", exact: true }).click();
+  await page.getByRole("button", { name: "Export", exact: true }).click();
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   const download = await downloadPromise;
   const exported = await readFile(await download.path());

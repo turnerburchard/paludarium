@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Info } from "lucide-react";
 import { IconButton } from "./ui/IconButton";
-import { isAnimal } from "./assets";
+import { assets, isAnimal } from "./assets";
 import { useEditor } from "./editor/useEditor";
 import type { Preset } from "./model/presets";
 import { WorldScene } from "./scene/WorldScene";
@@ -13,6 +13,7 @@ import { Inspector } from "./ui/Inspector";
 import { MobileDock } from "./ui/MobileDock";
 import { ShareDialog } from "./ui/ShareDialog";
 import { WorldsDialog } from "./ui/WorldsDialog";
+import { RenameDialog } from "./ui/RenameDialog";
 import { SceneBoundary } from "./ui/SceneBoundary";
 import { SceneTools } from "./ui/SceneTools";
 import { Sidebar, type Panel } from "./ui/Sidebar";
@@ -45,7 +46,14 @@ export default function App({
   const [hasBuilt, setHasBuilt] = useState(false);
   const [resetCamera, setResetCamera] = useState(0);
   const [dialog, setDialog] = useState<
-    "share" | "worlds" | "help" | "about" | "shared-copy" | "share-error" | null
+    | "share"
+    | "worlds"
+    | "help"
+    | "about"
+    | "shared-copy"
+    | "share-error"
+    | "rename-animal"
+    | null
   >(() =>
     shareError
       ? "share-error"
@@ -191,6 +199,7 @@ export default function App({
           ecosystem={ecosystem}
           view={view}
           onWatch={() => watch(selected.id)}
+          onRename={() => setDialog("rename-animal")}
         />
       )}
       {selected && watchingId && (
@@ -270,6 +279,19 @@ export default function App({
             clearWorldLink();
             setDialog(null);
           }}
+        />
+      )}
+      {dialog === "rename-animal" && selected && (
+        <RenameDialog
+          title={`Name this ${assets[selected.kind].name.toLowerCase()}`}
+          name={selected.name ?? ""}
+          placeholder={assets[selected.kind].name}
+          maxLength={40}
+          onSave={(name) => {
+            editor.patchObject(selected.id, { name: name || undefined });
+            setDialog(null);
+          }}
+          onClose={() => setDialog(null)}
         />
       )}
       {dialog === "help" && <HelpDialog onClose={closeHelp} />}
