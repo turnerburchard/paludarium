@@ -125,8 +125,12 @@ import {
   chickenOfTheWoods,
   flyAgaric,
   houseplantMushrooms,
+  oysterMushrooms,
   pantherCaps,
   parasolMushroom,
+  pinkOysterMushrooms,
+  reishi,
+  turkeyTail,
 } from "./landscape/mushrooms";
 import { ludwigia } from "./plants/ludwigia";
 import { dwarfSagittaria } from "./plants/dwarfSagittaria";
@@ -255,6 +259,10 @@ export const assets = {
   "parasol-mushroom": parasolMushroom,
   "panther-caps": pantherCaps,
   "houseplant-mushrooms": houseplantMushrooms,
+  "turkey-tail": turkeyTail,
+  reishi,
+  "oyster-mushrooms": oysterMushrooms,
+  "pink-oyster-mushrooms": pinkOysterMushrooms,
   fish,
   "cardinal-tetra": cardinalTetra,
   "ember-tetra": emberTetra,

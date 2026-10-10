@@ -203,9 +203,10 @@ const MODELS = [
     // "Mushroom_Laetiporus" from Quaternius's Stylized Nature MegaKit, CC0,
     // cut from 3216 to 400 triangles in Blender.
     source: "docs/inspiration/models/laetiporus-quaternius.glb",
-    out: "src/assets/landscape/chickenOfTheWoods.json",
+    out: "src/assets/landscape/bracketShelves.json",
     width: 0.45,
-    roles: { shelf: "b08040", rim: "d0b060" },
+    // Kept as separate shelves, so each fungus can stack them its own way.
+    shelves: true,
   },
   {
     // "Mushroom" by Quaternius, poly.pizza/m/db1tjMhmiA, CC0.
@@ -306,7 +307,9 @@ for (const model of MODELS) {
   writeFileSync(
     model.out,
     JSON.stringify({
-      parts: [...parts.values()],
+      ...(model.shelves
+        ? { shelves: shelves(keptFaces) }
+        : { parts: [...parts.values()] }),
       ...(model.perches && {
         perches: leafPerches(keptFaces, model.perches),
       }),
@@ -367,6 +370,50 @@ function leafPerches(faces, top) {
     });
   }
   return perches;
+}
+
+/** Splits a bracket fungus into its shelves, largest first. A shelf's lip
+ * can be modeled apart from its body, so pieces centered over each other
+ * count as one shelf. Its texture's light rim is scattered over the top, so
+ * faces are grouped by shape instead: the underside, and four bands on top
+ * from where the shelf grows (near the middle) out to its edge. */
+function shelves(faces) {
+  const merged = [];
+  for (const piece of connectedPieces(faces.map((face) => face.corners))) {
+    const bounds = new Box3();
+    for (const p of piece.points) bounds.expandByPoint(p);
+    const center = bounds.getCenter(new Vector3());
+    const shelf = merged.find(
+      (other) => other.center.distanceTo(center) < 0.03,
+    );
+    if (shelf) shelf.faces.push(...piece.faces);
+    else merged.push({ center, faces: [...piece.faces] });
+  }
+  return merged
+    .sort((a, b) => b.faces.length - a.faces.length)
+    .map((shelf) => {
+      const reach = (corners) =>
+        Math.hypot(
+          ...[0, 2].map(
+            (axis) => corners.reduce((sum, p) => sum + p[axis], 0) / 3,
+          ),
+        );
+      const reaches = shelf.faces.map(reach);
+      const nearest = Math.min(...reaches);
+      const farthest = Math.max(...reaches);
+      const parts = new Map();
+      for (const corners of shelf.faces) {
+        const [a, b, c] = corners.map((p) => new Vector3(...p));
+        const up = b.sub(a).cross(c.sub(a)).normalize().y;
+        const out = (reach(corners) - nearest) / (farthest - nearest);
+        const key =
+          up < -0.3 ? "under" : `band${Math.min(3, Math.floor(out * 4))}`;
+        const part = parts.get(key) ?? { color: key, positions: [] };
+        part.positions.push(...corners.flat());
+        parts.set(key, part);
+      }
+      return { parts: [...parts.values()] };
+    });
 }
 
 /** Groups faces that share corners into separate pieces, with their points
