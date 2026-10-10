@@ -694,6 +694,10 @@ button:hover:not(:disabled) {
   font-size: var(--text-body);
   color: var(--text);
 }
+/* A lone last button spans the row, so an odd count stays balanced. */
+.preset-options button:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
 .preset-options button:hover {
   background: var(--selected);
 }
