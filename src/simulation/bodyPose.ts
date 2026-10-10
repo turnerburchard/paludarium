@@ -202,3 +202,50 @@ export function fitBody(
   }
   return { position, normal, direction };
 }
+
+/** The most a body moves beyond what the spot it stands on moved, and the
+ * most it turns, in a step of the simulation. A body finding a new footing
+ * glides onto it rather than jumping. */
+const SHIFT = 0.008;
+const TURN = 0.07;
+const EASE = 0.4;
+
+/** The fitted pose, reached from where the body was a step ago, which the
+ * spot it stands on has since moved on from by `moved`. */
+export function follow(
+  previous: BodyPose,
+  target: BodyPose,
+  moved: Vec3,
+  steps: number,
+): BodyPose {
+  // Part of the way each step, so a fit that wavers between two footings
+  // settles between them instead of following each, and no faster than
+  // a body moves.
+  const share = 1 - (1 - EASE) ** steps;
+  const expected = add(previous.position, moved);
+  const off = sub(target.position, expected);
+  const distance = Math.hypot(off.x, off.y, off.z);
+  const shift = Math.min(SHIFT * steps, distance * share);
+  const position =
+    distance < 0.0005 ? target.position : add(expected, off, shift / distance);
+  const normal = turned(previous.normal, target.normal, TURN * steps, share);
+  // Already there, the fit itself stands, so the caller can tell.
+  if (position === target.position && normal === target.normal) return target;
+  const direction =
+    unit(add(target.direction, normal, -dot(target.direction, normal))) ??
+    target.direction;
+  return { position, normal, direction };
+}
+
+/** `from` turned `share` of the way toward `to`, by at most `limit`
+ * radians. */
+function turned(from: Vec3, to: Vec3, limit: number, share: number): Vec3 {
+  const angle = Math.acos(Math.max(-1, Math.min(1, dot(from, to))));
+  if (angle < 0.005 || Math.sin(angle) < 1e-3) return to;
+  const t = Math.min(limit, angle * share) / angle;
+  return (
+    unit(
+      add(scale(from, Math.sin((1 - t) * angle)), to, Math.sin(t * angle)),
+    ) ?? to
+  );
+}
