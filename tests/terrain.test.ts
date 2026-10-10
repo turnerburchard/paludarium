@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { emptyWorld } from "../src/model/schema";
+import { placementProblem } from "../src/model/water";
 import {
   baseGroundHeight,
   groundHeight,
   groundNormal,
   onlyPaintDiffers,
-  placementProblem,
 } from "../src/model/terrain";
 import { applyTerrainBrush } from "../src/model/terrainBrush";
 import {

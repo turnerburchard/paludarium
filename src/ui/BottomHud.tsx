@@ -1,4 +1,4 @@
-import { Check, Copy, Move, Paintbrush, Plus, X } from "lucide-react";
+import { Check, Copy, Droplets, Move, Paintbrush, Plus, X } from "lucide-react";
 import { assets } from "../assets";
 import type { Editor } from "../editor/useEditor";
 import { PlacementRotation } from "./PlacementRotation";
@@ -27,12 +27,29 @@ export function BottomHud({ editor }: { editor: Editor }) {
       : tool.type === "copy"
         ? "Copying"
         : "Placing";
+  let title = `${verb} ${name.toLowerCase()}`,
+    hint = "Tap to place · Two-finger drag to pan";
+  if (tool.type === "terrain") {
+    title = terrainTools.find((brush) => brush.mode === tool.mode)?.label ?? "";
+    hint = "Drag to brush · Escape to finish";
+  } else if (tool.type === "spring") {
+    title =
+      tool.index === null ? "Adding a spring" : `Spring ${tool.index + 1}`;
+    hint =
+      tool.index === null
+        ? "Tap the ground where water should well up"
+        : "Tap the ground to move it · Escape to finish";
+  }
+  const turns = tool.type !== "terrain" && tool.type !== "spring";
+  const done = adding || !turns;
   return (
     <div className="bottom-hud placing">
       <div className="placement-bar">
         <span className="placement-icon">
           {tool.type === "terrain" ? (
             <Paintbrush size={20} />
+          ) : tool.type === "spring" ? (
+            <Droplets size={20} />
           ) : tool.type === "move" ? (
             <Move size={20} />
           ) : tool.type === "copy" ? (
@@ -42,26 +59,15 @@ export function BottomHud({ editor }: { editor: Editor }) {
           )}
         </span>
         <div>
-          <strong>
-            {tool.type === "terrain"
-              ? terrainTools.find((brush) => brush.mode === tool.mode)?.label
-              : `${verb} ${name.toLowerCase()}`}
-          </strong>
+          <strong>{title}</strong>
           <span role="status" aria-live="polite">
-            {editor.placementError ||
-              (tool.type === "terrain"
-                ? "Drag to brush · Escape to finish"
-                : "Tap to place · Two-finger drag to pan")}
+            {editor.placementError || hint}
           </span>
         </div>
-        {tool.type !== "terrain" && <PlacementRotation editor={editor} />}
+        {turns && <PlacementRotation editor={editor} />}
         <button className="finish-button" onClick={editor.finish}>
-          {adding || tool.type === "terrain" ? (
-            <Check size={16} />
-          ) : (
-            <X size={16} />
-          )}
-          {adding || tool.type === "terrain" ? "Done" : "Cancel"}
+          {done ? <Check size={16} /> : <X size={16} />}
+          {done ? "Done" : "Cancel"}
         </button>
       </div>
     </div>

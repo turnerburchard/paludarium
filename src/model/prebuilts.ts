@@ -3,7 +3,8 @@ import type { Biome } from "../assets/types";
 import type { MossSpecies } from "./moss";
 import type { AssetKind, Environment, HabitatObject } from "./schema";
 import { objectBase } from "./stacking";
-import { groundHeight, placementProblem } from "./terrain";
+import { placementProblem } from "./water";
+import { groundHeight } from "./terrain";
 
 /** One object of a prebuilt, placed relative to the prebuilt's center. A
  * piece `on` an earlier one rests `height` above that piece's base. */

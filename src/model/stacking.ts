@@ -1,6 +1,7 @@
 import { assets, modelHeight } from "../assets";
 import type { Environment, HabitatObject } from "./schema";
 import { groundHeight } from "./terrain";
+import { waterLevel } from "./water";
 
 /** Where an object's base sits: on the ground, on the stone or wood it was
  * placed on, or on the surface for floating plants. Stone and wood settle to
@@ -17,7 +18,9 @@ export function objectBase(object: HabitatObject, env: Environment) {
     ground = Math.max(lowestGround(object, points, env), deepest);
   }
   const base = ground + (object.lift ?? 0);
-  return asset.floats ? Math.max(base, env.water) : base;
+  return asset.floats
+    ? Math.max(base, waterLevel(object.x, object.z, env))
+    : base;
 }
 
 /** Points around a piece's footprint. The radius bounds the whole model, so

@@ -34,6 +34,7 @@ const empty = {
     depth: 4.5,
     substrate: 0.25,
     water: 0,
+    springs: [],
     light: "day",
     warmth: 0.45,
     brightness: 1,
@@ -81,7 +82,7 @@ try {
     await route.fulfill({ response });
   });
   await page.addInitScript(
-    (world) => localStorage.setItem("little-worlds:v3", JSON.stringify(world)),
+    (world) => localStorage.setItem("little-worlds:v4", JSON.stringify(world)),
     empty,
   );
   await page.goto(origin);
@@ -110,7 +111,7 @@ try {
   await dialog.waitFor({ state: "detached" });
   await page.waitForFunction(() => {
     const world = JSON.parse(
-      localStorage.getItem("little-worlds:v3"),
+      localStorage.getItem("little-worlds:v4"),
       (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
@@ -137,7 +138,7 @@ try {
   );
   await page.waitForFunction(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v4"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -145,7 +146,7 @@ try {
   );
   const placed = await page.evaluate(
     () =>
-      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v4"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,

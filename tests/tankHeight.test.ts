@@ -7,7 +7,8 @@ import {
   terrainGrid,
   terrainPoint,
 } from "../src/model/terrainData";
-import { groundHeight, hasDryGround } from "../src/model/terrain";
+import { hasDryGround } from "../src/model/water";
+import { groundHeight } from "../src/model/terrain";
 import { applyTerrainBrush } from "../src/model/terrainBrush";
 import { withEnvironment } from "../src/editor/useEditor";
 import { objectBase } from "../src/model/stacking";
