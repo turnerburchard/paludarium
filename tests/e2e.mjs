@@ -25,7 +25,7 @@ server.on("exit", (code) => {
     throw new Error("Vite exited early. Is its port already in use?");
 });
 let browser;
-const storageKey = "little-worlds:v3";
+const storageKey = "little-worlds:v4";
 try {
   for (let i = 0; i < 50; i++) {
     try {
@@ -383,7 +383,7 @@ try {
   await page.keyboard.press("Tab");
   await page.waitForFunction(
     (before) =>
-      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v4"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,

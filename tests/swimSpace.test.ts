@@ -8,7 +8,8 @@ import {
   type HabitatObject,
 } from "../src/model/schema";
 import { newTerrain } from "../src/model/terrainData";
-import { groundHeight, swimmingHeight } from "../src/model/terrain";
+import { swimmingHeight } from "../src/model/water";
+import { groundHeight } from "../src/model/terrain";
 import {
   Steering,
   newSwimmer,

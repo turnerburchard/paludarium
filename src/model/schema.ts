@@ -133,6 +133,7 @@ export const assetKinds = [
 ] as const;
 export type AssetKind = (typeof assetKinds)[number];
 export const MAX_OBJECTS = 250;
+export const MAX_SPRINGS = 6;
 export const MAX_TANK_WIDTH = 24;
 export const MAX_TANK_DEPTH = 14;
 export const TANK_HEIGHT = DEFAULT_TANK_HEIGHT;
@@ -162,6 +163,16 @@ export const objectSchema = z.object({
   lift: finite.min(0).max(4).optional(),
 });
 export type HabitatObject = z.infer<typeof objectSchema>;
+/** Where water wells up and runs downhill. Its place is given in fractions
+ * of the tank's width and depth, so it stays on the same spot of terrain
+ * when the tank is resized. */
+const springSchema = z.object({
+  x: finite.min(-0.5).max(0.5),
+  z: finite.min(-0.5).max(0.5),
+  /** From a trickle at 0 to a gush at 1. */
+  flow: finite.min(0).max(1),
+});
+export type Spring = z.infer<typeof springSchema>;
 export const environmentSchema = z
   .object({
     width: finite.min(5).max(MAX_TANK_WIDTH),
@@ -172,6 +183,7 @@ export const environmentSchema = z
       .default(DEFAULT_TANK_HEIGHT),
     substrate: finite.min(0.12).max(0.55),
     water: finite.min(0).max(waterCeiling({ height: MAX_TANK_HEIGHT })),
+    springs: z.array(springSchema).max(MAX_SPRINGS),
     light: z.enum(["day", "golden", "moon"]),
     warmth: finite.min(0).max(1).default(0.45),
     brightness: finite.min(0.4).max(1.6).default(1),
@@ -231,6 +243,7 @@ export const defaultEnvironment: Environment = {
   height: DEFAULT_TANK_HEIGHT,
   substrate: 0.25,
   water: 0.44,
+  springs: [],
   light: "day",
   warmth: 0.45,
   brightness: 1,

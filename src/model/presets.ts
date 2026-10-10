@@ -6,6 +6,7 @@ import {
   type AssetKind,
   type Environment,
   type HabitatObject,
+  type Spring,
   type World,
 } from "./schema";
 import type { MossSpecies } from "./moss";
@@ -273,7 +274,7 @@ function cloudForest(add: Add, shelter: Shelter, objects: HabitatObject[]) {
   add("rock", 2.0, -0.4, 0.6, 1);
   add("fern-moss", -0.1, -1.0, 0.8);
   add("grass", 2.2, 0.6, 0.9);
-  add("grass", 0.6, -1.3, 0.8);
+  add("grass", 0.8, -1.5, 0.8);
   // Ferns, bromeliads and a calathea on the far side of the pool.
   add("fern", 2.9, 0.9, 1.1, 2.2);
   add("bromeliad", 3.4, -0.3, 0.85, 1.2);
@@ -491,7 +492,7 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
     ["kinnikinnick", 1.95, -1.45, 1.1],
     ["kinnikinnick", 2.95, -0.45, 1],
     ["kinnikinnick", 4.1, -0.2, 1.1],
-    ["kinnikinnick", -3.2, -1.6, 1.1],
+    ["kinnikinnick", -2.9, -1.7, 1.1],
     ["kinnikinnick", -1.1, -1.5, 1],
     ["kinnikinnick", 3.3, -1.75, 1],
     ["fly-agaric", 2.5, -1.25, 0.75],
@@ -865,24 +866,27 @@ function streambed() {
 /** A wide tank with a hill along the back and a stream running down into a
  * deep pool at the front. */
 function forestFloor() {
-  const stream: [number, number][] = [
-    [1.6, -2.2],
+  const brook: [number, number][] = [
+    [1.6, -2.1],
     [1.4, -1.2],
     [0.9, -0.3],
     [0.8, 0.5],
   ];
-  return sculpt(
-    level({ ...defaultEnvironment, width: 8, height: 4, water: 0.6 }, 0.9),
-    [
-      ["raise", 1.8, [[-2.4, -1.7]], 2],
-      ["raise", 1.5, [[2.6, -1.6]], 3],
-      ["raise", 1.6, [[3.0, 1.2]], 2],
-      ["pool", 0.6, stream],
-      ["smooth", 0.9, stream, 2],
-      ["pool", 1.9, [[0.7, 0.9]]],
-      ["lower", 1.4, [[0.7, 1.0]], 5],
-    ],
+  const env = level(
+    { ...defaultEnvironment, width: 8, height: 4, water: 0.6 },
+    0.9,
   );
+  return sculpt({ ...env, springs: [springAt(env, brook[0], 0.5)] }, [
+    ["raise", 1.8, [[-2.4, -1.7]], 2],
+    ["raise", 1.5, [[2.6, -1.6]], 3],
+    ["raise", 1.6, [[3.0, 1.2]], 2],
+    // A rise at the back for the brook to come down from.
+    ["raise", 1.3, [[1.5, -1.8]], 4],
+    ["lower", 0.75, brook],
+    ["smooth", 0.6, brook, 2],
+    ["pool", 1.9, [[0.7, 0.9]]],
+    ["lower", 1.4, [[0.7, 1.0]], 5],
+  ]);
 }
 
 /** A small, deep tank with a karst wall across the back, a seep running
@@ -897,6 +901,8 @@ function grottoFloor() {
     [-1.3, 1.3],
   ];
   const pool = { x: -1.6, z: 1.55 };
+  const plunge = { x: 0.75, z: -0.75 };
+  const pond = { x: -0.3, z: 0.4 };
   const env: Environment = {
     ...defaultEnvironment,
     width: 6,
@@ -918,21 +924,23 @@ function grottoFloor() {
       smooth((foot - z) / 1.3);
     const terrace = 0.15 * smooth(1 - Math.hypot(x - 2.2, z - 0.4) / 1.3);
     const ground = 0.82 + 0.05 * Math.sin(x * 1.7 - z * 1.3) + wall + terrace;
-    // The seep cuts a gully down the wall, then runs as a shallow stream
-    // across the bank.
-    const channel = 1 - smooth((distanceToPath(x, z, seep) - 0.15) / 0.3);
-    const stream = smooth((z - foot) / 0.4);
-    const bed = ground + (env.water - 0.2 - ground) * stream;
-    const basin = 1 - smooth((Math.hypot(x - pool.x, z - pool.z) - 0.85) / 0.6);
+    // The seep cuts a gully down the wall and a shallow bed across the
+    // bank, filling a plunge pool at the wall's foot and a second pool on
+    // the bank on its way to the water.
+    const channel =
+      1 - smooth((nearestOnPath(x, z, seep).distance - 0.15) / 0.3);
+    const dip = (at: { x: number; z: number }, radius: number) =>
+      1 - smooth((Math.hypot(x - at.x, z - at.z) - radius) / 0.35);
+    const basin = dip(pool, 0.85);
     const height = Math.min(
-      ground + (Math.min(bed, ground - 0.2) - ground) * channel,
+      ground - 0.12 * channel - 0.22 * dip(plunge, 0.2) - 0.1 * dip(pond, 0.3),
       ground + (env.water - 0.45 - ground) * basin,
     );
     return Math.round((height - baseGroundHeight(x, z, env)) * 100) / 100;
   });
   // Bare stone up the wall and along the seep, moss on the ledges and
   // carpeting the bank.
-  return sculpt({ ...env, terrain }, [
+  return sculpt({ ...env, terrain, springs: [springAt(env, seep[0], 0.5)] }, [
     [
       "moss",
       1.3,
@@ -992,7 +1000,7 @@ function grottoFloor() {
  * to a meadow at the front, widening into a pool for the trout. */
 function creekBed() {
   const creek: [number, number][] = [
-    [-4.7, -1.6],
+    [-4.35, -1.45],
     [-3.6, -1.05],
     [-2.6, -0.4],
     [-1.5, -0.05],
@@ -1004,6 +1012,8 @@ function creekBed() {
     [4.7, 1.8],
   ];
   const pool = { x: 1.5, z: 0.55 };
+  const upstream = creek.slice(0, 7);
+  const upstreamLength = pathLength(upstream);
   const env: Environment = {
     ...defaultEnvironment,
     width: 9,
@@ -1021,10 +1031,20 @@ function creekBed() {
     const knoll = 0.12 * smooth(1 - Math.hypot(x - 0.4, z + 1.6) / 1.3);
     const meadow = 0.1 * smooth(1 - Math.hypot(x + 3, z - 1.3) / 1.4);
     const ground = 0.86 + slope + knoll + meadow;
-    const channel = 1 - smooth((distanceToPath(x, z, creek) - 0.25) / 0.5);
+    // Above the pool the creek bed falls gently, then over a ledge
+    // halfway down. Below it the creek is part of the pool.
+    const { distance, along } = nearestOnPath(x, z, creek);
+    const f = along / upstreamLength;
+    const bed =
+      f < 1
+        ? env.water -
+          0.05 +
+          0.55 * (1 - 0.3 * f - 0.7 * smooth((f - 0.45) / 0.035))
+        : env.water - 0.2;
+    const channel = 1 - smooth((distance - 0.25) / 0.5);
     const basin = 1 - smooth((Math.hypot(x - pool.x, z - pool.z) - 0.6) / 0.6);
     const height = Math.min(
-      ground + (env.water - 0.2 - ground) * channel,
+      ground + (Math.min(bed, ground - 0.1) - ground) * channel,
       ground + (env.water - 0.45 - ground) * basin,
     );
     return Math.round((height - baseGroundHeight(x, z, env)) * 100) / 100;
@@ -1048,7 +1068,7 @@ function creekBed() {
     [3.4, -0.2],
     [4.3, 0.7],
   ];
-  return sculpt({ ...env, terrain }, [
+  return sculpt({ ...env, terrain, springs: [springAt(env, creek[0], 1)] }, [
     ["moss", 1.2, meadow],
     ["moss", 0.8, creekside],
     ["moss", 0.7, farBank],
@@ -1128,7 +1148,8 @@ function islandLagoon() {
         mound(x + 0.7, z + 0.55, 2.9, 1.8),
         mound(x + 2.0, z + 0.9, 1.6, 1.4),
       );
-      const top = 1.45 + 0.32 * smooth(1 - distanceToPath(x, z, ridge) / 1.2);
+      const top =
+        1.45 + 0.32 * smooth(1 - nearestOnPath(x, z, ridge).distance / 1.2);
       const shelf = mound(x + 0.7, z + 0.45, 3.5, 2.3);
       const islet = mound(x - 2.6, z + 1.05, 1.6, 1.3);
       let height = Math.max(
@@ -1161,20 +1182,51 @@ function islandLagoon() {
   ]);
 }
 
-function distanceToPath(x: number, z: number, path: [number, number][]) {
-  let nearest = Infinity;
+/** A spring at a spot given in tank coordinates. */
+function springAt(
+  env: Environment,
+  [x, z]: [number, number],
+  flow: number,
+): Spring {
+  // Rounded to keep preset share links short.
+  const fraction = (n: number) => Math.round(n * 1000) / 1000;
+  return { x: fraction(x / env.width), z: fraction(z / env.depth), flow };
+}
+
+/** How far a spot is from the nearest point on a path, and how far along
+ * the path that point is. */
+function nearestOnPath(x: number, z: number, path: [number, number][]) {
+  let distance = Infinity,
+    along = 0,
+    start = 0;
   for (let i = 1; i < path.length; i++) {
     const [x0, z0] = path[i - 1],
       [x1, z1] = path[i];
     const dx = x1 - x0,
-      dz = z1 - z0;
+      dz = z1 - z0,
+      length = Math.hypot(dx, dz);
     const t = Math.min(
       1,
-      Math.max(0, ((x - x0) * dx + (z - z0) * dz) / (dx * dx + dz * dz)),
+      Math.max(0, ((x - x0) * dx + (z - z0) * dz) / (length * length)),
     );
-    nearest = Math.min(nearest, Math.hypot(x - x0 - t * dx, z - z0 - t * dz));
+    const d = Math.hypot(x - x0 - t * dx, z - z0 - t * dz);
+    if (d < distance) {
+      distance = d;
+      along = start + t * length;
+    }
+    start += length;
   }
-  return nearest;
+  return { distance, along };
+}
+
+function pathLength(path: [number, number][]) {
+  let length = 0;
+  for (let i = 1; i < path.length; i++)
+    length += Math.hypot(
+      path[i][0] - path[i - 1][0],
+      path[i][1] - path[i - 1][1],
+    );
+  return length;
 }
 
 /** A wide, low, bright tank of rolling sand that rises into a mesa at the

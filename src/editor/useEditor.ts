@@ -4,6 +4,7 @@ import { assetRadius, isAnimal, placementScale } from "../assets";
 import { killAnimal } from "../simulation/lifeCycle";
 import {
   MAX_OBJECTS,
+  MAX_SPRINGS,
   type AssetKind,
   type HabitatObject,
   type World,
@@ -16,11 +17,12 @@ import {
   restingOn,
   type Surface,
 } from "../model/stacking";
+import { placementProblem } from "../model/water";
 import {
   boundedPosition,
   fitObject,
-  placementProblem,
   baseGroundHeight,
+  groundHeight,
 } from "../model/terrain";
 import {
   fitTerrain,
@@ -51,7 +53,9 @@ export type Tool =
   | { type: "prebuilt"; prebuilt: Prebuilt }
   | { type: "move"; id: string }
   | { type: "copy"; id: string }
-  | ({ type: "terrain" } & TerrainBrush);
+  | ({ type: "terrain" } & TerrainBrush)
+  /** Adding a spring, or with an index, moving or changing that one. */
+  | { type: "spring"; index: number | null };
 export function useEditor(readOnly = false, sharedWorld?: World) {
   const [initial] = useState(loadLibrary);
   const [library, setLibrary] = useState(initial.library);
@@ -143,9 +147,12 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       stroke.current = null;
       return;
     }
-    // Moving or copying an object that undo may take away ends here.
+    // Moving or copying an object, or changing a spring, that undo may take
+    // away ends here.
     setTool((tool) =>
-      tool.type === "move" || tool.type === "copy" ? { type: "select" } : tool,
+      tool.type === "move" || tool.type === "copy" || tool.type === "spring"
+        ? { type: "select" }
+        : tool,
     );
     setPlacementError("");
     dispatch({ type });
@@ -199,7 +206,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   }, [commit, selectedId]);
   const rotate = useCallback(
     (amount = Math.PI / 6) => {
-      if (tool.type === "terrain") return;
+      if (tool.type === "terrain" || tool.type === "spring") return;
       if (tool.type !== "select")
         setPlacementRotation((r) => (r + amount) % (Math.PI * 2));
       else if (selectedId) {
@@ -367,6 +374,37 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     }
     commit({ ...world, objects: [...world.objects, ...pieces] });
   }
+  /** Adds a spring where the ground is tapped, or moves the chosen one
+   * there. */
+  function placeSpring(x: number, z: number) {
+    if (tool.type !== "spring") return;
+    const env = world.environment;
+    if (groundHeight(x, z, env) < env.water) {
+      setPlacementError("Put the spring on ground above the water.");
+      return;
+    }
+    const springs = [...env.springs];
+    const at = {
+      x: Math.min(0.5, Math.max(-0.5, x / env.width)),
+      z: Math.min(0.5, Math.max(-0.5, z / env.depth)),
+    };
+    if (tool.index === null) {
+      if (springs.length >= MAX_SPRINGS) {
+        setPlacementError(`A tank can hold ${MAX_SPRINGS} springs.`);
+        return;
+      }
+      springs.push({ ...at, flow: 0.5 });
+      setTool({ type: "spring", index: springs.length - 1 });
+    } else springs[tool.index] = { ...springs[tool.index], ...at };
+    setPlacementError("");
+    changeEnvironment({ springs });
+  }
+  function removeSpring(index: number) {
+    changeEnvironment({
+      springs: world.environment.springs.filter((_, i) => i !== index),
+    });
+    setTool({ type: "select" });
+  }
   function changeEnvironment(patch: Partial<Environment>) {
     commit(withEnvironment(world, patch));
   }
@@ -484,6 +522,8 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     choosePrebuilt,
     finish,
     placeAt,
+    placeSpring,
+    removeSpring,
     changeEnvironment,
     patchObject,
     remove,

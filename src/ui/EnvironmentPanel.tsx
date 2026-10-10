@@ -3,6 +3,7 @@ import { Sun, Sunset, Moon } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import { RangeControl } from "./RangeControl";
 import { TerrainControls } from "./TerrainControls";
+import { SpringControls } from "./SpringControls";
 import {
   waterCeiling,
   MIN_TANK_HEIGHT,
@@ -76,6 +77,7 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
           pausedBeforeDrag.current = null;
         }}
       />
+      <SpringControls editor={editor} />
       <details className="more-options landscape-options">
         <summary>Shape landscape</summary>
         <TerrainControls editor={editor} />
