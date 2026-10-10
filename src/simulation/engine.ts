@@ -1,6 +1,6 @@
 import { discoveryFor, type Discovery } from "./discoveries";
 import { Steering, newSwimmer, type SwimWater, type Swimmer } from "./fish";
-import { fitBody } from "./bodyPose";
+import { fitBody, type BodyPose } from "./bodyPose";
 import type { Solids } from "./solids";
 import {
   HabitatGraph,
@@ -74,6 +74,9 @@ interface Agent {
   swimmer?: Swimmer;
   /** Whether the fish was keeping with its school when it chose its route. */
   schooling?: boolean;
+  /** Where the body was drawn for the current and previous steps. */
+  pose?: BodyPose;
+  previousPose?: BodyPose;
 }
 export interface SimulationOptions {
   random?: () => number;
@@ -225,8 +228,6 @@ export class Ecosystem {
     if (!agent) return undefined;
     const state = agent.state;
     const previous = agent.previous ?? state;
-    this.settle(agent, previous);
-    this.settle(agent, state);
     const rendered = (agent.rendered ??= structuredClone(state));
     Object.assign(rendered, state);
     const t = this.remainder / STEP;
@@ -246,15 +247,18 @@ export class Ecosystem {
       bend:
         previous.motion.bend + (state.motion.bend - previous.motion.bend) * t,
     };
-    if (previous.pose && state.pose)
+    // The body is set down only for states that are drawn, once each.
+    agent.pose ??= this.settle(agent, state);
+    agent.previousPose ??= agent.previous
+      ? this.settle(agent, previous)
+      : agent.pose;
+    const from = agent.previousPose,
+      to = agent.pose;
+    if (from && to)
       rendered.pose = {
-        position: interpolate(previous.pose.position, state.pose.position, t),
-        normal: interpolate(previous.pose.normal, state.pose.normal, t),
-        direction: interpolate(
-          previous.pose.direction,
-          state.pose.direction,
-          t,
-        ),
+        position: interpolate(from.position, to.position, t),
+        normal: interpolate(from.normal, to.normal, t),
+        direction: interpolate(from.direction, to.direction, t),
       };
     if (landing) rendered.moving = true;
     return rendered;
@@ -293,6 +297,7 @@ export class Ecosystem {
         Math.floor(this.elapsed / STEP) % Math.max(1, agents.length);
       for (let i = 0; i < agents.length; i++) {
         const agent = agents[(i + offset) % agents.length];
+        agent.previousPose = agent.pose;
         agent.previous = {
           ...agent.state,
           position: copyVector(agent.state.position),
@@ -302,15 +307,17 @@ export class Ecosystem {
         };
         if (!heldIds?.has(agent.state.id)) {
           this.update(agent);
-          // The body is set down again only when drawn, and only if it moved.
+          // A still animal keeps its body where it was set down.
           const { previous, state } = agent;
           if (
             !same(previous.position, state.position) ||
             !same(previous.normal, state.normal) ||
             !same(previous.direction, state.direction) ||
-            previous.motion.lift !== state.motion.lift
+            previous.motion.lift !== state.motion.lift ||
+            previous.nodeId !== state.nodeId ||
+            previous.moving !== state.moving
           )
-            state.pose = undefined;
+            agent.pose = undefined;
           const kind = discoveryFor(agent.state);
           if (kind && !this.discoveries.some((note) => note.kind === kind))
             this.discoveries.push({
@@ -324,12 +331,11 @@ export class Ecosystem {
       this.breedInsects();
     }
   }
-  /** Sets the body down on what is under the point it walks along, once
-   * for each state that is drawn. In the air it is only kept clear, so a
-   * hop still arcs. */
-  private settle(agent: Agent, state: AnimalState) {
+  /** Sets the body down on what is under the point it walks along. In the
+   * air it is only kept clear, so a hop still arcs. */
+  private settle(agent: Agent, state: AnimalState): BodyPose | undefined {
     const body = agent.profile.body;
-    if (state.pose || !this.solids || !body || agent.swimmer) return;
+    if (!this.solids || !body || agent.swimmer) return undefined;
     const { position, normal, direction } = state;
     const airborne = state.motion.hop && state.motion.lift > 0;
     // Leaves and stems aren't solid, so there the body is only kept clear
@@ -345,7 +351,7 @@ export class Ecosystem {
       this.solids,
       !airborne && !soft,
     );
-    state.pose = airborne
+    return airborne
       ? {
           ...pose,
           position: {

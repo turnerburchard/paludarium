@@ -12,7 +12,7 @@ import {
   isLandAnimal,
 } from "../assets";
 import type { AssetKind, Environment, HabitatObject } from "../model/schema";
-import { groundHeight, swimmingHeight } from "../model/terrain";
+import { groundHeight, groundNormal, swimmingHeight } from "../model/terrain";
 import { objectBase } from "../model/stacking";
 import { FrogRig } from "./frogRig";
 import { GeckoRig } from "./geckoRig";
@@ -164,20 +164,32 @@ export function Inhabitant({
         const fit = state.pose ?? state;
         group.position.set(fit.position.x, fit.position.y, fit.position.z);
         const live = ecosystem.live.current!;
-        if (environment !== live.world.environment) {
+        // Navigation stays committed during a stroke, so the preview shows
+        // a walking animal on the sculpted ground, and anything else
+        // attached to the ground or to the base of its supporting plant.
+        const sculpted =
+          environment !== live.world.environment && state.grounded
+            ? groundNormal(fit.position.x, fit.position.z, environment)
+            : undefined;
+        if (sculpted)
+          group.position.y = groundHeight(
+            fit.position.x,
+            fit.position.z,
+            environment,
+          );
+        else if (environment !== live.world.environment) {
           const node = live.engine.graph.node(state.nodeId);
           const supportId = node.plantId ?? node.supportId;
           const plant = supportId
             ? live.world.objects.find((part) => part.id === supportId)
             : undefined;
           const anchor = plant ?? state.position;
-          // Navigation stays committed during a stroke; keep the preview pose
-          // attached to the ground or to the base of its supporting plant.
           group.position.y +=
             groundHeight(anchor.x, anchor.z, environment) -
             groundHeight(anchor.x, anchor.z, live.world.environment);
         }
-        pose.normal.set(fit.normal.x, fit.normal.y, fit.normal.z).normalize();
+        const normal = sculpted ?? fit.normal;
+        pose.normal.set(normal.x, normal.y, normal.z).normalize();
         pose.forward.set(fit.direction.x, fit.direction.y, fit.direction.z);
         if (!state.grounded && !state.motion.hop) {
           const plantId = live.engine.graph.node(state.nodeId).plantId;

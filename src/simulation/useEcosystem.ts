@@ -117,7 +117,9 @@ export function useEcosystem(
         restY: y,
       };
     }
-    const { position, direction, surface } = animal;
+    // The body as drawn, which can sit a little off the point it walks along.
+    const { position, direction } = animal.pose ?? animal;
+    const surface = animal.surface;
     const falls =
       animal.grounded ||
       surface === "water" ||
