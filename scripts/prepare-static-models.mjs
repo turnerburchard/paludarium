@@ -207,6 +207,26 @@ const MODELS = [
     width: 0.45,
     roles: { shelf: "b08040", rim: "d0b060" },
   },
+  {
+    // "Mushroom" by Quaternius, poly.pizza/m/db1tjMhmiA, CC0.
+    source: "docs/inspiration/models/mushroom-parasol-quaternius.glb",
+    out: "src/assets/landscape/parasol.json",
+    height: 0.38,
+  },
+  {
+    // "Mushrooms" by Danni Bittman, poly.pizza/m/f35tumnmt3N, CC-BY 3.0.
+    source: "docs/inspiration/models/mushrooms-bittman.glb",
+    out: "src/assets/landscape/pantherCaps.json",
+    height: 0.26,
+  },
+  {
+    // "Mushroom_Common" from Quaternius's Stylized Nature MegaKit, CC0,
+    // packed into a GLB with its texture shrunk to 256 px.
+    source: "docs/inspiration/models/mushroom-common-quaternius.glb",
+    out: "src/assets/landscape/houseplantMushrooms.json",
+    width: 0.4,
+    roles: { cap: "a59993", capTop: "eacbb7", gills: "6e5c56", stem: "aca186" },
+  },
 ];
 
 for (const model of MODELS) {
