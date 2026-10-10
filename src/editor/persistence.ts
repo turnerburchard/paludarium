@@ -99,6 +99,18 @@ export function updateLibrary(
     }),
   };
 }
+export function renameLibraryWorld(
+  library: WorldLibrary,
+  id: string,
+  name: string,
+): WorldLibrary {
+  return {
+    ...library,
+    worlds: library.worlds.map((entry) =>
+      entry.id === id ? { ...entry, world: { ...entry.world, name } } : entry,
+    ),
+  };
+}
 export function openLibraryWorld(
   library: WorldLibrary,
   entry: WorldLibrary["worlds"][number],

@@ -1118,6 +1118,44 @@ button:hover:not(:disabled) {
   font-size: var(--text-small);
   color: var(--text-soft);
 }
+.animal-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 4px;
+  font-size: var(--text-small);
+  color: var(--text-soft);
+}
+.animal-name input,
+.rename-world {
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line-strong);
+  outline: none;
+  padding: 6px 0;
+}
+.animal-name input:focus,
+.rename-world:focus {
+  border-bottom-color: var(--accent);
+  outline: none;
+}
+.animal-name input {
+  /* Below 16px, iPhones zoom the page in while typing. */
+  font-size: 16px;
+}
+.rename-world {
+  font-size: var(--text-title);
+  line-height: var(--leading-title);
+  margin: 6px 0;
+}
+.inspector .animal-species {
+  margin: -4px 0 4px;
+  font-size: var(--text-small);
+  color: var(--text-soft);
+}
 .life-needs meter,
 .animal-condition meter {
   width: 55%;

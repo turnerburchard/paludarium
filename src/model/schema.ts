@@ -161,6 +161,8 @@ export const objectSchema = z.object({
   moss: z.enum(mossSpecies).optional(),
   support: z.string().min(1).max(100).optional(),
   lift: finite.min(0).max(4).optional(),
+  // Additive version-1 data: a name the player gave an animal.
+  name: z.string().trim().min(1).max(40).optional(),
 });
 export type HabitatObject = z.infer<typeof objectSchema>;
 /** Where water wells up and runs downhill. Its place is given in fractions

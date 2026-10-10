@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Download, MoreHorizontal, Trash2, Upload, X } from "lucide-react";
+import {
+  Download,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import { downloadWorld } from "../editor/persistence";
 import type { Preset } from "../model/presets";
@@ -23,6 +30,7 @@ export function WorldsDialog({
 }) {
   const [menuId, setMenuId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [renameId, setRenameId] = useState<string | null>(null);
   const savedWorlds = editor.library.worlds.filter((entry) => !entry.preview);
   return (
     <Modal label="Worlds" onClose={onClose}>
@@ -59,12 +67,31 @@ export function WorldsDialog({
         {savedWorlds.map(({ id, world }) => (
           <div className="saved-world" key={id}>
             <div className="saved-world-heading">
-              <button className="open-world" onClick={() => onOpen(id)}>
-                <strong>{world.name}</strong>
-                {id === editor.library.activeId && !editor.isShared && (
-                  <span>Current</span>
-                )}
-              </button>
+              {renameId === id ? (
+                <input
+                  className="rename-world"
+                  aria-label="World name"
+                  defaultValue={world.name}
+                  maxLength={60}
+                  autoFocus
+                  onBlur={(e) => {
+                    const name = e.target.value.trim();
+                    if (name && name !== world.name)
+                      editor.renameWorld(id, name);
+                    setRenameId(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") e.currentTarget.blur();
+                  }}
+                />
+              ) : (
+                <button className="open-world" onClick={() => onOpen(id)}>
+                  <strong>{world.name}</strong>
+                  {id === editor.library.activeId && !editor.isShared && (
+                    <span>Current</span>
+                  )}
+                </button>
+              )}
               <IconButton
                 label={`Options for ${world.name}`}
                 onClick={() => {
@@ -77,6 +104,14 @@ export function WorldsDialog({
             </div>
             {menuId === id && (
               <div className="world-options">
+                <button
+                  onClick={() => {
+                    setRenameId(id);
+                    setMenuId(null);
+                  }}
+                >
+                  <Pencil size={15} aria-hidden="true" /> Rename
+                </button>
                 <button onClick={() => downloadWorld(world)}>
                   <Download size={15} aria-hidden="true" /> Export file
                 </button>
