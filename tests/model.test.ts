@@ -62,7 +62,7 @@ describe("editor history", () => {
   });
 });
 describe("safe files and valid habitat", () => {
-  it.each(["tropical", "mountain", "amazon", "asian", "island"] as const)(
+  it.each(["tropical", "mountain", "amazon", "grotto", "island"] as const)(
     "round trips the %s preset and places every inhabitant in its habitat",
     (preset) => {
       const world = makePreset(preset);
@@ -83,7 +83,6 @@ describe("safe files and valid habitat", () => {
     "grotto",
     "island",
     "amazon",
-    "asian",
   ] as const)("reopens a saved copy of the %s preset", (preset) => {
     expect(() => parseWorld(JSON.stringify(makePreset(preset)))).not.toThrow();
   });

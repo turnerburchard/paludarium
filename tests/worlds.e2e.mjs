@@ -97,7 +97,7 @@ try {
       .click();
     await page.getByRole("button", { name: "Pause life (Space)" }).click();
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
-    assert.equal(await page.locator(".preset-options button").count(), 8);
+    assert.equal(await page.locator(".preset-options button").count(), 7);
     await page
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();

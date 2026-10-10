@@ -249,7 +249,7 @@ function fishIn(world: World, engine: ReturnType<typeof createWorldEcosystem>) {
 }
 
 describe("fish in a real tank", () => {
-  it.each(["tropical", "amazon", "asian"] as const)(
+  it.each(["tropical", "amazon", "grotto"] as const)(
     "stay in the %s water and inside the glass, and keep exploring",
     (preset) => {
       const world = makePreset(preset);
@@ -417,7 +417,6 @@ describe("fish in a real tank", () => {
 
   it.each([
     "amazon",
-    "asian",
     "tropical",
     "mountain",
     "grotto",

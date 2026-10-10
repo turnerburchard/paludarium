@@ -225,7 +225,6 @@ describe("water from springs", () => {
       "grotto",
       "island",
       "amazon",
-      "asian",
     ] as const)
       expect(
         environmentSchema.safeParse(makePreset(preset).environment).success,

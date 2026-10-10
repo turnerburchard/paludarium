@@ -15,7 +15,7 @@ import { randomFromSeed } from "./random";
 import { objectBase } from "./stacking";
 import { baseGroundHeight, groundHeight } from "./terrain";
 import { applyTerrainBrush, type TerrainMode } from "./terrainBrush";
-import { newTerrain } from "./terrainData";
+import { newTerrain, terrainPoint, type GroundMaterial } from "./terrainData";
 export type Preset =
   | "empty"
   | "tropical"
@@ -23,8 +23,7 @@ export type Preset =
   | "desert"
   | "grotto"
   | "island"
-  | "amazon"
-  | "asian";
+  | "amazon";
 type Add = (
   kind: AssetKind,
   x: number,
@@ -174,13 +173,6 @@ export function makePreset(preset: Preset): World {
       objects,
     };
   }
-  if (preset === "asian")
-    return {
-      version: 1,
-      name: "Asian stream",
-      environment: streambed(),
-      objects: asianStream(add, objects),
-    };
   if (preset === "island")
     return {
       version: 1,
@@ -306,87 +298,6 @@ function cloudForest(add: Add, shelter: Shelter, objects: HabitatObject[]) {
   return objects;
 }
 
-/** A rocky stream from tropical Asia: stones banked along the back with
- * ferns and moss on them, crypts in the gravel, and open water for the
- * gouramis, barbs and rasboras. */
-function asianStream(add: Add, objects: HabitatObject[]) {
-  // River stones up the bank, with java fern and java moss growing on some.
-  add("quaternius-outcrop", -2.6, -1.4, 1.2, 0.4, "java");
-  add("quaternius-boulder", -1.35, -1.65, 0.9, 2.1);
-  add("quaternius-crag", -0.25, -1.3, 1, 1);
-  add("quaternius-outcrop", 0.95, -1.55, 1.1, 2.8, "java");
-  add("quaternius-crag", 2.15, -1.15, 0.9, 0.5);
-  add("quaternius-boulder", 2.95, -1.75, 0.8, 1.6);
-  add("java-fern", -2.2, -0.85, 1.1);
-  add("java-fern", 0.55, -1.05, 1);
-  add("java-fern", 2.65, -1.2, 0.9);
-  for (const [x, z, scale] of [
-    [-2.95, -0.85, 1],
-    [-1.6, -1.05, 1.1],
-    [0.0, -0.75, 1],
-    [1.35, -0.95, 1.1],
-    [2.35, -0.55, 0.9],
-    [-1.85, 1.3, 1],
-    [2.1, 1.15, 0.9],
-  ])
-    add("java-moss", x, z, scale);
-  // Smaller stones and pebbles out in the gravel.
-  add("quaternius-dome", -2.3, 1.0, 0.6, 1.2);
-  add("pebbles", -1.0, 1.3, 1);
-  add("pebbles", 1.5, 0.8, 0.9, 2.2);
-  add("quaternius-crag", 2.6, 1.35, 0.55, 3);
-  // Rotala and eelgrass along the back glass, crypts through the middle.
-  for (const [x, z] of [
-    [-3.0, -1.95],
-    [-0.75, -1.95],
-    [1.7, -1.95],
-  ])
-    add("rotala", x, z, 1.1);
-  for (const [x, z] of [
-    [-2.0, -1.95],
-    [0.35, -1.95],
-    [3.1, -1.1],
-  ])
-    add("vallisneria", x, z, 1.1);
-  for (const [x, z, scale] of [
-    [-1.65, 0.35, 1],
-    [-1.25, 0.7, 0.85],
-    [0.25, 0.95, 0.9],
-    [1.9, 0.2, 1],
-    [2.25, 0.55, 0.85],
-  ])
-    add("cryptocoryne", x, z, scale, x * 2);
-  // A school each of rasboras and tiger barbs, two gouramis and a rainbow
-  // shark in the open water, and cherry shrimp on the stones.
-  for (let i = 0; i < 8; i++)
-    add(
-      "harlequin-rasbora",
-      -1.1 + (i % 4) * 0.25,
-      -0.2 + Math.floor(i / 4) * 0.3,
-      1,
-      1.2,
-    );
-  for (let i = 0; i < 6; i++)
-    add(
-      "tiger-barb",
-      0.8 + (i % 3) * 0.3,
-      -0.4 + Math.floor(i / 3) * 0.3,
-      1,
-      4.2,
-    );
-  add("pearl-gourami", -0.1, 0.5, 1, 2.4);
-  add("pearl-gourami", -2.0, -0.2, 1, 0.8);
-  add("rainbow-shark", 1.0, 1.3, 1, 1.8);
-  for (const [x, z, heading] of [
-    [-2.6, -0.85, 0.4],
-    [-0.3, -0.85, 2.2],
-    [1.6, -1.0, 5.1],
-    [-0.8, 1.55, 3],
-  ])
-    add("cherry-shrimp", x, z, 1, heading);
-  return objects;
-}
-
 /** A planted island in a deep lagoon, as hobbyists build a paludarium:
  * mantellas and day geckos on land, vampire crabs on the shore, and tetras,
  * gouramis, shrimp and micro crabs in the water. */
@@ -477,7 +388,8 @@ function tropicalIsland(add: Add, objects: HabitatObject[]) {
 }
 
 /** A Rocky Mountain creek running down a stony slope, past a granite knoll
- * and a wildflower meadow, into a trout pool. */
+ * and a wildflower meadow, into a deep, clear pool of trout, sculpins and
+ * crayfish. */
 function alpineCreek(add: Add, objects: HabitatObject[]) {
   // Broken stone up the slope behind the creek, with spruce seedlings
   // coming up between the rocks.
@@ -514,31 +426,22 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
   add("fence-lizard", 0.6, -1.0, 1.1, 2.2);
   // Boulders, river stones and gravel along the creek, with sedge and
   // hairgrass on the damp banks.
-  add("granite", -2.9, -0.7, 1, 1.3);
-  add("rock", -1.0, 0.35, 0.7, 2, "fern");
-  add("rock", 0.15, -0.25, 0.6, 0.5);
-  add("granite", 2.4, 1.3, 0.9, 0.2);
+  add("granite", -2.9, -0.95, 1, 1.3);
+  add("rock", -1.75, 0.45, 0.7, 2, "fern");
+  add("rock", -0.9, -0.35, 0.6, 0.5);
   add("scree", -4.0, -1.3, 1, 1.6);
-  for (const [x, z, scale] of [
-    [-2.0, 0.15, 1.2],
-    [0.0, 0.55, 1.1],
-    [3.05, 1.7, 1.1],
-  ])
-    add("pebbles", x, z, scale, x);
-  add("flagstone", 0.7, 1.4, 1.1, 2.1);
-  add("flagstone", 2.3, -0.15, 0.9, 0.7);
+  add("pebbles", -2.3, 0.05, 1.2, -2.3);
+  add("flagstone", 3.9, -0.3, 0.9, 0.7);
   for (const [kind, x, z, scale] of [
-    ["grass", -2.35, -0.85, 1],
-    ["grass", -0.8, -0.5, 0.9],
-    ["grass", 2.9, 0.45, 1],
-    ["grass", 3.95, 1.05, 0.9],
-    ["hairgrass", -3.4, 0.55, 1.1],
-    ["hairgrass", -1.9, 0.6, 1],
-    ["hairgrass", -0.6, 0.8, 0.9],
-    ["hairgrass", 0.45, 1.05, 1],
-    ["cattail", 2.45, 0.15, 1],
-    ["cattail", 2.7, 0.35, 0.85],
-    ["cattail", 2.3, -0.05, 0.9],
+    ["grass", -2.35, -1.0, 1],
+    ["grass", -1.25, -0.55, 0.9],
+    ["grass", 2.9, -0.35, 1],
+    ["grass", 4.25, 0.4, 0.9],
+    ["hairgrass", -3.4, 0.4, 1.1],
+    ["hairgrass", -2.0, 0.75, 1],
+    ["hairgrass", -1.1, 0.95, 0.9],
+    ["hairgrass", -0.35, -0.25, 1],
+    ["hairgrass", 0.9, -0.3, 0.9],
   ] as const)
     add(kind, x, z, scale, x * 2.3);
   // A wildflower meadow on the front bank, with a fallen log for the
@@ -548,129 +451,228 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
     ["columbine", -3.3, 1.35, 0.9],
     ["columbine", -2.9, 1.7, 1],
     ["columbine", -2.6, 0.95, 1],
-    ["columbine", -1.2, 1.5, 0.9],
-    ["columbine", -0.8, 1.25, 1],
+    ["columbine", -1.6, 1.6, 0.9],
+    ["columbine", -1.75, 1.15, 1],
     ["strawberry", -4.1, 1.2, 1],
-    ["strawberry", -1.6, 1.75, 0.9],
+    ["strawberry", -2.2, 1.9, 0.9],
     ["kinnikinnick", -3.9, 1.65, 1],
-    ["kinnikinnick", -0.95, 1.75, 0.9],
-    ["spruce", -4.1, 0.2, 0.75],
+    ["kinnikinnick", -3.0, 1.9, 0.9],
+    ["spruce", -3.75, 1.75, 0.75],
   ] as const)
     add(kind, x, z, scale, x * 1.3);
-  add("log", -2.2, 1.35, 1, 0.3, "sheet");
-  add("tiger-salamander", -2.0, 1.0, 1, 1.4);
-  // The pool: trout in open water, sculpins and crayfish on the stones, and
-  // the canyon tree frog on a flat stone at the edge.
-  add("canyon-tree-frog", 0.7, 1.4, 1.2, 0.4);
-  add("cutthroat-trout", 1.3, 0.4, 0.8, 0);
-  add("cutthroat-trout", 1.8, 0.75, 0.75, 3);
-  add("sculpin", 1.2, 0.75, 1, 3);
-  add("sculpin", 1.9, 0.3, 1, 0.5);
-  add("dwarf-crayfish", 1.5, 0.95, 1, 1.1);
-  add("dwarf-crayfish", 1.1, 0.25, 1, 4);
+  add("log", -2.6, 1.6, 1, 0.3, "sheet");
+  add("tiger-salamander", -2.3, 1.25, 1, 1.4);
+  // Cattails and a flat stone where the creek runs into the pool, with the
+  // canyon tree frog sitting on it.
+  add("cattail", -0.75, 0.75, 1, 0.4);
+  add("cattail", -0.75, 1.05, 0.85, 2);
+  add("cattail", -0.95, 1.15, 0.9, 1.1);
+  add("flagstone", -1.25, 1.7, 1.1, 2.1);
+  add("canyon-tree-frog", -1.25, 1.7, 1.2, 0.4);
+  // Under the water: granite boulders and a sunken snag on a gravel bed,
+  // eelgrass and ludwigia along the back of the pool, and sagittaria on the
+  // shallow margins.
+  add("granite", 0.3, 1.0, 1.2, 0.9, "sheet");
+  add("granite", 2.9, 1.25, 1.4, 2.6);
+  add("granite", 1.6, 1.85, 0.8, 4.1);
+  add("slate", 3.6, 0.55, 0.9, 1.2);
+  add("snag", 2.0, 0.6, 1, 2.8);
+  add("log", 1.3, 1.45, 0.9, 1.9);
+  for (const [kind, x, z, scale] of [
+    ["cobble", 0.6, 1.9, 1],
+    ["cobble", 3.4, 1.9, 0.9],
+    ["pebbles", 2.3, 1.6, 1.2],
+    ["pebbles", 0.1, 1.3, 1],
+    ["pebbles", 3.9, 1.2, 0.9],
+  ] as const)
+    add(kind, x, z, scale, x * 1.9);
+  for (const [kind, x, z, scale] of [
+    ["vallisneria", 0.6, 0.95, 1.2],
+    ["vallisneria", 1.4, 0.8, 1.3],
+    ["vallisneria", 2.7, 0.5, 1.2],
+    ["ludwigia", 3.2, 0.75, 1.1],
+    ["ludwigia", 2.2, 0.45, 1],
+    ["dwarf-sagittaria", -0.2, 1.9, 1],
+    ["dwarf-sagittaria", 3.9, 1.9, 1],
+    ["dwarf-sagittaria", 3.4, 1.9, 0.9],
+    ["dwarf-sagittaria", 0.2, 0.9, 0.9],
+    ["java-moss", 2.7, 1.45, 1],
+    ["java-moss", 0.8, 1.0, 0.9],
+    ["water-lily", 3.3, 1.3, 0.9],
+    ["water-lily", 0.5, 1.3, 0.8],
+  ] as const)
+    add(kind, x, z, scale, x * 2.7);
+  // Trout cruising the open water, sculpins and crayfish among the stones.
+  add("cutthroat-trout", 1.0, 1.5, 0.9, 0);
+  add("cutthroat-trout", 2.1, 1.1, 0.8, 3);
+  add("cutthroat-trout", 3.6, 1.5, 0.75, 4.5);
+  add("sculpin", 1.0, 1.85, 1, 3);
+  add("sculpin", 2.62, 2.0, 1, 0.5);
+  add("sculpin", 0.9, 1.55, 1, 2);
+  add("dwarf-crayfish", 1.9, 1.5, 1, 1.1);
+  add("dwarf-crayfish", 3.3, 1.0, 1, 4);
+  add("dwarf-crayfish", 0.3, 1.6, 1, 2.4);
   return objects;
 }
 
-/** A shady Vietnamese limestone grotto for mossy frogs: a mossy karst wall
- * with caves at its foot, a seep trickling down past begonias and elephant
- * ears, and a dark pool of harlequin rasboras in the front corner. */
+/** A shady Vietnamese limestone grotto over a rocky Asian stream. Up top,
+ * mossy frogs live in caves on a karst shelf, among begonias and elephant
+ * ears. Below the cliff, rasboras, barbs and gouramis swim over crypts and
+ * river stones. */
 function limestoneGrotto(
   add: Add,
   shelter: Shelter,
   stack: Stack,
   objects: HabitatObject[],
 ) {
-  // Karst stone climbing the wall in broken tiers: pinnacles and stacked
-  // outcrops along the top, smaller stones partway up, and loose cobbles
-  // near the foot, furred with moss and leaving room for the seep's gully.
-  add("limestone-pinnacle", -2.45, -2.05, 1.35, 0.6, "cushion");
-  add("limestone", -1.35, -2.1, 1, 1);
-  add("limestone-pinnacle", -1.3, -2.25, 0.7, 2.6, "sheet");
+  // Karst stone along the top of the wall in broken tiers, furred with moss
+  // and leaving room for the seep's gully.
+  add("limestone-pinnacle", -2.55, -2.25, 1.35, 0.6, "cushion");
+  add("limestone", -1.45, -2.33, 1, 1);
+  add("limestone-pinnacle", -1.4, -2.5, 0.7, 2.6, "sheet");
   stack(0.7);
-  add("limestone-pinnacle", 0.3, -2.1, 1.2, 2.2, "java");
-  add("limestone", 2.45, -2.05, 1.1, 0.3, "sheet");
-  add("limestone", 2.5, -2.15, 0.6, 3.4, "cushion");
+  add("limestone-pinnacle", 0.2, -2.34, 1.2, 2.2, "java");
+  add("limestone", 2.45, -2.25, 1.1, 0.3, "sheet");
+  add("limestone", 2.5, -2.48, 0.6, 3.4, "cushion");
   stack(0.8);
-  add("limestone", -1.95, -1.65, 0.75, 4.2, "fern");
-  add("rock", -0.4, -1.75, 0.55, 2.4, "sheet");
-  add("limestone-pinnacle", 0.75, -1.8, 0.8, 1.2, "cushion");
-  add("limestone", 2.05, -1.6, 0.65, 5.1, "fern");
-  add("slate", -2.65, -1.4, 0.55, 0.9);
-  add("cobble", -2.6, -1.4, 0.9, 2);
+  add("capstone", -0.7, -2.25, 1);
+  add("orchid", -0.75, -2.2, 0.8, 0.9);
+  add("orchid", 2.75, -1.65, 0.75, 2.4);
+  add("nest-fern", -0.1, -1.6, 0.8, 1.3);
+  add("nest-fern", 2.1, -1.65, 0.7, 4);
+  add("fittonia", -1.55, -1.55, 1);
+  for (const [kind, x, z, scale] of [
+    ["sheet-moss", -2.1, -1.95, 1],
+    ["fern-moss", 1.95, -1.4, 0.9],
+    ["moss", -0.45, -1.2, 0.8],
+  ] as const)
+    add(kind, x, z, scale);
+  // Smaller stones and loose cobbles at the foot of the wall.
+  add("limestone", -2.15, -1.8, 0.75, 4.2, "fern");
+  add("rock", -0.5, -1.85, 0.55, 2.4, "sheet");
+  add("limestone-pinnacle", 0.15, -1.75, 0.8, 1.2, "cushion");
+  add("limestone", 2.25, -1.8, 0.65, 5.1, "fern");
+  add("slate", -2.85, -1.6, 0.55, 0.9);
+  add("cobble", -2.8, -1.6, 0.9, 2);
   stack(0.12);
-  add("cobble", -0.95, -1.4, 1, 0.7);
-  add("cobble", 2.8, -1.3, 0.9, 3.3);
-  add("tree-roots", 0.35, -1.05, 1, -0.2);
-  add("orchid", -0.75, -1.9, 0.8, 0.9);
-  add("orchid", 2.85, -1.7, 0.75, 2.4);
-  add("nest-fern", -0.2, -1.95, 0.8, 1.3);
-  add("nest-fern", 1.75, -2.05, 0.7, 4);
+  add("cobble", -1.1, -1.75, 1, 0.7);
+  add("cobble", 2.95, -1.55, 0.9, 3.3);
+  // Two caves on the shelf, where the mossy frogs rest by day, with
+  // elephant ears and begonias crowding the entrances.
+  shelter(-1.85, -1.15, 0.3, "cushion");
+  shelter(2.35, -1.2, 2.6, "sheet");
+  add("mossy-frog", -1.7, -0.75, 1, 0.6);
+  add("mossy-frog", 2.05, -0.85, 1, 2.4);
+  add("mossy-frog", -0.2, -1.3, 1, 4);
+  add("alocasia", -2.7, -1.0, 1.15, 0.5);
+  add("alocasia", 2.8, -0.6, 0.95, 2.4);
+  add("alocasia", -0.75, -1.4, 0.8, 1.6);
+  add("begonia", -2.75, -0.35, 1, 0.3);
+  add("begonia", -1.15, -0.95, 0.9, 2.8);
+  add("begonia", 1.65, -1.0, 0.95, 1.6);
+  add("begonia", -0.35, -0.7, 0.85, 4.4);
+  add("fern", -2.3, -0.1, 0.85, 1.1);
+  add("fern", -0.85, -1.85, 0.8, 2);
+  // Mossy stones, wood and java fern where the seep crosses the shelf.
+  add("rock", 1.4, -1.55, 0.6, 0.8, "java");
+  add("wood", 0.35, -0.95, 0.8, 2.1, "java");
+  add("java-fern", 1.45, -0.95, 0.9, 1.2);
   for (const [kind, x, z, scale] of [
-    ["sheet-moss", -2.0, -2.1, 1],
-    ["fern-moss", 1.0, -2.2, 0.9],
-    ["moss", -0.3, -1.45, 0.8],
+    ["sheet-moss", -1.35, -0.45, 1.1],
+    ["fern-moss", 0.0, -1.0, 1],
+    ["moss", 1.75, -1.5, 0.9],
+    ["sheet-moss", -2.55, -0.65, 0.9],
   ] as const)
     add(kind, x, z, scale);
-  // Two caves at the foot of the wall, where the mossy frogs rest by day,
-  // with elephant ears and begonias crowding the entrances.
-  shelter(-1.85, -1.0, 0.3, "cushion");
-  shelter(2.25, -0.75, 2.6, "sheet");
-  add("mossy-frog", -1.7, -0.6, 1, 0.6);
-  add("mossy-frog", 2.0, -0.35, 1, 2.4);
-  add("mossy-frog", 0.95, -1.05, 1, 4);
-  add("alocasia", -2.5, -0.85, 1.15, 0.5);
-  add("alocasia", 2.55, -0.15, 0.95, 2.4);
-  add("alocasia", -0.6, -1.3, 0.8, 1.6);
-  add("begonia", -2.65, -0.15, 1, 0.3);
-  add("begonia", -1.05, -0.85, 0.9, 2.8);
-  add("begonia", 1.5, -0.6, 0.95, 1.6);
-  add("begonia", 2.75, 0.55, 0.85, 4.4);
-  add("fern", -2.2, 0.45, 0.85, 1.1);
-  add("fern", 2.2, 1.05, 0.8, 2);
-  // Mossy stones and java fern where the seep comes down off the wall.
-  add("rock", 1.25, -1.45, 0.6, 0.8, "java");
-  add("limestone", 0.55, -0.35, 0.7, 2.1, "cushion");
-  add("java-fern", 0.95, -0.55, 0.9, 1.2);
-  add("cryptocoryne", 0.05, -0.05, 0.9, 0.4);
-  add("cryptocoryne", -0.55, 0.65, 0.85, 2.6);
-  add("wood", -0.25, -0.75, 0.8, 2.1, "java");
-  for (const [kind, x, z, scale] of [
-    ["sheet-moss", -1.4, 0.0, 1.2],
-    ["fern-moss", 1.15, 0.2, 1.1],
-    ["moss", 1.75, 0.6, 1],
-    ["sheet-moss", -2.5, 0.95, 1],
-    ["fern-moss", 0.75, 1.3, 1],
-    ["moss", 2.6, 1.6, 1.1],
-  ] as const)
-    add(kind, x, z, scale);
-  // Leaf litter and fungus on the damp bank in front.
-  add("fungus-log", 1.55, 1.35, 0.9, 0.3);
-  add("leaf-litter", 0.25, 1.85, 1);
-  add("leaf-litter", 2.3, 2.0, 0.9);
-  add("bonnet-mushrooms", 1.85, 1.75, 0.9, 1.1);
-  add("bonnet-mushrooms", -2.4, -0.45, 0.85, 2.7);
-  add("begonia", 0.95, 2.05, 0.8, 0.9);
-  add("nest-fern", 2.45, 1.95, 0.8, 0.2);
-  // The pool, with crypts and java fern along its edge and a school of
-  // harlequin rasboras in the open water.
-  add("limestone", -0.3, 1.55, 0.6, 0.9, "java");
-  add("java-fern", -2.6, 1.45, 1, 1.2);
-  add("cryptocoryne", -0.45, 2.15, 0.9, 2);
-  add("cryptocoryne", -2.7, 2.1, 0.85, 3.1);
-  add("java-moss", -1.0, 1.0, 1);
-  add("water-lily", -1.9, 2.0, 0.9, 1);
+  // Leaf litter and fungus near the cliff's edge.
+  add("fungus-log", -1.1, -0.35, 0.8, 0.3);
+  add("leaf-litter", -2.0, -0.3, 1);
+  add("leaf-litter", 0.6, -1.5, 0.9);
+  add("bonnet-mushrooms", -1.4, -0.2, 0.85, 1.1);
+  add("bonnet-mushrooms", -2.45, -1.45, 0.85, 2.7);
+  // River stones along the foot of the cliff and on a step partway down it,
+  // with java fern and java moss growing on some.
+  add("quaternius-outcrop", -2.5, 1.15, 1.2, 0.4, "java");
+  add("quaternius-boulder", -1.3, 0.9, 0.9, 2.1);
+  add("quaternius-crag", -0.15, 0.65, 1, 1);
+  add("quaternius-outcrop", 1.6, 0.35, 0.9, 2.8, "java");
+  add("quaternius-boulder", 2.75, 0.7, 0.8, 1.6);
+  add("java-fern", -2.05, 1.45, 1.1);
+  add("java-fern", 2.2, 0.4, 1);
+  add("java-fern", 0.3, 0.9, 0.9);
+  for (const [x, z, scale] of [
+    [-2.85, 1.5, 1],
+    [-0.8, 1.15, 1.1],
+    [1.15, 0.5, 1],
+    [2.4, 0.85, 0.9],
+    [-1.8, 2.1, 1],
+    [2.1, 2.0, 0.9],
+  ])
+    add("java-moss", x, z, scale);
+  // Rotala and eelgrass up against the cliff, crypts through the middle,
+  // and a lawn of sagittaria in front.
+  for (const [x, z] of [
+    [-2.9, 1.0],
+    [-0.6, 0.75],
+    [0.6, 0.6],
+  ])
+    add("rotala", x, z, 1.2);
+  for (const [x, z] of [
+    [-1.95, 0.95],
+    [0.05, 0.7],
+    [2.9, 0.85],
+  ])
+    add("vallisneria", x, z, 1.3);
+  for (const [x, z, scale] of [
+    [-1.6, 1.75, 1],
+    [-1.25, 2.05, 0.85],
+    [0.5, 1.8, 0.9],
+    [1.9, 1.55, 1],
+    [2.3, 1.85, 0.85],
+    [2.0, 0.75, 0.8],
+  ])
+    add("cryptocoryne", x, z, scale, x * 2);
+  for (const [x, z] of [
+    [-2.6, 2.35],
+    [-0.9, 2.4],
+    [0.3, 2.35],
+    [1.4, 2.4],
+    [2.8, 2.35],
+  ])
+    add("dwarf-sagittaria", x, z, 1);
+  add("quaternius-dome", -2.4, 1.9, 0.6, 1.2);
+  add("pebbles", -0.6, 2.0, 1);
+  add("pebbles", 1.1, 1.85, 0.9, 2.2);
+  add("quaternius-crag", 2.85, 2.1, 0.55, 3);
+  add("water-lily", -2.75, 2.2, 0.9, 1);
+  // A school each of rasboras and tiger barbs, two gouramis and a rainbow
+  // shark in the open water, and cherry shrimp on the stones.
   for (let i = 0; i < 8; i++)
     add(
       "harlequin-rasbora",
-      -1.8 + (i % 4) * 0.18,
-      1.25 + Math.floor(i / 4) * 0.3,
+      -1.3 + (i % 4) * 0.25,
+      1.35 + Math.floor(i / 4) * 0.3,
       1,
-      0,
+      1.2,
     );
-  // Added after the rest so their seeds leave everything above unchanged.
-  add("limestone-pinnacle", -1.55, -1.5, 1);
-  add("capstone", -1.85, -2.0, 1);
-  add("fittonia", -0.8, -2.15, 1);
+  for (let i = 0; i < 6; i++)
+    add(
+      "tiger-barb",
+      0.8 + (i % 3) * 0.3,
+      1.1 + Math.floor(i / 3) * 0.3,
+      1,
+      4.2,
+    );
+  add("pearl-gourami", -0.2, 1.9, 1, 2.4);
+  add("pearl-gourami", -2.2, 1.6, 1, 0.8);
+  add("rainbow-shark", 0.9, 2.2, 1, 1.8);
+  for (const [x, z, heading] of [
+    [-2.6, 1.55, 0.4],
+    [-0.05, 1.0, 2.2],
+    [1.75, 0.75, 5.1],
+    [-0.4, 2.2, 3],
+  ])
+    add("cherry-shrimp", x, z, 1, heading);
   return objects;
 }
 
@@ -836,33 +838,6 @@ function blackwater(): Environment {
   };
 }
 
-/** A dark soil streambed with a bank rising toward the back glass. */
-function streambed() {
-  const env: Environment = {
-    ...defaultEnvironment,
-    water: AQUARIUM_WATER,
-    brightness: 1.15,
-  };
-  const smooth = (t: number) => {
-    t = Math.min(1, Math.max(0, t));
-    return t * t * (3 - 2 * t);
-  };
-  const terrain = newTerrain(
-    env,
-    (x, z) => {
-      const bank = smooth((-z - 0.3) / 1.5);
-      const height =
-        0.3 + 0.04 * Math.sin(x * 1.7) + (1.3 + 0.35 * Math.sin(x + 1)) * bank;
-      // `|| 0` turns -0 into 0, which a saved world can't tell apart.
-      return (
-        Math.round((height - baseGroundHeight(x, z, env)) * 100) / 100 || 0
-      );
-    },
-    "soil",
-  );
-  return { ...env, terrain };
-}
-
 /** A wide tank with a hill along the back and a stream running down into a
  * deep pool at the front. */
 function forestFloor() {
@@ -889,136 +864,107 @@ function forestFloor() {
   ]);
 }
 
-/** A small, deep tank with a karst wall across the back, a seep running
- * down from a notch in it, and a dark pool in the front corner. */
+/** A tall tank split in two: a mossy karst shelf with a wall behind it up
+ * top, and a deep stream aquarium below a cliff along the shelf's edge. A
+ * seep runs down the wall and across the shelf, and falls off the cliff. */
 function grottoFloor() {
   const seep: [number, number][] = [
-    [1.45, -2.5],
-    [1.3, -1.6],
-    [0.8, -0.9],
-    [0.3, -0.2],
-    [-0.4, 0.5],
-    [-1.3, 1.3],
+    [1.3, -2.7],
+    [1.2, -2.0],
+    [0.95, -1.3],
+    [0.8, -0.6],
+    [0.75, 0.5],
   ];
-  const pool = { x: -1.6, z: 1.55 };
-  const plunge = { x: 0.75, z: -0.75 };
-  const pond = { x: -0.3, z: 0.4 };
   const env: Environment = {
     ...defaultEnvironment,
-    width: 6,
-    depth: 5,
-    water: 0.5,
+    width: 6.5,
+    depth: 5.5,
+    height: 3.8,
+    water: 1.8,
     warmth: 0.6,
-    brightness: 0.85,
+    brightness: 0.9,
   };
   const smooth = (t: number) => {
     t = Math.min(1, Math.max(0, t));
     return t * t * (3 - 2 * t);
   };
   const terrain = newTerrain(env, (x, z) => {
-    // The wall rises steeply behind a band of bank, its top uneven and
-    // its foot pushed forward on the left.
-    const foot = -1.1 + 0.25 * smooth((-x - 0.5) / 2);
+    // The shelf's edge wanders, reaching furthest out on the left.
+    const edge = 0.2 - 0.3 * Math.sin(x * 1.1 + 0.6) - 0.08 * Math.sin(x * 3.3);
+    const cliff = smooth((edge - z) / 0.45);
     const wall =
-      (1.0 + 0.12 * Math.sin(x * 2.3) + 0.06 * Math.sin(x * 5.1 + 1)) *
-      smooth((foot - z) / 1.3);
-    const terrace = 0.15 * smooth(1 - Math.hypot(x - 2.2, z - 0.4) / 1.3);
-    const ground = 0.82 + 0.05 * Math.sin(x * 1.7 - z * 1.3) + wall + terrace;
-    // The seep cuts a gully down the wall and a shallow bed across the
-    // bank, filling a plunge pool at the wall's foot and a second pool on
-    // the bank on its way to the water.
+      (1.05 + 0.12 * Math.sin(x * 2.3) + 0.06 * Math.sin(x * 5.1 + 1)) *
+      smooth((-1.9 - z) / 0.8);
+    const shelf =
+      2.1 + 0.04 * Math.sin(x * 1.7 - z * 1.3) + 0.08 * smooth((-0.9 - z) / 1);
+    const floor = 0.3 + 0.05 * Math.sin(x * 1.3 + z * 0.9);
+    // A rocky step partway down the cliff on the right, for plants to
+    // grow on under the water.
+    const step = smooth((edge + 0.75 - z) / 0.3) * smooth((x - 0.9) / 0.5);
+    const ground = Math.max(
+      floor + (shelf + wall - floor) * cliff,
+      floor + (1.05 - floor) * step,
+    );
+    // The seep cuts a gully down the wall and a shallow bed across the shelf.
     const channel =
       1 - smooth((nearestOnPath(x, z, seep).distance - 0.15) / 0.3);
-    const dip = (at: { x: number; z: number }, radius: number) =>
-      1 - smooth((Math.hypot(x - at.x, z - at.z) - radius) / 0.35);
-    const basin = dip(pool, 0.85);
-    const height = Math.min(
-      ground - 0.12 * channel - 0.22 * dip(plunge, 0.2) - 0.1 * dip(pond, 0.3),
-      ground + (env.water - 0.45 - ground) * basin,
-    );
+    const height = ground - 0.12 * channel * cliff;
     return Math.round((height - baseGroundHeight(x, z, env)) * 100) / 100;
   });
-  // Bare stone up the wall and along the seep, moss on the ledges and
-  // carpeting the bank.
-  return sculpt({ ...env, terrain, springs: [springAt(env, seep[0], 0.5)] }, [
+  // Moss over the shelf, bare stone up the wall and down the cliff, and
+  // gravel under the water.
+  const paint = terrain.heights.map((_, i): GroundMaterial => {
+    const { x, z } = terrainPoint(i, { ...env, terrain });
+    const ground = groundHeight(x, z, { ...env, terrain });
+    if (ground < env.water) return "sand";
+    if (ground < env.water + 0.25 || z < -2.1) return "stone";
+    return "moss";
+  });
+  return sculpt(
+    {
+      ...env,
+      terrain: { ...terrain, paint },
+      springs: [springAt(env, seep[0], 0.5)],
+    },
     [
-      "moss",
-      1.3,
       [
-        [-2.4, 0.3],
-        [0.6, 0.5],
-        [2.4, 1.2],
+        "moss",
+        0.5,
+        [
+          [-2.8, -2.4],
+          [0.4, -2.5],
+        ],
       ],
-    ],
-    [
-      "moss",
-      0.9,
       [
-        [0.4, 1.9],
-        [2.6, 2.0],
+        "moss",
+        0.5,
+        [
+          [2.0, -2.3],
+          [3.0, -2.2],
+        ],
       ],
+      ["stone", 0.4, seep.slice(0, -1)],
     ],
-    [
-      "moss",
-      0.9,
-      [
-        [-2.6, -0.9],
-        [2.6, -0.6],
-      ],
-    ],
-    [
-      "stone",
-      0.7,
-      [
-        [-3, -1.75],
-        [3, -1.6],
-      ],
-    ],
-    [
-      "moss",
-      0.5,
-      [
-        [-2.8, -2.25],
-        [0.6, -2.3],
-      ],
-    ],
-    [
-      "moss",
-      0.55,
-      [
-        [2.0, -1.35],
-        [2.9, -1.1],
-      ],
-    ],
-    ["moss", 0.5, [[-0.2, -1.5]]],
-    ["stone", 0.45, seep],
-    ["stone", 1.1, [[pool.x, pool.z]]],
-  ]);
+  );
 }
 
-/** A long tank where a creek cuts diagonally from a stony slope at the back
- * to a meadow at the front, widening into a pool for the trout. */
+/** A long tank where a creek cuts down from a stony slope at the back
+ * into a deep, clear pool that fills the front of the tank. */
 function creekBed() {
   const creek: [number, number][] = [
-    [-4.35, -1.45],
-    [-3.6, -1.05],
-    [-2.6, -0.4],
-    [-1.5, -0.05],
-    [-0.4, 0.15],
-    [0.6, 0.35],
-    [1.5, 0.6],
-    [2.5, 0.95],
-    [3.4, 1.4],
-    [4.7, 1.8],
+    [-4.35, -1.6],
+    [-3.4, -1.0],
+    [-2.4, -0.45],
+    [-1.4, -0.05],
+    [-0.6, 0.35],
   ];
-  const pool = { x: 1.5, z: 0.55 };
-  const upstream = creek.slice(0, 7);
-  const upstreamLength = pathLength(upstream);
+  const creekLength = pathLength(creek);
+  const pool = { x: 1.6, z: 1.9, rx: 3.0, rz: 1.9 };
   const env: Environment = {
     ...defaultEnvironment,
     width: 9,
-    depth: 4.2,
-    water: 0.55,
+    depth: 4.5,
+    water: 0.95,
     light: "golden",
     warmth: 0.3,
   };
@@ -1027,25 +973,24 @@ function creekBed() {
     return t * t * (3 - 2 * t);
   };
   const terrain = newTerrain(env, (x, z) => {
-    const slope = 0.4 * smooth((-z - 0.3) / 1.6);
+    const slope = 0.45 * smooth((-z - 0.4) / 1.6);
     const knoll = 0.12 * smooth(1 - Math.hypot(x - 0.4, z + 1.6) / 1.3);
     const meadow = 0.1 * smooth(1 - Math.hypot(x + 3, z - 1.3) / 1.4);
-    const ground = 0.86 + slope + knoll + meadow;
-    // Above the pool the creek bed falls gently, then over a ledge
-    // halfway down. Below it the creek is part of the pool.
+    const ground = 1.2 + slope + knoll + meadow;
+    // The creek bed falls gently, then over a ledge halfway down.
     const { distance, along } = nearestOnPath(x, z, creek);
-    const f = along / upstreamLength;
+    const f = along / creekLength;
     const bed =
-      f < 1
-        ? env.water -
-          0.05 +
-          0.55 * (1 - 0.3 * f - 0.7 * smooth((f - 0.45) / 0.035))
-        : env.water - 0.2;
+      env.water + 0.6 * (1 - 0.3 * f - 0.7 * smooth((f - 0.45) / 0.035));
     const channel = 1 - smooth((distance - 0.25) / 0.5);
-    const basin = 1 - smooth((Math.hypot(x - pool.x, z - pool.z) - 0.6) / 0.6);
+    // The pool shelves gently from its banks, then drops away to a deep
+    // middle.
+    const r = Math.hypot((x - pool.x) / pool.rx, (z - pool.z) / pool.rz);
+    const basin = 1 - smooth((r - 0.8) / 0.25);
+    const floor = env.water - 0.15 - 0.7 * (1 - smooth((r - 0.5) / 0.3));
     const height = Math.min(
       ground + (Math.min(bed, ground - 0.1) - ground) * channel,
-      ground + (env.water - 0.45 - ground) * basin,
+      ground + (floor - ground) * basin,
     );
     return Math.round((height - baseGroundHeight(x, z, env)) * 100) / 100;
   });
@@ -1053,10 +998,8 @@ function creekBed() {
   // in patches up the slope.
   const meadow: [number, number][] = [
     [-4.2, 1.3],
-    [-1.8, 1.2],
-    [-0.4, 1.4],
-    [0.6, 1.9],
-    [2.1, 1.95],
+    [-2.6, 1.4],
+    [-1.4, 1.9],
   ];
   const creekside: [number, number][] = [
     [-4.2, 0.4],
@@ -1064,9 +1007,9 @@ function creekBed() {
     [-1.4, 0.7],
   ];
   const farBank: [number, number][] = [
-    [2.0, -0.5],
-    [3.4, -0.2],
-    [4.3, 0.7],
+    [0.2, -0.95],
+    [2.0, -0.95],
+    [4.3, -0.7],
   ];
   return sculpt({ ...env, terrain, springs: [springAt(env, creek[0], 1)] }, [
     ["moss", 1.2, meadow],
@@ -1105,7 +1048,14 @@ function creekBed() {
       ],
     ],
     ["stone", 0.75, creek],
-    ["stone", 1.3, [[pool.x, pool.z]]],
+    [
+      "stone",
+      1.5,
+      [
+        [-0.3, 1.0],
+        [3.7, 1.0],
+      ],
+    ],
     [
       "stone",
       0.6,
