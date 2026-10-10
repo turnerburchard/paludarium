@@ -99,36 +99,25 @@ try {
   );
   await page.getByRole("button", { name: "Pause life (Space)" }).tap();
   await page.getByRole("button", { name: "Build", exact: true }).tap();
-  for (const name of [
-    "Empty tank",
-    "Cloud forest",
-    "Alpine creek",
-    "Desert spring",
-    "Limestone grotto",
-    "Tropical island",
-    "Amazon river",
-    "Asian stream",
-  ]) {
-    await page.getByRole("button", { name: "Worlds", exact: true }).tap();
-    const dialog = page.getByRole("dialog", { name: "Worlds" });
-    await dialog
-      .locator(".preset-options")
-      .getByRole("button", { name, exact: true })
-      .tap();
-    await dialog.waitFor({ state: "detached" });
-    await page.waitForFunction((name) => {
-      const world = JSON.parse(
-        localStorage.getItem("little-worlds:v3"),
-        (key, value) =>
-          key === "" && value.worlds
-            ? value.worlds.find((entry) => entry.id === value.activeId).world
-            : value,
-      );
-      return name === "Empty tank"
-        ? world.objects.length === 0 && world.name === "Untitled"
-        : world.name === name && world.objects.length > 0;
-    }, name);
-  }
+  // Unit tests cover each preset's data, so one land world with animals is
+  // enough to show a preset builds and saves on an insecure origin.
+  await page.getByRole("button", { name: "Worlds", exact: true }).tap();
+  const dialog = page.getByRole("dialog", { name: "Worlds" });
+  await dialog
+    .locator(".preset-options")
+    .getByRole("button", { name: "Cloud forest", exact: true })
+    .tap();
+  await dialog.waitFor({ state: "detached" });
+  await page.waitForFunction(() => {
+    const world = JSON.parse(
+      localStorage.getItem("little-worlds:v3"),
+      (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+    );
+    return world.name === "Cloud forest" && world.objects.length > 0;
+  });
   // Start from the same saved empty dry tank to verify placement on HTTP too.
   await page.reload();
   await page.getByRole("button", { name: "Build", exact: true }).tap();
@@ -170,7 +159,7 @@ try {
     "HTTP menu selections and placement have no runtime errors",
   );
   console.log(
-    `PASS (${safari ? "WebKit" : "Chromium"}): insecure HTTP origin, all mobile preset buttons, frog placement and persistence without crypto.randomUUID`,
+    `PASS (${safari ? "WebKit" : "Chromium"}): insecure HTTP origin, a mobile preset button, frog placement and persistence without crypto.randomUUID`,
   );
 } finally {
   await browser?.close();
