@@ -28,7 +28,7 @@ export function CreatureList({
               aria-pressed={animal.id === selectedId}
             >
               <span>
-                {assets[object.kind].name}
+                {object.name ?? assets[object.kind].name}
                 {animalLife(object).age < MATURITY_AGE && " · Juvenile"}
               </span>
               <small>{activityLabels[animal.activity]}</small>

@@ -5,6 +5,7 @@ import {
   loadLibrary,
   openLibraryWorld,
   parseLibrary,
+  renameLibraryWorld,
   saveLibrary,
   STORAGE_KEY,
   updateLibrary,
@@ -95,6 +96,29 @@ describe("saved world collection", () => {
     expect(activeWorld(parseLibrary(JSON.stringify(updated))).name).toBe(
       "My aquarium",
     );
+  });
+  it("renames a world that isn't open and keeps animal names", () => {
+    const open = makePreset("amazon");
+    const frog = { ...open.objects[0], name: "Pip" };
+    const original = createLibrary({
+      ...open,
+      objects: open.objects.map((o) => (o.id === frog.id ? frog : o)),
+    });
+    const library = {
+      ...original,
+      worlds: [
+        ...original.worlds,
+        { id: "other", world: makePreset("tropical") },
+      ],
+    };
+    const reloaded = parseLibrary(
+      JSON.stringify(renameLibraryWorld(library, "other", "Back shelf")),
+    );
+    expect(reloaded.worlds[1].world.name).toBe("Back shelf");
+    expect(activeWorld(reloaded).name).toBe(open.name);
+    expect(
+      activeWorld(reloaded).objects.find((o) => o.id === frog.id)?.name,
+    ).toBe("Pip");
   });
   it("rejects an invalid active id, duplicate ids, and invalid worlds", () => {
     const library = createLibrary(makePreset("empty"));

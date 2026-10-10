@@ -43,6 +43,7 @@ import {
   activeWorld,
   loadLibrary,
   openLibraryWorld,
+  renameLibraryWorld,
   saveLibrary,
   updateLibrary,
   type WorldLibrary,
@@ -411,6 +412,24 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   function rename(name: string) {
     if (name !== world.name) commit({ ...world, name });
   }
+  function renameWorld(id: string, name: string): boolean {
+    if (id === library.activeId && !isShared) {
+      rename(name);
+      return true;
+    }
+    const next = renameLibraryWorld(
+      updateLibrary(library, history.present),
+      id,
+      name,
+    );
+    if (!saveLibrary(next)) {
+      setSaved(false);
+      setSaveError("Your worlds could not be saved.");
+      return false;
+    }
+    setLibrary(next);
+    return true;
+  }
   function switchLibrary(next: WorldLibrary): boolean {
     if (!saveLibrary(next)) {
       setSaved(false);
@@ -495,6 +514,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     startPreset,
     openWorld,
     deleteWorld,
+    renameWorld,
     adoptSharedWorld: () => (shared ? createWorld(shared) : false),
     savedWorld: world,
     previewEnvironment: (patch: Partial<Environment>) =>

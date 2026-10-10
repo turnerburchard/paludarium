@@ -42,7 +42,8 @@ export function Inspector({
     <aside className="inspector" aria-label="Selected object">
       <div className="inspector-heading">
         <div>
-          <h2>{asset.name}</h2>
+          <h2>{object.name ?? asset.name}</h2>
+          {object.name && <p className="animal-species">{asset.name}</p>}
         </div>
         <IconButton label="Deselect object" onClick={() => editor.select(null)}>
           <X size={17} />
@@ -78,6 +79,23 @@ export function Inspector({
       )}
       {!view && life && (
         <div className="animal-care">
+          <label className="animal-name">
+            <span>Name</span>
+            <input
+              key={object.name}
+              defaultValue={object.name}
+              placeholder={`Name this ${asset.name.toLowerCase()}`}
+              maxLength={40}
+              onBlur={(e) => {
+                const name = e.target.value.trim() || undefined;
+                if (name !== object.name)
+                  editor.patchObject(object.id, { name });
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+              }}
+            />
+          </label>
           <p>
             {life.age < MATURITY_AGE
               ? "Juvenile · Growing"

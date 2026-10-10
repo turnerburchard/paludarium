@@ -21,7 +21,7 @@ export function WatchCard({
     <aside className="inspector watch-card" aria-label="Watching">
       <div className="inspector-heading">
         <div>
-          <h2>{asset.name}</h2>
+          <h2>{object.name ?? asset.name}</h2>
         </div>
         <IconButton label="Stop watching" onClick={onStop}>
           <X size={17} />
