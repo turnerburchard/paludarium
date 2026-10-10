@@ -8,7 +8,7 @@ import {
 } from "../src/simulation/fish";
 import { randomFromSeed } from "../src/model/random";
 import { makePreset } from "../src/model/presets";
-import { placementProblem } from "../src/model/terrain";
+import { placementProblem } from "../src/model/water";
 import { createWorldEcosystem } from "../src/simulation/worldHabitat";
 import { SwimSpace } from "../src/simulation/swimSpace";
 import { assets } from "../src/assets";
@@ -249,7 +249,7 @@ function fishIn(world: World, engine: ReturnType<typeof createWorldEcosystem>) {
 }
 
 describe("fish in a real tank", () => {
-  it.each(["tropical", "amazon", "asian"] as const)(
+  it.each(["tropical", "amazon", "grotto"] as const)(
     "stay in the %s water and inside the glass, and keep exploring",
     (preset) => {
       const world = makePreset(preset);
@@ -417,7 +417,6 @@ describe("fish in a real tank", () => {
 
   it.each([
     "amazon",
-    "asian",
     "tropical",
     "mountain",
     "grotto",

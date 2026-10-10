@@ -442,6 +442,7 @@ describe("insect colonies", () => {
     for (const patch of food) expect(patch.amount).toBe(patch.capacity);
   });
 
+  // An hour of a whole planted tank takes longer than the usual limit.
   it("can keep a frog fed without help in a planted tank", () => {
     // Fish are costly to steer for hours and play no part in this.
     const world = makePreset("mountain");
@@ -453,7 +454,7 @@ describe("insect colonies", () => {
       .animals.filter((animal) => animal.speciesId === "canyon-tree-frog");
     expect(frogs).toHaveLength(1);
     expect(frogs[0].needs.hunger).toBeLessThan(0.8);
-  });
+  }, 40_000);
 });
 
 describe("preset habitats", () => {
@@ -478,6 +479,32 @@ describe("preset habitats", () => {
         expect(shore, `${preset} ${animal.speciesId}`).not.toHaveLength(0);
       }
     }
+  });
+
+  it("let frogs cross the alpine creek", () => {
+    const engine = createWorldEcosystem(makePreset("mountain"));
+    const frog = engine
+      .snapshot()
+      .animals.find((animal) => animal.speciesId === "canyon-tree-frog")!;
+    const routes = engine.graph.paths(
+      frog.nodeId,
+      frogProfile("canyon-tree-frog"),
+    );
+    const groundNear = (x: number, z: number) =>
+      [...engine.graph.nodes.values()]
+        .filter((node) => node.surface === "ground")
+        .reduce((best, node) =>
+          Math.hypot(node.position.x - x, node.position.z - z) <
+          Math.hypot(best.position.x - x, best.position.z - z)
+            ? node
+            : best,
+        );
+    // The meadow in front of the creek and the slope behind it.
+    for (const [x, z] of [
+      [-3, 1.3],
+      [3, -1.2],
+    ])
+      expect(routes.has(groundNear(x, z).id), `${x},${z}`).toBe(true);
   });
 });
 

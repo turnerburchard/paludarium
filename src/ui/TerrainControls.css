@@ -9,17 +9,17 @@
 }
 .terrain-tools button,
 .reset-terrain {
-  border: 1px solid #455f3c;
-  background: #24392c;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
   border-radius: 7px;
   padding: 10px 6px;
   min-height: 40px;
   font-size: var(--text-body);
 }
 .terrain-tools button.active {
-  border-color: #93ac73;
-  background: #354b31;
-  color: #e3edcc;
+  border-color: var(--accent);
+  background: var(--hover);
+  color: var(--text);
 }
 .reset-terrain {
   width: 100%;

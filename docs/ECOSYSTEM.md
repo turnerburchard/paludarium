@@ -30,6 +30,14 @@ Each simulation step a colony below capacity grows logistically: `growth × (ins
 
 `simulation/fish.ts` is a small, separate school simulation. Each fish keeps a slightly different pace and a slowly drifting turning rate, lines up with and drifts toward fish within about a scene unit, keeps a little personal space, and looks ahead so it turns away from the shore before reaching it. "Water" is exactly where a fish may be placed (`placementProblem`), so swimming and placement can't disagree. Fish keep their positions through ordinary edits unless they were moved or their spot dried out. Their breeding and mortality come from the shared life-cycle rules, without individual hunger or fatigue simulation.
 
+## Springs, pools and streams
+
+Springs are the only running water. Each is a spot and a flow saved on the environment, with its spot given in fractions of the tank's width and depth so it stays on the same terrain when the tank is resized. `model/water.ts` works out where the water goes on a grid of 0.1-unit cells. A priority flood from the tank's still water (or, in a dry tank, from the lowest point, where water soaks away) gives every cell the level it would fill to and the way out of its hollow. Each spring's water runs down the steepest way from there. A hollow it reaches fills to its rim as a pool, and the water spills on from the rim. Streams are the runs between pools, rounded off the grid and widened where springs' water joins. Water that comes alongside another spring's stream runs into it. Hollows no spring reaches stay dry.
+
+`waterLevel(x, z, env)` is the surface of the still water a spot is under or beside: a pool's, or the tank's water level. Placement, swimming, depth, plant roots and floating objects all read it, the same way `groundHeight` is the one source for the ground. A spring's water only ever lies where the terrain holds it, so nothing is drawn floating above a bed.
+
+Stream beds are wet but never submerged, so animals wade in them and soakers can use them instead of a shoreline. Fish swim in the tank's water and in pools deep enough for them. Plants measure how wet their roots are from the nearest water, a stream or pool within half a unit, or the tank's water. The renderer draws each course as a ribbon draped on its bed whose ripples run faster down steep drops, with white water down falls and a short way past their foot. Pools are drawn as surfaces that thin out toward their shore.
+
 ## Code boundaries
 
 - `simulation/types.ts`: engine contracts; no rendering types.
@@ -38,7 +46,7 @@ Each simulation step a colony below capacity grows logistically: `growth × (ins
 - Frog behavior profiles (nocturnal, climbs, speed) live on each frog's asset definition in `src/assets/animals/frogs.ts`.
 - `assets/collisionShape.ts`: cached baked asset triangles, shared by land and fish geometry adapters; temporary models are disposed.
 - `simulation/landSurfaces.ts`: exposed hardscape routes and solid-interior checks.
-- `simulation/worldHabitat.ts`: adapter from editor terrain/objects to connected ground, glass, hardscape, stem/leaf and den routes. Only shallow shoreline surfaces admit soaking.
+- `simulation/worldHabitat.ts`: adapter from editor terrain/objects to connected ground, glass, hardscape, stem/leaf and den routes. Only shallow shoreline and stream beds admit soaking.
 - `simulation/useEcosystem.ts`: React lifecycle and low-frequency HUD snapshots.
 - `simulation/lifeCycle.ts`: pure shared planting/space budgets and saved animal age, condition, reproduction and juvenile scale. Randomness is injected for births.
 - `scene/EcosystemLife.tsx`: advances the engine once per frame, renders feeding patches.
@@ -52,7 +60,7 @@ The renderer does not decide where food is, when an animal sleeps, or how needs 
 
 No wall-clock catch-up or equilibrium jump exists. Hidden tabs and Pause freeze simulation; editing placement also pauses it. Frame gaps above 250 ms are discarded rather than replayed. Selecting a frog holds its position/needs while inspecting it.
 
-World JSON remains version 1 with optional validated `life` data on animals. Older worlds still load, with deterministic adult starting ages and lifespans derived from their seeds. Live activity, food, short-term needs and field notes restart on reload. Normal edits retain needs and available food, remapping animals to the new surface graph. Age, condition and offspring survive reload, export and sharing. Shared worlds evolve in memory without overwriting the recipient's own save.
+World JSON remains version 1 with optional validated `life` data on animals. Worlds without `life` data load with deterministic adult starting ages and lifespans derived from their seeds. Saves from before springs joined the environment are not migrated. Live activity, food, short-term needs and field notes restart on reload. Normal edits retain needs and available food, remapping animals to the new surface graph. Age, condition and offspring survive reload, export and sharing. Shared worlds evolve in memory without overwriting the recipient's own save.
 
 ## Forgiving population rules
 

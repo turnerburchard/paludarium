@@ -7,7 +7,7 @@ import { chromium } from "playwright";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const url = "http://127.0.0.1:5197";
-const storageKey = "little-worlds:v3";
+const storageKey = "little-worlds:v4";
 const started = Date.now();
 const original = {
   version: 1,
@@ -17,6 +17,7 @@ const original = {
     depth: 4.5,
     substrate: 0.25,
     water: 0.44,
+    springs: [],
     light: "day",
     warmth: 0.45,
     brightness: 1,
@@ -36,6 +37,11 @@ const server = spawn(
   ],
   { cwd: root, stdio: "ignore" },
 );
+// A taken port would leave these checks quietly testing another app.
+server.on("exit", (code) => {
+  if (code && !server.killed)
+    throw new Error("Vite exited early. Is its port already in use?");
+});
 const browsers = [];
 try {
   for (let i = 0; i < 50; i++) {
@@ -91,7 +97,7 @@ try {
       .click();
     await page.getByRole("button", { name: "Pause life (Space)" }).click();
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
-    assert.equal(await page.locator(".preset-options button").count(), 8);
+    assert.equal(await page.locator(".preset-options button").count(), 7);
     await page
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -119,10 +125,10 @@ try {
     );
     await page
       .locator(".preset-options")
-      .getByRole("button", { name: "Amazon river", exact: true })
+      .getByRole("button", { name: "Empty tank", exact: true })
       .click();
     await page.waitForFunction(
-      () => document.title === "paludarium · Amazon river",
+      () => document.title === "paludarium · Untitled",
     );
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     await page.getByRole("button", { name: "My creek", exact: true }).click();

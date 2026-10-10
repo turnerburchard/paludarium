@@ -9,6 +9,7 @@ import {
 import type { HabitatObject, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
 import { groundHeight } from "../model/terrain";
+import { waterLevel } from "../model/water";
 import type { HabitatNode, Vec3 } from "./types";
 
 interface Solid {
@@ -154,8 +155,8 @@ export class LandSurfaces {
           position: { x: point.x, y: point.y, z: point.z },
           normal: { x: 0, y: 1, z: 0 },
           surface: stone ? "stone" : "bark",
-          wet: env.water > 0 && point.y <= env.water + 0.065,
-          submerged: env.water - point.y > 0.025,
+          wet: point.y <= waterLevel(point.x, point.z, env) + 0.065,
+          submerged: waterLevel(point.x, point.z, env) - point.y > 0.025,
           shelter: solid.object.moss ? 0.5 : 0.2,
           perchHeight: point.y - groundHeight(point.x, point.z, env),
           supportId: solid.object.id,
@@ -276,8 +277,9 @@ export class LandSurfaces {
    * ground. */
   clearRoute(from: Vec3, to: Vec3) {
     const env = this.world.environment;
-    const floor =
-      Math.min(from.y, to.y) < env.water - 0.025 ? 0 : env.water - 0.025;
+    const under = (point: Vec3) =>
+      point.y < waterLevel(point.x, point.z, env) - 0.025;
+    const underwater = under(from) || under(to);
     const length = Math.hypot(to.x - from.x, to.y - from.y, to.z - from.z);
     const steps = Math.max(2, Math.ceil(length / 0.04));
     for (let i = 1; i < steps; i++) {
@@ -287,6 +289,7 @@ export class LandSurfaces {
         y: from.y + (to.y - from.y) * t,
         z: from.z + (to.z - from.z) * t,
       };
+      const floor = underwater ? 0 : waterLevel(point.x, point.z, env) - 0.025;
       if (
         point.y < Math.max(floor, groundHeight(point.x, point.z, env) - 0.04) ||
         this.inside(point)

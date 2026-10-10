@@ -5,7 +5,7 @@ import { chromium } from "playwright";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const url = "http://127.0.0.1:5198";
-const storageKey = "little-worlds:v3";
+const storageKey = "little-worlds:v4";
 const server = spawn(
   process.execPath,
   [
@@ -19,6 +19,11 @@ const server = spawn(
   ],
   { cwd: root, stdio: "ignore" },
 );
+// A taken port would leave these checks quietly testing another app.
+server.on("exit", (code) => {
+  if (code && !server.killed)
+    throw new Error("Vite exited early. Is its port already in use?");
+});
 
 function habitat(kind, water) {
   const object = (kind, id, x, z) => ({
@@ -38,6 +43,7 @@ function habitat(kind, water) {
       depth: 4.5,
       substrate: 0.25,
       water,
+      springs: [],
       light: "day",
       warmth: 0.45,
       brightness: 1,
@@ -306,9 +312,8 @@ try {
     .getByRole("button", { name: "Close dialog" })
     .click();
   await deathPage.getByRole("button", { name: "About Paludarium" }).click();
-  await deathPage.getByText("Follow a creature", { exact: true }).click();
-  await deathPage.getByRole("button", { name: /Red-eyed tree frog/ }).click();
-  await deathPage.getByRole("button", { name: "Watch up close" }).click();
+  // With one animal left, following a creature watches that frog.
+  await deathPage.getByRole("button", { name: "Follow a creature" }).click();
   await deathPage
     .getByRole("complementary", { name: "Watching", exact: true })
     .waitFor();
