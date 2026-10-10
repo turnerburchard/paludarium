@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Plus, ListFilter } from "lucide-react";
 import {
   catalog,
@@ -10,32 +10,13 @@ import {
   type Group,
 } from "../assets";
 import type { Editor } from "../editor/useEditor";
-import { loadThumbnails, type Thumbnails } from "../scene/thumbnails";
+import { thumbnails } from "../scene/thumbnails";
 import { hasDryGround } from "../model/water";
 import { prebuilts } from "../model/prebuilts";
 import { LibraryFilter, type Place } from "./LibraryFilter";
 const categories: Category[] = ["Plants", "Hardscape", "Animals"];
-export function Library({
-  editor,
-  hidden,
-  sheetOpen,
-}: {
-  editor: Editor;
-  hidden: boolean;
-  sheetOpen: boolean;
-}) {
-  const [mobile, setMobile] = useState(
-    () => matchMedia("(max-width: 760px)").matches,
-  );
-  useEffect(() => {
-    const media = matchMedia("(max-width: 760px)");
-    const update = () => setMobile(media.matches);
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
-  const visible = !hidden && (!mobile || sheetOpen);
+export function Library({ editor }: { editor: Editor }) {
   const [category, setCategory] = useState<Category>("Plants");
-  const [thumbnails, setThumbnails] = useState<Thumbnails>({});
   const dryGround = hasDryGround(editor.world.environment);
   const available = catalog.filter(
     (asset) => dryGround || (asset.habitat !== "land" && !asset.soil),
@@ -78,34 +59,6 @@ export function Library({
     setPlaces([]);
     setChosenGroups([]);
   };
-  const grid = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!visible) return;
-    const controller = new AbortController();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const keys = entries
-          .filter((entry) => entry.isIntersecting)
-          .map((entry) => {
-            observer.unobserve(entry.target);
-            return entry.target.getAttribute("data-kind")!;
-          });
-        if (keys.length)
-          void loadThumbnails(keys, controller.signal).then((loaded) => {
-            if (!controller.signal.aborted)
-              setThumbnails((current) => ({ ...current, ...loaded }));
-          });
-      },
-      { rootMargin: "80px" },
-    );
-    grid.current
-      ?.querySelectorAll("[data-kind]")
-      .forEach((card) => observer.observe(card));
-    return () => {
-      controller.abort();
-      observer.disconnect();
-    };
-  }, [activeCategory, dryGround, visible, places, chosenGroups]);
   return (
     <>
       <div className="category-tabs" aria-label="Object categories">
@@ -151,7 +104,7 @@ export function Library({
           <button onClick={clearFilters}>Clear filters</button>
         </p>
       )}
-      <div className="asset-grid" ref={grid}>
+      <div className="asset-grid">
         {shownPrebuilts.length > 0 && (
           <>
             <h3 className="asset-heading">Prebuilt</h3>
@@ -161,7 +114,6 @@ export function Library({
                 id={`prebuilt:${prebuilt.id}`}
                 name={prebuilt.name}
                 description={prebuilt.description}
-                thumbnails={thumbnails}
                 chosen={
                   editor.tool.type === "prebuilt" &&
                   editor.tool.prebuilt.id === prebuilt.id
@@ -178,7 +130,6 @@ export function Library({
             id={asset.kind}
             name={asset.name}
             description={asset.description}
-            thumbnails={thumbnails}
             chosen={
               editor.tool.type === "place" && editor.tool.kind === asset.kind
             }
@@ -195,14 +146,12 @@ function Card({
   id,
   name,
   description,
-  thumbnails,
   chosen,
   onChoose,
 }: {
   id: string;
   name: string;
   description: string;
-  thumbnails: Thumbnails;
   chosen: boolean;
   onChoose: () => void;
 }) {
@@ -216,7 +165,14 @@ function Card({
     >
       <span className="asset-picture">
         {thumbnails[id] && (
-          <img src={thumbnails[id]} alt="" draggable={false} />
+          <img
+            src={thumbnails[id]}
+            alt=""
+            draggable={false}
+            loading="lazy"
+            width={160}
+            height={130}
+          />
         )}
         <span className="asset-add">
           <Plus size={13} />
