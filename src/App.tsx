@@ -33,9 +33,6 @@ export default function App({
   const [view, setView] = useState(true);
   const editor = useEditor(view, sharedWorld);
   const { world, selected, tool } = editor;
-  useEffect(() => {
-    document.title = `paludarium · ${world.name}`;
-  }, [world.name]);
   // Life follows committed edits, not intermediate brush or slider previews.
   const ecosystem = useEcosystem(
     editor.savedWorld,
