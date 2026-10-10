@@ -23,6 +23,7 @@ import {
   fitObject,
   baseGroundHeight,
   groundHeight,
+  onlyAppearanceDiffers,
 } from "../model/terrain";
 import {
   fitTerrain,
@@ -564,6 +565,8 @@ export function withEnvironment(
   patch: Partial<Environment>,
 ): World {
   const environment = { ...world.environment, ...patch };
+  if (onlyAppearanceDiffers(world.environment, environment))
+    return { ...world, environment };
   environment.water = Math.min(environment.water, waterCeiling(environment));
   if (environment.terrain)
     environment.terrain = fitTerrain(environment.terrain, environment);
