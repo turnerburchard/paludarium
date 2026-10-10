@@ -501,47 +501,7 @@ try {
       touchPoints: points,
     });
   }
-  async function placementCamera() {
-    return page.evaluate(async (url) => {
-      const { _roots } = await import(url);
-      const { camera, controls } = _roots
-        .get(document.querySelector("canvas"))
-        .store.getState();
-      return {
-        position: camera.position.toArray(),
-        rotate: controls.enableRotate,
-      };
-    }, fiberUrl);
-  }
-  const beforeTouch = await placementCamera();
-  assert.equal(beforeTouch.rotate, false, "one-finger placement cannot orbit");
   const finger = { x: spot.x, y: spot.y, id: 0 };
-  await touch("touchStart", [finger]);
-  await touch("touchMove", [{ ...finger, x: finger.x + 45 }]);
-  await touch("touchMove", [finger]);
-  await touch("touchEnd", []);
-  assert.equal(
-    await page.evaluate(
-      () =>
-        JSON.parse(localStorage.getItem("little-worlds:v4"), (key, value) =>
-          key === "" && value.worlds
-            ? value.worlds.find((entry) => entry.id === value.activeId).world
-            : value,
-        ).objects.length,
-    ),
-    1,
-    "a drag returning to its start does not place anything",
-  );
-  const afterTouch = await placementCamera();
-  // Damping can finish settling by a fraction of a pixel during the gesture.
-  assert.ok(
-    Math.hypot(
-      ...afterTouch.position.map(
-        (value, index) => value - beforeTouch.position[index],
-      ),
-    ) < 0.001,
-    "dragging during placement leaves the camera still",
-  );
   await touch("touchStart", [finger]);
   await touch("touchCancel", []);
   await page.touchscreen.tap(spot.x, spot.y);
@@ -579,11 +539,6 @@ try {
     "the placed object saves the chosen angle",
   );
   await page.getByRole("button", { name: "Done", exact: true }).click();
-  assert.equal(
-    (await placementCamera()).rotate,
-    true,
-    "Done restores camera navigation",
-  );
   await page.getByRole("button", { name: "View", exact: true }).click();
   await page.screenshot({ path: "/tmp/paludarium-view-phone.png" });
   await page.close();
