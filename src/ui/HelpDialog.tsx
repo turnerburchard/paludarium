@@ -16,9 +16,9 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
           <Move size={16} aria-hidden="true" /> Look around
         </dt>
         <dd>
-          Drag with one finger or the mouse to rotate. Pinch or scroll to zoom.
-          Drag with two fingers to move across the tank, even while placing
-          objects.
+          Drag with one finger or the mouse to rotate, even while placing
+          objects. Pinch or scroll to zoom. Drag with two fingers to move across
+          the tank.
         </dd>
         <dt>
           <Hammer size={16} aria-hidden="true" /> Build

@@ -415,7 +415,7 @@ function Scene({
         enablePan
         screenSpacePanning={false}
         touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
-        enableRotate={!placing && tool.type !== "terrain"}
+        enableRotate={tool.type !== "terrain"}
         enableDamping
         dampingFactor={0.09}
         autoRotate={view && !editor.paused && !followCamera.active}
