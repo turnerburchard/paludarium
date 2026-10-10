@@ -260,7 +260,7 @@ describe("live ecosystem behavior", () => {
     expect(remaining).toBe(0);
     const fullnessGain = engine
       .snapshot()
-      .animals.reduce((sum, a) => sum + (0.8 + 0.002 * 10 - a.needs.hunger), 0);
+      .animals.reduce((sum, a) => sum + (0.8 + 0.001 * 10 - a.needs.hunger), 0);
     expect(fullnessGain).toBeCloseTo(0.2, 6);
   });
   it("walks past a nearly empty colony to one worth a meal", () => {
@@ -694,7 +694,7 @@ describe("plant perches and species movement", () => {
       ),
     ).toBe(true);
   });
-  it("limits mossy frogs to low foliage and reserves leaf-to-leaf leaps for tree frogs", () => {
+  it("limits mossy frogs to low foliage and reserves leaf-to-leaf leaps for frogs that hop", () => {
     const graph = new HabitatGraph([
       node("a", 0, ["low"]),
       node("low", 0.1, ["a", "high", "other"], {
@@ -706,9 +706,11 @@ describe("plant perches and species movement", () => {
     ]);
     expect(graph.allowed("low", frogProfile("mossy-frog"))).toBe(true);
     expect(graph.allowed("high", frogProfile("mossy-frog"))).toBe(false);
-    expect(graph.paths("a", frogProfile("mossy-frog")).has("other")).toBe(
-      false,
-    );
+    const crawling = {
+      ...frogProfile("mossy-frog"),
+      movement: "crawl" as const,
+    };
+    expect(graph.paths("a", crawling).has("other")).toBe(false);
     expect(graph.paths("a", frogProfile("tree-frog")).has("other")).toBe(true);
   });
   it("poses hops and crawls differently without redirecting or teleporting mid-edge", () => {
@@ -716,7 +718,7 @@ describe("plant perches and species movement", () => {
       node("a", 0, ["b"]),
       node("b", 0.32, ["a"]),
     ]);
-    const engines = (["dart-frog", "mossy-frog"] as const).map(
+    const engines = (["dart-frog", "western-toad"] as const).map(
       (kind) =>
         new Ecosystem(
           graph,

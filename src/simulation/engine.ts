@@ -23,13 +23,13 @@ const STEP = 0.1;
 export const NORMAL_SPEED = 6;
 const DAY_LENGTH = 1800;
 /** Hunger gained per simulated second, and removed by eating one insect portion. */
-const HUNGER_RATE = 0.002;
+const HUNGER_RATE = 0.001;
 const HUNGER_PER_PORTION = 0.2;
 /** Energy spent per scene unit walked, on top of what any waking second costs. */
 const WALK_ENERGY = 0.0275;
 /** Hydration lost per simulated second in the open. */
 const HYDRATION_RATE = 0.0014;
-/** Colony growth per simulated second. A full-cover colony feeds about one frog. */
+/** Colony growth per simulated second. A full-cover colony feeds about two frogs. */
 const INSECT_GROWTH = 0.01;
 /** Newcomers let an emptied colony slowly recover instead of dying out. */
 const INSECT_ARRIVALS = 0.05;
@@ -74,6 +74,10 @@ interface Agent {
   swimmer?: Swimmer;
   /** Whether the fish was keeping with its school when it chose its route. */
   schooling?: boolean;
+  /** Sitting about with nothing pressing, so a need can end the sit. */
+  idle?: boolean;
+  /** Since when it has waited for another animal to get out of its way. */
+  waitingSince?: number;
   /** Where the body was drawn for the current and previous steps. */
   pose?: BodyPose;
   previousPose?: BodyPose;
@@ -433,6 +437,11 @@ export class Ecosystem {
         STEP *
           (0.0007 + (state.moving ? WALK_ENERGY * agent.profile.speed : 0)),
     );
+    // A long idle sit ends early once hunger or thirst presses.
+    if (agent.idle && (needs.hunger > 0.7 || needs.hydration < 0.35)) {
+      agent.idle = false;
+      agent.reconsiderAt = Math.min(agent.reconsiderAt, this.elapsed);
+    }
     // Decide at graph nodes, never teleport to a new path while halfway along an edge.
     if (!state.moving && this.elapsed >= agent.reconsiderAt) this.decide(agent);
     if (state.moving) {
@@ -471,13 +480,23 @@ export class Ecosystem {
     const navigation = agent.routes.navigation;
     const lengths = navigation.distances;
     // Frogs don't move to a spot another frog holds or is heading for.
-    const taken = new Set(
+    const held = new Set(
       [...this.agents.values()]
         .filter((other) => other !== agent)
         .map((other) => other.path.at(-1) ?? other.state.nodeId),
     );
     const reachable = [...lengths.keys()].filter(
-      (id) => id === state.nodeId || !taken.has(id),
+      (id) => id === state.nodeId || !held.has(id),
+    );
+    // Nor close enough to crowd another where it will be: where it sits, or
+    // where it is heading rather than the spot it is leaving.
+    const bodies = this.neighbors(agent).map(({ other, clearance }) => ({
+      at: this.graph.node(other.path.at(-1) ?? other.state.nodeId).position,
+      clearance,
+    }));
+    const roomy = reachable.filter(
+      (id) =>
+        id === state.nodeId || !crowds(this.graph.node(id).position, bodies),
     );
     const nearest = (ids: string[]) => {
       let best: string | undefined;
@@ -492,8 +511,10 @@ export class Ecosystem {
       return best;
     };
     const insects = (id: string) => this.food.get(id)?.amount ?? 0;
-    // A meal is worth the walk; crumbs only when there's nothing better.
+    // A meal is worth the walk, the more so with room around it; crumbs
+    // only when there's nothing better.
     const food =
+      nearest(roomy.filter((id) => insects(id) >= 0.5)) ??
       nearest(reachable.filter((id) => insects(id) >= 0.5)) ??
       nearest(reachable.filter((id) => insects(id) > 0.001));
     // Animals that visit the water soak in it rather than on the shore.
@@ -502,9 +523,18 @@ export class Ecosystem {
         ? this.graph.node(id).submerged
         : this.graph.node(id).wet,
     );
-    const water = nearest(
-      shoreline.filter((id) => id === state.nodeId || !taken.has(id)),
+    // A spot with room at the water, before squeezing in beside another.
+    const freeShore = shoreline.filter(
+      (id) => id === state.nodeId || !held.has(id),
     );
+    const water =
+      nearest(
+        freeShore.filter(
+          (id) =>
+            id === state.nodeId ||
+            !crowds(this.graph.node(id).position, bodies),
+        ),
+      ) ?? nearest(freeShore);
     const inactive = agent.profile.nocturnal
       ? this.phase === "day"
       : this.phase === "night";
@@ -517,6 +547,7 @@ export class Ecosystem {
     ) => {
       agent.path = this.travelPath(state.nodeId, navigation.pathTo(target));
       agent.restFor = duration;
+      agent.idle = false;
       agent.glance = undefined;
       agent.hasTravelled = false;
       agent.turning = false;
@@ -554,7 +585,7 @@ export class Ecosystem {
     const busyWater = !water && shore;
     if (thirsty && busyWater) {
       const wait = [state.nodeId, ...navigation.pathTo(busyWater)]
-        .filter((id) => id === state.nodeId || !taken.has(id))
+        .filter((id) => id === state.nodeId || !held.has(id))
         .at(-1)!;
       go(
         wait,
@@ -587,7 +618,7 @@ export class Ecosystem {
         return;
       }
       const restsOn = agent.profile.restsOn ?? ["leaf"];
-      const shelters = reachable
+      const shelters = roomy
         .map((id) => ({
           id,
           score:
@@ -612,10 +643,31 @@ export class Ecosystem {
       );
       return;
     }
+    // Climbers now and then head up the glass to cling there a while, as
+    // frogs in a tank do.
+    const glass = agent.profile.climbs
+      ? roomy.filter(
+          (id) =>
+            id !== state.nodeId &&
+            this.graph.node(id).surface === "glass" &&
+            lengths.get(id)! <= 4,
+        )
+      : [];
+    if (glass.length && this.roll() < 0.15) {
+      go(
+        glass[Math.floor(this.roll() * glass.length)],
+        "resting",
+        "exploring",
+        unmet || "Climbing the glass",
+        this.sit("glass"),
+      );
+      agent.idle = !unmet;
+      return;
+    }
     // Vary the reach of each outing and favor unfamiliar spots, with a mild
     // bias toward the current heading. Needs still take precedence over curiosity.
     const range = 0.7 + this.roll() * 2.1;
-    const candidates = reachable.filter(
+    const candidates = roomy.filter(
       (id) => id !== state.nodeId && lengths.get(id)! <= range,
     );
     if (candidates.length && this.roll() > 0.2) {
@@ -634,19 +686,22 @@ export class Ecosystem {
           direction && facing ? (dot(direction, facing) + 1) / 2 : 0.5;
         const fresh = agent.recent.includes(id) ? 0.12 : 1;
         const node = this.graph.node(id);
-        const perch = node.surface === "leaf" ? 1.5 : 1;
+        // Frogs in a tank love a leaf or the glass to cling to.
+        const perch =
+          node.surface === "leaf" || node.surface === "glass" ? 1.5 : 1;
         // Animals that visit the water like to poke around underwater.
         const dip = agent.profile.water === "visits" && node.submerged ? 3 : 1;
         return (
           fresh * perch * dip * (0.5 + ahead) * (0.3 + lengths.get(id)! / range)
         );
       });
+      const chosen = this.pick(candidates, weights);
       go(
-        this.pick(candidates, weights),
+        chosen,
         "resting",
         "exploring",
         unmet || "Exploring the habitat",
-        3 + this.roll() * 21,
+        this.sit(this.graph.node(chosen).surface),
       );
     } else
       go(
@@ -654,8 +709,45 @@ export class Ecosystem {
         "resting",
         "exploring",
         unmet || "Watching the habitat",
-        5 + this.roll() * 25,
+        this.sit(state.surface),
       );
+    // With every need met, a need can cut the sit short.
+    agent.idle = !unmet;
+  }
+  /** The other land animals, each with how close it and this one can come
+   * before their bodies meet. */
+  private neighbors(agent: Agent) {
+    return [...this.agents.values()]
+      .filter((other) => other !== agent && !other.swimmer)
+      .map((other) => ({
+        other,
+        clearance:
+          0.8 * ((agent.profile.radius ?? 0.1) + (other.profile.radius ?? 0.1)),
+      }));
+  }
+  /** Whether stepping to `point` would bring the animal closer into
+   * another's space, or keep it there, where the other is or where it is
+   * stepping to. Stepping away is always allowed, so two that start too
+   * close can part. */
+  private inTheWay(agent: Agent, point: Vec3) {
+    return this.neighbors(agent).some(({ other, clearance }) =>
+      [
+        other.state.position,
+        ...(other.edge ? [this.graph.node(other.path[0]).position] : []),
+      ].some(
+        (at) =>
+          distance(point, at) < clearance &&
+          distance(point, at) < distance(agent.state.position, at) + 0.01,
+      ),
+    );
+  }
+  /** How long an animal sits after an outing, in simulated seconds. Like
+   * real frogs, it mostly sits still for a good while, now and then only
+   * pausing, and longest where it clings to the glass or a leaf. */
+  private sit(surface: AnimalState["surface"]) {
+    const perch = surface === "glass" || surface === "leaf" ? 1.6 : 1;
+    if (this.roll() < 0.25) return 6 + this.roll() * 18;
+    return perch * (40 + this.roll() ** 2 * 230);
   }
   private swim(agent: Agent, fish: Swimmer) {
     // A fish that had to turn out of a dead end tries somewhere else, rather
@@ -867,7 +959,9 @@ export class Ecosystem {
     if (this.elapsed < agent.pauseUntil) return;
     const target = this.graph.node(agent.path[0]);
     const style = agent.profile.movement;
-    const leap = state.surface === "leaf" && target.surface === "leaf";
+    const leap =
+      (state.surface === "leaf" && target.surface === "leaf") ||
+      !!this.graph.node(state.nodeId).leaps?.includes(target.id);
     const walks = (surface: AnimalState["surface"]) =>
       ["ground", "stone", "bark"].includes(surface);
     const hopping =
@@ -875,7 +969,26 @@ export class Ecosystem {
       (leap ||
         (walks(state.surface) &&
           walks(target.surface) &&
-          Math.min(state.normal.y, target.normal.y) >= 0.85));
+          Math.min(state.normal.y, target.normal.y) >= 0.7));
+    // An animal waits rather than step into another's way. After a couple
+    // of seconds it gives up and sits where it is a while, or, on its way
+    // to food or water, which are scarce enough already, squeezes past
+    // after one.
+    if (!agent.edge && this.inTheWay(agent, target.position)) {
+      agent.waitingSince ??= this.elapsed;
+      const waited = this.elapsed - agent.waitingSince;
+      const errand =
+        state.activity === "seeking-food" || state.activity === "seeking-water";
+      if (!errand && waited > 12) {
+        agent.waitingSince = undefined;
+        agent.path = [];
+        state.moving = false;
+        state.activity = "resting";
+        agent.reconsiderAt = this.elapsed + this.sit(state.surface);
+        return;
+      }
+      if (!errand || waited < 6) return;
+    } else if (!agent.edge) agent.waitingSince = undefined;
     if (
       !agent.edge &&
       this.turnToward(
@@ -1036,6 +1149,9 @@ export class Ecosystem {
   }
 }
 
+/** Whether a point is within reach of any of these bodies. */
+const crowds = (point: Vec3, bodies: { at: Vec3; clearance: number }[]) =>
+  bodies.some(({ at, clearance }) => distance(point, at) < clearance);
 const same = (a: Vec3, b: Vec3) => a.x === b.x && a.y === b.y && a.z === b.z;
 const dot = (a: Vec3, b: Vec3) => a.x * b.x + a.y * b.y + a.z * b.z;
 const cross = (a: Vec3, b: Vec3): Vec3 => ({

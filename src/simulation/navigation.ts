@@ -132,7 +132,8 @@ export class HabitatGraph {
       if (current.distance !== distances.get(current.id)) continue;
       const from = this.node(current.id);
       const steps =
-        from.leaps && species.movement === "hop"
+        from.leaps &&
+        (species.movement === "hop" || species.movement === "climb")
           ? from.neighbors.concat(from.leaps)
           : from.neighbors;
       for (const next of steps) {
