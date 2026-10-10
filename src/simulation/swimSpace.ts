@@ -10,25 +10,67 @@ import { objectBase } from "../model/stacking";
 import { highestWater, placementProblem, waterLevel } from "../model/water";
 import { groundHeight } from "../model/terrain";
 import { CURLED_BOW, CURLED_LENGTH, type Clearance } from "./fish";
-import type { Vec3 } from "./types";
+import type { HabitatNode, Vec3 } from "./types";
+import { waterNodes } from "./waterNodes";
 
 const CLEARANCE = 0.015;
 const SWIM_BOB = 0.025;
 
-/** Collision trees for the plants, wood and stone, which only depend on
- * those objects and the environment. */
+/** Collision trees for the plants, wood and stone that reach into the
+ * water, which only depend on those objects and the environment. */
 interface Scenery {
   objects: HabitatObject[];
   obstacles: CollisionTree;
   solids: CollisionTree[];
+  /** Routes through the open water, made when first needed. */
+  routes?: HabitatNode[];
 }
 
-// Kills, births and moved fish leave the scenery alone. Rebuilding its trees
-// for each of them made every fish death in a planted tank hitch.
+// Kills, births, moved fish and edits above the water leave the scenery
+// alone. Rebuilding its trees for each of them made every fish death in a
+// planted tank hitch.
 const sceneries = new WeakMap<Environment, Scenery>();
 
 function sameObjects(a: HabitatObject[], b: HabitatObject[]) {
   return a.length === b.length && a.every((object, i) => object === b[i]);
+}
+
+function placement(object: HabitatObject, env: Environment) {
+  return new THREE.Matrix4().compose(
+    new THREE.Vector3(object.x, objectBase(object, env), object.z),
+    new THREE.Quaternion().setFromAxisAngle(
+      new THREE.Vector3(0, 1, 0),
+      object.rotation,
+    ),
+    new THREE.Vector3().setScalar(object.scale),
+  );
+}
+
+function buildScenery(
+  placed: { object: HabitatObject; matrix: THREE.Matrix4 }[],
+  surface: number,
+): Scenery {
+  const faces: CollisionFace[] = [];
+  const solids: CollisionTree[] = [];
+  for (const { object, matrix } of placed) {
+    const transformed = collisionShape(object).faces.map(({ triangle }) => {
+      const moved = triangle.clone();
+      for (const point of [moved.a, moved.b, moved.c])
+        point.applyMatrix4(matrix);
+      return {
+        triangle: moved,
+        bounds: new THREE.Box3().setFromPoints([moved.a, moved.b, moved.c]),
+      };
+    });
+    faces.push(...transformed.filter((face) => face.bounds.min.y < surface));
+    if (assets[object.kind].hardscape)
+      solids.push(buildCollisionTree(transformed));
+  }
+  return {
+    objects: placed.map(({ object }) => object),
+    obstacles: buildCollisionTree(faces),
+    solids,
+  };
 }
 
 interface Crossing {
@@ -39,6 +81,7 @@ interface Crossing {
 /** Fish-sized, oriented clearance against the actual leaves, branches and
  * hardscape. A hierarchy keeps queries local even in a heavily planted tank. */
 export class SwimSpace {
+  private readonly scenery: Scenery;
   private readonly obstacles: CollisionTree;
   private readonly solids: CollisionTree[];
   private readonly bodies = new Map<string, THREE.Box3>();
@@ -72,46 +115,34 @@ export class SwimSpace {
       bounds.max.z += CLEARANCE;
       this.bodies.set(object.id, bounds);
     }
-    const objects = world.objects.filter((o) => !isAnimal(o.kind));
-    const built = sceneries.get(world.environment);
-    const scenery =
-      built && sameObjects(built.objects, objects)
+    // Only what reaches into some water can get in a fish's way.
+    const env = world.environment;
+    const surface = highestWater(env);
+    const placed = world.objects
+      .filter((object) => !isAnimal(object.kind))
+      .map((object) => ({ object, matrix: placement(object, env) }))
+      .filter(
+        ({ object, matrix }) =>
+          collisionShape(object).bounds.clone().applyMatrix4(matrix).min.y <
+          surface,
+      );
+    const built = sceneries.get(env);
+    this.scenery =
+      built &&
+      sameObjects(
+        built.objects,
+        placed.map(({ object }) => object),
+      )
         ? built
-        : this.buildScenery(objects);
-    sceneries.set(world.environment, scenery);
-    this.obstacles = scenery.obstacles;
-    this.solids = scenery.solids;
+        : buildScenery(placed, surface);
+    sceneries.set(env, this.scenery);
+    this.obstacles = this.scenery.obstacles;
+    this.solids = this.scenery.solids;
   }
 
-  private buildScenery(objects: HabitatObject[]): Scenery {
-    const env = this.world.environment;
-    // Only what reaches into some water can get in a fish's way.
-    const surface = highestWater(env);
-    const faces: CollisionFace[] = [];
-    const solids: CollisionTree[] = [];
-    for (const object of objects) {
-      this.matrix.compose(
-        this.position.set(object.x, objectBase(object, env), object.z),
-        this.rotation.setFromAxisAngle(this.up, object.rotation),
-        this.unitScale.clone().multiplyScalar(object.scale),
-      );
-      const geometry = collisionShape(object);
-      const submergedBounds = geometry.bounds.clone().applyMatrix4(this.matrix);
-      if (submergedBounds.min.y >= surface) continue;
-      const transformed = geometry.faces.map(({ triangle }) => {
-        const moved = triangle.clone();
-        for (const point of [moved.a, moved.b, moved.c])
-          point.applyMatrix4(this.matrix);
-        return {
-          triangle: moved,
-          bounds: new THREE.Box3().setFromPoints([moved.a, moved.b, moved.c]),
-        };
-      });
-      faces.push(...transformed.filter((face) => face.bounds.min.y < surface));
-      if (assets[object.kind].hardscape)
-        solids.push(buildCollisionTree(transformed));
-    }
-    return { objects, obstacles: buildCollisionTree(faces), solids };
+  /** Routes for fish through the open water, which only change with it. */
+  routes() {
+    return (this.scenery.routes ??= waterNodes(this.world, this));
   }
 
   /** How much open water a fish needs around it: its height, and room to

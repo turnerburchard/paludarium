@@ -20,6 +20,18 @@ interface Solid {
   faceOrder: Map<CollisionFace, number>;
 }
 
+/** Whether a box reaches the box spanned by two points. */
+function reaches(box: THREE.Box3, a: Vec3, b: Vec3) {
+  return (
+    Math.max(a.x, b.x) >= box.min.x &&
+    Math.min(a.x, b.x) <= box.max.x &&
+    Math.max(a.y, b.y) >= box.min.y &&
+    Math.min(a.y, b.y) <= box.max.y &&
+    Math.max(a.z, b.z) >= box.min.z &&
+    Math.min(a.z, b.z) <= box.max.z
+  );
+}
+
 /** Exposed stone and wood surfaces, sampled from the same geometry used for
  * placement and fish clearance. Overlapping stacks expose only their outer skin. */
 export class LandSurfaces {
@@ -34,8 +46,25 @@ export class LandSurfaces {
   ).normalize();
   private readonly normal = new THREE.Vector3();
   private readonly down = new THREE.Vector3(0, -1, 0);
+  /** Route and inside checks made for this world, by the points checked. */
+  private readonly checks = new Map<string, boolean>();
+  /** Each solid's sampled skin, before other solids cover any of it. */
+  private readonly skins = new Map<HabitatObject, HabitatNode[]>();
+  /** The checks and skins from before an edit, and the bounds of every
+   * solid it moved, added or removed. A check away from those still holds. */
+  private readonly earlier?: {
+    checks: Map<string, boolean>;
+    skins: ReadonlyMap<HabitatObject, HabitatNode[]>;
+    changed: THREE.Box3[];
+  };
 
-  constructor(private readonly world: World) {
+  /** Rebuilding the habitat after an edit repeats tens of thousands of these
+   * checks, so with the surfaces from before the edit, only checks near what
+   * changed are made again. Terrain and water touch every check and skin. */
+  constructor(
+    private readonly world: World,
+    previous?: LandSurfaces,
+  ) {
     for (const object of world.objects) {
       if (!assets[object.kind].hardscape) continue;
       const matrix = new THREE.Matrix4().compose(
@@ -68,6 +97,41 @@ export class LandSurfaces {
         faceOrder: new Map(faces.map((face, index) => [face, index])),
       });
     }
+    if (previous?.world.environment !== world.environment) return;
+    const now = new Set(this.solids.map((solid) => solid.object));
+    const before = new Set(previous.solids.map((solid) => solid.object));
+    this.earlier = {
+      checks: previous.checks,
+      skins: previous.skins,
+      changed: [
+        ...previous.solids.filter((solid) => !now.has(solid.object)),
+        ...this.solids.filter((solid) => !before.has(solid.object)),
+      ].map((solid) => solid.bounds),
+    };
+  }
+
+  /** A check between two points only depends on the ground, the water and
+   * the solids whose bounds it reaches. */
+  private remember(
+    kind: "inside" | "route",
+    a: Vec3,
+    b: Vec3,
+    check: () => boolean,
+  ) {
+    const key = `${kind}:${a.x},${a.y},${a.z},${b.x},${b.y},${b.z}`;
+    const known = this.checks.get(key);
+    if (known !== undefined) return known;
+    // Moving checks across, rather than copying them, leaves the old map
+    // holding only what the edit made stale.
+    let result = this.earlier?.checks.get(key);
+    this.earlier?.checks.delete(key);
+    if (
+      result === undefined ||
+      this.earlier!.changed.some((bounds) => reaches(bounds, a, b))
+    )
+      result = check();
+    this.checks.set(key, result);
+    return result;
   }
 
   at(x: number, z: number) {
@@ -130,86 +194,28 @@ export class LandSurfaces {
     });
   }
 
-  /** Mesh vertices, edge samples and face centers share connections along
-   * the actual skin, including steep sides that a top-down height map misses. */
+  /** The skin of every solid that no other solid covers. */
   routes(margin: number): HabitatNode[] {
     const nodes: HabitatNode[] = [];
     const env = this.world.environment;
     for (const solid of this.solids) {
-      const samples = new Map<
-        string,
-        { point: THREE.Vector3; normal: THREE.Vector3; node: HabitatNode }
-      >();
-      const stone = assets[solid.object.kind].hardscape === "stone";
-      const sample = (point: THREE.Vector3, normal: THREE.Vector3) => {
-        const key = [point.x, point.y, point.z]
-          .map((value) => Math.round(value * 100000))
-          .join(":");
-        const existing = samples.get(key);
-        if (existing) {
-          existing.normal.add(normal);
-          return existing.node;
-        }
-        const node: HabitatNode = {
-          id: `hardscape:${solid.object.id}:${key}`,
-          position: { x: point.x, y: point.y, z: point.z },
-          normal: { x: 0, y: 1, z: 0 },
-          surface: stone ? "stone" : "bark",
-          wet: point.y <= waterLevel(point.x, point.z, env) + 0.065,
-          submerged: waterLevel(point.x, point.z, env) - point.y > 0.025,
-          shelter: solid.object.moss ? 0.5 : 0.2,
-          perchHeight: point.y - groundHeight(point.x, point.z, env),
-          supportId: solid.object.id,
-          neighbors: [],
-        };
-        samples.set(key, {
-          point: point.clone(),
-          normal: normal.clone(),
-          node,
-        });
-        return node;
-      };
-      const connect = (a: HabitatNode, b: HabitatNode) => {
-        if (!a.neighbors.includes(b.id)) a.neighbors.push(b.id);
-        if (!b.neighbors.includes(a.id)) b.neighbors.push(a.id);
-      };
-      for (const { triangle } of solid.faces) {
-        const normal = triangle.getNormal(new THREE.Vector3());
-        // Do not offer the flat underside as a walking surface. Sloping
-        // sides below a stone's equator are useful approaches for climbers.
-        if (normal.y < -0.95) continue;
-        const center = sample(
-          triangle.getMidpoint(new THREE.Vector3()),
-          normal,
-        );
-        const corners = [triangle.a, triangle.b, triangle.c];
-        for (let edge = 0; edge < 3; edge++) {
-          const from = corners[edge],
-            to = corners[(edge + 1) % 3];
-          const steps = Math.max(1, Math.ceil(from.distanceTo(to) / 0.16));
-          let previous = sample(from, normal);
-          connect(center, previous);
-          for (let i = 1; i <= steps; i++) {
-            const next = sample(from.clone().lerp(to, i / steps), normal);
-            connect(previous, next);
-            connect(center, next);
-            previous = next;
-          }
-        }
-      }
-      for (const { point, normal, node } of samples.values()) {
-        normal.normalize();
-        const lifted = point.clone().addScaledVector(normal, 0.018);
-        node.position = { x: lifted.x, y: lifted.y, z: lifted.z };
-        node.normal = { x: normal.x, y: normal.y, z: normal.z };
+      const skin =
+        this.skins.get(solid.object) ??
+        this.earlier?.skins.get(solid.object) ??
+        this.sampleSkin(solid);
+      this.skins.set(solid.object, skin);
+      for (const node of skin) {
+        const { x, y, z } = node.position;
         if (
-          Math.abs(lifted.x) > env.width / 2 - margin ||
-          Math.abs(lifted.z) > env.depth / 2 - margin ||
-          lifted.y < groundHeight(lifted.x, lifted.z, env) - 0.015 ||
-          this.inside(node.position)
+          Math.abs(x) > env.width / 2 - margin ||
+          Math.abs(z) > env.depth / 2 - margin ||
+          y < groundHeight(x, z, env) - 0.015 ||
+          this.remember("inside", node.position, node.position, () =>
+            this.inside(node.position),
+          )
         )
           continue;
-        nodes.push(node);
+        nodes.push({ ...node, neighbors: [...node.neighbors] });
       }
     }
     const exposed = new Map(nodes.map((node) => [node.id, node]));
@@ -228,6 +234,77 @@ export class LandSurfaces {
         return false;
       });
     return nodes;
+  }
+
+  /** Mesh vertices, edge samples and face centers share connections along
+   * the actual skin, including steep sides that a top-down height map misses. */
+  private sampleSkin(solid: Solid): HabitatNode[] {
+    const env = this.world.environment;
+    const samples = new Map<
+      string,
+      { point: THREE.Vector3; normal: THREE.Vector3; node: HabitatNode }
+    >();
+    const stone = assets[solid.object.kind].hardscape === "stone";
+    const sample = (point: THREE.Vector3, normal: THREE.Vector3) => {
+      const key = [point.x, point.y, point.z]
+        .map((value) => Math.round(value * 100000))
+        .join(":");
+      const existing = samples.get(key);
+      if (existing) {
+        existing.normal.add(normal);
+        return existing.node;
+      }
+      const node: HabitatNode = {
+        id: `hardscape:${solid.object.id}:${key}`,
+        position: { x: point.x, y: point.y, z: point.z },
+        normal: { x: 0, y: 1, z: 0 },
+        surface: stone ? "stone" : "bark",
+        wet: point.y <= waterLevel(point.x, point.z, env) + 0.065,
+        submerged: waterLevel(point.x, point.z, env) - point.y > 0.025,
+        shelter: solid.object.moss ? 0.5 : 0.2,
+        perchHeight: point.y - groundHeight(point.x, point.z, env),
+        supportId: solid.object.id,
+        neighbors: [],
+      };
+      samples.set(key, {
+        point: point.clone(),
+        normal: normal.clone(),
+        node,
+      });
+      return node;
+    };
+    const connect = (a: HabitatNode, b: HabitatNode) => {
+      if (!a.neighbors.includes(b.id)) a.neighbors.push(b.id);
+      if (!b.neighbors.includes(a.id)) b.neighbors.push(a.id);
+    };
+    for (const { triangle } of solid.faces) {
+      const normal = triangle.getNormal(new THREE.Vector3());
+      // Do not offer the flat underside as a walking surface. Sloping
+      // sides below a stone's equator are useful approaches for climbers.
+      if (normal.y < -0.95) continue;
+      const center = sample(triangle.getMidpoint(new THREE.Vector3()), normal);
+      const corners = [triangle.a, triangle.b, triangle.c];
+      for (let edge = 0; edge < 3; edge++) {
+        const from = corners[edge],
+          to = corners[(edge + 1) % 3];
+        const steps = Math.max(1, Math.ceil(from.distanceTo(to) / 0.16));
+        let previous = sample(from, normal);
+        connect(center, previous);
+        for (let i = 1; i <= steps; i++) {
+          const next = sample(from.clone().lerp(to, i / steps), normal);
+          connect(previous, next);
+          connect(center, next);
+          previous = next;
+        }
+      }
+    }
+    for (const { point, normal, node } of samples.values()) {
+      normal.normalize();
+      const lifted = point.clone().addScaledVector(normal, 0.018);
+      node.position = { x: lifted.x, y: lifted.y, z: lifted.z };
+      node.normal = { x: normal.x, y: normal.y, z: normal.z };
+    }
+    return [...samples.values()].map(({ node }) => node);
   }
 
   /** Signed crossings handle both overlapping stones and hollow wood. A
@@ -276,6 +353,10 @@ export class LandSurfaces {
    * never wade across a pond. Underwater routes only have to stay above the
    * ground. */
   clearRoute(from: Vec3, to: Vec3) {
+    return this.remember("route", from, to, () => this.traceRoute(from, to));
+  }
+
+  private traceRoute(from: Vec3, to: Vec3) {
     const env = this.world.environment;
     const under = (point: Vec3) =>
       point.y < waterLevel(point.x, point.z, env) - 0.025;

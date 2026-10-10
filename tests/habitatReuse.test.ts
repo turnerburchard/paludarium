@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { assets } from "../src/assets";
+import { makePreset } from "../src/model/presets";
 import {
   emptyWorld,
   type HabitatObject,
@@ -136,5 +138,23 @@ describe("reusing habitat navigation", () => {
     const updated = createWorldEcosystem(next, { world, engine });
     expect(updated.graph === engine.graph).toBe(false);
     expect([...updated.graph.nodes]).toEqual([...buildHabitat(next).nodes]);
+  });
+
+  it("carries surface checks into a rebuild without changing the graph", () => {
+    // The grotto stacks stone on stone, so a move changes what its
+    // neighbors expose as well as its own routes.
+    let world = makePreset("grotto");
+    let engine = createWorldEcosystem(world);
+    const stones = world.objects.filter((o) => assets[o.kind].hardscape);
+    for (const edit of [
+      (o: HabitatObject) =>
+        o === stones[0] ? { ...o, x: o.x + 0.2, rotation: o.rotation + 1 } : o,
+      (o: HabitatObject) => (o === stones[1] ? [] : o),
+    ]) {
+      const next = { ...world, objects: world.objects.flatMap(edit) };
+      engine = createWorldEcosystem(next, { world, engine });
+      expect([...engine.graph.nodes]).toEqual([...buildHabitat(next).nodes]);
+      world = next;
+    }
   });
 });

@@ -21,7 +21,7 @@ import { streamSurface, swimmingHeight, waterLevel } from "../model/water";
 import { transformPlantPoint } from "../model/plantSurfaces";
 import type { Fish } from "./fish";
 import { SwimSpace } from "./swimSpace";
-import { WIDEST_ROOM, waterNodes } from "./waterNodes";
+import { WIDEST_ROOM } from "./waterNodes";
 import { HabitatNodeGrid } from "./nodeGrid";
 import { LandSurfaces } from "./landSurfaces";
 import { Solids } from "./solids";
@@ -309,8 +309,11 @@ export function buildHabitat(
   };
   // Nearby mesh surfaces can meet across a stack, while isolated or floating
   // pieces remain disconnected. Spatial buckets avoid comparing every pair.
-  const buckets = new Map<string, HabitatNode[]>();
+  const buckets = new Map<number, HabitatNode[]>();
   const bucketSize = 0.16;
+  /** A bucket's number. Tanks are far fewer than 512 buckets across. */
+  const bucketKey = (x: number, y: number, z: number) =>
+    (x * 1024 + y) * 1024 + z;
   /** How far an animal steps off stone onto ground with this much room. */
   const reach = (room: number) => spacing + room + 0.06;
   /** Stepping off stone onto dry ground keeps to dry ground or the stone
@@ -336,14 +339,14 @@ export function buildHabitat(
       for (let dy = -1; dy <= 1; dy++)
         for (let dz = -1; dz <= 1; dz++)
           for (const other of buckets.get(
-            `${cell[0] + dx}:${cell[1] + dy}:${cell[2] + dz}`,
+            bucketKey(cell[0] + dx, cell[1] + dy, cell[2] + dz),
           ) ?? [])
             if (
               node.supportId !== other.supportId &&
               distance(node.position, other.position) <= 0.13
             )
               connect(node, other);
-    const key = cell.join(":");
+    const key = bucketKey(cell[0], cell[1], cell[2]);
     const bucket = buckets.get(key);
     if (bucket) bucket.push(node);
     else buckets.set(key, [node]);
@@ -351,16 +354,17 @@ export function buildHabitat(
     // band of room, for larger animals that step off from farther away.
     let band = -1;
     for (const { ground, d } of groundGrid
-      .near(node.position, reach(LARGEST_FOOTPRINT))
+      .near(
+        node.position,
+        reach(LARGEST_FOOTPRINT),
+        (ground) =>
+          Math.abs(node.position.y - ground.position.y) <= 0.18 &&
+          distance(node.position, ground.position) <= reach(ground.room!),
+      )
       .map((ground) => ({
         ground,
         d: distance(node.position, ground.position),
       }))
-      .filter(
-        ({ ground, d }) =>
-          d <= reach(ground.room!) &&
-          Math.abs(node.position.y - ground.position.y) <= 0.18,
-      )
       .sort((a, b) => a.d - b.d)) {
       const beside = d <= reach(CLEARANCE);
       if (!beside && roomBand(ground.room!) <= band) continue;
@@ -379,11 +383,15 @@ export function buildHabitat(
   );
   const landingGrid = new HabitatNodeGrid(landings, LEAP);
   for (const node of landings)
-    for (const other of landingGrid.near(node.position, LEAP))
-      if (
+    for (const other of landingGrid.near(
+      node.position,
+      LEAP,
+      (other) =>
         node.id < other.id &&
         distance(node.position, other.position) <= LEAP &&
-        Math.abs(node.position.y - other.position.y) <= 0.18 &&
+        Math.abs(node.position.y - other.position.y) <= 0.18,
+    ))
+      if (
         !overLand(node.position, other.position) &&
         surfaces.clearRoute(node.position, other.position)
       ) {
@@ -401,8 +409,9 @@ export function buildHabitat(
   const dryAnchors = (point: Vec3, range: number) => {
     const found: HabitatNode[] = [];
     for (const node of anchors
-      .near(point, range)
-      .filter(
+      .near(
+        point,
+        range,
         (node) =>
           !node.submerged &&
           distance(node.position, point) <= range &&
@@ -551,7 +560,7 @@ export function buildHabitat(
         other.neighbors.push(perch.id);
       }
   for (const node of nodes) measureSpace(node, solids);
-  if (hasFish(world)) nodes.push(...waterNodes(world, new SwimSpace(world)));
+  if (hasFish(world)) nodes.push(...new SwimSpace(world).routes());
   return new HabitatGraph(nodes);
 }
 
@@ -616,7 +625,9 @@ export function createWorldEcosystem(
   random?: () => number,
 ): Ecosystem {
   const reuse = previous && sameHabitat(previous.world, world);
-  const solids = (reuse && previous.engine.solids) || new Solids(world);
+  const solids =
+    (reuse && previous.engine.solids) ||
+    new Solids(world, previous?.engine.solids);
   const graph = reuse ? previous.engine.graph : buildHabitat(world, solids),
     snapshot = previous?.engine.snapshot();
   const animals: AnimalSeed[] = [];

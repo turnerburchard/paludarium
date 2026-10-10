@@ -24,10 +24,15 @@ export class Solids implements Caster {
   private readonly end = new THREE.Vector3();
   private readonly reach = new THREE.Box3();
 
+  readonly surfaces: LandSurfaces;
+
+  /** With the solids from before an edit, checks away from it carry over. */
   constructor(
     private readonly world: World,
-    readonly surfaces = new LandSurfaces(world),
-  ) {}
+    previous?: Solids,
+  ) {
+    this.surfaces = new LandSurfaces(world, previous?.surfaces);
+  }
 
   /** The ground under a point, and which way it faces. */
   ground(x: number, z: number) {
