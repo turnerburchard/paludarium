@@ -8,7 +8,7 @@
 
 :root {
   font-family: var(--font-ui);
-  color: #ebe7de;
+  color: var(--text);
   background: #0c1512;
   font-synthesis: none;
   font-weight: 400;
@@ -17,8 +17,14 @@
   --panel: hsl(145 28% 11%);
   --surface: hsl(145 28% 15%);
   --selected: hsl(145 28% 21%);
-  --line: rgba(235, 231, 222, 0.12);
-  --muted: #a4b3a9;
+  --hover: hsl(135 19% 27%);
+  /* The logo's off-white sets the text color, with dimmer tints of it below. */
+  --text: #e7eadf;
+  --text-soft: #b9c7b0;
+  --muted: #93a68c;
+  --line: rgba(231, 234, 223, 0.12);
+  --line-strong: #536b49;
+  --warning: #e8b4a0;
   --accent: #aec5a0;
   --ink: #14241b;
   --font-ui:
@@ -49,6 +55,8 @@ input {
   font: inherit;
 }
 .brand h1,
+.world-title input,
+.inspector h2,
 .modal h2 {
   font-family: var(--font-heading);
 }
@@ -141,7 +149,6 @@ button:hover:not(:disabled) {
   letter-spacing: -0.25px;
   line-height: var(--leading-title);
   margin: 0;
-  color: #e7eadf;
 }
 .world-title {
   display: flex;
@@ -151,7 +158,7 @@ button:hover:not(:disabled) {
   flex: 1;
 }
 .world-title input {
-  color: #ebe7de;
+  color: var(--text);
   background: transparent;
   border: 0;
   outline: none;
@@ -169,13 +176,13 @@ button:hover:not(:disabled) {
 .save-status {
   min-height: 16px;
   font-size: var(--text-small);
-  color: #9aae98;
+  color: var(--muted);
   display: flex;
   gap: 4px;
   align-items: center;
 }
 .warning {
-  color: #f4b89b;
+  color: var(--warning);
 }
 .header-actions {
   display: flex;
@@ -194,7 +201,7 @@ button:hover:not(:disabled) {
   place-items: center;
   border-radius: 8px;
   flex: none;
-  color: #c2d1bb;
+  color: var(--text-soft);
 }
 .icon-button:hover,
 .icon-button.active {
@@ -223,7 +230,7 @@ button:hover:not(:disabled) {
   min-width: 0;
   border: 1px solid var(--line);
   background: var(--panel);
-  color: #a9bd9f;
+  color: var(--text-soft);
   padding: 9px 6px;
   border-radius: var(--radius);
   display: flex;
@@ -234,13 +241,13 @@ button:hover:not(:disabled) {
   cursor: pointer;
 }
 .panel-tabs button:hover {
-  border-color: #536b49;
-  color: #dfebcc;
+  border-color: var(--line-strong);
+  color: var(--text);
 }
 .panel-tabs button.active {
   border-color: var(--accent);
   background: var(--selected);
-  color: #e3edcc;
+  color: var(--text);
 }
 .panel-content {
   min-height: 0;
@@ -248,7 +255,7 @@ button:hover:not(:disabled) {
   overflow-y: auto;
   flex: 1;
   scrollbar-width: thin;
-  scrollbar-color: #435a43 transparent;
+  scrollbar-color: var(--line-strong) transparent;
 }
 /* Small pills, so the categories read as a filter on the list below and not
    as a second row of panel tabs. */
@@ -263,7 +270,7 @@ button:hover:not(:disabled) {
   border: 1px solid transparent;
   border-radius: 999px;
   background: transparent;
-  color: #879e89;
+  color: var(--muted);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -272,7 +279,7 @@ button:hover:not(:disabled) {
   font-size: var(--text-body);
 }
 .category-tabs button:hover {
-  color: #dfebcc;
+  color: var(--text);
 }
 .panel-tabs button svg,
 .category-tabs button svg {
@@ -281,7 +288,7 @@ button:hover:not(:disabled) {
 .category-tabs button.active {
   border-color: var(--line);
   background: var(--selected);
-  color: #e3edcc;
+  color: var(--text);
 }
 .category-tabs .category-filter {
   padding: 5px 8px;
@@ -300,7 +307,7 @@ button:hover:not(:disabled) {
   margin: 4px 0 0;
   font-size: var(--text-small);
   font-weight: 500;
-  color: #879e89;
+  color: var(--muted);
 }
 .asset-card {
   padding: 0 0 12px;
@@ -333,8 +340,8 @@ button:hover:not(:disabled) {
   right: 7px;
   top: 7px;
   border-radius: 50%;
-  background: #405637;
-  color: #c7dca8;
+  background: var(--hover);
+  color: var(--text-soft);
   display: grid;
   place-items: center;
   width: 20px;
@@ -356,7 +363,7 @@ button:hover:not(:disabled) {
   overflow: hidden;
   overflow-wrap: anywhere;
   padding: 0 9px;
-  color: #ebe7de;
+  color: var(--text);
 }
 .sidebar-footer {
   flex-shrink: 0;
@@ -367,12 +374,12 @@ button:hover:not(:disabled) {
   padding: 0 20px;
   border-top: 1px solid var(--line);
   font-size: var(--text-small);
-  color: #8fa18a;
+  color: var(--muted);
 }
 .sidebar-footer button {
   background: none;
   border: 0;
-  color: #a4b69b;
+  color: var(--text-soft);
   padding: 7px;
 }
 .scene-tools {
@@ -406,7 +413,7 @@ button:hover:not(:disabled) {
   gap: 14px;
   padding: 12px 13px;
   background: #14271fee;
-  border: 1px solid #627650;
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   box-shadow: 0 12px 40px #0002;
 }
@@ -415,7 +422,7 @@ button:hover:not(:disabled) {
   width: 36px;
   display: grid;
   place-items: center;
-  background: #354a2e;
+  background: var(--hover);
   border-radius: 8px;
   color: var(--accent);
 }
@@ -427,7 +434,7 @@ button:hover:not(:disabled) {
 .placement-bar span:not(.placement-icon) {
   display: block;
   font-size: var(--text-small);
-  color: #a3b697;
+  color: var(--text-soft);
   margin-top: 4px;
 }
 .finish-button {
@@ -445,7 +452,7 @@ button:hover:not(:disabled) {
 .eyebrow {
   font-size: var(--text-small);
   letter-spacing: 1.7px;
-  color: #b5c79d;
+  color: var(--text-soft);
   font-weight: 500;
 }
 .inspector {
@@ -476,7 +483,7 @@ button:hover:not(:disabled) {
   margin-bottom: 0;
 }
 .object-actions .kill-button {
-  color: #e4b4a1;
+  color: var(--warning);
 }
 .inspector-heading {
   display: flex;
@@ -492,7 +499,7 @@ button:hover:not(:disabled) {
 .inspector p {
   font-size: var(--text-body);
   line-height: var(--leading-body);
-  color: #a9bba1;
+  color: var(--text-soft);
   margin: 10px 0 19px;
 }
 .inspector .plant-condition {
@@ -510,15 +517,15 @@ button:hover:not(:disabled) {
   width: 100%;
   margin: -6px 0 16px;
   padding: 9px;
-  border: 1px solid #536b49;
+  border: 1px solid var(--line-strong);
   border-radius: 7px;
   background: var(--surface);
-  color: #deedc0;
+  color: var(--text);
   font-size: var(--text-body);
   cursor: pointer;
 }
 .watch-button:hover {
-  background: #38533c;
+  background: var(--hover);
 }
 .inspector strong {
   display: block;
@@ -543,7 +550,7 @@ button:hover:not(:disabled) {
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: #c3d3b6;
+  color: var(--text-soft);
   padding: 7px 8px;
 }
 .object-actions button:hover {
@@ -558,11 +565,11 @@ button:hover:not(:disabled) {
   justify-content: space-between;
   align-items: center;
   font-size: var(--text-body);
-  color: #ccdac0;
+  color: var(--text-soft);
 }
 .range-control output {
   font-size: var(--text-small);
-  color: #a7bb95;
+  color: var(--text-soft);
   font-variant-numeric: tabular-nums;
 }
 .range-control input {
@@ -579,7 +586,7 @@ button:hover:not(:disabled) {
 .section-label {
   font-size: var(--text-small);
   letter-spacing: 1.6px;
-  color: #90a584;
+  color: var(--muted);
   margin: 19px 0 15px;
 }
 .light-options {
@@ -598,17 +605,17 @@ button:hover:not(:disabled) {
   padding: 14px 8px;
   font-size: var(--text-body);
   flex: 1;
-  color: #acbe9c;
+  color: var(--text-soft);
 }
 .light-options button.active {
   border-color: var(--accent);
   background: var(--selected);
-  color: #e3edcc;
+  color: var(--text);
 }
 .panel-note {
   font-size: var(--text-body);
   line-height: var(--leading-body);
-  color: #99ae91;
+  color: var(--muted);
 }
 .modal-backdrop {
   position: absolute;
@@ -626,7 +633,7 @@ button:hover:not(:disabled) {
   max-height: 90dvh;
   overflow: auto;
   background: var(--panel);
-  border: 1px solid #526549;
+  border: 1px solid var(--line-strong);
   border-radius: 16px;
   padding: 26px;
   box-shadow: 0 30px 90px #0005;
@@ -652,7 +659,7 @@ button:hover:not(:disabled) {
 .modal p,
 .modal dd {
   font-size: var(--text-body);
-  color: #afc0a4;
+  color: var(--text-soft);
   line-height: var(--leading-body);
 }
 .preset-options {
@@ -663,12 +670,12 @@ button:hover:not(:disabled) {
 }
 .preset-options button {
   background: var(--surface);
-  border: 1px solid #455f3c;
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   padding: 14px 12px;
   min-height: 48px;
   font-size: var(--text-body);
-  color: #e1eccf;
+  color: var(--text);
 }
 .preset-options button:hover {
   background: var(--selected);
@@ -676,7 +683,7 @@ button:hover:not(:disabled) {
 .filter-heading {
   font-size: var(--text-body);
   font-weight: 500;
-  color: #a8bd99;
+  color: var(--text-soft);
   margin: 22px 0 10px;
 }
 .filter-chips {
@@ -686,11 +693,11 @@ button:hover:not(:disabled) {
 }
 .filter-chips button {
   background: var(--surface);
-  border: 1px solid #455f3c;
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   padding: 8px 14px;
   font-size: var(--text-body);
-  color: #d6e1c9;
+  color: var(--text);
 }
 .filter-chips button.active {
   background: var(--accent);
@@ -704,12 +711,12 @@ button:hover:not(:disabled) {
   margin-top: 26px;
 }
 .filter-actions button {
-  border: 1px solid #455f3c;
+  border: 1px solid var(--line-strong);
   background: transparent;
   border-radius: 8px;
   padding: 9px 16px;
   font-size: var(--text-body);
-  color: #d6e1c9;
+  color: var(--text);
 }
 .filter-actions button.primary {
   background: var(--accent);
@@ -719,7 +726,7 @@ button:hover:not(:disabled) {
 .library-empty {
   font-size: var(--text-body);
   text-align: center;
-  color: #99ae91;
+  color: var(--muted);
   margin: 12px 18px;
 }
 .library-empty button {
@@ -748,7 +755,7 @@ button:hover:not(:disabled) {
   padding: 60px 30px;
   max-width: 550px;
   line-height: var(--leading-body);
-  color: #e1eccf;
+  color: var(--text);
 }
 @media (min-width: 1600px) {
   .asset-picture {
@@ -816,7 +823,7 @@ button:hover:not(:disabled) {
     bottom: 0;
     height: min(60svh, 520px);
     width: 100%;
-    border-top: 1px solid #43533c;
+    border-top: 1px solid var(--line-strong);
     border-right: 0;
     border-radius: 20px 20px 0 0;
     overflow: hidden;
@@ -865,7 +872,7 @@ button:hover:not(:disabled) {
     border: 0;
     border-radius: var(--radius);
     background: transparent;
-    color: #d6e4c4;
+    color: var(--text);
     font-size: var(--text-small);
   }
   .mobile-dock button:active {
@@ -1012,7 +1019,7 @@ button:hover:not(:disabled) {
 
 .species-name {
   font-style: italic;
-  color: #bccb9f !important;
+  color: var(--text-soft) !important;
   margin: 0 0 8px !important;
   font-size: var(--text-small) !important;
 }
@@ -1028,7 +1035,7 @@ button:hover:not(:disabled) {
   justify-content: space-between;
   gap: 8px;
   font-size: var(--text-small);
-  color: #bacb9b;
+  color: var(--text-soft);
   margin-bottom: 8px;
 }
 .life-panel strong {
@@ -1038,13 +1045,13 @@ button:hover:not(:disabled) {
 .life-panel p {
   font-size: var(--text-body);
   line-height: var(--leading-body);
-  color: #b6c6aa;
+  color: var(--text-soft);
   margin: 6px 0 10px;
 }
 .life-panel small {
   display: block;
   font-size: var(--text-small);
-  color: #a6b999;
+  color: var(--text-soft);
   margin-top: 9px;
 }
 .frog-list {
@@ -1064,17 +1071,17 @@ button:hover:not(:disabled) {
   border: 1px solid transparent;
   border-radius: 7px;
   background: var(--surface);
-  color: #deedc0;
+  color: var(--text);
   font-size: var(--text-body);
   text-align: left;
   cursor: pointer;
 }
 .frog-list button:hover,
 .frog-list button[aria-pressed="true"] {
-  border-color: #536b49;
+  border-color: var(--line-strong);
 }
 .frog-list small {
-  color: #a6b999;
+  color: var(--text-soft);
   font-size: var(--text-small);
 }
 .life-needs {
@@ -1088,7 +1095,7 @@ button:hover:not(:disabled) {
   justify-content: space-between;
   align-items: center;
   font-size: var(--text-small);
-  color: #bacb9b;
+  color: var(--text-soft);
 }
 .life-needs meter,
 .animal-condition meter {
@@ -1134,7 +1141,7 @@ button:hover:not(:disabled) {
 }
 .mode-switch button[aria-pressed="true"] {
   background: var(--selected);
-  color: #e4efcf;
+  color: var(--text);
 }
 .view-mode .inspector {
   top: auto;
@@ -1181,7 +1188,7 @@ button:hover:not(:disabled) {
   font-size: var(--text-body);
 }
 .water-options button[aria-pressed="true"] {
-  border-color: #73885c;
+  border-color: var(--line-strong);
   background: var(--selected);
 }
 .moss-options {
@@ -1215,7 +1222,7 @@ button:hover:not(:disabled) {
   border-radius: 50%;
 }
 .moss-swatch.bare {
-  border: 1px dashed #7d8f72;
+  border: 1px dashed var(--line-strong);
 }
 @media (max-width: 760px) {
   .mode-switch {
@@ -1261,7 +1268,7 @@ button:hover:not(:disabled) {
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--surface);
-  color: #deedc0;
+  color: var(--text);
   font-size: var(--text-body);
 }
 .placement-rotation {
@@ -1323,7 +1330,7 @@ button:hover:not(:disabled) {
   min-height: 100dvh;
   place-items: center;
   background: #0e1c16;
-  color: #deedc0;
+  color: var(--text);
   font-size: var(--text-body);
 }
 .shared-world-actions {
@@ -1353,23 +1360,23 @@ button:hover:not(:disabled) {
   width: 100%;
   padding: 14px;
   margin: 12px 0 6px;
-  border: 1px solid #536b49;
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   background: var(--surface);
-  color: #deedc0;
+  color: var(--text);
   text-align: left;
   font-size: var(--text-body);
   cursor: pointer;
 }
 .life-follow:hover {
-  background: #38533c;
+  background: var(--hover);
 }
 .life-group {
   font-size: var(--text-small);
   font-weight: 400;
   letter-spacing: 1.6px;
   text-transform: uppercase;
-  color: #90a584;
+  color: var(--muted);
   margin: 18px 0 8px;
 }
 .life-panel li small {
@@ -1383,12 +1390,12 @@ button:hover:not(:disabled) {
   padding: 4px 0;
   border: 0;
   background: none;
-  color: #90a584;
+  color: var(--muted);
   font-size: var(--text-body);
   cursor: pointer;
 }
 .life-log-toggle:hover {
-  color: #deedc0;
+  color: var(--text);
 }
 .life-log {
   list-style: none;
@@ -1396,13 +1403,13 @@ button:hover:not(:disabled) {
   padding: 0;
   font-size: var(--text-small);
   line-height: var(--leading-body);
-  color: #b6c6aa;
+  color: var(--text-soft);
 }
 .life-log time {
   display: inline-block;
   min-width: 96px;
   margin-right: 8px;
-  color: #90a584;
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1503,7 +1510,7 @@ button:hover:not(:disabled) {
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
-  color: #c2d1bb;
+  color: var(--text-soft);
   font-size: var(--text-body);
   line-height: var(--leading-body);
   flex: none;
@@ -1584,9 +1591,9 @@ button:hover:not(:disabled) {
   align-items: center;
   gap: 7px;
   min-height: 40px;
-  color: #d6e1c9;
+  color: var(--text);
   background: transparent;
-  border: 1px solid #455f3c;
+  border: 1px solid var(--line-strong);
   border-radius: 8px;
   padding: 8px 14px;
   font-size: var(--text-body);
@@ -1596,7 +1603,7 @@ button:hover:not(:disabled) {
   background: var(--selected);
 }
 .world-options .delete-world {
-  color: #d7a29a;
+  color: var(--warning);
   border-color: #6b4a44;
   margin-left: auto;
 }

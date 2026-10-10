@@ -11,8 +11,8 @@
   width: 100%;
   margin-top: 8px;
   min-height: 40px;
-  border: 1px solid #455f3c;
+  border: 1px solid var(--line-strong);
   border-radius: 7px;
-  background: #24392c;
+  background: var(--surface);
   font-size: var(--text-body);
 }
