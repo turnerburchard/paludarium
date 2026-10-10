@@ -4,7 +4,7 @@ import { makePreset } from "../model/presets";
 import { emptyWorld, worldSchema, type World } from "../model/schema";
 import { fitObject } from "../model/terrain";
 export const STORAGE_KEY = "little-worlds:v4";
-/** Worlds saved before streams joined the environment. They are not
+/** Worlds saved before springs joined the environment. They are not
  * migrated, only cleared. */
 const RETIRED_STORAGE_KEY = "little-worlds:v3";
 export const MAX_WORLD_SIZE = 250_000;
