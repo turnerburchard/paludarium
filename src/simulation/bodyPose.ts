@@ -118,10 +118,7 @@ export function fitBody(
       negate(normal),
       rise + FALL,
     );
-    if (below && below.distance > rise) {
-      position = below.point;
-      normal = below.normal;
-    }
+    if (below && below.distance > rise) position = below.point;
   }
   // A second pass feels again from the pose the first one found.
   for (let pass = 0; pass < 2; pass++) {
@@ -159,6 +156,8 @@ export function fitBody(
       cross(unit(sub(side, left)) ?? right, unit(sub(nose, tail)) ?? forward),
     );
     if (!lifted) return pose;
+    // On even ground the first pass already has it.
+    const settled = dot(lifted, up) > 0.9995;
     normal = lifted;
     direction = unit(sub(nose, tail)) ?? forward;
     // The body rests on the plane through what its ends and sides found,
@@ -168,6 +167,7 @@ export function fitBody(
     if (centre) height = Math.max(height, dot(sub(centre, position), normal));
     if (!settle) height = Math.max(0, height);
     position = add(position, normal, height);
+    if (settled) break;
   }
   // Neither end may reach into anything, as where a stem meets the ground
   // or the nose meets the glass: the body slides back along itself.
