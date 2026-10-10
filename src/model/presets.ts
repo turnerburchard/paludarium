@@ -79,8 +79,12 @@ export function makePreset(preset: Preset): World {
     (height) => {
       const [support, piece] = objects.slice(-2);
       piece.support = support.id;
-      piece.lift =
-        objectBase(support, env) + height - groundHeight(piece.x, piece.z, env);
+      // A support sunk into a slope can have its top below the ground here,
+      // and saves only accept a piece resting on or above the ground.
+      piece.lift = Math.max(
+        0,
+        objectBase(support, env) + height - groundHeight(piece.x, piece.z, env),
+      );
     };
   if (preset === "amazon") {
     // Sunken wood and fallen leaves in place of stone, as in a blackwater

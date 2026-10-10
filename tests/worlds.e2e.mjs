@@ -37,6 +37,11 @@ const server = spawn(
   ],
   { cwd: root, stdio: "ignore" },
 );
+// A taken port would leave these checks quietly testing another app.
+server.on("exit", (code) => {
+  if (code && !server.killed)
+    throw new Error("Vite exited early. Is its port already in use?");
+});
 const browsers = [];
 try {
   for (let i = 0; i < 50; i++) {
@@ -120,10 +125,10 @@ try {
     );
     await page
       .locator(".preset-options")
-      .getByRole("button", { name: "Amazon river", exact: true })
+      .getByRole("button", { name: "Empty tank", exact: true })
       .click();
     await page.waitForFunction(
-      () => document.title === "paludarium · Amazon river",
+      () => document.title === "paludarium · Untitled",
     );
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     await page.getByRole("button", { name: "My creek", exact: true }).click();
