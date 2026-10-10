@@ -42,7 +42,6 @@ export function WorldsDialog({
       <div className="preset-options">
         <button onClick={() => onPreset("tropical")}>Cloud forest</button>
         <button onClick={() => onPreset("amazon")}>Amazon river</button>
-        <button onClick={() => onPreset("asian")}>Asian stream</button>
         <button onClick={() => onPreset("mountain")}>Alpine creek</button>
         <button onClick={() => onPreset("desert")}>Desert spring</button>
         <button onClick={() => onPreset("grotto")}>Limestone grotto</button>
