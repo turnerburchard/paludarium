@@ -12,8 +12,10 @@ const RAPID_SLOPE = 0.2;
 const FALL_SLOPE = 0.8;
 /** How far white water carries past the foot of a fall. */
 const FOAM_REACH = 0.3;
-/** Distance over which the water fades in at its source and out at its end. */
-const FADE = 0.2;
+/** Distance over which the water fades in at its source, short so it comes
+ * straight out of a spring, and out at its end. */
+const HEAD_FADE = 0.04;
+const TAIL_FADE = 0.2;
 /** Depth of still water over which a stream fades into it. Deeper than a
  * pool's shore, so the two overlap rather than leave a gap. */
 const STILL = 0.06;
@@ -66,7 +68,11 @@ function streamGeometry(course: CoursePoint[], env: Environment) {
         Math.hypot(run, drop) /
         (FLAT_SPEED + (FALL_SPEED - FLAT_SPEED) * steep);
     }
-    const ends = Math.min(1, point.along / FADE, (end - point.along) / FADE);
+    const ends = Math.min(
+      1,
+      point.along / HEAD_FADE,
+      (end - point.along) / TAIL_FADE,
+    );
     for (let j = 0; j < ACROSS; j++) {
       const across = (2 * j) / (ACROSS - 1) - 1;
       // Kept inside the glass where a stream runs along or off the tank's edge.
