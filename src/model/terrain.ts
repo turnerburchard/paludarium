@@ -31,11 +31,23 @@ export function groundHeight(x: number, z: number, env: Environment): number {
     : 0;
   return clamp(base + delta, 0.08, groundCeiling(env));
 }
-/** Whether two environments differ at most in ground paint, which only
- * the renderer reads. */
-export function onlyPaintDiffers(a: Environment, b: Environment): boolean {
-  const { terrain: before, ...restA } = a,
-    { terrain: after, ...restB } = b;
+/** Lighting and ground paint only affect appearance, so they can keep
+ * the same habitat and object placement. */
+export function onlyAppearanceDiffers(a: Environment, b: Environment): boolean {
+  const {
+      terrain: before,
+      light: lightA,
+      warmth: warmthA,
+      brightness: brightnessA,
+      ...restA
+    } = a,
+    {
+      terrain: after,
+      light: lightB,
+      warmth: warmthB,
+      brightness: brightnessB,
+      ...restB
+    } = b;
   const keys = Object.keys(restA) as (keyof typeof restA)[];
   return (
     before?.heights === after?.heights &&

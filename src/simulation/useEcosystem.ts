@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { isAnimal } from "../assets";
 import type { HabitatObject, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
-import { groundHeight, onlyPaintDiffers } from "../model/terrain";
+import { groundHeight, onlyAppearanceDiffers } from "../model/terrain";
 import { createWorldEcosystem } from "./worldHabitat";
 import type { Ecosystem } from "./engine";
 import { advanceLife as evolveLife, habitatSupport } from "./lifeCycle";
@@ -47,7 +47,7 @@ export function useEcosystem(
     const previous = live.current!;
     if (holding || previous.world === world) return;
     if (
-      onlyPaintDiffers(previous.world.environment, world.environment) &&
+      onlyAppearanceDiffers(previous.world.environment, world.environment) &&
       previous.world.objects === world.objects
     ) {
       previous.world = world;
