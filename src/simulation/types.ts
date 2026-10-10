@@ -1,6 +1,7 @@
 import type { Discovery } from "./discoveries";
 import type { AnimalBehavior, Swimming } from "../assets/types";
 import type { Fish, Swimmer } from "./fish";
+import type { Body, BodyPose } from "./bodyPose";
 
 /** Engine units are scene units and simulated seconds. Needs are normalized to 0–1. */
 export interface Vec3 {
@@ -28,6 +29,11 @@ export interface HabitatNode {
   /** The largest footprint that fits here, clear of the glass, stone and
    * wood. Unset where size doesn't matter, as on plants and the glass. */
   room?: number;
+  /** How much space there is over the surface, out along its normal, and
+   * across a den, so an animal only goes where its body fits. Unset where
+   * there is plenty. */
+  headroom?: number;
+  width?: number;
   neighbors: string[];
   /** Dry surfaces across a short gap of water, for animals that hop. */
   leaps?: string[];
@@ -46,6 +52,8 @@ export interface SpeciesProfile extends AnimalBehavior {
   swims?: Swimming & { room: number; height: number };
   /** This animal's footprint, so it keeps to places it fits. */
   radius?: number;
+  /** Its size, so its body can be set down on what is under it. */
+  body?: Body;
 }
 export interface Needs {
   hunger: number;
@@ -87,6 +95,10 @@ export interface AnimalState {
   /** At a ground node or walking between two, so it can follow the terrain
    * itself rather than the straight line between nodes. */
   grounded: boolean;
+  /** Where the body rests, set down on the surfaces under it so it
+   * follows slopes, bumps and corners rather than just the point it walks
+   * along. Only drawn states have one, and never fish. */
+  pose?: BodyPose;
   /** How the current edge is travelled. `hop` is true for the whole edge,
    * including the crouch before takeoff and the landing. `bend` is how far
    * a fish is curled up for a tight turn: 1 to its left, -1 to its right. */
