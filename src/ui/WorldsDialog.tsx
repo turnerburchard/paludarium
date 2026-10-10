@@ -12,6 +12,7 @@ import { downloadWorld } from "../editor/persistence";
 import type { Preset } from "../model/presets";
 import { IconButton } from "./IconButton";
 import { Modal } from "./Modal";
+import { RenameDialog } from "./RenameDialog";
 
 export function WorldsDialog({
   editor,
@@ -32,6 +33,21 @@ export function WorldsDialog({
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [renameId, setRenameId] = useState<string | null>(null);
   const savedWorlds = editor.library.worlds.filter((entry) => !entry.preview);
+  const renaming = savedWorlds.find((entry) => entry.id === renameId);
+  if (renaming)
+    return (
+      <RenameDialog
+        title="Rename world"
+        name={renaming.world.name}
+        maxLength={60}
+        onSave={(name) => {
+          // A failed save shows its error back in the Worlds list.
+          if (name) editor.renameWorld(renaming.id, name);
+          setRenameId(null);
+        }}
+        onClose={() => setRenameId(null)}
+      />
+    );
   return (
     <Modal label="Worlds" onClose={onClose}>
       <div className="modal-heading worlds-heading">
@@ -67,31 +83,12 @@ export function WorldsDialog({
         {savedWorlds.map(({ id, world }) => (
           <div className="saved-world" key={id}>
             <div className="saved-world-heading">
-              {renameId === id ? (
-                <input
-                  className="rename-world"
-                  aria-label="World name"
-                  defaultValue={world.name}
-                  maxLength={60}
-                  autoFocus
-                  onBlur={(e) => {
-                    const name = e.target.value.trim();
-                    if (name && name !== world.name)
-                      editor.renameWorld(id, name);
-                    setRenameId(null);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") e.currentTarget.blur();
-                  }}
-                />
-              ) : (
-                <button className="open-world" onClick={() => onOpen(id)}>
-                  <strong>{world.name}</strong>
-                  {id === editor.library.activeId && !editor.isShared && (
-                    <span>Current</span>
-                  )}
-                </button>
-              )}
+              <button className="open-world" onClick={() => onOpen(id)}>
+                <strong>{world.name}</strong>
+                {id === editor.library.activeId && !editor.isShared && (
+                  <span>Current</span>
+                )}
+              </button>
               <IconButton
                 label={`Options for ${world.name}`}
                 onClick={() => {
@@ -113,7 +110,7 @@ export function WorldsDialog({
                   <Pencil size={15} aria-hidden="true" /> Rename
                 </button>
                 <button onClick={() => downloadWorld(world)}>
-                  <Download size={15} aria-hidden="true" /> Export file
+                  <Download size={15} aria-hidden="true" /> Export
                 </button>
                 {editor.library.worlds.length > 1 &&
                   (deleteId === id ? (
@@ -137,7 +134,7 @@ export function WorldsDialog({
                       className="delete-world"
                       onClick={() => setDeleteId(id)}
                     >
-                      <Trash2 size={15} aria-hidden="true" /> Delete world
+                      <Trash2 size={15} aria-hidden="true" /> Delete
                     </button>
                   ))}
               </div>

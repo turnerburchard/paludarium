@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { Copy, Eye, Move, RotateCw, Skull, Trash2, X } from "lucide-react";
+import {
+  Copy,
+  Eye,
+  Move,
+  Pencil,
+  RotateCw,
+  Skull,
+  Trash2,
+  X,
+} from "lucide-react";
 import { assets, isAnimal } from "../assets";
 import type { Editor } from "../editor/useEditor";
 import { plantCondition } from "../model/plants";
@@ -17,12 +26,14 @@ export function Inspector({
   ecosystem,
   view,
   onWatch,
+  onRename,
 }: {
   editor: Editor;
   object: HabitatObject;
   ecosystem: EcosystemController;
   view: boolean;
   onWatch: () => void;
+  onRename: () => void;
 }) {
   const asset = assets[object.kind];
   const animal = isAnimal(object.kind);
@@ -45,6 +56,11 @@ export function Inspector({
           <h2>{object.name ?? asset.name}</h2>
           {object.name && <p className="animal-species">{asset.name}</p>}
         </div>
+        {animal && !view && (
+          <IconButton label="Rename" onClick={onRename}>
+            <Pencil size={16} />
+          </IconButton>
+        )}
         <IconButton label="Deselect object" onClick={() => editor.select(null)}>
           <X size={17} />
         </IconButton>
@@ -79,23 +95,6 @@ export function Inspector({
       )}
       {!view && life && (
         <div className="animal-care">
-          <label className="animal-name">
-            <span>Name</span>
-            <input
-              key={object.name}
-              defaultValue={object.name}
-              placeholder={`Name this ${asset.name.toLowerCase()}`}
-              maxLength={40}
-              onBlur={(e) => {
-                const name = e.target.value.trim() || undefined;
-                if (name !== object.name)
-                  editor.patchObject(object.id, { name });
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") e.currentTarget.blur();
-              }}
-            />
-          </label>
           <p>
             {life.age < MATURITY_AGE
               ? "Juvenile · Growing"
