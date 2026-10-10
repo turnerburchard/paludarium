@@ -586,7 +586,7 @@ export class Ecosystem {
           },
           state.normal,
         );
-        const facing = alongSurface(state.direction, state.normal);
+        const facing = facingOf(state);
         const ahead =
           direction && facing ? (dot(direction, facing) + 1) / 2 : 0.5;
         const fresh = agent.recent.includes(id) ? 0.12 : 1;
@@ -795,7 +795,7 @@ export class Ecosystem {
   private lookAround(agent: Agent) {
     const state = agent.state;
     if (this.elapsed >= agent.glanceAt) {
-      const forward = alongSurface(state.direction, state.normal);
+      const forward = facingOf(state);
       if (forward) {
         const side = cross(state.normal, forward);
         const angle = (this.roll() - 0.5) * 1.8;
@@ -959,7 +959,7 @@ export class Ecosystem {
    * whether the animal is still turning and should not set off yet. */
   private turnToward(agent: Agent, point: Vec3, threshold = TURN_START) {
     const state = agent.state;
-    const facing = alongSurface(state.direction, state.normal);
+    const facing = facingOf(state);
     const wanted = alongSurface(
       {
         x: point.x - state.position.x,
@@ -1005,6 +1005,11 @@ const interpolate = (a: Vec3, b: Vec3, t: number): Vec3 => ({
   y: a.y + (b.y - a.y) * t,
   z: a.z + (b.z - a.z) * t,
 });
+/** Which way an animal faces along its surface. Having walked straight
+ * into the glass, it faces up it. */
+const facingOf = (state: AnimalState) =>
+  alongSurface(state.direction, state.normal) ??
+  alongSurface({ x: 0, y: 1, z: 0 }, state.normal);
 /** The unit direction of `v` within the surface, or undefined if it points along the normal. */
 function alongSurface(v: Vec3, normal: Vec3): Vec3 | undefined {
   const along = dot(v, normal);
