@@ -124,10 +124,10 @@ try {
     );
     await page
       .locator(".preset-options")
-      .getByRole("button", { name: "Amazon river", exact: true })
+      .getByRole("button", { name: "Empty tank", exact: true })
       .click();
     await page.waitForFunction(
-      () => document.title === "paludarium · Amazon river",
+      () => document.title === "paludarium · Untitled",
     );
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     await page.getByRole("button", { name: "My creek", exact: true }).click();
