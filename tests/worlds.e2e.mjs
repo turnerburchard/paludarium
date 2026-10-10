@@ -120,15 +120,17 @@ try {
         .fill("My creek");
     // Clicking the picker blurs rename and must flush the pending autosave before switching.
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
-    await page.waitForFunction(
-      () => document.title === "paludarium · My creek",
-    );
+    await page
+      .getByRole("button", { name: "Options for My creek", exact: true })
+      .waitFor();
     await page
       .locator(".preset-options")
       .getByRole("button", { name: "Empty tank", exact: true })
       .click();
     await page.waitForFunction(
-      () => document.title === "paludarium · Untitled",
+      () =>
+        document.querySelector('input[aria-label="World name"]').value ===
+        "Untitled",
     );
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     await page.getByRole("button", { name: "My creek", exact: true }).click();
