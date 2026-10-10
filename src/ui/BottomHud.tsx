@@ -28,7 +28,7 @@ export function BottomHud({ editor }: { editor: Editor }) {
         ? "Copying"
         : "Placing";
   let title = `${verb} ${name.toLowerCase()}`,
-    hint = "Tap to place · Two-finger drag to pan";
+    hint = "Tap to place · Drag to spin";
   if (tool.type === "terrain") {
     title = terrainTools.find((brush) => brush.mode === tool.mode)?.label ?? "";
     hint = "Drag to brush · Escape to finish";

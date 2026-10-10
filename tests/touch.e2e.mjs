@@ -306,23 +306,7 @@ try {
     "touch placement uses client coordinates even when event offsets are wrong",
   );
 
-  const beforeDrag = await cameraState();
-  stage = "drag and cancellation";
-  await pointer("pointerdown", point);
-  await pointer("pointermove", { x: point.x + 60, y: point.y });
-  await pointer("pointermove", point);
-  await pointer("pointerup", point);
-  assert.equal(
-    (await saved()).objects.length,
-    4,
-    "single-finger drags never plant",
-  );
-  assert.ok(
-    (await cameraState()).position.every(
-      (value, index) => Math.abs(value - beforeDrag.position[index]) < 0.001,
-    ),
-    "single-finger placement drags do not move the camera",
-  );
+  stage = "cancellation";
   await pointer("pointerdown", point);
   await pointer("pointercancel", point);
   await pointer("pointerup", point);
@@ -568,12 +552,28 @@ try {
     "touch release commits a frog without a corresponding pointerup",
   );
   await pointer("pointercancel", point, 82);
+  // Last, because the spin coasts on for seconds with software rendering.
+  stage = "placement drag";
+  const beforeDrag = await cameraState();
+  await pointer("pointerdown", point);
+  await pointer("pointermove", { x: point.x + 60, y: point.y });
+  await pointer("pointerup", { x: point.x + 60, y: point.y });
+  assert.equal(
+    (await saved()).objects.length,
+    3,
+    "single-finger drags never plant",
+  );
+  assert.notEqual(
+    (await cameraState()).angle,
+    beforeDrag.angle,
+    "single-finger placement drags spin the camera",
+  );
   await page.screenshot({
     path: `/tmp/paludarium-frog-${safari ? "webkit" : "chromium"}.png`,
   });
   assert.deepEqual(errors, [], "no browser runtime errors");
   console.log(
-    `PASS (${safari ? "WebKit" : "Chromium"}): aquarium taps, native coordinates, drag/cancel rejection, two-finger pan in placement/Build/View, pinch zoom, tap after navigation, bottom controls after viewport resizing, zoomed frog placement after lost pointer releases`,
+    `PASS (${safari ? "WebKit" : "Chromium"}): aquarium taps, native coordinates, cancel rejection, two-finger pan in placement/Build/View, pinch zoom, tap after navigation, bottom controls after viewport resizing, zoomed frog placement after lost pointer releases, drag to spin while placing`,
   );
 } finally {
   await browser?.close();
