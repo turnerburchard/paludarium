@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { emptyWorld } from "../src/model/schema";
+import { randomFromSeed } from "../src/model/random";
+import { createWorldEcosystem } from "../src/simulation/worldHabitat";
 import { fitBody, type Body } from "../src/simulation/bodyPose";
 import type { Caster, SurfaceHit } from "../src/simulation/solids";
 import type { Vec3 } from "../src/simulation/types";
@@ -136,5 +139,31 @@ describe("setting a body down", () => {
       (side) => pose.position.y + (side * pose.direction.y * frog.length) / 2,
     );
     expect(Math.min(...ends)).toBeLessThan(0.006);
+  });
+});
+
+describe("drawing a set-down body", () => {
+  it("leaves the simulation's own state as it was", () => {
+    const world = emptyWorld();
+    world.objects = [
+      {
+        id: "frog",
+        kind: "dart-frog",
+        x: 1,
+        z: 0.5,
+        scale: 1,
+        rotation: 0,
+        seed: 173,
+      },
+    ];
+    const engine = createWorldEcosystem(world, undefined, randomFromSeed(3));
+    for (let i = 0; i < 60; i++) {
+      engine.advance(0.1);
+      const before = engine.snapshot();
+      const drawn = engine.observeRenderedAnimal("frog")!;
+      expect(drawn.pose).toBeDefined();
+      expect(engine.snapshot()).toEqual(before);
+      expect(engine.getAnimal("frog")!.pose).toBeUndefined();
+    }
   });
 });

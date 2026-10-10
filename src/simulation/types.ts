@@ -97,7 +97,7 @@ export interface AnimalState {
   grounded: boolean;
   /** Where the body rests, set down on the surfaces under it so it
    * follows slopes, bumps and corners rather than just the point it walks
-   * along. Unset where nothing solid is known, as for fish. */
+   * along. Only drawn states have one, and never fish. */
   pose?: BodyPose;
   /** How the current edge is travelled. `hop` is true for the whole edge,
    * including the crouch before takeoff and the landing. `bend` is how far
