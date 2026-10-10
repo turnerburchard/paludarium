@@ -480,6 +480,32 @@ describe("preset habitats", () => {
       }
     }
   });
+
+  it("let frogs cross the alpine creek", () => {
+    const engine = createWorldEcosystem(makePreset("mountain"));
+    const frog = engine
+      .snapshot()
+      .animals.find((animal) => animal.speciesId === "canyon-tree-frog")!;
+    const routes = engine.graph.paths(
+      frog.nodeId,
+      frogProfile("canyon-tree-frog"),
+    );
+    const groundNear = (x: number, z: number) =>
+      [...engine.graph.nodes.values()]
+        .filter((node) => node.surface === "ground")
+        .reduce((best, node) =>
+          Math.hypot(node.position.x - x, node.position.z - z) <
+          Math.hypot(best.position.x - x, best.position.z - z)
+            ? node
+            : best,
+        );
+    // The meadow in front of the creek and the slope behind it.
+    for (const [x, z] of [
+      [-3, 1.3],
+      [3, -1.2],
+    ])
+      expect(routes.has(groundNear(x, z).id), `${x},${z}`).toBe(true);
+  });
 });
 
 describe("insects across edits", () => {
