@@ -124,6 +124,9 @@ import {
   bonnetMushrooms,
   chickenOfTheWoods,
   flyAgaric,
+  houseplantMushrooms,
+  pantherCaps,
+  parasolMushroom,
 } from "./landscape/mushrooms";
 import { ludwigia } from "./plants/ludwigia";
 import { dwarfSagittaria } from "./plants/dwarfSagittaria";
@@ -249,6 +252,9 @@ export const assets = {
   bolete,
   "bonnet-mushrooms": bonnetMushrooms,
   "chicken-of-the-woods": chickenOfTheWoods,
+  "parasol-mushroom": parasolMushroom,
+  "panther-caps": pantherCaps,
+  "houseplant-mushrooms": houseplantMushrooms,
   fish,
   "cardinal-tetra": cardinalTetra,
   "ember-tetra": emberTetra,
