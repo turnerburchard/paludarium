@@ -15,7 +15,8 @@ const presets = [
   { name: "alpine-creek", button: "Alpine creek" },
   { name: "desert-spring", button: "Desert spring" },
   { name: "limestone-grotto", button: "Limestone grotto" },
-  { name: "aquarium", button: "Aquarium" },
+  { name: "amazon-river", button: "Amazon river" },
+  { name: "tropical-island", button: "Tropical island" },
 ].filter(
   (preset) =>
     !process.env.SCREENSHOT_PRESET ||
