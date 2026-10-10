@@ -11,6 +11,7 @@ import { makePreset } from "../src/model/presets";
 import { groundHeight } from "../src/model/terrain";
 import { LandSurfaces } from "../src/simulation/landSurfaces";
 import { buildHabitat } from "../src/simulation/worldHabitat";
+import { Solids } from "../src/simulation/solids";
 import type { SpeciesProfile } from "../src/simulation/types";
 
 const profile = (kind: AssetKind): SpeciesProfile => {
@@ -261,5 +262,61 @@ describe("exposed hardscape routes", () => {
     expect(
       reached(deep, dweller, 2.5).some((node) => node.supportId === "rock"),
     ).toBe(true);
+  });
+});
+
+describe("room for a body", () => {
+  it("measures the space over each surface, so tall animals keep out of low gaps", () => {
+    const world = stackedWorld();
+    const graph = buildHabitat(world);
+    const solids = new Solids(world);
+    const low = [...graph.nodes.values()].filter(
+      (node) => node.headroom !== undefined && node.headroom < 0.1,
+    );
+    expect(low.length).toBeGreaterThan(0);
+    for (const node of low) {
+      // Something solid really is that close over the surface.
+      const over = solids.cast(node.position, node.normal, 0.2)!;
+      expect(over.distance).toBeLessThan(0.11);
+      const tall = {
+        ...profile("tree-frog"),
+        body: { length: 0.3, width: 0.3, height: 0.2 },
+      };
+      expect(graph.allowed(node.id, tall)).toBe(false);
+    }
+  });
+});
+
+describe("solids an animal's body rests on", () => {
+  it("finds the ground, the glass and stone along a ray", () => {
+    const world = stackedWorld();
+    const solids = new Solids(world);
+    const env = world.environment;
+    const floor = groundHeight(2, 1, env);
+    const down = solids.cast(
+      { x: 2, y: floor + 0.3, z: 1 },
+      { x: 0, y: -1, z: 0 },
+      1,
+    )!;
+    expect(down.point.y).toBeCloseTo(floor, 3);
+    expect(down.distance).toBeCloseTo(0.3, 3);
+    const glass = solids.cast(
+      { x: env.width / 2 - 0.1, y: floor + 0.1, z: 0 },
+      { x: 1, y: 0, z: 0 },
+      1,
+    )!;
+    expect(glass.distance).toBeCloseTo(0.1);
+    expect(glass.point.x).toBeCloseTo(env.width / 2);
+    const top = new LandSurfaces(world).at(-1.2, 0)!.position.y - 0.015;
+    const stone = solids.cast(
+      { x: -1.2, y: top + 0.5, z: 0 },
+      { x: 0, y: -1, z: 0 },
+      1,
+    )!;
+    expect(stone.point.y).toBeCloseTo(top, 3);
+    // Out of range, nothing is there.
+    expect(
+      solids.cast({ x: 2, y: floor + 0.3, z: 1 }, { x: 0, y: -1, z: 0 }, 0.2),
+    ).toBeUndefined();
   });
 });

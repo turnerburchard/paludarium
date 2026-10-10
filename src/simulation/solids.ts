@@ -7,7 +7,6 @@ import type { Vec3 } from "./types";
 
 export interface SurfaceHit {
   point: Vec3;
-  normal: Vec3;
   distance: number;
 }
 
@@ -22,6 +21,8 @@ export class Solids implements Caster {
   private readonly ray = new THREE.Ray();
   private readonly hit = new THREE.Vector3();
   private readonly normal = new THREE.Vector3();
+  private readonly end = new THREE.Vector3();
+  private readonly reach = new THREE.Box3();
 
   constructor(
     private readonly world: World,
@@ -58,10 +59,7 @@ export class Solids implements Caster {
     let near = 0,
       nearAbove = above(0);
     // Starting underground is as good as being stopped at once.
-    if (nearAbove <= 0) {
-      const ground = this.ground(o.x, o.z);
-      return { point: { ...o }, normal: ground.normal, distance: 0 };
-    }
+    if (nearAbove <= 0) return { point: { ...o }, distance: 0 };
     while (near < far) {
       const next = Math.min(near + 0.05, far),
         nextAbove = above(next);
@@ -78,10 +76,10 @@ export class Solids implements Caster {
           if (at > 0) [low, lowAbove] = [t, at];
           else [high, highAbove] = [t, at];
         }
-        const ground = this.ground(o.x + d.x * t, o.z + d.z * t);
+        const x = o.x + d.x * t,
+          z = o.z + d.z * t;
         return {
-          point: ground.position,
-          normal: ground.normal,
+          point: { x, y: groundHeight(x, z, env), z },
           distance: t,
         };
       }
@@ -103,8 +101,6 @@ export class Solids implements Caster {
         if (t < 0 || t > (best?.distance ?? far)) continue;
         best = {
           point: { x: o.x + d.x * t, y: o.y + d.y * t, z: o.z + d.z * t },
-          normal:
-            axis === "x" ? { x: -side, y: 0, z: 0 } : { x: 0, y: 0, z: -side },
           distance: t,
         };
       }
@@ -117,33 +113,38 @@ export class Solids implements Caster {
     this.ray.origin.set(o.x, o.y, o.z);
     this.ray.direction.set(d.x, d.y, d.z);
     let best: SurfaceHit | undefined;
+    const end = this.end
+      .copy(this.ray.direction)
+      .multiplyScalar(far)
+      .add(this.ray.origin);
+    this.reach.setFromPoints([this.ray.origin, end]);
     for (const solid of this.surfaces.solids)
-      visitRayFaces(
-        solid.tree,
-        this.ray,
-        ({ triangle }) => {
-          const normal = triangle.getNormal(this.normal);
-          if (normal.dot(this.ray.direction) >= 0) return;
-          if (
-            !this.ray.intersectTriangle(
-              triangle.a,
-              triangle.b,
-              triangle.c,
-              true,
-              this.hit,
+      if (solid.bounds.intersectsBox(this.reach))
+        visitRayFaces(
+          solid.tree,
+          this.ray,
+          ({ triangle }) => {
+            const normal = triangle.getNormal(this.normal);
+            if (normal.dot(this.ray.direction) >= 0) return;
+            if (
+              !this.ray.intersectTriangle(
+                triangle.a,
+                triangle.b,
+                triangle.c,
+                true,
+                this.hit,
+              )
             )
-          )
-            return;
-          const distance = this.hit.distanceTo(this.ray.origin);
-          if (distance > (best?.distance ?? far)) return;
-          best = {
-            point: { x: this.hit.x, y: this.hit.y, z: this.hit.z },
-            normal: { x: normal.x, y: normal.y, z: normal.z },
-            distance,
-          };
-        },
-        best?.distance ?? far,
-      );
+              return;
+            const distance = this.hit.distanceTo(this.ray.origin);
+            if (distance > (best?.distance ?? far)) return;
+            best = {
+              point: { x: this.hit.x, y: this.hit.y, z: this.hit.z },
+              distance,
+            };
+          },
+          best?.distance ?? far,
+        );
     return best;
   }
 }

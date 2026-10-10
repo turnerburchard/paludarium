@@ -26,7 +26,6 @@ function planes(...faces: { point: Vec3; normal: Vec3 }[]): Caster {
             y: origin.y + direction.y * distance,
             z: origin.z + direction.z * distance,
           },
-          normal,
           distance,
         };
       }
@@ -57,15 +56,7 @@ function pebble(centre: Vec3, radius: number): Caster {
         y: origin.y + direction.y * distance,
         z: origin.z + direction.z * distance,
       };
-      return {
-        point,
-        normal: {
-          x: (point.x - centre.x) / radius,
-          y: (point.y - centre.y) / radius,
-          z: (point.z - centre.z) / radius,
-        },
-        distance,
-      };
+      return { point, distance };
     },
   };
 }
