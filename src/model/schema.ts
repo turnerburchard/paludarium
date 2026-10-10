@@ -93,6 +93,7 @@ export const assetKinds = [
   "hairgrass",
   "orchid",
   "water-lily",
+  "duckweed",
   "hedgehog-cactus",
   "saguaro",
   "organ-pipe",

@@ -88,6 +88,7 @@ import { treePhilodendron } from "./plants/treePhilodendron";
 import { hairgrass } from "./plants/hairgrass";
 import { orchid } from "./plants/orchid";
 import { waterLily } from "./plants/waterLily";
+import { duckweed } from "./plants/duckweed";
 import { hedgehogCactus } from "./plants/hedgehogCactus";
 import { beavertail, cholla, organPipe, saguaro } from "./plants/cacti";
 import { cushionMoss, fernMoss, javaMoss, sheetMoss } from "./landscape/mosses";
@@ -213,6 +214,7 @@ export const assets = {
   "java-fern": javaFern,
   cryptocoryne,
   "water-lily": waterLily,
+  duckweed,
   moss: cushionMoss,
   "sheet-moss": sheetMoss,
   "fern-moss": fernMoss,
