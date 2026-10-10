@@ -1,6 +1,6 @@
 import { discoveryFor, type Discovery } from "./discoveries";
 import { Steering, newSwimmer, type SwimWater, type Swimmer } from "./fish";
-import { fitBody, type BodyPose } from "./bodyPose";
+import { fitBody, follow, type BodyPose } from "./bodyPose";
 import type { Solids } from "./solids";
 import {
   HabitatGraph,
@@ -77,6 +77,9 @@ interface Agent {
   /** Where the body was drawn for the current and previous steps. */
   pose?: BodyPose;
   previousPose?: BodyPose;
+  /** The body as last set down, before any hop's lift, the spot it was set
+   * down from and when, so the next is set down from it. */
+  settled?: { pose: BodyPose; from: Vec3; at: number; gliding: boolean };
 }
 export interface SimulationOptions {
   random?: () => number;
@@ -248,10 +251,11 @@ export class Ecosystem {
         previous.motion.bend + (state.motion.bend - previous.motion.bend) * t,
     };
     // The body is set down only for states that are drawn, once each.
-    agent.pose ??= this.settle(agent, state);
-    agent.previousPose ??= agent.previous
-      ? this.settle(agent, previous)
-      : agent.pose;
+    // Each body is set down from the last, so the earlier step goes first.
+    if (agent.previous)
+      agent.previousPose ??= this.settle(agent, previous, this.elapsed - STEP);
+    agent.pose ??= this.settle(agent, state, this.elapsed);
+    agent.previousPose ??= agent.pose;
     const from = agent.previousPose,
       to = agent.pose;
     if (from && to)
@@ -307,7 +311,8 @@ export class Ecosystem {
         };
         if (!heldIds?.has(agent.state.id)) {
           this.update(agent);
-          // A still animal keeps its body where it was set down.
+          // A still animal keeps its body where it was set down, once it
+          // has glided there.
           const { previous, state } = agent;
           if (
             !same(previous.position, state.position) ||
@@ -315,7 +320,8 @@ export class Ecosystem {
             !same(previous.direction, state.direction) ||
             previous.motion.lift !== state.motion.lift ||
             previous.nodeId !== state.nodeId ||
-            previous.moving !== state.moving
+            previous.moving !== state.moving ||
+            agent.settled?.gliding
           )
             agent.pose = undefined;
           const kind = discoveryFor(agent.state);
@@ -331,12 +337,19 @@ export class Ecosystem {
       this.breedInsects();
     }
   }
-  /** Sets the body down on what is under the point it walks along. In the
-   * air it is only kept clear, so a hop still arcs. */
-  private settle(agent: Agent, state: AnimalState): BodyPose | undefined {
+  /** Sets the body down on what is under the point it walks along. On
+   * uneven stone a small step or turn can change which way the body best
+   * rests, so from where it was last set down nearby it moves there no
+   * faster than a body can. In the air it is only kept clear, so a hop
+   * still arcs. */
+  private settle(
+    agent: Agent,
+    state: AnimalState,
+    at: number,
+  ): BodyPose | undefined {
     const body = agent.profile.body;
     if (!this.solids || !body || agent.swimmer) return undefined;
-    const { position, normal, direction } = state;
+    const { position, direction } = state;
     const airborne = state.motion.hop && state.motion.lift > 0;
     // Leaves and stems aren't solid, so there the body is only kept clear
     // of what is.
@@ -344,13 +357,37 @@ export class Ecosystem {
     const soft = !!(this.graph.node(state.nodeId).plantId ?? target?.plantId);
     const start = state.grounded
       ? this.solids.ground(position.x, position.z)
-      : { position, normal };
-    const pose = fitBody(
+      : { position, normal: state.normal };
+    const last = agent.settled;
+    const near =
+      last &&
+      at > last.at &&
+      distance(last.from, position) < body.length &&
+      at - last.at < 1;
+    const fitted = fitBody(
       { position: start.position, normal: start.normal, direction },
       body,
       this.solids,
       !airborne && !soft,
     );
+    const pose = near
+      ? follow(
+          last.pose,
+          fitted,
+          {
+            x: position.x - last.from.x,
+            y: position.y - last.from.y,
+            z: position.z - last.from.z,
+          },
+          Math.round((at - last.at) / STEP),
+        )
+      : fitted;
+    agent.settled = {
+      pose,
+      from: copyVector(position),
+      at,
+      gliding: pose !== fitted,
+    };
     return airborne
       ? {
           ...pose,
