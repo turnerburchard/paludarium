@@ -1,13 +1,15 @@
-import { Check, Globe2, Redo2, Undo2 } from "lucide-react";
+import { Check, Globe2, Redo2, Share2, Undo2 } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import { IconButton } from "./IconButton";
 
 export function TopBar({
   editor,
   onWorlds,
+  onShare,
 }: {
   editor: Editor;
   onWorlds: () => void;
+  onShare: () => void;
 }) {
   const { world } = editor;
 
@@ -60,6 +62,9 @@ export function TopBar({
             <Redo2 size={18} />
           </IconButton>
         </span>
+        <IconButton label="Share this world" onClick={onShare}>
+          <Share2 size={18} />
+        </IconButton>
         <button className="worlds-button" onClick={onWorlds}>
           <Globe2 size={18} aria-hidden="true" /> Worlds
         </button>

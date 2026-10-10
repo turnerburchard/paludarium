@@ -169,7 +169,13 @@ export default function App({
           />
         </SceneBoundary>
       </div>
-      {!view && <TopBar editor={editor} onWorlds={openWorlds} />}
+      {!view && (
+        <TopBar
+          editor={editor}
+          onWorlds={openWorlds}
+          onShare={() => setDialog("share")}
+        />
+      )}
       {files.fileInput}
       {hasBuilt && (
         <Sidebar

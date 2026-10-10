@@ -58,9 +58,11 @@ export function SceneTools({
         <IconButton label="Reset view" onClick={onResetCamera}>
           <Home size={19} />
         </IconButton>
-        <IconButton label="Share this world" onClick={onShare}>
-          <Share2 size={19} />
-        </IconButton>
+        {view && (
+          <IconButton label="Share this world" onClick={onShare}>
+            <Share2 size={19} />
+          </IconButton>
+        )}
       </div>
     </div>
   );
