@@ -275,6 +275,7 @@ function Scene({
             key={i}
             spring={spring}
             environment={env}
+            paused={editor.paused}
             selected={!view && tool.type === "spring" && tool.index === i}
             onSelect={(e) => {
               if (e.delta > 6 || view || placing || tool.type === "terrain")
