@@ -21,6 +21,11 @@ const server = spawn(
   ],
   { cwd: root, stdio: "ignore" },
 );
+// A taken port would leave these checks quietly testing another app.
+server.on("exit", (code) => {
+  if (code && !server.killed)
+    throw new Error("Vite exited early. Is its port already in use?");
+});
 const empty = {
   version: 1,
   name: "HTTP empty tank",
