@@ -78,6 +78,19 @@ describe("safe files and valid habitat", () => {
         ).toBeNull();
     },
   );
+  // Browsing a preset saves it, and one unreadable world locks the whole library.
+  it.each([
+    "empty",
+    "tropical",
+    "mountain",
+    "desert",
+    "grotto",
+    "island",
+    "amazon",
+    "asian",
+  ] as const)("reopens a saved copy of the %s preset", (preset) => {
+    expect(() => parseWorld(JSON.stringify(makePreset(preset)))).not.toThrow();
+  });
   it("creates distinct preset objects without randomUUID", () => {
     vi.stubGlobal("crypto", {
       getRandomValues: crypto.getRandomValues.bind(crypto),
