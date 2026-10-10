@@ -1,20 +1,38 @@
-import { assets } from "../assets";
+import { assets, modelHeight } from "../assets";
 import type { Environment, HabitatObject } from "./schema";
 import { groundHeight } from "./terrain";
 import { waterLevel } from "./water";
 
 /** Where an object's base sits: on the ground, on the stone or wood it was
- * placed on, or on the surface for floating plants. */
+ * placed on, or on the surface for floating plants. Stone and wood settle to
+ * the lowest ground under them, so on a slope no side hangs in the air. */
 export function objectBase(object: HabitatObject, env: Environment) {
   const asset = assets[object.kind];
-  const ground =
-    asset.groundPoints && !object.support
-      ? lowestGround(object, asset.groundPoints, env)
-      : groundHeight(object.x, object.z, env);
+  const points =
+    asset.groundPoints ?? (asset.hardscape && footprintRing(asset.radius));
+  let ground = groundHeight(object.x, object.z, env);
+  if (points && !object.support) {
+    // Never so deep it vanishes, as a stone at the lip of a drop would.
+    const deepest =
+      ground - 0.9 * modelHeight(object.kind, object.seed) * object.scale;
+    ground = Math.max(lowestGround(object, points, env), deepest);
+  }
   const base = ground + (object.lift ?? 0);
   return asset.floats
     ? Math.max(base, waterLevel(object.x, object.z, env))
     : base;
+}
+
+/** Points around a piece's footprint. The radius bounds the whole model, so
+ * the ring sits inside it, where the piece meets the ground. */
+function footprintRing(radius: number) {
+  return Array.from({ length: 8 }, (_, i) => {
+    const angle = (i / 8) * 2 * Math.PI;
+    return {
+      x: 0.7 * radius * Math.cos(angle),
+      z: 0.7 * radius * Math.sin(angle),
+    };
+  });
 }
 
 /** The lowest ground under points on a model, after it is turned and

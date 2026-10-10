@@ -9,6 +9,7 @@ import type { Environment, HabitatObject, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
 import { highestWater, placementProblem, waterLevel } from "../model/water";
 import { groundHeight } from "../model/terrain";
+import { CURLED_BOW, CURLED_LENGTH, type Clearance } from "./fish";
 import type { Vec3 } from "./types";
 
 const CLEARANCE = 0.015;
@@ -120,6 +121,13 @@ export class SwimSpace {
     return Math.max((body.max.y - body.min.y) / 2, this.reach(id) * 0.75);
   }
 
+  /** How deep the water must be for a fish to swim and bob in, with room
+   * to turn over uneven ground. Water as shallow as the fish pins it there. */
+  height(id: string) {
+    const body = this.bodies.get(id)!;
+    return body.max.y - body.min.y + 2 * SWIM_BOB;
+  }
+
   reach = (id: string) => {
     const body = this.bodies.get(id)!;
     return Math.max(-body.min.z, body.max.z);
@@ -150,7 +158,7 @@ export class SwimSpace {
     y: number,
     z: number,
     heading: number,
-    padding = 0,
+    { padding = 0, curl = 0 }: Clearance = {},
   ): boolean => {
     // Every swimmer shares the open-water placement rule.
     if (placementProblem("fish", x, z, this.world.environment)) return false;
@@ -163,6 +171,16 @@ export class SwimSpace {
     this.bodyBox.max.x += padding;
     this.bodyBox.min.z -= padding;
     this.bodyBox.max.z += padding;
+    if (curl) {
+      // The fish faces -z, so its left is -x.
+      const { min, max } = this.bodyBox;
+      const length = max.z - min.z,
+        middle = (min.z + max.z) / 2;
+      min.z = middle - (length * CURLED_LENGTH) / 2;
+      max.z = middle + (length * CURLED_LENGTH) / 2;
+      if (curl > 0) min.x -= length * CURLED_BOW;
+      else max.x += length * CURLED_BOW;
+    }
     this.matrix.compose(
       this.position.set(x, y, z),
       this.rotation.setFromAxisAngle(this.up, heading),
@@ -170,9 +188,22 @@ export class SwimSpace {
     );
     this.inverse.copy(this.matrix).invert();
     this.query.copy(this.bodyBox).applyMatrix4(this.matrix);
-    // Retreats can keep their previous depth, so check the floor here too.
-    if (this.query.min.y < groundHeight(x, z, this.world.environment))
+    // Poses between two settled heights can dip into a slope, so check the
+    // floor here too. Water barely deeper than the fish would pin it there,
+    // with no room to turn, so it keeps out of the shallows.
+    const env = this.world.environment;
+    const ground = groundHeight(x, z, env);
+    if (
+      this.query.min.y < ground ||
+      waterLevel(x, z, env) - ground < this.height(id)
+    )
       return false;
+    // A curled fish pushes leaves aside, but not stone or wood.
+    if (curl)
+      return (
+        this.insideTank() &&
+        !this.solids.some((solid) => this.intersects(solid, this.bodyBox))
+      );
     return this.clear();
   };
 
@@ -190,28 +221,38 @@ export class SwimSpace {
   /** Whether the posed body in `query` stays inside the tank and water, and
    * clear of everything in it. */
   private clear() {
+    return this.insideTank() && !this.intersects(this.obstacles, this.bodyBox);
+  }
+
+  /** Whether the posed body in `query` stays inside the glass and water. */
+  private insideTank() {
     const env = this.world.environment;
-    if (
-      this.query.min.x <= -env.width / 2 ||
-      this.query.max.x >= env.width / 2 ||
-      this.query.min.z <= -env.depth / 2 ||
-      this.query.max.z >= env.depth / 2 ||
-      this.query.max.y >=
+    return (
+      this.query.min.x > -env.width / 2 &&
+      this.query.max.x < env.width / 2 &&
+      this.query.min.z > -env.depth / 2 &&
+      this.query.max.z < env.depth / 2 &&
+      this.query.max.y <
         waterLevel(
           (this.query.min.x + this.query.max.x) / 2,
           (this.query.min.z + this.query.max.z) / 2,
           env,
         )
-    )
-      return false;
-    return !this.intersects(this.obstacles, this.bodyBox);
+    );
   }
 
   /** A new or edited object can surround a fish without crossing its skin.
    * Check solid interiors when finding a starting position, too. Hollow log
    * walls and shelter openings retain their real gaps. */
-  canStart(id: string, x: number, y: number, z: number, heading: number) {
-    if (!this.canSwim(id, x, y, z, heading)) return false;
+  canStart(
+    id: string,
+    x: number,
+    y: number,
+    z: number,
+    heading: number,
+    clearance?: Clearance,
+  ) {
+    if (!this.canSwim(id, x, y, z, heading, clearance)) return false;
     this.ray.set(
       this.position,
       new THREE.Vector3(0.937, 0.213, 0.277).normalize(),

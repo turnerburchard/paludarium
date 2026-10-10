@@ -37,7 +37,7 @@ const server = spawn(
   ],
   { cwd: root, stdio: "ignore" },
 );
-let browser;
+const browsers = [];
 try {
   for (let i = 0; i < 50; i++) {
     try {
@@ -48,20 +48,20 @@ try {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }
-  browser = await chromium.launch({
-    executablePath: process.env.CHROMIUM_PATH || undefined,
-    args: [
-      "--no-sandbox",
-      "--use-gl=angle",
-      "--use-angle=swiftshader",
-      "--enable-unsafe-swiftshader",
-    ],
-  });
   const errors = [];
-  for (const viewport of [
-    { width: 1440, height: 960 },
-    { width: 390, height: 844 },
-  ]) {
+  // Each size gets its own browser, and so its own GPU process, so their
+  // shader compiles run side by side instead of one after the other.
+  async function checkWorlds(viewport) {
+    const browser = await chromium.launch({
+      executablePath: process.env.CHROMIUM_PATH || undefined,
+      args: [
+        "--no-sandbox",
+        "--use-gl=angle",
+        "--use-angle=swiftshader",
+        "--enable-unsafe-swiftshader",
+      ],
+    });
+    browsers.push(browser);
     const page = await browser.newPage({ viewport });
     // Software WebGL on CI can take half a minute to compile a new world's shaders.
     page.setDefaultTimeout(90_000);
@@ -92,7 +92,7 @@ try {
       .click();
     await page.getByRole("button", { name: "Pause life (Space)" }).click();
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
-    assert.equal(await page.locator(".preset-options button").count(), 7);
+    assert.equal(await page.locator(".preset-options button").count(), 8);
     await page
       .getByRole("button", { name: "Close dialog", exact: true })
       .click();
@@ -120,10 +120,10 @@ try {
     );
     await page
       .locator(".preset-options")
-      .getByRole("button", { name: "Aquarium", exact: true })
+      .getByRole("button", { name: "Amazon river", exact: true })
       .click();
     await page.waitForFunction(
-      () => document.title === "paludarium · Aquarium",
+      () => document.title === "paludarium · Amazon river",
     );
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     await page.getByRole("button", { name: "My creek", exact: true }).click();
@@ -147,7 +147,7 @@ try {
       // The rest is the same save logic at either size, and software
       // rendering makes the large desktop canvas slow, so only the phone runs it.
       await page.close();
-      continue;
+      return;
     }
     await page.reload();
     await page.getByRole("button", { name: "Pause life (Space)" }).click();
@@ -275,11 +275,17 @@ try {
     });
     await page.close();
   }
+  await Promise.all(
+    [
+      { width: 1440, height: 960 },
+      { width: 390, height: 844 },
+    ].map(checkWorlds),
+  );
   assert.deepEqual(errors, []);
   console.log(
     "PASS: desktop and phone rename, preset switching, reload, export/import, confirmed deletion, storage failure, file sharing, and minimal closed UI",
   );
 } finally {
-  await browser?.close();
+  await Promise.all(browsers.map((browser) => browser.close()));
   server.kill();
 }

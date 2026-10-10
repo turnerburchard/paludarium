@@ -62,7 +62,7 @@ describe("editor history", () => {
   });
 });
 describe("safe files and valid habitat", () => {
-  it.each(["tropical", "mountain", "aquarium", "island"] as const)(
+  it.each(["tropical", "mountain", "amazon", "asian", "island"] as const)(
     "round trips the %s preset and places every inhabitant in its habitat",
     (preset) => {
       const world = makePreset(preset);
@@ -196,7 +196,7 @@ describe("saved world compatibility", () => {
 
 describe("a fully submerged aquarium", () => {
   it("submerges the whole ground and hardscape without adding terrestrial inhabitants", () => {
-    const world = makePreset("aquarium");
+    const world = makePreset("amazon");
     const env = world.environment;
     expect(env.water).toBe(AQUARIUM_WATER);
     expect(env.water).toBeLessThan(TANK_HEIGHT);
@@ -231,7 +231,7 @@ describe("a fully submerged aquarium", () => {
     expect(swimmingHeight(2, 0, pond, [0.06, 0.2])).toBeCloseTo(
       Math.max(groundHeight(2, 0, pond) + 0.05, pond.water - 0.13),
     );
-    const env = makePreset("aquarium").environment;
+    const env = makePreset("amazon").environment;
     const shallowSwimmer = swimmingHeight(2, 0, env, [0.04, 0.16]);
     const deepSwimmer = swimmingHeight(2, 0, env, [0.16, 0.34]);
     expect(shallowSwimmer - deepSwimmer).toBeGreaterThan(0.5);

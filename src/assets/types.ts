@@ -77,7 +77,8 @@ export interface AssetDefinition {
   scaleRange?: readonly [number, number];
   habitat: "land" | "water" | "either";
   /** Where a long piece meets the ground, in model units. It settles to the
-   * lowest ground under these, so on a slope no end hangs in the air. */
+   * lowest ground under these, so on a slope no end hangs in the air. Other
+   * stone and wood settles to the lowest ground around its footprint. */
   groundPoints?: readonly { x: number; z: number }[];
   /** Frogs route around it. */
   blocksMovement?: boolean;

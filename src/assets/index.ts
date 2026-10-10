@@ -305,6 +305,20 @@ export function assetRadius(kind: AssetKind) {
   return assets[kind].radius * (assets[kind].size ?? 1);
 }
 
+const heights = new Map<string, number>();
+/** How tall a model stands at scale 1, after the asset's size calibration. */
+export function modelHeight(kind: AssetKind, seed: number) {
+  const key = `${kind}:${seed}`;
+  let height = heights.get(key);
+  if (height === undefined) {
+    const model = buildAsset(kind, seed);
+    height = new THREE.Box3().setFromObject(model).max.y;
+    disposeAsset(model);
+    heights.set(key, height);
+  }
+  return height;
+}
+
 /** A scale for a new placement within the asset's range, on the same 0.05
  * steps as the size slider. */
 export function placementScale(kind: AssetKind, random = Math.random) {

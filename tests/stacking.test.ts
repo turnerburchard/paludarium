@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Mesh, Vector3, type Object3D } from "three";
+import { Box3, Mesh, Vector3, type Object3D } from "three";
 import { assets, buildAsset, catalog } from "../src/assets";
 import {
   defaultEnvironment,
@@ -8,6 +8,7 @@ import {
 } from "../src/model/schema";
 import { objectBase, replaceObject } from "../src/model/stacking";
 import { groundHeight } from "../src/model/terrain";
+import { newTerrain } from "../src/model/terrainData";
 import { TerrainStroke } from "../src/editor/terrainStroke";
 import { withEnvironment } from "../src/editor/useEditor";
 
@@ -70,7 +71,9 @@ describe("stacked objects", () => {
     expect(carried.x).toBeCloseTo(-1);
     expect(carried.z).toBeCloseTo(-0.2);
     expect(carried.rotation).toBeCloseTo(Math.PI / 2);
-    expect(above(carried, rock)).toBeCloseTo(above(fern, rock) * 2);
+    expect(above(carried, find(turned, "rock"))).toBeCloseTo(
+      above(fern, rock) * 2,
+    );
   });
 
   it("settle to the ground when their support is removed", () => {
@@ -186,6 +189,23 @@ describe("long wood", () => {
       }
     },
   );
+});
+
+describe("stone on the lip of a drop", () => {
+  // A step down of 0.5 at x = 1.5, so part of a stone at its edge overhangs it.
+  const ledge = {
+    ...env,
+    terrain: newTerrain(env, (x) => (x < 1.5 ? 0.5 : 0)),
+  };
+  const flagstone = object("flagstone", 1.35, 0, { kind: "flagstone" });
+  const top = new Box3().setFromObject(buildAsset("flagstone", 1)).max.y;
+
+  it("sinks toward the drop but keeps its top above the ground", () => {
+    const base = objectBase(flagstone, ledge);
+    const ground = groundHeight(flagstone.x, flagstone.z, ledge);
+    expect(base).toBeLessThan(ground);
+    expect(base + top).toBeGreaterThan(ground);
+  });
 });
 
 function vertices(model: Object3D) {

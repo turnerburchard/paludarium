@@ -29,18 +29,21 @@ export interface HabitatNode {
    * wood. Unset where size doesn't matter, as on plants and the glass. */
   room?: number;
   neighbors: string[];
+  /** Dry surfaces across a short gap of water, for animals that hop. */
+  leaps?: string[];
   perchHeight?: number;
   /** Open water: how far below the surface, on the scale of `swims.depth`,
-   * whether this is the bottom of the water column, and the widest fish body
-   * that fits here. */
-  swim?: { depth: number; bottom: boolean; room: number };
+   * whether this is the bottom of the water column, the widest fish body
+   * that fits here, and how deep the water is. */
+  swim?: { depth: number; bottom: boolean; room: number; column: number };
   plantId?: string;
   supportId?: string;
 }
 export interface SpeciesProfile extends AnimalBehavior {
   id: string;
-  /** Fish swim through open water, and fit where there is `room` for them. */
-  swims?: Swimming & { room: number };
+  /** Fish swim through open water, and fit where there is `room` for them
+   * and water at least `height` deep. */
+  swims?: Swimming & { room: number; height: number };
   /** This animal's footprint, so it keeps to places it fits. */
   radius?: number;
 }
@@ -85,8 +88,15 @@ export interface AnimalState {
    * itself rather than the straight line between nodes. */
   grounded: boolean;
   /** How the current edge is travelled. `hop` is true for the whole edge,
-   * including the crouch before takeoff and the landing. */
-  motion: { progress: number; lift: number; tilt: number; hop: boolean };
+   * including the crouch before takeoff and the landing. `bend` is how far
+   * a fish is curled up for a tight turn: 1 to its left, -1 to its right. */
+  motion: {
+    progress: number;
+    lift: number;
+    tilt: number;
+    hop: boolean;
+    bend: number;
+  };
 }
 /** Insects at one spot. A colony (capacity above zero) breeds back toward its
  * capacity; insects scattered by hand (capacity zero) are simply eaten. */

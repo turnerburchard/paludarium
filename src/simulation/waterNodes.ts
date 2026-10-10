@@ -22,7 +22,8 @@ export function waterNodes(world: World, space: SwimSpace): HabitatNode[] {
     nz = Math.floor(env.depth / SPACING);
   const grid = new Map<string, HabitatNode>();
   // Open water around a point, moved clear of the floor and surface. Shallow
-  // water is as tall as it gets, so a big fish can still cross a creek.
+  // water is as tall as it gets, and each node records how deep it is for
+  // fish to check against their own height.
   const fits = (point: Vec3, half: number) => {
     const ground = groundHeight(point.x, point.z, env);
     const surface = waterLevel(point.x, point.z, env);
@@ -54,6 +55,7 @@ export function waterNodes(world: World, space: SwimSpace): HabitatNode[] {
             depth: depthAt(x, z, env, y),
             bottom: level === LEVELS - 1,
             room,
+            column: surface - ground,
           },
           neighbors: [],
         });

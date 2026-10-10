@@ -143,7 +143,7 @@ try {
   await page
     .getByRole("dialog", { name: "Worlds" })
     .locator(".preset-options")
-    .getByRole("button", { name: "Aquarium", exact: true })
+    .getByRole("button", { name: "Amazon river", exact: true })
     .click();
   await page.waitForFunction((key) => {
     const world = JSON.parse(localStorage.getItem(key), (key, value) =>
@@ -151,7 +151,7 @@ try {
         ? value.worlds.find((entry) => entry.id === value.activeId).world
         : value,
     );
-    return world?.name === "Aquarium" && world.environment.water > 2;
+    return world?.name === "Amazon river" && world.environment.water > 2;
   }, storageKey);
   const aquarium = await page.evaluate(
     (key) =>
@@ -319,7 +319,7 @@ try {
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
-      ).name === "Aquarium",
+      ).name === "Amazon river",
     storageKey,
   );
   await page.getByRole("button", { name: "Worlds", exact: true }).click();
