@@ -1,5 +1,5 @@
 import { assets } from "../assets";
-import type { AssetKind, Environment } from "./schema";
+import type { AssetKind, Environment, Spring } from "./schema";
 import { clamp, groundHeight } from "./terrain";
 import { terrainGrid, terrainPoint, terrainPointCount } from "./terrainData";
 
@@ -18,6 +18,8 @@ const POOL_DEPTH = 0.03;
 const TRICKLE_WIDTH = 0.2;
 const GUSH_WIDTH = 0.7;
 const WIDEST = 1.1;
+/** How far a stream runs from its spring before it reaches its full width. */
+const WELL = 0.35;
 
 export interface CoursePoint {
   x: number;
@@ -302,12 +304,15 @@ function buildWaterMap(env: Environment): WaterMap {
   // fade into the pool rather than stopping short of it.
   const drawn = new Uint8Array(count);
   const width = (i: number) => springWidth(flow[i]);
-  for (const route of routes) {
+  routes.forEach((route, r) => {
     let cells: number[] = [],
       source: number | undefined;
     const finish = (to?: number) => {
+      // Only a route's first stream can start without a pool behind it, and
+      // that one starts at the spring.
+      const spring = source === undefined ? env.springs[r] : undefined;
       if (cells.length > 1)
-        map.streams.push(course(cells, source, to, map, env, width));
+        map.streams.push(course(cells, source, spring, to, map, env, width));
       cells = [];
     };
     for (let k = 0; k < route.length; k++) {
@@ -355,8 +360,28 @@ function buildWaterMap(env: Environment): WaterMap {
       drawn[i] = 1;
     }
     finish();
-  }
+  });
   return map;
+}
+
+/** How far out a spring's water wells up around it. */
+export function springRadius(flow: number) {
+  return 0.05 + 0.06 * flow;
+}
+
+/** Which way water runs out of a spring, as an angle from the x axis toward
+ * z, or undefined where it starts no stream of its own: it wells up in a pool,
+ * or straight into another spring's stream. */
+export function springOutlet(spring: Spring, env: Environment) {
+  const x = spring.x * env.width,
+    z = spring.z * env.depth;
+  const course = waterMap(env).streams.find(
+    ([head]) => head.x === x && head.z === z,
+  );
+  const ahead = course?.find(
+    (point) => point.along >= springRadius(spring.flow),
+  );
+  return ahead && Math.atan2(ahead.z - z, ahead.x - x);
 }
 
 /** How wide a stream runs carrying this much spring water. */
@@ -522,6 +547,7 @@ function hollow(start: number, map: WaterMap, fill: Float64Array): Pool {
 function course(
   cells: number[],
   source: number | undefined,
+  spring: Spring | undefined,
   to: number | undefined,
   map: WaterMap,
   env: Environment,
@@ -537,6 +563,13 @@ function course(
       width: width(cell),
     };
   });
+  // The water comes out of the spring itself, not the middle of its cell.
+  if (spring)
+    points[0] = {
+      ...points[0],
+      x: spring.x * env.width,
+      z: spring.z * env.depth,
+    };
   // Cells beside each other along the glass can land on the same spot.
   points = points.filter(
     (point, i) =>
@@ -564,11 +597,15 @@ function course(
     );
     return { ...point, y: Math.max(surface, to ?? -Infinity), along };
   });
-  if (to !== undefined) return course;
-  return course.map((point) => ({
-    ...point,
-    width: point.width * Math.min(1, (along - point.along) / SOAK),
-  }));
+  const mouth = spring && 2 * springRadius(spring.flow);
+  return course.map((point) => {
+    let width = point.width;
+    // Water leaves the spring as wide as it wells up, then spreads out.
+    if (mouth !== undefined)
+      width = Math.min(width, mouth + ((width - mouth) * point.along) / WELL);
+    if (to === undefined) width *= Math.min(1, (along - point.along) / SOAK);
+    return { ...point, width };
+  });
 }
 
 type PathPoint = { x: number; z: number; width: number };

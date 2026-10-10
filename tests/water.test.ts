@@ -13,6 +13,8 @@ import { baseGroundHeight, groundHeight } from "../src/model/terrain";
 import { newTerrain } from "../src/model/terrainData";
 import {
   STREAM_DEPTH,
+  springOutlet,
+  springRadius,
   streamSurface,
   waterLevel,
   waterMap,
@@ -173,8 +175,20 @@ describe("water from springs", () => {
     expect(streams).toHaveLength(1);
     expectDownhill(streams[0]);
     expect(streams[0].at(-1)!.x).toBeGreaterThan(3);
-    expect(streams[0][0].width).toBeGreaterThan(0.3);
+    expect(Math.max(...streams[0].map((point) => point.width))).toBeGreaterThan(
+      0.3,
+    );
     expect(streams[0].at(-1)!.width).toBe(0);
+  });
+
+  it("runs straight out of the spring, as wide as it wells up", () => {
+    const env = ramp([spring(-0.4)], [], 0);
+    const [head] = waterMap(env).streams[0];
+    expect(head.x).toBeCloseTo(-0.4 * env.width);
+    expect(head.z).toBeCloseTo(env.springs[0].z * env.depth);
+    expect(head.width).toBeCloseTo(2 * springRadius(env.springs[0].flow));
+    // Downhill is toward +x, so that's the way out of the ring of stones.
+    expect(Math.cos(springOutlet(env.springs[0], env)!)).toBeGreaterThan(0.9);
   });
 
   it("joins streams that meet, and widens below where they do", () => {
