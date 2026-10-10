@@ -5,6 +5,22 @@
   font-display: swap;
   src: url("/fonts/fraunces-latin.woff2") format("woff2");
 }
+@font-face {
+  font-family: "Newsreader";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  /* Newsreader runs small, so this brings it up to the other fonts' size. */
+  size-adjust: 112%;
+  src: url("/fonts/newsreader-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/figtree-latin.woff2") format("woff2");
+}
 
 :root {
   font-family: var(--font-ui);
@@ -27,10 +43,9 @@
   --warning: #e8b4a0;
   --accent: #aec5a0;
   --ink: #14241b;
-  --font-ui:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  --font-heading: "Fraunces", Georgia, serif;
+  --font-ui: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-brand: "Fraunces", Georgia, serif;
+  --font-heading: "Newsreader", Georgia, serif;
   --text-small: 12px;
   --text-body: 14px;
   --text-title: 18px;
@@ -54,7 +69,9 @@ button,
 input {
   font: inherit;
 }
-.brand h1,
+.brand h1 {
+  font-family: var(--font-brand);
+}
 .world-title input,
 .inspector h2,
 .modal h2 {
