@@ -16,7 +16,6 @@ export type Panel = "objects" | "habitat" | "life";
 
 export function Sidebar({
   hidden = false,
-  sheetOpen,
   editor,
   ecosystem,
   panel,
@@ -26,7 +25,6 @@ export function Sidebar({
   onClose,
 }: {
   hidden?: boolean;
-  sheetOpen: boolean;
   editor: Editor;
   ecosystem: EcosystemController;
   panel: Panel;
@@ -80,7 +78,7 @@ export function Sidebar({
       </div>
       <div className="panel-content">
         {panel === "objects" ? (
-          <Library editor={editor} hidden={hidden} sheetOpen={sheetOpen} />
+          <Library editor={editor} />
         ) : panel === "habitat" ? (
           <EnvironmentPanel editor={editor} />
         ) : (

@@ -14,3 +14,7 @@ To run locally with Node.js 22 or newer:
 npm ci
 npm run dev
 ```
+
+After changing asset models or prebuilts, run `npm run thumbnails` to regenerate
+the library pictures. Install Chromium with `npx playwright install chromium`
+once, or set `CHROMIUM_PATH` to a local Chromium browser.
