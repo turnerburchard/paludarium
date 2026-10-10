@@ -11,7 +11,12 @@ import {
 } from "../src/model/schema";
 import { baseGroundHeight, groundHeight } from "../src/model/terrain";
 import { newTerrain } from "../src/model/terrainData";
-import { streamSurface, waterLevel, waterMap } from "../src/model/water";
+import {
+  STREAM_DEPTH,
+  streamSurface,
+  waterLevel,
+  waterMap,
+} from "../src/model/water";
 import { buildHabitat } from "../src/simulation/worldHabitat";
 
 /** A bowl this deep at its middle, falling to nothing at its edge. */
@@ -44,6 +49,12 @@ function ramp(
 
 const spring = (x: number, flow = 0.5): Spring => ({ x, z: 0, flow });
 
+/** A stream's end runs on into still water, settling onto its surface. */
+function expectEndsIn(course: { y: number }[], level: number) {
+  expect(course.at(-1)!.y).toBeGreaterThanOrEqual(level);
+  expect(course.at(-1)!.y).toBeLessThan(level + STREAM_DEPTH);
+}
+
 function expectDownhill(course: { y: number }[]) {
   for (let i = 1; i < course.length; i++)
     expect(course[i].y).toBeLessThanOrEqual(course[i - 1].y + 1e-9);
@@ -58,7 +69,7 @@ describe("water from springs", () => {
     const [course] = streams;
     expect(course[0].x).toBeCloseTo(-0.4 * env.width, 0);
     expectDownhill(course);
-    expect(course.at(-1)!.y).toBe(env.water);
+    expectEndsIn(course, env.water);
     expect(course.at(-1)!.x).toBeGreaterThan(course[0].x + 3);
   });
 
@@ -79,8 +90,8 @@ describe("water from springs", () => {
     expect(waterLevel(-1.5, 1.2, env)).toBe(env.water);
     // One stream into the pool, and one out of it down to the water.
     expect(streams).toHaveLength(2);
-    expect(streams[0].at(-1)!.y).toBe(pool.level);
-    expect(streams[1].at(-1)!.y).toBe(env.water);
+    expectEndsIn(streams[0], pool.level);
+    expectEndsIn(streams[1], env.water);
     for (const course of streams) expectDownhill(course);
   });
 
@@ -92,8 +103,25 @@ describe("water from springs", () => {
     expect(waterLevel(outflow[0].x, outflow[0].z, env)).toBe(pool.level);
     expect(outflow[0].y).toBeGreaterThan(pool.level);
     expect(outflow[0].y).toBeLessThan(pool.level + 0.05);
-    for (const point of outflow)
-      expect(point.y).toBeGreaterThan(groundHeight(point.x, point.z, env));
+    for (const point of outflow) {
+      const ground = groundHeight(point.x, point.z, env);
+      expect(point.y).toBeGreaterThan(ground);
+      // Once past the rim it runs down with its bed.
+      if (waterLevel(point.x, point.z, env) < ground)
+        expect(point.y).toBeLessThanOrEqual(ground + STREAM_DEPTH + 1e-9);
+    }
+  });
+
+  it("runs on into the water it meets", () => {
+    const env = ramp([spring(-0.42)], [{ at: -1.5, radius: 0.7 }]);
+    const { pools, streams } = waterMap(env);
+    const inlet = streams[0].at(-1)!,
+      outlet = streams[1].at(-1)!;
+    expect(groundHeight(inlet.x, inlet.z, env)).toBeLessThan(
+      pools[0].level - 0.02,
+    );
+    expect(groundHeight(outlet.x, outlet.z, env)).toBeLessThan(env.water);
+    expectEndsIn(streams[1], env.water);
   });
 
   it("runs along the glass without stopping in place", () => {
@@ -126,7 +154,7 @@ describe("water from springs", () => {
     expect(pools[0].level).toBeGreaterThan(pools[1].level);
     expect(streams).toHaveLength(3);
     expect(streams[1][0].x).toBeLessThan(streams[1].at(-1)!.x);
-    expect(streams[1].at(-1)!.y).toBe(pools[1].level);
+    expectEndsIn(streams[1], pools[1].level);
   });
 
   it("leaves hollows the water never reaches dry", () => {
@@ -145,6 +173,8 @@ describe("water from springs", () => {
     expect(streams).toHaveLength(1);
     expectDownhill(streams[0]);
     expect(streams[0].at(-1)!.x).toBeGreaterThan(3);
+    expect(streams[0][0].width).toBeGreaterThan(0.3);
+    expect(streams[0].at(-1)!.width).toBe(0);
   });
 
   it("joins streams that meet, and widens below where they do", () => {

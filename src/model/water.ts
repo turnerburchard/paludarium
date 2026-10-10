@@ -7,6 +7,10 @@ import { terrainGrid, terrainPoint, terrainPointCount } from "./terrainData";
 const CELL = 0.1;
 /** Running water this deep over its bed. */
 export const STREAM_DEPTH = 0.06;
+/** How far a stream that meets no water narrows before it's gone. */
+const SOAK = 0.6;
+/** How many cells a stream runs on into the still water it meets. */
+const INTO_WATER = 2;
 /** A full hollow shallower than this is run through rather than pooled. */
 const POOL_DEPTH = 0.03;
 /** How wide a spring's stream runs, from a trickle to a gush. Streams that
@@ -86,6 +90,17 @@ export function waterLevel(x: number, z: number, env: Environment): number {
   if (!env.springs.length) return still;
   const map = waterMap(env);
   return Math.max(still, map.shore[cellAt(x, z, map, env)]);
+}
+
+/** The surface of the still water over a spot: the pool's it lies in, or
+ * the tank's water level, or -Infinity in a dry tank. Unlike `waterLevel`,
+ * a pool's shore is left out. */
+export function stillSurface(x: number, z: number, env: Environment): number {
+  const still = env.water > 0 ? env.water : -Infinity;
+  if (!env.springs.length) return still;
+  const map = waterMap(env);
+  const pool = map.pools[map.poolAt[cellAt(x, z, map, env)]];
+  return Math.max(still, pool?.level ?? -Infinity);
 }
 
 /** The highest still water anywhere in the tank, or -Infinity in a dry one. */
@@ -282,36 +297,56 @@ function buildWaterMap(env: Environment): WaterMap {
 
   // Streams run between the pools. Where one meets water an earlier one
   // already carries, it ends there and the widths downstream carry both.
+  // Where one meets still water it runs on into it a little way, and one
+  // spilling out of a pool starts a little way inside, so the stream can
+  // fade into the pool rather than stopping short of it.
   const drawn = new Uint8Array(count);
   const width = (i: number) => springWidth(flow[i]);
   for (const route of routes) {
     let cells: number[] = [],
-      from: number | undefined,
-      edge: number | undefined;
+      source: number | undefined;
     const finish = (to?: number) => {
       if (cells.length > 1)
-        map.streams.push(course(cells, from, to, map, env, width));
+        map.streams.push(course(cells, source, to, map, env, width));
       cells = [];
     };
-    for (const i of route) {
-      const pool = map.poolAt[i];
+    for (let k = 0; k < route.length; k++) {
+      const i = route[k],
+        pool = map.poolAt[i];
       if (sea[i]) {
         cells.push(i);
         // In a dry tank the water soaks away at the lowest point.
-        finish(map.ground[i] < env.water ? env.water : undefined);
+        if (map.ground[i] >= env.water) {
+          finish();
+          break;
+        }
+        for (let n = 0, at = i; n < INTO_WATER; n++) {
+          const next = deeper(at, map);
+          if (next === at) break;
+          flow[next] = Math.max(flow[next], flow[i]);
+          cells.push((at = next));
+        }
+        finish(env.water);
         break;
       }
       if (pool >= 0) {
         if (cells.length) {
-          cells.push(i);
+          cells.push(
+            ...route
+              .slice(k, k + INTO_WATER + 1)
+              .filter((cell) => map.poolAt[cell] === pool),
+          );
           finish(map.pools[pool].level);
         }
-        from = map.pools[pool].level;
-        edge = i;
+        source = pool;
         continue;
       }
-      // Water spilling out of a pool starts within it, so the two meet.
-      if (!cells.length && edge !== undefined) cells.push(edge);
+      if (!cells.length && source !== undefined)
+        cells.push(
+          ...route
+            .slice(Math.max(0, k - INTO_WATER - 1), k)
+            .filter((cell) => map.poolAt[cell] === source),
+        );
       cells.push(i);
       if (drawn[i]) {
         finish(map.ground[i] + STREAM_DEPTH);
@@ -426,6 +461,14 @@ function flood(map: WaterMap, env: Environment) {
   return { fill, parent, sea };
 }
 
+/** The lowest neighbor below a cell, or the cell itself at the bottom. */
+function deeper(i: number, map: WaterMap) {
+  let lowest = i;
+  for (const n of neighbors(i, map))
+    if (map.ground[n] < map.ground[lowest]) lowest = n;
+  return lowest;
+}
+
 /** Where water goes from a cell: down the steepest way, or where the ground
  * is flat or under a full hollow, the way the flood came in. */
 function downhill(
@@ -472,11 +515,13 @@ function hollow(start: number, map: WaterMap, fill: Float64Array): Pool {
 /** A stream's course through a run of cells, rounded off so it doesn't
  * zigzag along the grid. Its surface keeps a little above the bed and never
  * climbs, so where the bed rises the water runs under the rise. Spilling out
- * of a pool at `from`, it starts a little above the pool so there's water
- * over the rim. It ends at `to` where it meets water. */
+ * of the pool `source`, it starts a little above the pool so there's water
+ * over the rim. Running on into the water it meets, it settles down onto
+ * that water's surface `to`. Where it meets none, it narrows to nothing as
+ * it soaks away. */
 function course(
   cells: number[],
-  from: number | undefined,
+  source: number | undefined,
   to: number | undefined,
   map: WaterMap,
   env: Environment,
@@ -503,19 +548,27 @@ function course(
   for (let pass = 0; pass < (widest / CELL) ** 2 / 2; pass++)
     points = relaxed(points);
   for (let pass = 0; pass < 2; pass++) points = rounded(points);
-  const rim = (from ?? -Infinity) + STREAM_DEPTH / 2;
-  let surface = from === undefined ? Infinity : rim,
+  const rim =
+    source === undefined
+      ? Infinity
+      : map.pools[source].level + STREAM_DEPTH / 2;
+  let surface = Infinity,
     along = 0;
-  return points.map((point, i) => {
+  const course = points.map((point, i) => {
     if (i > 0)
       along += Math.hypot(point.x - points[i - 1].x, point.z - points[i - 1].z);
+    const inSource = map.poolAt[cellAt(point.x, point.z, map, env)] === source;
     surface = Math.min(
       surface,
-      Math.max(rim, groundHeight(point.x, point.z, env) + STREAM_DEPTH),
+      inSource ? rim : groundHeight(point.x, point.z, env) + STREAM_DEPTH,
     );
-    const y = i === points.length - 1 && to !== undefined ? to : surface;
-    return { ...point, y: Math.max(y, to ?? -Infinity), along };
+    return { ...point, y: Math.max(surface, to ?? -Infinity), along };
   });
+  if (to !== undefined) return course;
+  return course.map((point) => ({
+    ...point,
+    width: point.width * Math.min(1, (along - point.along) / SOAK),
+  }));
 }
 
 type PathPoint = { x: number; z: number; width: number };

@@ -108,13 +108,17 @@ export function makeStreamMaterial(time: THREE.IUniform<number>) {
         float wobble = sin(vFlow.x * 7.0 + vFlow.y * 2.3) * 1.4;
         float streak = (sin(along + wobble) * 0.5 + 0.5)
           * (sin(vFlow.x * 19.0 + vFlow.y * 4.0) * 0.5 + 0.5);
+        // Down falls the water breaks into strands that churn as they drop.
+        float strands = sin(vFlow.x * 31.0 + sin(vFlow.x * 11.0) * 2.0) * 0.5 + 0.5;
+        float churn = sin(along * 1.7 + vFlow.x * 13.0) * 0.5 + 0.5;
         float white = clamp(
-          vFoam * 0.75 + smoothstep(0.55, 0.95, streak) * (0.18 + 0.6 * vFoam),
+          vFoam * (0.4 + 0.45 * strands * churn)
+            + smoothstep(0.55, 0.95, streak) * (0.18 + 0.3 * vFoam),
           0.0, 1.0);
         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9, 0.97, 0.95), white);
         diffuseColor.a = mix(diffuseColor.a, 0.92, white) * vFade;`,
       );
   };
-  material.customProgramCacheKey = () => "stream-flow-v1";
+  material.customProgramCacheKey = () => "stream-flow-v2";
   return material;
 }

@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import type { Environment } from "../model/schema";
 import { clamp, groundHeight } from "../model/terrain";
-import { STREAM_DEPTH, type CoursePoint } from "../model/water";
+import { STREAM_DEPTH, stillSurface, type CoursePoint } from "../model/water";
 
 /** How fast water runs on the flat, and how much faster down a fall. */
 const FLAT_SPEED = 0.3;
@@ -12,10 +12,11 @@ const RAPID_SLOPE = 0.2;
 const FALL_SLOPE = 0.8;
 /** How far white water carries past the foot of a fall. */
 const FOAM_REACH = 0.3;
-/** Distance over which the water fades in at its source and out into the
- * pool. Kept to about a grid cell, since a stream starts and ends a cell
- * inside the pools it joins, and any longer leaves a gap at their shores. */
-const FADE = 0.1;
+/** Distance over which the water fades in at its source and out at its end. */
+const FADE = 0.2;
+/** Depth of still water over which a stream fades into it. Deeper than a
+ * pool's shore, so the two overlap rather than leave a gap. */
+const STILL = 0.06;
 /** Vertices across the stream, so its edges can follow the bed. */
 const ACROSS = 7;
 /** The outer part of each side, as a share of half the width, that fades
@@ -27,7 +28,8 @@ const EDGE = 0.25;
  * Each vertex carries how far the water has travelled in time rather than
  * distance, so ripples scroll faster down falls without stretching. Where the
  * bed rises above the surface, or the ribbon nears its sides, the water fades
- * out, so it meets any bank softly. */
+ * out, so it meets any bank softly. Over still water it fades as the pool
+ * fades in, so the two join without a seam. */
 function streamGeometry(course: CoursePoint[], env: Environment) {
   const positions: number[] = [],
     flow: number[] = [],
@@ -36,7 +38,8 @@ function streamGeometry(course: CoursePoint[], env: Environment) {
     indices: number[] = [];
   const end = course.at(-1)!.along;
   let travel = 0,
-    white = 0;
+    white = 0,
+    bed = groundHeight(course[0].x, course[0].z, env);
   course.forEach((point, i) => {
     const before = course[Math.max(0, i - 1)],
       after = course[Math.min(course.length - 1, i + 1)];
@@ -47,8 +50,14 @@ function streamGeometry(course: CoursePoint[], env: Environment) {
     if (i > 0) {
       const run = point.along - before.along,
         drop = before.y - point.y;
+      // Water breaks up where its bed falls away, not where it settles onto
+      // still water from a gentle bank.
+      const fall = Math.min(
+        drop,
+        bed - (bed = groundHeight(point.x, point.z, env)),
+      );
       const steep = clamp(
-        (drop / run - RAPID_SLOPE) / (FALL_SLOPE - RAPID_SLOPE),
+        (fall / run - RAPID_SLOPE) / (FALL_SLOPE - RAPID_SLOPE),
         0,
         1,
       );
@@ -78,7 +87,12 @@ function streamGeometry(course: CoursePoint[], env: Environment) {
       foam.push(white);
       // Falling water leaves its bed, so white water keeps its body.
       const body = Math.max(clamp((y - ground) / STREAM_DEPTH, 0, 1), white);
-      fade.push(Math.min(ends, body, (1 - Math.abs(across)) / EDGE));
+      // White water carries on out over the pool below a fall.
+      const still = clamp((stillSurface(x, z, env) - ground) / STILL, 0, 1);
+      fade.push(
+        Math.min(ends, body, (1 - Math.abs(across)) / EDGE) *
+          (1 - still * (1 - white)),
+      );
     }
     if (i > 0) {
       const row = ACROSS * (i - 1);
@@ -113,5 +127,12 @@ export function StreamWater({
 }) {
   const geometry = useMemo(() => streamGeometry(course, env), [course, env]);
   useEffect(() => () => geometry.dispose(), [geometry]);
-  return <mesh geometry={geometry} material={material} renderOrder={2} />;
+  return (
+    <mesh
+      geometry={geometry}
+      material={material}
+      receiveShadow
+      renderOrder={2}
+    />
+  );
 }

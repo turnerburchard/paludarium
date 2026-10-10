@@ -5,7 +5,7 @@ import { clamp, groundHeight } from "../model/terrain";
 import { cellCenter, type WaterMap } from "../model/water";
 
 /** Depth over which a pool thins out to nothing at its shore. */
-const SHORE = 0.04;
+const SHORE = 0.015;
 
 /** A pool's surface over its cells and the ring around them, laid out in a
  * plane's own frame (x right, y away from the viewer) so the water material's
