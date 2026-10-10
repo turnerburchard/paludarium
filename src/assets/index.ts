@@ -319,6 +319,26 @@ export function modelHeight(kind: AssetKind, seed: number) {
   return height;
 }
 
+const bodies = new Map<
+  string,
+  { length: number; width: number; height: number }
+>();
+/** An animal's size at scale 1, nose to tail, side to side and feet to back. */
+export function animalBody(kind: AssetKind, seed: number) {
+  const key = `${kind}:${seed}`;
+  let body = bodies.get(key);
+  if (!body) {
+    const model = buildAsset(kind, seed);
+    const size = new THREE.Box3()
+      .setFromObject(model, true)
+      .getSize(new THREE.Vector3());
+    disposeAsset(model);
+    body = { length: size.z, width: size.x, height: size.y };
+    bodies.set(key, body);
+  }
+  return body;
+}
+
 /** A scale for a new placement within the asset's range, on the same 0.05
  * steps as the size slider. */
 export function placementScale(kind: AssetKind, random = Math.random) {

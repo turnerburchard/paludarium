@@ -6,6 +6,7 @@ import {
   type World,
 } from "../model/schema";
 import {
+  animalBody,
   assetRadius,
   assets,
   isAnimal,
@@ -22,7 +23,10 @@ import { SwimSpace } from "./swimSpace";
 import { WIDEST_ROOM, waterNodes } from "./waterNodes";
 import { HabitatNodeGrid } from "./nodeGrid";
 import { LandSurfaces } from "./landSurfaces";
+import { Solids } from "./solids";
 import { Ecosystem } from "./engine";
+import type { Body } from "./bodyPose";
+import { juvenileScale } from "./lifeCycle";
 import { HabitatGraph, distance } from "./navigation";
 import type {
   AnimalSeed,
@@ -108,7 +112,10 @@ function sameHabitat(a: World, b: World) {
 }
 
 /** Conservative ground navigation. The graph describes surfaces, not animal mesh anatomy. */
-export function buildHabitat(world: World): HabitatGraph {
+export function buildHabitat(
+  world: World,
+  solids = new Solids(world),
+): HabitatGraph {
   const env = world.environment,
     nodes: HabitatNode[] = [],
     grid = new Map<string, HabitatNode>();
@@ -116,7 +123,7 @@ export function buildHabitat(world: World): HabitatGraph {
     spacing = 0.32;
   const nx = Math.ceil((env.width - 2 * margin) / spacing),
     nz = Math.ceil((env.depth - 2 * margin) / spacing);
-  const surfaces = new LandSurfaces(world);
+  const surfaces = solids.surfaces;
   // A struggling plant still gives some cover, just much less.
   const shelters = world.objects
     .filter((o) => assets[o.kind].shelter)
@@ -520,8 +527,46 @@ export function buildHabitat(world: World): HabitatGraph {
         perch.neighbors.push(other.id);
         other.neighbors.push(perch.id);
       }
+  for (const node of nodes) measureSpace(node, solids);
   if (hasFish(world)) nodes.push(...waterNodes(world, new SwimSpace(world)));
   return new HabitatGraph(nodes);
+}
+
+function scaled(body: Body, scale: number): Body {
+  return {
+    length: body.length * scale,
+    width: body.width * scale,
+    height: body.height * scale,
+  };
+}
+
+/** Space reaching past this is plenty for any animal. */
+const OPEN = 0.6;
+
+/** How far the space over a surface reaches before something solid, and
+ * how wide a den is between its walls. */
+function measureSpace(node: HabitatNode, solids: Solids) {
+  const start = { ...node.position };
+  start.x += node.normal.x * 0.005;
+  start.y += node.normal.y * 0.005;
+  start.z += node.normal.z * 0.005;
+  const over = solids.cast(start, node.normal, OPEN);
+  if (over) node.headroom = over.distance;
+  if (!node.id.startsWith("den:")) return;
+  // Just off the floor, in four directions across and their opposites.
+  const low = { ...node.position, y: node.position.y + 0.03 };
+  let width = Infinity;
+  for (let i = 0; i < 4; i++) {
+    const angle = (i * Math.PI) / 4;
+    const across = { x: Math.cos(angle), y: 0, z: Math.sin(angle) };
+    const back = { x: -across.x, y: 0, z: -across.z };
+    width = Math.min(
+      width,
+      (solids.cast(low, across, OPEN)?.distance ?? OPEN) +
+        (solids.cast(low, back, OPEN)?.distance ?? OPEN),
+    );
+  }
+  if (width < 2 * OPEN) node.width = width;
 }
 
 /** Plant stems face away from the plant's center. */
@@ -547,10 +592,9 @@ export function createWorldEcosystem(
   previous?: { world: World; engine: Ecosystem },
   random?: () => number,
 ): Ecosystem {
-  const graph =
-      previous && sameHabitat(previous.world, world)
-        ? previous.engine.graph
-        : buildHabitat(world),
+  const reuse = previous && sameHabitat(previous.world, world);
+  const solids = (reuse && previous.engine.solids) || new Solids(world);
+  const graph = reuse ? previous.engine.graph : buildHabitat(world, solids),
     snapshot = previous?.engine.snapshot();
   const animals: AnimalSeed[] = [];
   const water = hasFish(world) ? new SwimSpace(world) : undefined;
@@ -563,6 +607,10 @@ export function createWorldEcosystem(
       id: object.kind,
       ...behavior,
       radius: assetRadius(object.kind) * object.scale,
+      body: scaled(
+        animalBody(object.kind, object.seed),
+        object.scale * juvenileScale(object),
+      ),
     };
     const oldObject = previous?.world.objects.find((o) => o.id === object.id);
     const oldState = snapshot?.animals.find(
@@ -629,6 +677,7 @@ export function createWorldEcosystem(
   return new Ecosystem(graph, animals, {
     random,
     water,
+    solids,
     elapsed: snapshot?.elapsed,
     discoveries: snapshot?.discoveries,
     food: [...food.values()],

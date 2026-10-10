@@ -1,5 +1,7 @@
 import { discoveryFor, type Discovery } from "./discoveries";
 import { Steering, newSwimmer, type SwimWater, type Swimmer } from "./fish";
+import { fitBody } from "./bodyPose";
+import type { Solids } from "./solids";
 import {
   HabitatGraph,
   copyVector,
@@ -77,6 +79,9 @@ export interface SimulationOptions {
   random?: () => number;
   /** The water fish swim in. */
   water?: SwimWater;
+  /** What land animals' bodies rest on. Without it they keep to the
+   * points they walk along. */
+  solids?: Solids;
   speed?: number;
   elapsed?: number;
   food?: FoodPatch[];
@@ -92,6 +97,7 @@ export class Ecosystem {
   private elapsed: number;
   private readonly random: () => number;
   private readonly steering?: Steering;
+  readonly solids?: Solids;
   /** Every fish, for schooling. */
   private readonly fish: Swimmer[] = [];
   readonly speed: number;
@@ -110,6 +116,7 @@ export class Ecosystem {
       .map((note) => ({ ...note }));
     this.random = options.random ?? Math.random;
     this.speed = options.speed ?? NORMAL_SPEED;
+    this.solids = options.solids;
     if (options.water)
       this.steering = new Steering(options.water, () => this.roll());
     this.elapsed = options.elapsed ?? DAY_LENGTH * 0.42;
@@ -218,6 +225,8 @@ export class Ecosystem {
     if (!agent) return undefined;
     const state = agent.state;
     const previous = agent.previous ?? state;
+    this.settle(agent, previous);
+    this.settle(agent, state);
     const rendered = (agent.rendered ??= structuredClone(state));
     Object.assign(rendered, state);
     const t = this.remainder / STEP;
@@ -237,6 +246,16 @@ export class Ecosystem {
       bend:
         previous.motion.bend + (state.motion.bend - previous.motion.bend) * t,
     };
+    if (previous.pose && state.pose)
+      rendered.pose = {
+        position: interpolate(previous.pose.position, state.pose.position, t),
+        normal: interpolate(previous.pose.normal, state.pose.normal, t),
+        direction: interpolate(
+          previous.pose.direction,
+          state.pose.direction,
+          t,
+        ),
+      };
     if (landing) rendered.moving = true;
     return rendered;
   }
@@ -283,6 +302,15 @@ export class Ecosystem {
         };
         if (!heldIds?.has(agent.state.id)) {
           this.update(agent);
+          // The body is set down again only when drawn, and only if it moved.
+          const { previous, state } = agent;
+          if (
+            !same(previous.position, state.position) ||
+            !same(previous.normal, state.normal) ||
+            !same(previous.direction, state.direction) ||
+            previous.motion.lift !== state.motion.lift
+          )
+            state.pose = undefined;
           const kind = discoveryFor(agent.state);
           if (kind && !this.discoveries.some((note) => note.kind === kind))
             this.discoveries.push({
@@ -295,6 +323,37 @@ export class Ecosystem {
       }
       this.breedInsects();
     }
+  }
+  /** Sets the body down on what is under the point it walks along, once
+   * for each state that is drawn. In the air it is only kept clear, so a
+   * hop still arcs. */
+  private settle(agent: Agent, state: AnimalState) {
+    const body = agent.profile.body;
+    if (state.pose || !this.solids || !body || agent.swimmer) return;
+    const { position, normal, direction } = state;
+    const airborne = state.motion.hop && state.motion.lift > 0;
+    // Leaves and stems aren't solid, so there the body is only kept clear
+    // of what is.
+    const target = agent.edge && this.graph.node(agent.path[0]);
+    const soft = !!(this.graph.node(state.nodeId).plantId ?? target?.plantId);
+    const start = state.grounded
+      ? this.solids.ground(position.x, position.z)
+      : { position, normal };
+    const pose = fitBody(
+      { position: start.position, normal: start.normal, direction },
+      body,
+      this.solids,
+      !airborne && !soft,
+    );
+    state.pose = airborne
+      ? {
+          ...pose,
+          position: {
+            ...pose.position,
+            y: pose.position.y + state.motion.lift,
+          },
+        }
+      : pose;
   }
   /** Logistic growth: fast when a colony is small, leveling off at capacity. */
   private breedInsects() {
@@ -934,6 +993,7 @@ export class Ecosystem {
   }
 }
 
+const same = (a: Vec3, b: Vec3) => a.x === b.x && a.y === b.y && a.z === b.z;
 const dot = (a: Vec3, b: Vec3) => a.x * b.x + a.y * b.y + a.z * b.z;
 const cross = (a: Vec3, b: Vec3): Vec3 => ({
   x: a.y * b.z - a.z * b.y,

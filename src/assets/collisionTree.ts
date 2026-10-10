@@ -63,16 +63,30 @@ function select(
   }
 }
 
+const entry = new THREE.Vector3();
+
+/** Visits the faces whose bounds the ray meets within `far`. */
 export function visitRayFaces(
   tree: CollisionTree,
   ray: THREE.Ray,
   visit: (face: CollisionFace) => void,
+  far = Infinity,
 ) {
-  if (!ray.intersectsBox(tree.bounds)) return;
+  if (!meets(ray, tree.bounds, far)) return;
   if (tree.children) {
-    for (const child of tree.children) visitRayFaces(child, ray, visit);
+    for (const child of tree.children) visitRayFaces(child, ray, visit, far);
   } else {
     for (const face of tree.faces!)
-      if (ray.intersectsBox(face.bounds)) visit(face);
+      if (meets(ray, face.bounds, far)) visit(face);
   }
+}
+
+function meets(ray: THREE.Ray, box: THREE.Box3, far: number) {
+  if (far === Infinity) return ray.intersectsBox(box);
+  // From inside, three gives where the ray leaves the box, not where it is.
+  if (box.containsPoint(ray.origin)) return true;
+  return (
+    !!ray.intersectBox(box, entry) &&
+    entry.distanceToSquared(ray.origin) <= far * far
+  );
 }
