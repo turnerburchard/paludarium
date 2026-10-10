@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Box3, Mesh, Vector3, type Object3D } from "three";
+import { collisionShape } from "../src/assets/collisionShape";
 import { assets, buildAsset, catalog } from "../src/assets";
 import {
   defaultEnvironment,
@@ -98,6 +99,22 @@ describe("stacked objects", () => {
 });
 
 describe("stacked objects when the ground changes", () => {
+  it.each([
+    { water: 0.5 },
+    { substrate: 0.3 },
+    { width: 8, depth: 6 },
+    { height: 4 },
+  ])(
+    "retains cached collision geometry for unchanged placement after %j",
+    (patch) => {
+      const original = { ...emptyWorld(), environment: env, objects: [rock] };
+      const shape = collisionShape(rock);
+      const edited = withEnvironment(original, patch);
+      expect(edited.environment).toMatchObject(patch);
+      expect(collisionShape(edited.objects[0]) === shape).toBe(true);
+    },
+  );
+
   it("stay on their support through a sculpting stroke", () => {
     const base = { ...emptyWorld(), environment: env };
     const stack = [
