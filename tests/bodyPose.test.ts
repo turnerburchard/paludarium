@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { emptyWorld } from "../src/model/schema";
 import { randomFromSeed } from "../src/model/random";
 import { createWorldEcosystem } from "../src/simulation/worldHabitat";
-import { fitBody, type Body } from "../src/simulation/bodyPose";
+import { fitBody, follow, type Body } from "../src/simulation/bodyPose";
 import type { Caster, SurfaceHit } from "../src/simulation/solids";
 import type { Vec3 } from "../src/simulation/types";
 
@@ -165,5 +165,44 @@ describe("drawing a set-down body", () => {
       expect(engine.snapshot()).toEqual(before);
       expect(engine.getAnimal("frog")!.pose).toBeUndefined();
     }
+  });
+});
+
+describe("a body finding a new footing", () => {
+  const at = (x: number, y: number) => ({
+    position: { x, y, z: 0 },
+    normal: up,
+    direction: ahead,
+  });
+  const still = { x: 0, y: 0, z: 0 };
+
+  it("glides onto it over a few steps rather than jumping", () => {
+    let pose = at(0, 0);
+    const target = at(0, 0.05);
+    const heights = [];
+    for (let step = 0; step < 30; step++) {
+      const next = follow(pose, target, still, 1);
+      expect(next.position.y - pose.position.y).toBeLessThanOrEqual(0.0081);
+      heights.push(next.position.y);
+      pose = next;
+    }
+    expect(heights[0]).toBeLessThan(0.01);
+    expect(pose).toBe(target);
+  });
+
+  it("keeps up with the spot it stands on as that moves", () => {
+    const next = follow(at(0, 0), at(0.3, 0), { x: 0.3, y: 0, z: 0 }, 1);
+    expect(next).toEqual(at(0.3, 0));
+  });
+
+  it("settles between two footings a fit wavers between", () => {
+    let pose = at(0, 0);
+    const heights = [];
+    for (let step = 0; step < 40; step++) {
+      pose = follow(pose, at(0, step % 2 ? 0.02 : 0), still, 1);
+      heights.push(pose.position.y);
+    }
+    const late = heights.slice(20);
+    expect(Math.max(...late) - Math.min(...late)).toBeLessThan(0.01);
   });
 });
