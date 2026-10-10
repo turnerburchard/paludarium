@@ -312,9 +312,8 @@ try {
     .getByRole("button", { name: "Close dialog" })
     .click();
   await deathPage.getByRole("button", { name: "About Paludarium" }).click();
-  await deathPage.getByText("Follow a creature", { exact: true }).click();
-  await deathPage.getByRole("button", { name: /Red-eyed tree frog/ }).click();
-  await deathPage.getByRole("button", { name: "Watch up close" }).click();
+  // With one animal left, following a creature watches that frog.
+  await deathPage.getByRole("button", { name: "Follow a creature" }).click();
   await deathPage
     .getByRole("complementary", { name: "Watching", exact: true })
     .waitFor();

@@ -162,21 +162,20 @@ export function Inhabitant({
         object.id,
       );
       if (state) {
-        group.position.set(
-          state.position.x,
-          state.position.y,
-          state.position.z,
-        );
+        const fit = state.pose ?? state;
+        group.position.set(fit.position.x, fit.position.y, fit.position.z);
         const live = ecosystem.live.current!;
-        // On the ground, follow the terrain under the animal rather than the
-        // straight line between nodes, and lean with its slope.
-        const slope = state.grounded
-          ? groundNormal(state.position.x, state.position.z, environment)
-          : undefined;
-        if (slope)
+        // Navigation stays committed during a stroke, so the preview shows
+        // a walking animal on the sculpted ground, and anything else
+        // attached to the ground or to the base of its supporting plant.
+        const sculpted =
+          environment !== live.world.environment && state.grounded
+            ? groundNormal(fit.position.x, fit.position.z, environment)
+            : undefined;
+        if (sculpted)
           group.position.y = groundHeight(
-            state.position.x,
-            state.position.z,
+            fit.position.x,
+            fit.position.z,
             environment,
           );
         else if (environment !== live.world.environment) {
@@ -186,19 +185,13 @@ export function Inhabitant({
             ? live.world.objects.find((part) => part.id === supportId)
             : undefined;
           const anchor = plant ?? state.position;
-          // Navigation stays committed during a stroke; keep the preview pose
-          // attached to the ground or to the base of its supporting plant.
           group.position.y +=
             groundHeight(anchor.x, anchor.z, environment) -
             groundHeight(anchor.x, anchor.z, live.world.environment);
         }
-        const normal = slope ?? state.normal;
+        const normal = sculpted ?? fit.normal;
         pose.normal.set(normal.x, normal.y, normal.z).normalize();
-        pose.forward.set(
-          state.direction.x,
-          state.direction.y,
-          state.direction.z,
-        );
+        pose.forward.set(fit.direction.x, fit.direction.y, fit.direction.z);
         if (!state.grounded && !state.motion.hop) {
           const plantId = live.engine.graph.node(state.nodeId).plantId;
           const support = plantId && foliagePlants?.current.get(plantId);
@@ -231,7 +224,8 @@ export function Inhabitant({
         else pose.facing.copy(pose.rotation);
         pose.faced = true;
         group.quaternion.copy(pose.facing);
-        group.position.y += state.motion.lift;
+        // A pose already carries the hop's lift.
+        if (!state.pose) group.position.y += state.motion.lift;
         group.rotateX(state.motion.tilt);
         rig.update(state, rigDelta);
         return;

@@ -1,5 +1,7 @@
 import { discoveryFor, type Discovery } from "./discoveries";
 import { Steering, newSwimmer, type SwimWater, type Swimmer } from "./fish";
+import { fitBody, type BodyPose } from "./bodyPose";
+import type { Solids } from "./solids";
 import {
   HabitatGraph,
   copyVector,
@@ -72,11 +74,17 @@ interface Agent {
   swimmer?: Swimmer;
   /** Whether the fish was keeping with its school when it chose its route. */
   schooling?: boolean;
+  /** Where the body was drawn for the current and previous steps. */
+  pose?: BodyPose;
+  previousPose?: BodyPose;
 }
 export interface SimulationOptions {
   random?: () => number;
   /** The water fish swim in. */
   water?: SwimWater;
+  /** What land animals' bodies rest on. Without it they keep to the
+   * points they walk along. */
+  solids?: Solids;
   speed?: number;
   elapsed?: number;
   food?: FoodPatch[];
@@ -92,6 +100,7 @@ export class Ecosystem {
   private elapsed: number;
   private readonly random: () => number;
   private readonly steering?: Steering;
+  readonly solids?: Solids;
   /** Every fish, for schooling. */
   private readonly fish: Swimmer[] = [];
   readonly speed: number;
@@ -110,6 +119,7 @@ export class Ecosystem {
       .map((note) => ({ ...note }));
     this.random = options.random ?? Math.random;
     this.speed = options.speed ?? NORMAL_SPEED;
+    this.solids = options.solids;
     if (options.water)
       this.steering = new Steering(options.water, () => this.roll());
     this.elapsed = options.elapsed ?? DAY_LENGTH * 0.42;
@@ -237,6 +247,19 @@ export class Ecosystem {
       bend:
         previous.motion.bend + (state.motion.bend - previous.motion.bend) * t,
     };
+    // The body is set down only for states that are drawn, once each.
+    agent.pose ??= this.settle(agent, state);
+    agent.previousPose ??= agent.previous
+      ? this.settle(agent, previous)
+      : agent.pose;
+    const from = agent.previousPose,
+      to = agent.pose;
+    if (from && to)
+      rendered.pose = {
+        position: interpolate(from.position, to.position, t),
+        normal: interpolate(from.normal, to.normal, t),
+        direction: interpolate(from.direction, to.direction, t),
+      };
     if (landing) rendered.moving = true;
     return rendered;
   }
@@ -274,6 +297,7 @@ export class Ecosystem {
         Math.floor(this.elapsed / STEP) % Math.max(1, agents.length);
       for (let i = 0; i < agents.length; i++) {
         const agent = agents[(i + offset) % agents.length];
+        agent.previousPose = agent.pose;
         agent.previous = {
           ...agent.state,
           position: copyVector(agent.state.position),
@@ -283,6 +307,17 @@ export class Ecosystem {
         };
         if (!heldIds?.has(agent.state.id)) {
           this.update(agent);
+          // A still animal keeps its body where it was set down.
+          const { previous, state } = agent;
+          if (
+            !same(previous.position, state.position) ||
+            !same(previous.normal, state.normal) ||
+            !same(previous.direction, state.direction) ||
+            previous.motion.lift !== state.motion.lift ||
+            previous.nodeId !== state.nodeId ||
+            previous.moving !== state.moving
+          )
+            agent.pose = undefined;
           const kind = discoveryFor(agent.state);
           if (kind && !this.discoveries.some((note) => note.kind === kind))
             this.discoveries.push({
@@ -295,6 +330,36 @@ export class Ecosystem {
       }
       this.breedInsects();
     }
+  }
+  /** Sets the body down on what is under the point it walks along. In the
+   * air it is only kept clear, so a hop still arcs. */
+  private settle(agent: Agent, state: AnimalState): BodyPose | undefined {
+    const body = agent.profile.body;
+    if (!this.solids || !body || agent.swimmer) return undefined;
+    const { position, normal, direction } = state;
+    const airborne = state.motion.hop && state.motion.lift > 0;
+    // Leaves and stems aren't solid, so there the body is only kept clear
+    // of what is.
+    const target = agent.edge && this.graph.node(agent.path[0]);
+    const soft = !!(this.graph.node(state.nodeId).plantId ?? target?.plantId);
+    const start = state.grounded
+      ? this.solids.ground(position.x, position.z)
+      : { position, normal };
+    const pose = fitBody(
+      { position: start.position, normal: start.normal, direction },
+      body,
+      this.solids,
+      !airborne && !soft,
+    );
+    return airborne
+      ? {
+          ...pose,
+          position: {
+            ...pose.position,
+            y: pose.position.y + state.motion.lift,
+          },
+        }
+      : pose;
   }
   /** Logistic growth: fast when a colony is small, leveling off at capacity. */
   private breedInsects() {
@@ -527,7 +592,7 @@ export class Ecosystem {
           },
           state.normal,
         );
-        const facing = alongSurface(state.direction, state.normal);
+        const facing = facingOf(state);
         const ahead =
           direction && facing ? (dot(direction, facing) + 1) / 2 : 0.5;
         const fresh = agent.recent.includes(id) ? 0.12 : 1;
@@ -736,7 +801,7 @@ export class Ecosystem {
   private lookAround(agent: Agent) {
     const state = agent.state;
     if (this.elapsed >= agent.glanceAt) {
-      const forward = alongSurface(state.direction, state.normal);
+      const forward = facingOf(state);
       if (forward) {
         const side = cross(state.normal, forward);
         const angle = (this.roll() - 0.5) * 1.8;
@@ -900,7 +965,7 @@ export class Ecosystem {
    * whether the animal is still turning and should not set off yet. */
   private turnToward(agent: Agent, point: Vec3, threshold = TURN_START) {
     const state = agent.state;
-    const facing = alongSurface(state.direction, state.normal);
+    const facing = facingOf(state);
     const wanted = alongSurface(
       {
         x: point.x - state.position.x,
@@ -934,6 +999,7 @@ export class Ecosystem {
   }
 }
 
+const same = (a: Vec3, b: Vec3) => a.x === b.x && a.y === b.y && a.z === b.z;
 const dot = (a: Vec3, b: Vec3) => a.x * b.x + a.y * b.y + a.z * b.z;
 const cross = (a: Vec3, b: Vec3): Vec3 => ({
   x: a.y * b.z - a.z * b.y,
@@ -945,6 +1011,11 @@ const interpolate = (a: Vec3, b: Vec3, t: number): Vec3 => ({
   y: a.y + (b.y - a.y) * t,
   z: a.z + (b.z - a.z) * t,
 });
+/** Which way an animal faces along its surface. Having walked straight
+ * into the glass, it faces up it. */
+const facingOf = (state: AnimalState) =>
+  alongSurface(state.direction, state.normal) ??
+  alongSurface({ x: 0, y: 1, z: 0 }, state.normal);
 /** The unit direction of `v` within the surface, or undefined if it points along the normal. */
 function alongSurface(v: Vec3, normal: Vec3): Vec3 | undefined {
   const along = dot(v, normal);
