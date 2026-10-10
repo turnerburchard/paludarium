@@ -11,11 +11,8 @@ import * as THREE from "three";
 import type { Editor } from "../editor/useEditor";
 import { assetRadius, assets, isAnimal } from "../assets";
 import { useWatchVisibility } from "./useWatchVisibility";
-import {
-  boundedPosition,
-  groundHeight,
-  placementProblem,
-} from "../model/terrain";
+import { placementProblem, waterLevel } from "../model/water";
+import { boundedPosition, groundHeight } from "../model/terrain";
 import { prebuiltObjects, prebuiltProblem } from "../model/prebuilts";
 import { restingOn, type Surface } from "../model/stacking";
 import { useCameraNavigation } from "./useCameraNavigation";
@@ -25,6 +22,7 @@ import { Inhabitant } from "./Inhabitant";
 import type { FoliageVisitor } from "./foliageMotion";
 import { Remains } from "./Remains";
 import { Tank, Terrain, Water } from "./Terrain";
+import { SpringMarker } from "./SpringMarker";
 import { TerrainBrushCursor } from "./TerrainBrushCursor";
 import { useSceneTouch } from "./useSceneTouch";
 
@@ -121,7 +119,7 @@ function Scene({
     setCursor(null);
   });
   const point =
-    cursor && (placing || tool.type === "terrain")
+    cursor && (placing || tool.type === "terrain" || tool.type === "spring")
       ? boundedPosition(
           cursor.x,
           cursor.z,
@@ -143,11 +141,13 @@ function Scene({
           () => 0.3,
         )
       : null;
-  const problem = ghostPieces
-    ? prebuiltProblem(ghostPieces, env)
-    : point && kind
-      ? placementProblem(kind, point.x, point.z, env, lift)
-      : null;
+  let problem: string | null = null;
+  if (ghostPieces) problem = prebuiltProblem(ghostPieces, env);
+  else if (point && kind)
+    problem = placementProblem(kind, point.x, point.z, env, lift);
+  else if (point && tool.type === "spring")
+    problem =
+      groundHeight(point.x, point.z, env) < env.water ? "Under water" : null;
   /** The ground, or the stone or wood, under the pointer. Plants and animals
    * in the way are looked past, and animals always go on the ground. */
   function spotUnder(e: {
@@ -168,18 +168,19 @@ function Scene({
   }
   /** Where the pointer meets the ground, looking through anything in front.
    * The event already carries every hit, so this needs no second raycast. */
-  function groundUnder(e: ThreeEvent<PointerEvent>) {
+  function groundUnder(e: ThreeEvent<MouseEvent>) {
     return e.intersections.find((hit) => hit.object === terrain.current)?.point;
   }
   function track(e: ThreeEvent<PointerEvent>) {
-    if (!placing && tool.type !== "terrain") return;
+    if (!placing && tool.type !== "terrain" && tool.type !== "spring") return;
     e.stopPropagation();
     if (placing && e.nativeEvent.pointerType === "touch") return;
-    if (tool.type === "terrain") {
+    if (tool.type === "terrain" || tool.type === "spring") {
       const point = groundUnder(e);
       if (!point) return;
       setCursor({ x: point.x, z: point.z });
-      editor.continueTerrainStroke(point.x, point.z);
+      if (tool.type === "terrain")
+        editor.continueTerrainStroke(point.x, point.z);
       return;
     }
     const { point, surface } = spotUnder(e);
@@ -189,6 +190,11 @@ function Scene({
     if (e.delta > 6) return;
     e.stopPropagation();
     if (tool.type === "terrain") return;
+    if (tool.type === "spring") {
+      const point = groundUnder(e);
+      if (point) editor.placeSpring(point.x, point.z);
+      return;
+    }
     if (!placing) {
       editor.select(null);
       return;
@@ -264,6 +270,21 @@ function Scene({
         onLostPointerCapture={editor.cancelTerrainStroke}
       >
         <Terrain environment={env} groundRef={terrain} />
+        {env.springs.map((spring, i) => (
+          <SpringMarker
+            key={i}
+            spring={spring}
+            environment={env}
+            selected={!view && tool.type === "spring" && tool.index === i}
+            onSelect={(e) => {
+              if (e.delta > 6 || view || placing || tool.type === "terrain")
+                return;
+              e.stopPropagation();
+              editor.select(null);
+              editor.setTool({ type: "spring", index: i });
+            }}
+          />
+        ))}
         <mesh
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, 0.001, 0]}
@@ -354,13 +375,13 @@ function Scene({
       {point && tool.type === "terrain" && (
         <TerrainBrushCursor {...point} radius={tool.radius} environment={env} />
       )}
-      {point && placing && (
+      {point && (placing || tool.type === "spring") && (
         <mesh
           position={[
             point.x,
             Math.max(
               groundHeight(point.x, point.z, env) + (lift ?? 0),
-              env.water,
+              waterLevel(point.x, point.z, env),
             ) + 0.018,
             point.z,
           ]}

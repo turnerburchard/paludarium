@@ -9,12 +9,8 @@ import {
   type World,
 } from "../src/model/schema";
 import { makePreset } from "../src/model/presets";
-import {
-  boundedPosition,
-  groundHeight,
-  placementProblem,
-  swimmingHeight,
-} from "../src/model/terrain";
+import { placementProblem, swimmingHeight } from "../src/model/water";
+import { boundedPosition, groundHeight } from "../src/model/terrain";
 import { assets, buildAsset, disposeAsset } from "../src/assets";
 import { Box3 } from "three";
 import {
@@ -66,7 +62,7 @@ describe("editor history", () => {
   });
 });
 describe("safe files and valid habitat", () => {
-  it.each(["tropical", "mountain", "amazon", "asian", "island"] as const)(
+  it.each(["tropical", "mountain", "amazon", "grotto", "island"] as const)(
     "round trips the %s preset and places every inhabitant in its habitat",
     (preset) => {
       const world = makePreset(preset);
@@ -78,6 +74,18 @@ describe("safe files and valid habitat", () => {
         ).toBeNull();
     },
   );
+  // Browsing a preset saves it, and one unreadable world locks the whole library.
+  it.each([
+    "empty",
+    "tropical",
+    "mountain",
+    "desert",
+    "grotto",
+    "island",
+    "amazon",
+  ] as const)("reopens a saved copy of the %s preset", (preset) => {
+    expect(() => parseWorld(JSON.stringify(makePreset(preset)))).not.toThrow();
+  });
   it("creates distinct preset objects without randomUUID", () => {
     vi.stubGlobal("crypto", {
       getRandomValues: crypto.getRandomValues.bind(crypto),

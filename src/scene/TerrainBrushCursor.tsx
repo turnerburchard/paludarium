@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import type { Environment } from "../model/schema";
 import { groundHeight } from "../model/terrain";
+import { waterLevel } from "../model/water";
 
 export function TerrainBrushCursor({
   x,
@@ -23,7 +24,8 @@ export function TerrainBrushCursor({
             pz = z + Math.sin(angle) * radius;
           return new THREE.Vector3(
             px,
-            Math.max(env.water, groundHeight(px, pz, env)) + 0.025,
+            Math.max(waterLevel(px, pz, env), groundHeight(px, pz, env)) +
+              0.025,
             pz,
           );
         }),

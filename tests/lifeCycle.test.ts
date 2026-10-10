@@ -90,7 +90,6 @@ describe("slow animal life cycles", () => {
       "desert",
       "grotto",
       "amazon",
-      "asian",
       "island",
     ] as const) {
       const support = habitatSupport(makePreset(preset));

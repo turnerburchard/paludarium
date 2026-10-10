@@ -19,6 +19,11 @@ const server = spawn(
   ],
   { stdio: "ignore" },
 );
+// A taken port would leave these checks quietly testing another app.
+server.on("exit", (code) => {
+  if (code && !server.killed)
+    throw new Error("Vite exited early. Is its port already in use?");
+});
 let browser;
 try {
   let ready = false;
@@ -98,7 +103,7 @@ try {
       { timeout: 30000 },
     );
     return page.evaluate(() =>
-      JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
+      JSON.parse(localStorage.getItem("little-worlds:v4"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
@@ -112,7 +117,7 @@ try {
         return groundHeight(
           x,
           z,
-          JSON.parse(localStorage.getItem("little-worlds:v3"), (key, value) =>
+          JSON.parse(localStorage.getItem("little-worlds:v4"), (key, value) =>
             key === "" && value.worlds
               ? value.worlds.find((entry) => entry.id === value.activeId).world
               : value,

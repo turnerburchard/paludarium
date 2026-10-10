@@ -15,7 +15,8 @@ const presets = [
   { name: "alpine-creek", button: "Alpine creek" },
   { name: "desert-spring", button: "Desert spring" },
   { name: "limestone-grotto", button: "Limestone grotto" },
-  { name: "aquarium", button: "Aquarium" },
+  { name: "amazon-river", button: "Amazon river" },
+  { name: "tropical-island", button: "Tropical island" },
 ].filter(
   (preset) =>
     !process.env.SCREENSHOT_PRESET ||
@@ -44,6 +45,11 @@ const server = spawn(
   ],
   { stdio: "ignore" },
 );
+// A taken port would leave these checks quietly testing another app.
+server.on("exit", (code) => {
+  if (code && !server.killed)
+    throw new Error("Vite exited early. Is its port already in use?");
+});
 let browser;
 try {
   for (let i = 0; i < 50; i++) {

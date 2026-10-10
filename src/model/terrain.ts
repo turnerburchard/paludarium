@@ -1,12 +1,6 @@
-import type { Environment, HabitatObject, AssetKind } from "./schema";
-import { assetRadius, assets } from "../assets";
-import {
-  terrainSamples,
-  terrainGrid,
-  terrainPoint,
-  terrainPointCount,
-  groundCeiling,
-} from "./terrainData";
+import type { Environment, HabitatObject } from "./schema";
+import { assetRadius } from "../assets";
+import { terrainSamples, groundCeiling } from "./terrainData";
 export function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
@@ -49,14 +43,6 @@ export function onlyPaintDiffers(a: Environment, b: Environment): boolean {
     keys.every((key) => restA[key] === restB[key])
   );
 }
-export function hasDryGround(env: Environment): boolean {
-  const points = terrainPointCount(terrainGrid(env));
-  for (let index = 0; index < points; index++) {
-    const { x, z } = terrainPoint(index, env);
-    if (groundHeight(x, z, env) >= env.water + 0.025) return true;
-  }
-  return false;
-}
 /** The upward surface normal of the ground, from its slope. */
 export function groundNormal(x: number, z: number, env: Environment) {
   const step = 0.01;
@@ -64,39 +50,6 @@ export function groundNormal(x: number, z: number, env: Environment) {
   const dz = groundHeight(x, z + step, env) - groundHeight(x, z - step, env);
   const length = Math.hypot(dx, 2 * step, dz);
   return { x: -dx / length, y: (2 * step) / length, z: -dz / length };
-}
-/** Depths below the surface are given as in water 0.4 deep. Deeper water
- * stretches them in proportion, so schools spread through a deep tank, while
- * shallow ponds keep their real depths. */
-function depthScale(x: number, z: number, env: Environment) {
-  return Math.max(1, (env.water - groundHeight(x, z, env)) / 0.4);
-}
-/** The height at a depth, on that 0.4-deep scale. */
-export function heightAtDepth(
-  x: number,
-  z: number,
-  env: Environment,
-  depth: number,
-) {
-  return env.water - depth * depthScale(x, z, env);
-}
-/** The depth of a height, on that 0.4-deep scale. */
-export function depthAt(x: number, z: number, env: Environment, y: number) {
-  return (env.water - y) / depthScale(x, z, env);
-}
-/** The middle of a species' depth range, with clearance above the substrate. */
-export function swimmingHeight(
-  x: number,
-  z: number,
-  env: Environment,
-  depth: readonly [number, number],
-  clearance = 0.05,
-): number {
-  const middle = (depth[0] + Math.min(depth[1], 0.4)) / 2;
-  return Math.max(
-    groundHeight(x, z, env) + clearance,
-    heightAtDepth(x, z, env, middle),
-  );
 }
 export function boundedPosition(
   x: number,
@@ -108,20 +61,6 @@ export function boundedPosition(
     x: clamp(x, -env.width / 2 + margin, env.width / 2 - margin),
     z: clamp(z, -env.depth / 2 + margin, env.depth / 2 - margin),
   };
-}
-export function placementProblem(
-  kind: AssetKind,
-  x: number,
-  z: number,
-  env: Environment,
-  lift = 0,
-): string | null {
-  const ground = groundHeight(x, z, env) + lift;
-  if (assets[kind].habitat === "land" && ground < env.water + 0.025)
-    return "Find a dry spot on the bank.";
-  if (assets[kind].habitat === "water" && ground > env.water - 0.12)
-    return "Find deeper water, or raise the water level.";
-  return null;
 }
 export function fitObject(
   object: HabitatObject,

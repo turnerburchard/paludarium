@@ -11,7 +11,7 @@ import {
 } from "../assets";
 import type { Editor } from "../editor/useEditor";
 import { loadThumbnails, type Thumbnails } from "../scene/thumbnails";
-import { hasDryGround } from "../model/terrain";
+import { hasDryGround } from "../model/water";
 import { prebuilts } from "../model/prebuilts";
 import { LibraryFilter, type Place } from "./LibraryFilter";
 const categories: Category[] = ["Plants", "Hardscape", "Animals"];

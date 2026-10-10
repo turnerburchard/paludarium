@@ -12,7 +12,8 @@ import {
   isLandAnimal,
 } from "../assets";
 import type { AssetKind, Environment, HabitatObject } from "../model/schema";
-import { groundHeight, groundNormal, swimmingHeight } from "../model/terrain";
+import { swimmingHeight } from "../model/water";
+import { groundHeight, groundNormal } from "../model/terrain";
 import { objectBase } from "../model/stacking";
 import { FrogRig } from "./frogRig";
 import { GeckoRig } from "./geckoRig";

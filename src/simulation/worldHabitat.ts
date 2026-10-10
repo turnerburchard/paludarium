@@ -15,8 +15,9 @@ import {
   plantPerches,
 } from "../assets";
 import { plantCondition } from "../model/plants";
-import { groundHeight, swimmingHeight } from "../model/terrain";
+import { groundHeight } from "../model/terrain";
 import { objectBase } from "../model/stacking";
+import { streamSurface, swimmingHeight, waterLevel } from "../model/water";
 import { transformPlantPoint } from "../model/plantSurfaces";
 import type { Fish } from "./fish";
 import { SwimSpace } from "./swimSpace";
@@ -124,6 +125,9 @@ export function buildHabitat(
   const nx = Math.ceil((env.width - 2 * margin) / spacing),
     nz = Math.ceil((env.depth - 2 * margin) / spacing);
   const surfaces = solids.surfaces;
+  // Reaching half a spacing past a stream's edge, even a trickle between
+  // two rows of nodes wets one of them.
+  const streamLevelAt = streamSurface(env, spacing / 2);
   // A struggling plant still gives some cover, just much less.
   const shelters = world.objects
     .filter((o) => assets[o.kind].shelter)
@@ -148,14 +152,20 @@ export function buildHabitat(
           ),
         0,
       );
+      // Animals wade in streams rather than swim, so a stream bed is wet
+      // but never submerged.
+      const streamLevel = streamLevelAt(x, z);
+      const level = waterLevel(x, z, env);
       const node: HabitatNode = {
         id: `g:${ix}:${iz}`,
         position: { x, y, z },
         normal: { x: 0, y: 1, z: 0 },
         surface: "ground",
-        wet: env.water > 0 && y <= env.water + 0.065,
+        wet:
+          y <= level + 0.065 ||
+          (streamLevel !== null && y <= streamLevel + 0.065),
         // Shallow shoreline is dry enough for land animals.
-        submerged: env.water - y > 0.025,
+        submerged: level - y > 0.025,
         shelter,
         room: groundRoom(surfaces, x, z, env),
         neighbors: [],
@@ -304,7 +314,10 @@ export function buildHabitat(
     for (let i = 1; i < steps; i++) {
       const x = from.x + ((to.x - from.x) * i) / steps;
       const z = from.z + ((to.z - from.z) * i) / steps;
-      if (groundHeight(x, z, env) < env.water - 0.025 && !surfaces.at(x, z))
+      if (
+        groundHeight(x, z, env) < waterLevel(x, z, env) - 0.025 &&
+        !surfaces.at(x, z)
+      )
         return false;
     }
     return true;
@@ -409,7 +422,7 @@ export function buildHabitat(
   const up = { x: 0, y: 1, z: 0 };
   for (const object of world.objects) {
     const baseY = objectBase(object, env);
-    if (baseY < env.water + 0.025) continue;
+    if (baseY < waterLevel(object.x, object.z, env) + 0.025) continue;
     // Normals turn with the object but don't move or scale.
     const turn = (v: Vec3) =>
       transformPlantPoint(v, { ...object, x: 0, z: 0, scale: 1 });
@@ -493,7 +506,11 @@ export function buildHabitat(
         };
       });
       const [anchor, ...wider] = dryAnchors(entrance, 0.6);
-      if (!anchor || entrance.y < env.water + 0.025) continue;
+      if (
+        !anchor ||
+        entrance.y < waterLevel(entrance.x, entrance.z, env) + 0.025
+      )
+        continue;
       let previous = anchor;
       for (const [part, position, shelter] of [
         ["entrance", entrance, 0.6],
@@ -504,7 +521,7 @@ export function buildHabitat(
           position,
           normal: up,
           surface: "ground",
-          wet: env.water > 0 && position.y <= env.water + 0.065,
+          wet: position.y <= waterLevel(position.x, position.z, env) + 0.065,
           shelter,
           neighbors: [previous.id],
         };

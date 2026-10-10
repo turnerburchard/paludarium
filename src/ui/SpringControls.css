@@ -1,0 +1,18 @@
+.spring-controls {
+  margin-top: 14px;
+}
+.spring-list {
+  flex-wrap: wrap;
+}
+.spring-list button {
+  flex: 1 0 30%;
+}
+.remove-spring {
+  width: 100%;
+  margin-top: 8px;
+  min-height: 40px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  font-size: var(--text-body);
+}

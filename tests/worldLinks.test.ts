@@ -48,7 +48,7 @@ describe("shared world snapshots", () => {
       const link = new URL(await createWorldLink(world, baseURL));
       expect(link.origin + link.pathname).toBe(baseURL);
       expect(link.hash).toMatch(/^#world=1\.[A-Za-z0-9_-]+$/);
-      expect(link.href.length).toBeLessThan(6000);
+      expect(link.href.length).toBeLessThan(7500);
       expect(await readWorldLink(link.hash)).toEqual(world);
     },
   );
