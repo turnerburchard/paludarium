@@ -56,15 +56,18 @@ export function ShareDialog({
           title: `${world.name} · Paludarium`,
           url,
         });
+        return;
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError")
           return;
-        setManual(true);
       }
-      return;
     }
+    await copy(url);
+  }
+  async function copy(url: string) {
     try {
       await navigator.clipboard.writeText(url);
+      setManual(false);
       setCopied(true);
     } catch {
       setManual(true);
@@ -85,6 +88,7 @@ export function ShareDialog({
       }
     } else downloadWorld(world);
   }
+  const link = prepared?.url;
   return (
     <Modal label="Share world" onClose={onClose}>
       <div className="modal-heading">
@@ -106,14 +110,17 @@ export function ShareDialog({
         <button onClick={() => void shareFile()}>Share file</button>
       </div>
       {manual &&
-        (prepared?.url ? (
-          <input
-            className="world-link-input"
-            aria-label="World link"
-            readOnly
-            value={prepared.url}
-            onFocus={(event) => event.currentTarget.select()}
-          />
+        (link ? (
+          <div className="world-link-copy">
+            <input
+              className="world-link-input"
+              aria-label="World link"
+              readOnly
+              value={link}
+              onFocus={(event) => event.currentTarget.select()}
+            />
+            <button onClick={() => void copy(link)}>Copy link</button>
+          </div>
         ) : (
           <p>
             This world couldn’t be turned into a link. Use Share file instead.
