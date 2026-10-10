@@ -92,6 +92,7 @@ try {
     })),
     { secure: false, uuid: "undefined", random: "function" },
   );
+  await page.getByRole("button", { name: "Pause life (Space)" }).tap();
   await page.getByRole("button", { name: "Build", exact: true }).tap();
   for (const name of [
     "Empty tank",
