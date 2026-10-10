@@ -354,7 +354,6 @@ try {
   } finally {
     await page.keyboard.up("w");
   }
-  await page.getByRole("button", { name: "Reset view", exact: true }).click();
   await page.screenshot({
     path: process.env.SCREENSHOT_DIR
       ? `${process.env.SCREENSHOT_DIR}/desktop.png`

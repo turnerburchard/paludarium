@@ -106,7 +106,7 @@ try {
         .querySelector(".mode-switch")
         .getBoundingClientRect();
       const tools = document
-        .querySelector(".scene-tools")
+        .querySelector(".header-actions")
         .getBoundingClientRect();
       return {
         modeTop: mode.top,
@@ -142,8 +142,8 @@ try {
     return [image.naturalWidth, image.naturalHeight];
   });
   assert.deepEqual(image, [1200, 630]);
-  await page.getByRole("button", { name: "Pause life (Space)" }).click();
   await page.getByRole("button", { name: "Build", exact: true }).click();
+  await page.getByRole("button", { name: "Pause life (Space)" }).click();
   await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page
     .getByRole("dialog", { name: "Worlds" })

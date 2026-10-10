@@ -201,10 +201,28 @@ button:hover:not(:disabled) {
 .warning {
   color: var(--warning);
 }
+/* Both modes share these groups, so switching never moves a control. */
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 3px;
+  margin-left: auto;
+  padding: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.header-actions .icon-button,
+.header-actions .worlds-button {
+  height: 40px;
+}
+.view-mode .topbar {
+  background: transparent;
+  border-bottom-color: transparent;
+  pointer-events: none;
+}
+.view-mode .topbar > * {
+  pointer-events: auto;
 }
 .desktop-redo {
   display: flex;
@@ -392,24 +410,6 @@ button:hover:not(:disabled) {
   border-top: 1px solid var(--line);
   font-size: var(--text-small);
   color: var(--muted);
-}
-.sidebar-footer button {
-  background: none;
-  border: 0;
-  color: var(--text-soft);
-  padding: 7px;
-}
-.scene-tools {
-  position: absolute;
-  right: 25px;
-  bottom: 31px;
-  display: flex;
-  gap: 5px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  padding: 5px;
-  border-radius: var(--radius);
-  z-index: 4;
 }
 .bottom-hud {
   position: absolute;
@@ -673,6 +673,18 @@ button:hover:not(:disabled) {
   letter-spacing: -0.6px;
   margin: 0;
 }
+.modal .about-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-brand);
+  font-weight: 350;
+  letter-spacing: -0.25px;
+}
+.about-brand img {
+  width: 44px;
+  height: 45px;
+}
 .modal p,
 .modal dd {
   font-size: var(--text-body);
@@ -804,39 +816,50 @@ button:hover:not(:disabled) {
   .app {
     min-height: 500px;
   }
-  .topbar {
-    height: 56px;
-    padding: 0 12px;
-    gap: 10px;
+  /* Phones keep just the two groups floating over the scene in both modes;
+   * Build's tools live in the dock and sheet instead of a bar. */
+  .topbar,
+  .view-mode .topbar {
+    height: auto;
+    padding: 12px;
+    gap: 6px;
+    align-items: flex-start;
+    background: transparent;
+    border-bottom-color: transparent;
+    pointer-events: none;
   }
+  .topbar > * {
+    pointer-events: auto;
+  }
+  /* The mark alone keeps the brand on screen without the wordmark's width. */
   .brand {
     min-width: 0;
-    gap: 8px;
+    align-self: center;
   }
-  .brand-mark {
-    width: 30px;
-    height: 31px;
-  }
-  .brand-mark img {
-    width: 100%;
-  }
-  .brand h1 {
-    font-size: 20px;
-  }
-  .world-title {
+  .brand h1,
+  .world-title,
+  .desktop-redo,
+  .view-mode .life-toggle,
+  .mode-switch button span,
+  .worlds-button span {
     display: none;
   }
-  .header-actions {
-    margin-left: auto;
+  .header-actions,
+  .topbar .mode-switch {
     gap: 0;
+    padding: 3px;
   }
-  .desktop-redo {
-    display: none;
+  .topbar .mode-switch button {
+    width: 44px;
+    height: 44px;
+    min-height: 0;
+    padding: 0;
   }
-  /* Comfortable tap targets on phones. */
-  .header-actions .icon-button {
+  .topbar .icon-button,
+  .topbar .worlds-button {
     width: 40px;
-    height: 40px;
+    height: 44px;
+    padding: 0;
   }
   /* The sidebar becomes a bottom sheet, hidden until the dock opens it. */
   .sidebar {
@@ -899,11 +922,6 @@ button:hover:not(:disabled) {
   .mobile-dock button:active {
     background: var(--surface);
   }
-  .dock-divider {
-    width: 1px;
-    margin: 8px 3px;
-    background: var(--line);
-  }
   .panel-tabs {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr)) 40px;
@@ -945,22 +963,6 @@ button:hover:not(:disabled) {
   .sidebar-footer {
     height: 48px;
     padding: 0 12px;
-  }
-  .sidebar-footer button {
-    padding: 10px;
-  }
-  .scene-tools {
-    display: none;
-  }
-  .view-mode .scene-tools {
-    display: flex;
-    right: 12px;
-    gap: 1px;
-    padding: 3px;
-  }
-  .scene-tools .icon-button {
-    width: 32px;
-    height: 32px;
   }
   .bottom-hud {
     left: 0;
@@ -1171,10 +1173,6 @@ button:hover:not(:disabled) {
 }
 
 .mode-switch {
-  position: absolute;
-  top: 103px;
-  left: 325px;
-  z-index: 6;
   display: flex;
   gap: 3px;
   padding: 4px;
@@ -1281,17 +1279,6 @@ button:hover:not(:disabled) {
   border: 1px dashed var(--line-strong);
 }
 @media (max-width: 760px) {
-  .mode-switch {
-    top: 68px;
-    left: 12px;
-  }
-  .mode-switch button {
-    padding: 0 12px;
-  }
-  .view-mode .scene-tools .icon-button {
-    width: 44px;
-    height: 44px;
-  }
   .view-mode .inspector {
     bottom: 12px;
   }
@@ -1365,14 +1352,6 @@ button:hover:not(:disabled) {
   color: var(--muted);
 }
 @media (max-width: 760px) {
-  .view-mode .scene-tools {
-    gap: 0;
-    padding: 3px;
-  }
-  .view-mode .scene-tools .icon-button {
-    width: 40px;
-    height: 44px;
-  }
   .placement-bar {
     flex-wrap: wrap;
   }
@@ -1474,22 +1453,11 @@ button:hover:not(:disabled) {
   font-variant-numeric: tabular-nums;
 }
 
-.view-info {
-  position: absolute;
-  left: 16px;
-  bottom: max(16px, env(safe-area-inset-bottom));
-  z-index: 4;
-}
-.view-info .icon-button {
-  width: 44px;
-  height: 44px;
-  color: var(--muted);
-}
 .shared-world-badge {
   position: absolute;
   bottom: max(16px, env(safe-area-inset-bottom));
-  left: 72px;
-  max-width: calc(100% - 88px);
+  left: 16px;
+  max-width: calc(100% - 32px);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1580,59 +1548,6 @@ button:hover:not(:disabled) {
   background: var(--selected);
   color: var(--accent);
 }
-.scene-controls {
-  display: contents;
-}
-.view-mode .scene-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  position: absolute;
-  top: 24px;
-  left: 24px;
-  right: 24px;
-  z-index: 6;
-  pointer-events: none;
-}
-.view-mode .scene-controls > .mode-switch,
-.view-mode .scene-controls > .scene-tools {
-  position: static;
-  pointer-events: auto;
-}
-.view-mode .scene-controls > .scene-tools {
-  margin-left: auto;
-}
-@media (max-width: 760px) {
-  .view-mode .scene-controls {
-    top: 12px;
-    left: 12px;
-    right: 12px;
-    flex-wrap: nowrap;
-    gap: 6px;
-  }
-  .view-mode .mode-switch button {
-    width: 44px;
-    height: 44px;
-    padding: 0;
-  }
-  .view-mode .mode-switch button span,
-  .view-mode .worlds-button span,
-  .view-mode .scene-tools .icon-button[aria-label="Reset view"] {
-    display: none;
-  }
-  .view-mode .scene-tools .icon-button {
-    width: 44px;
-  }
-  .view-mode .worlds-button {
-    width: 44px;
-    padding: 0;
-  }
-  .worlds-button {
-    height: 44px;
-  }
-}
 .open-world span {
   color: var(--muted);
   font-size: var(--text-small);
@@ -1687,4 +1602,18 @@ button:hover:not(:disabled) {
   margin-top: 22px;
   border-top: 1px solid var(--line);
   padding-bottom: 0;
+}
+/* Build's five actions still fit beside the mode switch at 320px. */
+@media (max-width: 360px) {
+  .topbar .icon-button,
+  .topbar .worlds-button {
+    width: 36px;
+  }
+}
+/* Build's actions need the mark's room on the narrowest phones. Hiding it in
+ * both modes keeps the mode switch from moving when the mode changes. */
+@media (max-width: 340px) {
+  .brand {
+    display: none;
+  }
 }

@@ -15,7 +15,7 @@ import { placementProblem, waterLevel } from "../model/water";
 import { boundedPosition, groundHeight } from "../model/terrain";
 import { prebuiltObjects, prebuiltProblem } from "../model/prebuilts";
 import { restingOn, type Surface } from "../model/stacking";
-import { useCameraNavigation } from "./useCameraNavigation";
+import { keepTankInReach, useCameraNavigation } from "./useCameraNavigation";
 import { useFollowCamera } from "./useFollowCamera";
 import { tankReach, useCameraLayout } from "./useCameraLayout";
 import { Inhabitant } from "./Inhabitant";
@@ -78,7 +78,7 @@ function Scene({
     watchingId,
     resetCamera,
   );
-  useCameraNavigation(controls, true, followCamera.interrupt);
+  useCameraNavigation(controls, env, true, followCamera.interrupt);
   const [cursor, setCursor] = useState<{
     x: number;
     z: number;
@@ -421,6 +421,9 @@ function Scene({
         autoRotate={view && !editor.paused && !followCamera.active}
         autoRotateSpeed={0.35}
         onStart={followCamera.interrupt}
+        onChange={() => {
+          if (controls.current) keepTankInReach(controls.current, env);
+        }}
       />
     </>
   );

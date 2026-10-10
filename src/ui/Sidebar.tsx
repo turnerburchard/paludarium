@@ -1,7 +1,6 @@
 import {
   ChevronDown,
   HeartPulse,
-  Info,
   SlidersHorizontal,
   Sprout,
 } from "lucide-react";
@@ -20,7 +19,6 @@ export function Sidebar({
   ecosystem,
   panel,
   onPanel,
-  onAbout,
   onWatch,
   onClose,
 }: {
@@ -29,7 +27,6 @@ export function Sidebar({
   ecosystem: EcosystemController;
   panel: Panel;
   onPanel: (panel: Panel) => void;
-  onAbout: () => void;
   onWatch: (id: string) => void;
   /** Phones show the sidebar as a sheet that can be closed. */
   onClose: () => void;
@@ -93,9 +90,6 @@ export function Sidebar({
       </div>
       <div className="sidebar-footer">
         <span>{editor.world.objects.length} inhabitants & objects</span>
-        <button onClick={onAbout} aria-label="About Paludarium">
-          <Info size={16} />
-        </button>
       </div>
     </aside>
   );

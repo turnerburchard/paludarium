@@ -95,7 +95,8 @@ try {
       .getByRole("dialog", { name: "Controls and help" })
       .getByRole("button", { name: "Close dialog" })
       .click();
-    await page.getByRole("button", { name: "Pause life (Space)" }).click();
+    // Phones hide Pause in View, so use the Space shortcut.
+    await page.locator("body").press("Space");
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     assert.equal(await page.locator(".preset-options button").count(), 7);
     await page
@@ -157,8 +158,8 @@ try {
       return;
     }
     await page.reload();
-    await page.getByRole("button", { name: "Pause life (Space)" }).click();
     await page.getByRole("button", { name: "Build", exact: true }).click();
+    await page.getByRole("button", { name: "Pause life (Space)" }).click();
     assert.equal(
       await page
         .getByRole("textbox", { name: "World name", includeHidden: true })

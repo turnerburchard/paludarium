@@ -1,12 +1,4 @@
-import {
-  Eye,
-  HeartPulse,
-  Pause,
-  Play,
-  SlidersHorizontal,
-  Sprout,
-} from "lucide-react";
-import type { Editor } from "../editor/useEditor";
+import { HeartPulse, SlidersHorizontal, Sprout } from "lucide-react";
 import type { Panel } from "./Sidebar";
 
 const panels = [
@@ -16,15 +8,7 @@ const panels = [
 ] as const;
 
 /** Phones keep the scene clear: tools live behind these buttons. */
-export function MobileDock({
-  editor,
-  onOpen,
-  onWatchWorld,
-}: {
-  editor: Editor;
-  onOpen: (panel: Panel) => void;
-  onWatchWorld: () => void;
-}) {
+export function MobileDock({ onOpen }: { onOpen: (panel: Panel) => void }) {
   return (
     <nav className="mobile-dock" aria-label="Tools">
       {panels.map(({ panel, label, Icon }) => (
@@ -33,16 +17,6 @@ export function MobileDock({
           {label}
         </button>
       ))}
-      <span className="dock-divider" />
-      <button
-        onClick={() => editor.setPaused((p) => !p)}
-        aria-label={editor.paused ? "Resume life" : "Pause life"}
-      >
-        {editor.paused ? <Play size={19} /> : <Pause size={19} />}
-      </button>
-      <button onClick={onWatchWorld} aria-label="Watch your world">
-        <Eye size={19} />
-      </button>
     </nav>
   );
 }

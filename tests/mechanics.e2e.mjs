@@ -122,9 +122,8 @@ try {
     .getByRole("button", { name: "Close dialog" })
     .click();
   await page.waitForFunction(() => document.querySelector("canvas"));
-  await page
-    .getByRole("button", { name: "Pause life (Space)", exact: true })
-    .click();
+  // Phones hide Pause in View, so use the Space shortcut.
+  await page.locator("body").press("Space");
   assert.equal(
     await page
       .getByRole("button", { name: "View", exact: true })
@@ -324,7 +323,6 @@ try {
   );
   await page.getByRole("button", { name: "Close panel", exact: true }).click();
   await page.setViewportSize({ width: 1440, height: 960 });
-  await page.getByRole("button", { name: "Reset view", exact: true }).click();
   await page.waitForTimeout(2000);
 
   async function clickObject(id) {
@@ -794,10 +792,10 @@ try {
     await fishPage.waitForTimeout(100);
   }
   assert.ok(moved, "bottom fish actually swim in the rendered habitat");
+  await fishPage.getByRole("button", { name: "Build", exact: true }).click();
   await fishPage
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
-  await fishPage.getByRole("button", { name: "Build", exact: true }).click();
   await fishPage
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Habitat", exact: true })

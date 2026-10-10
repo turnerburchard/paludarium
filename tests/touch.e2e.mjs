@@ -98,10 +98,10 @@ try {
     .getByRole("dialog", { name: "Controls and help" })
     .getByRole("button", { name: "Close dialog" })
     .click();
+  await page.getByRole("button", { name: "Build", exact: true }).tap();
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .tap();
-  await page.getByRole("button", { name: "Build", exact: true }).tap();
   await page
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Add", exact: true })

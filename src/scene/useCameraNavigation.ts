@@ -2,10 +2,32 @@ import { useEffect, useRef, type RefObject } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { OrbitControls } from "three-stdlib";
+import type { Environment } from "../model/schema";
+
+/** How far past the glass panning may carry the orbit target. */
+const PAN_MARGIN = 2;
+
+/** Pulls the orbit target back near the tank so it can't be panned out of
+ * reach. The camera moves with it, keeping the view's angle and distance. */
+export function keepTankInReach(
+  orbit: OrbitControls,
+  environment: Environment,
+) {
+  const { target } = orbit,
+    reachX = environment.width / 2 + PAN_MARGIN,
+    reachZ = environment.depth / 2 + PAN_MARGIN;
+  const shiftX = THREE.MathUtils.clamp(target.x, -reachX, reachX) - target.x,
+    shiftZ = THREE.MathUtils.clamp(target.z, -reachZ, reachZ) - target.z;
+  target.x += shiftX;
+  target.z += shiftZ;
+  orbit.object.position.x += shiftX;
+  orbit.object.position.z += shiftZ;
+}
 
 /** Keyboard movement shifts camera and orbit target together, preserving the user's view. */
 export function useCameraNavigation(
   controls: RefObject<OrbitControls | null>,
+  environment: Environment,
   enabled: boolean,
   onNavigate: () => void,
 ) {
@@ -76,12 +98,9 @@ export function useCameraNavigation(
     onNavigate();
     const speed = held.has("ShiftLeft") || held.has("ShiftRight") ? 5 : 2.4;
     movement.normalize().multiplyScalar(speed * Math.min(delta, 0.05));
-    // Keep an easy path back to the enclosure; reset remains an explicit one-click action.
-    const nextX = THREE.MathUtils.clamp(orbit.target.x + movement.x, -8, 8),
-      nextZ = THREE.MathUtils.clamp(orbit.target.z + movement.z, -8, 8);
-    movement.set(nextX - orbit.target.x, 0, nextZ - orbit.target.z);
     orbit.target.add(movement);
     orbit.object.position.add(movement);
+    keepTankInReach(orbit, environment);
     orbit.update();
   });
 }

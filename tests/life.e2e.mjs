@@ -99,10 +99,10 @@ try {
     .getByRole("dialog", { name: "Controls and help" })
     .getByRole("button", { name: "Close dialog" })
     .click();
+  await page.getByRole("button", { name: "Build", exact: true }).click();
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
-  await page.getByRole("button", { name: "Build", exact: true }).click();
   await page
     .getByRole("textbox", { name: "World name" })
     .fill("Growing habitat");
@@ -241,10 +241,10 @@ try {
       ).objects.length === 7,
     storageKey,
   );
+  await fishPage.getByRole("button", { name: "Build", exact: true }).click();
   await fishPage
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
-  await fishPage.getByRole("button", { name: "Build", exact: true }).click();
   await fishPage
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Life", exact: true })
@@ -263,9 +263,8 @@ try {
   assert.equal(bornFish.kind, "fish");
   assert.equal(bornFish.life.age, 0);
   await fishPage.reload();
-  await fishPage
-    .getByRole("button", { name: "Pause life (Space)", exact: true })
-    .click();
+  // Phones hide Pause in View, so use the Space shortcut.
+  await fishPage.locator("body").press("Space");
   const resumed = await fishPage.evaluate(
     (key) => JSON.parse(localStorage.getItem(key)),
     storageKey,

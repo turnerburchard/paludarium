@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import { Info } from "lucide-react";
-import { IconButton } from "./ui/IconButton";
 import { assets, isAnimal } from "./assets";
 import { useEditor } from "./editor/useEditor";
 import type { Preset } from "./model/presets";
@@ -15,7 +13,6 @@ import { ShareDialog } from "./ui/ShareDialog";
 import { WorldsDialog } from "./ui/WorldsDialog";
 import { RenameDialog } from "./ui/RenameDialog";
 import { SceneBoundary } from "./ui/SceneBoundary";
-import { SceneTools } from "./ui/SceneTools";
 import { Sidebar, type Panel } from "./ui/Sidebar";
 import { TopBar } from "./ui/TopBar";
 import { useWorldFiles } from "./ui/useWorldFiles";
@@ -169,13 +166,14 @@ export default function App({
           />
         </SceneBoundary>
       </div>
-      {!view && (
-        <TopBar
-          editor={editor}
-          onWorlds={openWorlds}
-          onShare={() => setDialog("share")}
-        />
-      )}
+      <TopBar
+        editor={editor}
+        view={view}
+        onChangeMode={changeMode}
+        onWorlds={openWorlds}
+        onShare={() => setDialog("share")}
+        onAbout={() => setDialog("about")}
+      />
       {files.fileInput}
       {hasBuilt && (
         <Sidebar
@@ -184,17 +182,12 @@ export default function App({
           ecosystem={ecosystem}
           panel={panel}
           onPanel={setPanel}
-          onAbout={() => setDialog("about")}
           onWatch={inspectAnimal}
           onClose={() => setSheetOpen(false)}
         />
       )}
       {!view && !sheetOpen && !selected && tool.type === "select" && (
-        <MobileDock
-          editor={editor}
-          onOpen={openPanel}
-          onWatchWorld={() => changeMode(true)}
-        />
+        <MobileDock onOpen={openPanel} />
       )}
       {selected && tool.type === "select" && !watchingId && (
         <Inspector
@@ -214,34 +207,11 @@ export default function App({
           onStop={() => setWatchRequest(null)}
         />
       )}
-      <SceneTools
-        editor={editor}
-        view={view}
-        onShare={() => setDialog("share")}
-        onWorlds={openWorlds}
-        onChangeMode={changeMode}
-        onResetCamera={() => {
-          setWatchRequest(null);
-          setResetCamera((n) => n + 1);
-        }}
-      />
-      {view && !watchingId && (
-        <>
-          <div className="view-info">
-            <IconButton
-              label="About Paludarium"
-              onClick={() => setDialog("about")}
-            >
-              <Info size={19} />
-            </IconButton>
-          </div>
-          {editor.isShared && (
-            <nav className="shared-world-badge" aria-label="Shared world">
-              <span title={world.name}>{world.name}</span>
-              <a href={location.pathname + location.search}>Back to my world</a>
-            </nav>
-          )}
-        </>
+      {view && !watchingId && editor.isShared && (
+        <nav className="shared-world-badge" aria-label="Shared world">
+          <span title={world.name}>{world.name}</span>
+          <a href={location.pathname + location.search}>Back to my world</a>
+        </nav>
       )}
       {!view && <BottomHud editor={editor} />}
       {dialog === "share" && (

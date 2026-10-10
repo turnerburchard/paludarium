@@ -18,7 +18,9 @@ export function AboutDialog({
   return (
     <Modal label="About Paludarium" onClose={onClose}>
       <div className="modal-heading">
-        <h2>Paludarium</h2>
+        <h2 className="about-brand">
+          <img src="./paludarium-mark-light.svg" alt="" /> paludarium
+        </h2>
         <IconButton label="Close introduction" onClick={onClose}>
           <X size={20} />
         </IconButton>

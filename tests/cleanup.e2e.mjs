@@ -129,10 +129,10 @@ try {
     .getByRole("button", { name: "Close dialog" })
     .click();
   await page.waitForFunction(() => document.querySelector("canvas"));
-  assert.equal(
-    await page.getByRole("heading").count(),
-    0,
-    "View has no branding headline",
+  assert.deepEqual(
+    await page.getByRole("heading").allInnerTexts(),
+    ["paludarium"],
+    "View shows the brand and no other headline",
   );
   assert.equal(
     await page
@@ -466,7 +466,7 @@ try {
   assert.equal(parseInt(await angle.innerText()), parseInt(held) - 30);
   assert.equal(
     await page
-      .locator('.scene-tools button[aria-label="Resume life (Space)"]')
+      .locator('.topbar button[aria-label="Resume life (Space)"]')
       .count(),
     1,
     "Space on a turn button does not pause or resume life",
@@ -625,7 +625,9 @@ try {
   await receiver
     .getByRole("button", { name: "Build a copy", exact: true })
     .click();
-  await receiver.locator(".topbar").waitFor();
+  await receiver
+    .getByRole("button", { name: "Build", exact: true, pressed: true })
+    .waitFor();
   assert.deepEqual(await receiverSaved(), sharedWorld);
   assert.equal(new URL(receiver.url()).hash, "");
   await receiver.getByRole("button", { name: "Worlds", exact: true }).click();

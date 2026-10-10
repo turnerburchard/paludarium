@@ -96,9 +96,8 @@ try {
         .getByRole("dialog", { name: "Controls and help" })
         .getByRole("button", { name: "Close dialog" })
         .click();
-      await page
-        .getByRole("button", { name: "Pause life (Space)", exact: true })
-        .click();
+      // Phones hide Pause in View, so use the Space shortcut.
+      await page.locator("body").press("Space");
       async function openLife() {
         if (width === 390)
           await page

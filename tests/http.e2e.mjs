@@ -98,8 +98,8 @@ try {
     })),
     { secure: false, uuid: "undefined", random: "function" },
   );
-  await page.getByRole("button", { name: "Pause life (Space)" }).tap();
   await page.getByRole("button", { name: "Build", exact: true }).tap();
+  await page.getByRole("button", { name: "Pause life (Space)" }).tap();
   // Unit tests cover each preset's data, so one land world with animals is
   // enough to show a preset builds and saves on an insecure origin.
   await page.getByRole("button", { name: "Worlds", exact: true }).tap();
