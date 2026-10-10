@@ -595,7 +595,18 @@ export function withEnvironment(
   return {
     ...world,
     environment,
-    objects: keepStacked(objects, world.environment, environment),
+    // Keep collision geometry cached when fitting leaves an object unchanged.
+    objects: keepStacked(objects, world.environment, environment).map(
+      (object, i) => {
+        const original = world.objects[i];
+        return object.x === original.x &&
+          object.z === original.z &&
+          object.rotation === original.rotation &&
+          object.lift === original.lift
+          ? original
+          : object;
+      },
+    ),
   };
 }
 
