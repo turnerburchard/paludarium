@@ -1003,7 +1003,7 @@ function creekBed() {
     [3.4, -0.2],
     [4.3, 0.7],
   ];
-  return sculpt({ ...env, terrain, springs: [springAt(env, creek[0], 0.3)] }, [
+  return sculpt({ ...env, terrain, springs: [springAt(env, creek[0], 1)] }, [
     ["moss", 1.2, meadow],
     ["moss", 0.8, creekside],
     ["moss", 0.7, farBank],
