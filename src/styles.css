@@ -62,6 +62,11 @@ b {
 * {
   box-sizing: border-box;
 }
+/* Pinches that start on the UI would zoom the page and strand the player
+   there. Scrolling still works, and the canvas handles its own pinch. */
+html {
+  touch-action: pan-x pan-y;
+}
 body {
   margin: 0;
 }
@@ -1327,7 +1332,8 @@ button:hover:not(:disabled) {
   border-radius: 6px;
   background: var(--surface);
   color: var(--text);
-  font-size: var(--text-body);
+  /* iOS zooms the page when focusing an input under 16px. */
+  font-size: max(16px, var(--text-body));
 }
 .placement-rotation {
   display: grid;
