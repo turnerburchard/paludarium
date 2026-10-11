@@ -443,12 +443,12 @@ button:hover:not(:disabled) {
   border-radius: 8px;
   color: var(--accent);
 }
-.placement-bar strong {
+.placement-text strong {
   display: block;
   font-size: var(--text-body);
   font-weight: 500;
 }
-.placement-bar span:not(.placement-icon) {
+.placement-text span {
   display: block;
   font-size: var(--text-small);
   color: var(--text-soft);
@@ -1365,7 +1365,7 @@ button:hover:not(:disabled) {
   .placement-bar {
     flex-wrap: wrap;
   }
-  .placement-bar > div:not(.placement-rotation) {
+  .placement-text {
     flex: 1;
     min-width: 0;
   }

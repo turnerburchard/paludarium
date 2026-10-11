@@ -7,12 +7,39 @@
 .spring-list button {
   flex: 1 0 30%;
 }
+.spring-bar {
+  flex-wrap: wrap;
+  width: min(460px, 100%);
+  padding: 14px 16px 16px;
+  row-gap: 14px;
+}
+.spring-bar .placement-text {
+  flex: 1;
+}
+.spring-settings {
+  flex-basis: 100%;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.spring-settings .range-control {
+  flex: 1;
+  margin: 0;
+}
 .remove-spring {
-  width: 100%;
-  margin-top: 8px;
-  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
   border: 1px solid var(--line-strong);
   border-radius: 7px;
   background: var(--surface);
+  color: var(--text-soft);
   font-size: var(--text-body);
+}
+.remove-spring:hover {
+  background: var(--selected);
 }

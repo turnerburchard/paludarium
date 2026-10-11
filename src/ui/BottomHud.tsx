@@ -2,6 +2,7 @@ import { Check, Copy, Droplets, Move, Paintbrush, Plus, X } from "lucide-react";
 import { assets } from "../assets";
 import type { Editor } from "../editor/useEditor";
 import { PlacementRotation } from "./PlacementRotation";
+import { SpringSettings } from "./SpringControls";
 import { terrainTools } from "./terrainTools";
 
 /** Controls for the active editing tool. */
@@ -42,9 +43,14 @@ export function BottomHud({ editor }: { editor: Editor }) {
   }
   const turns = tool.type !== "terrain" && tool.type !== "spring";
   const done = adding || !turns;
+  const spring = tool.type === "spring" ? tool.index : null;
   return (
     <div className="bottom-hud placing">
-      <div className="placement-bar">
+      <div
+        className={
+          spring === null ? "placement-bar" : "placement-bar spring-bar"
+        }
+      >
         <span className="placement-icon">
           {tool.type === "terrain" ? (
             <Paintbrush size={20} />
@@ -58,7 +64,7 @@ export function BottomHud({ editor }: { editor: Editor }) {
             <Plus size={20} />
           )}
         </span>
-        <div>
+        <div className="placement-text">
           <strong>{title}</strong>
           <span role="status" aria-live="polite">
             {editor.placementError || hint}
@@ -69,6 +75,7 @@ export function BottomHud({ editor }: { editor: Editor }) {
           {done ? <Check size={16} /> : <X size={16} />}
           {done ? "Done" : "Cancel"}
         </button>
+        {spring !== null && <SpringSettings editor={editor} index={spring} />}
       </div>
     </div>
   );

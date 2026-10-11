@@ -1,3 +1,4 @@
+import { Trash2 } from "lucide-react";
 import { MAX_SPRINGS } from "../model/schema";
 import type { Editor } from "../editor/useEditor";
 import { RangeControl } from "./RangeControl";
@@ -10,8 +11,6 @@ export function SpringControls({ editor }: { editor: Editor }) {
   const { tool } = editor;
   const adding = tool.type === "spring" && tool.index === null;
   const chosen = tool.type === "spring" ? tool.index : null;
-  const withFlow = (flow: number) =>
-    springs.map((s, i) => (i === chosen ? { ...s, flow } : s));
   return (
     <section className="spring-controls" aria-label="Springs">
       <div className="water-options spring-list">
@@ -38,30 +37,45 @@ export function SpringControls({ editor }: { editor: Editor }) {
           Add spring
         </button>
       </div>
-      {chosen !== null && (
-        <>
-          <RangeControl
-            label="Flow"
-            value={springs[chosen].flow}
-            min={0}
-            max={1}
-            step={0.05}
-            format={(n) => (n < 0.3 ? "Trickle" : n > 0.7 ? "Gush" : "Steady")}
-            onPreview={(flow) =>
-              editor.previewEnvironment({ springs: withFlow(flow) })
-            }
-            onCommit={(flow) =>
-              editor.changeEnvironment({ springs: withFlow(flow) })
-            }
-          />
-          <button
-            className="remove-spring"
-            onClick={() => editor.removeSpring(chosen)}
-          >
-            Remove spring
-          </button>
-        </>
-      )}
     </section>
+  );
+}
+
+/** The chosen spring's flow, shown wherever it was chosen from: the list
+ * above or the spring itself in the tank. */
+export function SpringSettings({
+  editor,
+  index,
+}: {
+  editor: Editor;
+  index: number;
+}) {
+  const { springs } = editor.world.environment;
+  const withFlow = (flow: number) =>
+    springs.map((s, i) => (i === index ? { ...s, flow } : s));
+  return (
+    <div className="spring-settings">
+      <RangeControl
+        label="Flow"
+        value={springs[index].flow}
+        min={0}
+        max={1}
+        step={0.05}
+        format={(n) => (n < 0.3 ? "Trickle" : n > 0.7 ? "Gush" : "Steady")}
+        onPreview={(flow) =>
+          editor.previewEnvironment({ springs: withFlow(flow) })
+        }
+        onCommit={(flow) =>
+          editor.changeEnvironment({ springs: withFlow(flow) })
+        }
+      />
+      <button
+        className="remove-spring"
+        onClick={() => editor.removeSpring(index)}
+      >
+        <Trash2 size={16} />
+        Remove
+      </button>
+    </div>
   );
 }
