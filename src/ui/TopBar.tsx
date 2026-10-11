@@ -14,7 +14,8 @@ import type { Editor } from "../editor/useEditor";
 import { IconButton } from "./IconButton";
 
 /** One header for both modes, so switching never moves a control. Build
- * adds the world name, and Undo and Redo at the start of the actions. */
+ * adds the world name, and Undo and Redo at the start of the actions. Phones
+ * drop Redo and Pause here and switch modes from the dock. */
 export function TopBar({
   editor,
   view,

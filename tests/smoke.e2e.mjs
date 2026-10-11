@@ -97,27 +97,24 @@ try {
     .getByRole("button", { name: "Close dialog" })
     .click();
   await page.getByRole("button", { name: "About Paludarium" }).waitFor();
-  assert.equal(await page.getByRole("heading").count(), 0);
+  assert.deepEqual(await page.getByRole("heading").allTextContents(), [
+    "paludarium",
+  ]);
   assert.equal(await page.getByRole("slider").count(), 0);
   for (const width of [320, 360, 390]) {
     await page.setViewportSize({ width, height: 844 });
     const controls = await page.evaluate(() => {
-      const mode = document
-        .querySelector(".mode-switch")
-        .getBoundingClientRect();
+      const brand = document.querySelector(".brand").getBoundingClientRect();
       const tools = document
         .querySelector(".header-actions")
         .getBoundingClientRect();
       return {
-        modeTop: mode.top,
-        modeRight: mode.right,
-        toolsTop: tools.top,
+        brandRight: brand.right,
         toolsLeft: tools.left,
         toolsRight: tools.right,
       };
     });
-    assert.ok(Math.abs(controls.modeTop - controls.toolsTop) <= 2);
-    assert.ok(controls.modeRight <= controls.toolsLeft);
+    assert.ok(controls.brandRight <= controls.toolsLeft);
     assert.ok(controls.toolsRight <= width - 12);
   }
   assert.equal(
@@ -142,8 +139,9 @@ try {
     return [image.naturalWidth, image.naturalHeight];
   });
   assert.deepEqual(image, [1200, 630]);
+  // Phones have no Pause button, so use the Space shortcut.
+  await page.locator("body").press("Space");
   await page.getByRole("button", { name: "Build", exact: true }).click();
-  await page.getByRole("button", { name: "Pause life (Space)" }).click();
   await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page
     .getByRole("dialog", { name: "Worlds" })
@@ -282,6 +280,7 @@ try {
       ).environment.water > 2,
     storageKey,
   );
+  await page.getByRole("button", { name: "Close panel", exact: true }).click();
   await page.getByRole("button", { name: "View", exact: true }).click();
   assert.equal(
     await page.evaluate(

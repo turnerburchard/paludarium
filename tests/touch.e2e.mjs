@@ -98,10 +98,9 @@ try {
     .getByRole("dialog", { name: "Controls and help" })
     .getByRole("button", { name: "Close dialog" })
     .click();
+  // Phones have no Pause button, so use the Space shortcut.
+  await page.locator("body").press("Space");
   await page.getByRole("button", { name: "Build", exact: true }).tap();
-  await page
-    .getByRole("button", { name: "Pause life (Space)", exact: true })
-    .tap();
   await page
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Add", exact: true })
@@ -493,7 +492,6 @@ try {
   await page.getByRole("button", { name: "Build", exact: true }).tap();
   await page.getByRole("button", { name: "Worlds", exact: true }).tap();
   await page.getByRole("button", { name: "Empty tank", exact: true }).tap();
-  await page.getByRole("button", { name: "Build", exact: true }).tap();
   await page
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Add", exact: true })

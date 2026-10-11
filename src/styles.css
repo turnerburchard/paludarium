@@ -816,8 +816,8 @@ button:hover:not(:disabled) {
   .app {
     min-height: 500px;
   }
-  /* Phones keep just the two groups floating over the scene in both modes;
-   * Build's tools live in the dock and sheet instead of a bar. */
+  /* Phones float the brand and the world actions over the scene in both
+   * modes. Switching modes and Build's tools live in the dock. */
   .topbar,
   .view-mode .topbar {
     height: auto;
@@ -831,29 +831,28 @@ button:hover:not(:disabled) {
   .topbar > * {
     pointer-events: auto;
   }
-  /* The mark alone keeps the brand on screen without the wordmark's width. */
   .brand {
     min-width: 0;
+    gap: 8px;
     align-self: center;
   }
-  .brand h1,
+  .brand-mark {
+    width: 34px;
+    height: 35px;
+  }
+  .brand h1 {
+    font-size: 19px;
+  }
+  .topbar .mode-switch,
   .world-title,
   .desktop-redo,
-  .view-mode .life-toggle,
-  .mode-switch button span,
+  .life-toggle,
   .worlds-button span {
     display: none;
   }
-  .header-actions,
-  .topbar .mode-switch {
+  .header-actions {
     gap: 0;
     padding: 3px;
-  }
-  .topbar .mode-switch button {
-    width: 44px;
-    height: 44px;
-    min-height: 0;
-    padding: 0;
   }
   .topbar .icon-button,
   .topbar .worlds-button {
@@ -921,6 +920,11 @@ button:hover:not(:disabled) {
   }
   .mobile-dock button:active {
     background: var(--surface);
+  }
+  .dock-divider {
+    width: 1px;
+    margin: 8px 3px;
+    background: var(--line);
   }
   .panel-tabs {
     display: grid;
@@ -1307,6 +1311,7 @@ button:hover:not(:disabled) {
 .world-link-copy {
   display: flex;
   gap: 8px;
+  margin-top: 14px;
 }
 .world-link-input {
   flex: 1;
@@ -1479,6 +1484,12 @@ button:hover:not(:disabled) {
   color: var(--muted);
   text-underline-offset: 3px;
 }
+/* Phones keep the badge above the dock's Build button. */
+@media (max-width: 760px) {
+  .shared-world-badge {
+    bottom: 92px;
+  }
+}
 
 .world-list {
   margin-top: 4px;
@@ -1603,17 +1614,13 @@ button:hover:not(:disabled) {
   border-top: 1px solid var(--line);
   padding-bottom: 0;
 }
-/* Build's five actions still fit beside the mode switch at 320px. */
+/* Build's header still fits beside the full brand at 320px. */
 @media (max-width: 360px) {
   .topbar .icon-button,
   .topbar .worlds-button {
     width: 36px;
   }
-}
-/* Build's actions need the mark's room on the narrowest phones. Hiding it in
- * both modes keeps the mode switch from moving when the mode changes. */
-@media (max-width: 340px) {
-  .brand {
-    display: none;
+  .brand h1 {
+    font-size: 17px;
   }
 }

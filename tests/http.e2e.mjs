@@ -98,8 +98,9 @@ try {
     })),
     { secure: false, uuid: "undefined", random: "function" },
   );
+  // Phones have no Pause button, so use the Space shortcut.
+  await page.locator("body").press("Space");
   await page.getByRole("button", { name: "Build", exact: true }).tap();
-  await page.getByRole("button", { name: "Pause life (Space)" }).tap();
   // Unit tests cover each preset's data, so one land world with animals is
   // enough to show a preset builds and saves on an insecure origin.
   await page.getByRole("button", { name: "Worlds", exact: true }).tap();

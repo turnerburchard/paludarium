@@ -202,26 +202,29 @@ try {
       },
     });
   });
+  // Touch screens skip the dialog and open the share sheet straight away.
+  const shareDialog = page.getByRole("dialog", { name: "Share world" });
   await page.getByRole("button", { name: "Share this world" }).click();
-  await page.getByRole("button", { name: "Share link", exact: true }).click();
+  await page.waitForFunction(() => window.sharedProject);
   assert.equal(
     (await page.evaluate(() => window.sharedProject)).url,
     sharedLink,
   );
   assert.equal(await page.evaluate(() => window.sharedWithActivation), true);
   assert.equal(await page.evaluate(() => window.sharedProject.text), undefined);
-  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   assert.equal(
     (await page.evaluate(() => window.sharedProject)).title,
     "Cleanup check · Paludarium",
   );
+  assert.equal(await shareDialog.count(), 0);
   await page.evaluate(() => {
+    window.sharedProject = null;
     window.shareError = "AbortError";
   });
   await page.getByRole("button", { name: "Share this world" }).click();
-  await page.getByRole("button", { name: "Share link", exact: true }).click();
+  await page.waitForFunction(() => window.sharedProject);
   assert.equal(
-    await page.getByRole("textbox", { name: "World link" }).count(),
+    await shareDialog.count(),
     0,
     "canceling native share leaves the scene clean",
   );
@@ -230,7 +233,6 @@ try {
     null,
     "canceling does not copy behind the user's back",
   );
-  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   await page.evaluate(() => {
     window.shareError = "NotAllowedError";
   });
@@ -257,6 +259,18 @@ try {
         },
       },
     });
+  });
+  await page.getByRole("button", { name: "Share this world" }).click();
+  await page.getByRole("button", { name: "Share link", exact: true }).click();
+  await page.getByText("World link copied", { exact: true }).waitFor();
+  assert.equal(
+    await page.getByRole("textbox", { name: "World link" }).count(),
+    0,
+    "a blocked Clipboard API still copies through a selected field",
+  );
+  await page.getByRole("button", { name: "Close dialog" }).click();
+  await page.evaluate(() => {
+    document.execCommand = () => false;
   });
   await page.getByRole("button", { name: "Share this world" }).click();
   await page.getByRole("button", { name: "Share link", exact: true }).click();
@@ -324,9 +338,20 @@ try {
 
   await page.evaluate(() => {
     window.shareError = null;
+    window.sharedProject = null;
   });
+  // Touch screens share straight away once the renamed world's link is
+  // ready, and open the dialog if it's still being built.
   await page.getByRole("button", { name: "Share this world" }).click();
-  await page.getByRole("button", { name: "Share link", exact: true }).click();
+  await page.waitForFunction(
+    () => window.sharedProject || document.querySelector("[role=dialog]"),
+  );
+  if (await shareDialog.count()) {
+    await shareDialog
+      .getByRole("button", { name: "Share link", exact: true })
+      .click();
+    await shareDialog.getByRole("button", { name: "Close dialog" }).click();
+  }
   const renamedShared = await page.evaluate(async () => {
     const { readWorldLink } = await import("/src/editor/worldLinks.ts");
     return readWorldLink(new URL(window.sharedProject.url).hash);
@@ -337,7 +362,6 @@ try {
     sharedLink,
   );
 
-  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   await page
     .getByRole("button", { name: "Habitat settings", exact: true })
     .click();
@@ -626,7 +650,8 @@ try {
     .getByRole("button", { name: "Build a copy", exact: true })
     .click();
   await receiver
-    .getByRole("button", { name: "Build", exact: true, pressed: true })
+    .getByRole("navigation", { name: "Tools" })
+    .getByRole("button", { name: "View", exact: true })
     .waitFor();
   assert.deepEqual(await receiverSaved(), sharedWorld);
   assert.equal(new URL(receiver.url()).hash, "");

@@ -15,6 +15,7 @@ import { RenameDialog } from "./ui/RenameDialog";
 import { SceneBoundary } from "./ui/SceneBoundary";
 import { Sidebar, type Panel } from "./ui/Sidebar";
 import { TopBar } from "./ui/TopBar";
+import { shareLink, useWorldLink } from "./ui/useWorldLink";
 import { useWorldFiles } from "./ui/useWorldFiles";
 import { WatchCard } from "./ui/WatchCard";
 import { AboutDialog } from "./ui/AboutDialog";
@@ -124,6 +125,18 @@ export default function App({
     setMode(next);
   }
 
+  const worldLink = useWorldLink(editor.savedWorld);
+  async function share() {
+    // Phones go straight to the share sheet; the dialog adds copying and files.
+    if (
+      worldLink &&
+      matchMedia("(pointer: coarse)").matches &&
+      (await shareLink(editor.savedWorld.name, worldLink))
+    )
+      return;
+    setDialog("share");
+  }
+
   function openWorlds() {
     editor.finish();
     setDialog("worlds");
@@ -171,7 +184,7 @@ export default function App({
         view={view}
         onChangeMode={changeMode}
         onWorlds={openWorlds}
-        onShare={() => setDialog("share")}
+        onShare={() => void share()}
         onAbout={() => setDialog("about")}
       />
       {files.fileInput}
@@ -186,8 +199,8 @@ export default function App({
           onClose={() => setSheetOpen(false)}
         />
       )}
-      {!view && !sheetOpen && !selected && tool.type === "select" && (
-        <MobileDock onOpen={openPanel} />
+      {!sheetOpen && !selected && tool.type === "select" && (
+        <MobileDock view={view} onChangeMode={changeMode} onOpen={openPanel} />
       )}
       {selected && tool.type === "select" && !watchingId && (
         <Inspector
@@ -217,6 +230,7 @@ export default function App({
       {dialog === "share" && (
         <ShareDialog
           world={editor.savedWorld}
+          link={worldLink}
           onClose={() => setDialog(null)}
         />
       )}

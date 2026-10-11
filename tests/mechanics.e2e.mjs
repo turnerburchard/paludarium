@@ -122,14 +122,12 @@ try {
     .getByRole("button", { name: "Close dialog" })
     .click();
   await page.waitForFunction(() => document.querySelector("canvas"));
-  // Phones hide Pause in View, so use the Space shortcut.
+  // Phones have no Pause button, so use the Space shortcut.
   await page.locator("body").press("Space");
-  assert.equal(
-    await page
-      .getByRole("button", { name: "View", exact: true })
-      .getAttribute("aria-pressed"),
-    "true",
-  );
+  await page
+    .getByRole("navigation", { name: "Tools" })
+    .getByRole("button", { name: "Build", exact: true })
+    .waitFor();
   assert.equal(
     await page.getByRole("slider").count(),
     0,
@@ -254,10 +252,11 @@ try {
     return restored;
   }, fiberUrl);
 
-  await page.getByRole("button", { name: "Build", exact: true }).click();
+  // The dock waits for the followed animal to be let go.
   await page
     .getByRole("button", { name: "Deselect object", exact: true })
     .click();
+  await page.getByRole("button", { name: "Build", exact: true }).click();
   await page
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Habitat", exact: true })
@@ -792,10 +791,9 @@ try {
     await fishPage.waitForTimeout(100);
   }
   assert.ok(moved, "bottom fish actually swim in the rendered habitat");
+  // Phones have no Pause button, so use the Space shortcut.
+  await fishPage.locator("body").press("Space");
   await fishPage.getByRole("button", { name: "Build", exact: true }).click();
-  await fishPage
-    .getByRole("button", { name: "Pause life (Space)", exact: true })
-    .click();
   await fishPage
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Habitat", exact: true })
@@ -831,6 +829,11 @@ try {
     .click();
   await fishPage.getByRole("button", { name: "Watch up close" }).click();
   await fishPage.getByRole("complementary", { name: "Watching" }).waitFor();
+  // Phones let go of the fish before the dock offers Build.
+  await fishPage.getByRole("button", { name: "Stop watching" }).click();
+  await fishPage
+    .getByRole("button", { name: "Deselect object", exact: true })
+    .click();
   await fishPage.getByRole("button", { name: "Build", exact: true }).click();
   await fishPage.evaluate(
     () =>
@@ -841,7 +844,7 @@ try {
   assert.deepEqual(
     await fishPositions(),
     beforeLight,
-    "a watched fish stays at its live position when switching to Build",
+    "a watched fish stays at its live position through the switch to Build",
   );
   await fishPage.close();
   assert.deepEqual(errors, [], "no browser runtime errors");

@@ -96,7 +96,7 @@ try {
         .getByRole("dialog", { name: "Controls and help" })
         .getByRole("button", { name: "Close dialog" })
         .click();
-      // Phones hide Pause in View, so use the Space shortcut.
+      // Phones have no Pause button, so use the Space shortcut.
       await page.locator("body").press("Space");
       async function openLife() {
         if (width === 390)
@@ -153,7 +153,16 @@ try {
       });
       await watch.getByRole("button", { name: "Stop watching" }).click();
       await card.waitFor();
-      await page.getByRole("button", { name: "Build", exact: true }).click();
+      if (width === 390) {
+        // Phones switch modes from the dock, which an open card hides.
+        await card.getByRole("button", { name: "Deselect object" }).click();
+        await page.getByRole("button", { name: "Build", exact: true }).click();
+        await openLife();
+        await page
+          .getByRole("button", { name: new RegExp(`^${name}`) })
+          .click();
+      } else
+        await page.getByRole("button", { name: "Build", exact: true }).click();
       await card
         .getByRole("meter", { name: "Condition", exact: true })
         .waitFor();
@@ -197,6 +206,16 @@ try {
             : library;
         }, storageKey);
       }
+      // Phones have no Pause button, so use the Space shortcut.
+      async function toggleLife() {
+        if (width === 390) await page.locator("body").press("Space");
+        else
+          await page
+            .getByRole("button", {
+              name: /^(Pause|Resume) life(?: \(Space\))?$/,
+            })
+            .click();
+      }
       async function waitFor(check) {
         const deadline = Date.now() + 30000;
         while (Date.now() < deadline) {
@@ -223,13 +242,9 @@ try {
         pausedBody,
         "pause freezes the death sequence",
       );
-      await page
-        .getByRole("button", { name: /^Resume life(?: \(Space\))?$/ })
-        .click();
+      await toggleLife();
       await waitFor(async () => (await sceneState()).bodies[0]?.roll > 0.1);
-      await page
-        .getByRole("button", { name: /^Pause life(?: \(Space\))?$/ })
-        .click();
+      await toggleLife();
       await page.screenshot({
         path: `/tmp/paludarium-animal-${kind}-${width}-death.png`,
       });

@@ -241,10 +241,9 @@ try {
       ).objects.length === 7,
     storageKey,
   );
+  // Phones have no Pause button, so use the Space shortcut.
+  await fishPage.locator("body").press("Space");
   await fishPage.getByRole("button", { name: "Build", exact: true }).click();
-  await fishPage
-    .getByRole("button", { name: "Pause life (Space)", exact: true })
-    .click();
   await fishPage
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Life", exact: true })
@@ -263,7 +262,7 @@ try {
   assert.equal(bornFish.kind, "fish");
   assert.equal(bornFish.life.age, 0);
   await fishPage.reload();
-  // Phones hide Pause in View, so use the Space shortcut.
+  // Phones have no Pause button, so use the Space shortcut.
   await fishPage.locator("body").press("Space");
   const resumed = await fishPage.evaluate(
     (key) => JSON.parse(localStorage.getItem(key)),
