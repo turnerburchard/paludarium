@@ -4,7 +4,11 @@ export default defineConfig({
   plugins: [react()],
   // Mesh-heavy tests compete for CPU when every available worker starts at once,
   // and the longer simulations run for several seconds on a CI runner.
-  test: { maxWorkers: 2, testTimeout: 20_000 },
+  test: {
+    maxWorkers: 2,
+    testTimeout: 20_000,
+    setupFiles: ["tests/yieldBetweenTests.ts"],
+  },
   base: "./",
   build: {
     rollupOptions: {
