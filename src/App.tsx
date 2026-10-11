@@ -176,9 +176,13 @@ export default function App({
 
   function activateObject(id: string) {
     const object = world.objects.find((o) => o.id === id);
-    if (view) {
-      if (object && isAnimal(object.kind)) inspectAnimal(id);
-    } else editor.select(id);
+    if (!view) editor.select(id);
+    else if (!object || !isAnimal(object.kind)) return;
+    // With no card to offer Watch, a tap goes straight to following the
+    // animal, and a second tap lets it go.
+    else if (!uiHidden) inspectAnimal(id);
+    else if (watchingId === id) editor.select(null);
+    else watch(id);
   }
 
   return (
