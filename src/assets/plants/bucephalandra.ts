@@ -10,7 +10,7 @@ export const bucephalandra: AssetDefinition = {
   group: "Aquatic plants",
   biomes: ["Tropical"],
   description:
-    "Small, wavy leaves in dark teal and purple on a creeping rhizome. It clings to rocks in fast Bornean streams, above or below the water.",
+    "Small, wavy leaves in deep green and dark red on a creeping rhizome. It clings to rocks in fast Bornean streams, above or below the water.",
   radius: 0.2,
   habitat: "either",
   shelter: true,
@@ -19,11 +19,11 @@ export const bucephalandra: AssetDefinition = {
 
 function build(random: () => number) {
   const root = new THREE.Group();
-  const skin = material("#ffffff", 0.3);
+  const skin = material("#ffffff", 0.55);
   skin.vertexColors = true;
-  const teal = new THREE.Color("#1d4a40"),
-    purple = new THREE.Color("#4b3048"),
-    bronze = new THREE.Color("#7b3d2e");
+  const green = new THREE.Color("#1d4031"),
+    red = new THREE.Color("#331620"),
+    young = new THREE.Color("#36121a");
   // The rhizome forks as it creeps, and leaves crowd its tips.
   const base = new THREE.Vector3(0, 0.015, 0);
   const tips = [0, 1, 2].map((i) => {
@@ -47,8 +47,8 @@ function build(random: () => number) {
         .setY(0.03 + random() * 0.03);
       branch(root, tip, stalk, 0.004, material("#3b4a30"));
       const length = 0.09 + random() * 0.05;
-      // The newest leaves unfurl bronze before they darken.
-      const young = random() < 0.12;
+      // The newest leaves unfurl red before they darken.
+      const fresh = random() < 0.15;
       const leaf = mesh(
         ovalLeaf({
           length,
@@ -57,7 +57,7 @@ function build(random: () => number) {
           cup: 0.12,
           wave: 0.03,
           color: (_, edge) =>
-            young ? bronze : teal.clone().lerp(purple, edge * 0.8),
+            fresh ? young : green.clone().lerp(red, edge * 0.7),
         }),
         skin,
         root,

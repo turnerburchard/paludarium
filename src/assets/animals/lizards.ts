@@ -1,6 +1,11 @@
 import * as THREE from "three";
 import type { AssetDefinition } from "../types";
-import { buildSkinned, type Painter, type SkinnedModel } from "../skinned";
+import {
+  buildSkinned,
+  WART_DOME,
+  type Painter,
+  type SkinnedModel,
+} from "../skinned";
 import geckoModel from "./gecko.json";
 
 export const gecko: AssetDefinition = {
@@ -168,7 +173,8 @@ const BACK = "98e043",
   UNDERSIDE = "ddcec7",
   TOES = "d3bfb4",
   EYE = "d69f8a",
-  WARTS = "warts";
+  WARTS = "warts",
+  TIPS = "tips";
 
 /** Model: "Salamander" by Poly by Google, CC-BY 3.0, recolored per species.
  * scripts/prepare-gecko-model.mjs bakes the mesh, skeleton and skin weights. */
@@ -178,12 +184,32 @@ function buildLizard(paint: Painter, random: () => number) {
 
 let knobbly: SkinnedModel | undefined;
 
-/** The salamander mesh with a crocodile newt's warts: a knobbly ridge down
- * the spine and tail, and a row along each flank from the head to the hips.
- * Each wart is skinned like the skin beneath it, so it moves with the body. */
+type Part = SkinnedModel["parts"][number];
+
+/** The salamander mesh made into a crocodile newt: a knobbly ridge down the
+ * spine and tail, a row of warts along each flank, and slender splayed
+ * fingers in place of the source's blocky feet. */
 function knobblyModel(): SkinnedModel {
-  if (knobbly) return knobbly;
-  const back = geckoModel.parts.find((part) => part.color === BACK)!;
+  knobbly ??= {
+    ...geckoModel,
+    parts: [
+      ...geckoModel.parts.filter((part) => part.color !== TOES),
+      warts(geckoModel.parts.find((part) => part.color === BACK)!),
+      ...newtFeet(geckoModel.parts.find((part) => part.color === TOES)!),
+    ],
+  };
+  return knobbly;
+}
+
+/** The bone a vertex follows most, by its index in the part. */
+function mainBone(part: Part, vertex: number) {
+  const weights = part.skinWeight.slice(vertex * 4, vertex * 4 + 4);
+  return part.skinIndex[vertex * 4 + weights.indexOf(Math.max(...weights))];
+}
+
+/** Rounded warts raised on the back's faces, each skinned like the face it
+ * grows from so it moves with the body. */
+function warts(back: Part): Part {
   const faces = Array.from({ length: back.positions.length / 9 }, (_, i) => {
     const [a, b, c] = [0, 1, 2].map((corner) =>
       new THREE.Vector3().fromArray(back.positions, i * 9 + corner * 3),
@@ -191,57 +217,46 @@ function knobblyModel(): SkinnedModel {
     return {
       center: a.clone().add(b).add(c).divideScalar(3),
       normal: new THREE.Triangle(a, b, c).getNormal(new THREE.Vector3()),
+      bone: mainBone(back, i * 3),
       skinIndex: back.skinIndex.slice(i * 12, i * 12 + 4),
       skinWeight: back.skinWeight.slice(i * 12, i * 12 + 4),
     };
   });
-  const warts: SkinnedModel["parts"][number] = {
+  type Face = (typeof faces)[number];
+  const part: Part = {
     color: WARTS,
     positions: [],
     skinIndex: [],
     skinWeight: [],
   };
-  /** Raises a four-sided wart on the face that best matches `score`. */
+  const up = new THREE.Vector3(0, 1, 0);
+  /** Raises a wart on the face that best matches `score`. */
   function wart(
-    candidates: typeof faces,
-    score: (face: (typeof faces)[number]) => number,
+    candidates: Face[],
+    score: (face: Face) => number,
     size: number,
   ) {
     if (!candidates.length) return;
     const face = candidates.reduce((best, face) =>
       score(face) > score(best) ? face : best,
     );
-    const side = new THREE.Vector3(0, 0, 1).cross(face.normal).normalize();
-    const along = face.normal.clone().cross(side);
-    const tip = face.center.clone().addScaledVector(face.normal, size * 0.75);
-    const corners = [
-      side,
-      along,
-      side.clone().negate(),
-      along.clone().negate(),
-    ].map((direction) =>
-      face.center
+    const facing = new THREE.Quaternion().setFromUnitVectors(up, face.normal);
+    for (const corner of WART_DOME) {
+      const point = corner
         .clone()
-        .addScaledVector(direction, size)
-        .addScaledVector(face.normal, -size * 0.3),
-    );
-    for (let i = 0; i < 4; i++) {
-      for (const point of [corners[i], corners[(i + 1) % 4], tip])
-        warts.positions.push(point.x, point.y, point.z);
-      for (let corner = 0; corner < 3; corner++) {
-        warts.skinIndex.push(...face.skinIndex);
-        warts.skinWeight.push(...face.skinWeight);
-      }
+        .multiplyScalar(size)
+        .applyQuaternion(facing)
+        .add(face.center);
+      part.positions.push(point.x, point.y, point.z);
+      part.skinIndex.push(...face.skinIndex);
+      part.skinWeight.push(...face.skinWeight);
     }
   }
   // Bones from the root through the head and tail; the rest are limbs.
   const LIMBS = 12;
   const near = (z: number) =>
     faces.filter(
-      (face) =>
-        Math.abs(face.center.z - z) < 0.02 &&
-        face.skinIndex[face.skinWeight.indexOf(Math.max(...face.skinWeight))] <
-          LIMBS,
+      (face) => Math.abs(face.center.z - z) < 0.02 && face.bone < LIMBS,
     );
   for (let z = -0.22; z < 0.36; z += 0.02)
     wart(
@@ -258,10 +273,109 @@ function knobblyModel(): SkinnedModel {
           (face) => face.normal.y > 0 && flank * face.normal.x > 0.35,
         ),
         (face) => flank * face.center.x + face.center.y,
-        0.016,
+        0.013,
       );
-  knobbly = { ...geckoModel, parts: [...geckoModel.parts, warts] };
-  return knobbly;
+  return part;
+}
+
+/** Four fingers on each hand and five toes on each foot, splayed flat from a
+ * low palm where the source's blocky feet were, with their tips a separate
+ * part so they can be painted. Each moves wholly with its hand or foot. */
+function newtFeet(toes: Part): Part[] {
+  const feet: Part = {
+    color: TOES,
+    positions: [],
+    skinIndex: [],
+    skinWeight: [],
+  };
+  const tips: Part = {
+    color: TIPS,
+    positions: [],
+    skinIndex: [],
+    skinWeight: [],
+  };
+  const up = new THREE.Vector3(0, 1, 0);
+  for (const name of ["handR", "handL", "footR", "footL"]) {
+    const bone = geckoModel.bones.findIndex((data) => data.name === name);
+    const palm = new THREE.Vector3();
+    let count = 0;
+    for (let vertex = 0; vertex < toes.positions.length / 3; vertex++)
+      if (mainBone(toes, vertex) === bone) {
+        palm.add(new THREE.Vector3().fromArray(toes.positions, vertex * 3));
+        count++;
+      }
+    palm.divideScalar(count).setY(0.003);
+    /** Adds a triangle to `part`, wound to face away from `inside`. */
+    const triangle = (
+      part: Part,
+      [a, b, c]: THREE.Vector3[],
+      inside: THREE.Vector3,
+    ) => {
+      const normal = new THREE.Triangle(a, b, c).getNormal(new THREE.Vector3());
+      const corners =
+        normal.dot(a.clone().sub(inside)) < 0 ? [a, c, b] : [a, b, c];
+      for (const point of corners) {
+        part.positions.push(point.x, point.y, point.z);
+        part.skinIndex.push(bone, 0, 0, 0);
+        part.skinWeight.push(1, 0, 0, 0);
+      }
+    };
+    const hand = name.startsWith("hand");
+    // Fingers reach forward and out; toes reach out and a little back.
+    const forward = new THREE.Vector3(
+      Math.sign(palm.x) * 0.6,
+      0,
+      hand ? -0.8 : 0.35,
+    ).normalize();
+    // A low six-sided palm.
+    const top = palm.clone().setY(0.011);
+    const rim = Array.from({ length: 6 }, (_, i) => {
+      const angle = (i / 6) * Math.PI * 2;
+      return palm
+        .clone()
+        .add(
+          new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle)).multiplyScalar(
+            0.013,
+          ),
+        );
+    });
+    rim.forEach((point, i) =>
+      triangle(feet, [point, rim[(i + 1) % 6], top], palm),
+    );
+    const digits = hand ? 4 : 5;
+    for (let i = 0; i < digits; i++) {
+      const spread = (i / (digits - 1) - 0.5) * 2;
+      const direction = forward.clone().applyAxisAngle(up, spread * 0.9);
+      const across = direction.clone().cross(up);
+      const length = (hand ? 0.028 : 0.034) * (1 - 0.3 * Math.abs(spread));
+      // A three-sided finger that narrows from the palm, then a rounded tip.
+      const ring = (along: number, width: number) => {
+        const center = palm.clone().addScaledVector(direction, along);
+        return [
+          center.clone().addScaledVector(across, width),
+          center.clone().addScaledVector(across, -width),
+          center.clone().setY(palm.y + width * 1.4),
+        ];
+      };
+      const base = ring(0.008, 0.0045),
+        knuckle = ring(0.008 + length * 0.7, 0.0035);
+      const tip = palm
+        .clone()
+        .addScaledVector(direction, 0.008 + length)
+        .setY(palm.y + 0.002);
+      const axis = palm
+        .clone()
+        .addScaledVector(direction, 0.01)
+        .setY(palm.y + 0.003);
+      for (let k = 0; k < 3; k++) {
+        const next = (k + 1) % 3;
+        triangle(feet, [base[k], base[next], knuckle[next]], axis);
+        triangle(feet, [base[k], knuckle[next], knuckle[k]], axis);
+        triangle(tips, [knuckle[k], knuckle[next], tip], axis);
+      }
+    }
+  }
+  return [feet, tips];
 }
 
 /** Bright green above with gold flecks across the neck and shoulders and red
@@ -342,12 +456,13 @@ function paintTigerSalamander(
   return new THREE.Color("#3a3d29");
 }
 
-/** Near black all over, with orange warts, toes and a stripe under the
- * tail. */
+/** Near black all over, warts included, with orange fingertips and a
+ * stripe under the tail. */
 function paintCrocodileNewt(source: string, at: THREE.Vector3) {
-  const orange = new THREE.Color("#d8752b");
+  const orange = new THREE.Color("#a9562b");
   if (source === EYE) return new THREE.Color("#16130f");
-  if (source === TOES || source === WARTS) return orange;
+  if (source === TIPS) return orange;
+  if (source === TOES || source === WARTS) return new THREE.Color("#2b221c");
   if (source === UNDERSIDE)
     return at.z > 0.13 ? orange : new THREE.Color("#3a2a20");
   if (source !== BACK) throw new Error(`Unexpected newt color ${source}.`);

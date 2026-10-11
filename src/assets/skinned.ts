@@ -19,6 +19,16 @@ export interface SkinnedModel {
   }[];
 }
 
+/** Corners of a low, rounded wart one unit wide, facing +Y, as triangles.
+ * Scaled and turned onto a face, it raises skin bumps on a skinned model. */
+export const WART_DOME = (() => {
+  const dome = new THREE.IcosahedronGeometry(1, 0).scale(1, 0.6, 1);
+  const position = dome.getAttribute("position");
+  return Array.from({ length: position.count }, (_, i) =>
+    new THREE.Vector3().fromBufferAttribute(position, i),
+  );
+})();
+
 /** Colors one face, given the source color of its part, its center in model
  * space, and a per-animal offset so no two animals share a pattern. */
 export type Painter = (

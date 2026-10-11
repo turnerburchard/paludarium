@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import type { AssetDefinition } from "../types";
-import { buildSkinned } from "../skinned";
+import { buildSkinned, WART_DOME } from "../skinned";
 import europeanTreeFrogModel from "./europeanTreeFrog.json";
 import frogModel from "./frog.json";
 
@@ -26,6 +26,9 @@ interface Appearance {
   /** A pointed flap over each eye, as on a horned frog. */
   horns?: boolean;
   shape?: Shape;
+  /** Splits the skin's faces that a spot's edge crosses in four, so a bold
+   * pattern has finer edges. */
+  detailed?: boolean;
 }
 
 /** How a frog departs from the slim base model. Width and depth fatten the
@@ -155,6 +158,7 @@ export const greenPoisonDartFrog: AssetDefinition = {
         roughness: 0.62,
         spots: 40,
         markings: "#141a17",
+        detailed: true,
       },
       random,
     ),
@@ -454,6 +458,13 @@ function buildFrog(appearance: Appearance, random: () => number) {
     radius: 0.009 + random() * 0.019,
     stretch: 0.65 + random() * 0.7,
   }));
+  const spotted = (x: number, y: number, z: number) =>
+    y > 0.1 &&
+    spots.some(
+      (spot) =>
+        Math.hypot((x - spot.x) / spot.stretch, (z - spot.z) * 0.8) <
+        spot.radius,
+    );
 
   for (const part of frogModel.parts) {
     const indexed = new THREE.BufferGeometry();
@@ -488,6 +499,14 @@ function buildFrog(appearance: Appearance, random: () => number) {
       }
     }
     indexed.dispose();
+    if (appearance.detailed && part.material === "Green") {
+      const finer = subdivided(geometry, (corners) => {
+        const inside = corners.map((p) => spotted(p.x, p.y, p.z));
+        return inside.some((spot) => spot !== inside[0]);
+      });
+      geometry.dispose();
+      geometry = finer;
+    }
     geometry.computeVertexNormals();
     const skin = part.material === "Green";
     const baseColor =
@@ -527,15 +546,7 @@ function buildFrog(appearance: Appearance, random: () => number) {
         color.copy(back);
         if (Math.abs(x) > 0.12 && y < 0.11) color.copy(feet);
         else if (appearance.striped && stripe(x, y, z)) color.copy(dark);
-        else if (
-          y > 0.1 &&
-          spots.some(
-            (spot) =>
-              Math.hypot((x - spot.x) / spot.stretch, (z - spot.z) * 0.8) <
-              spot.radius,
-          )
-        )
-          color.copy(markings);
+        else if (spotted(x, y, z)) color.copy(markings);
         else if (appearance.mottled) {
           const mottling =
             Math.sin(x * 40 + Math.sin(z * 29) * 2) * Math.cos(z * 41 - y * 43);
@@ -615,14 +626,6 @@ function reshape(
 const WART_DENSITY = 450;
 
 /** A low dome of unit radius, as a flat list of triangle corners. */
-const WART = (() => {
-  const dome = new THREE.IcosahedronGeometry(1, 0).scale(1, 0.6, 1);
-  const position = dome.getAttribute("position");
-  return Array.from({ length: position.count }, (_, i) =>
-    new THREE.Vector3().fromBufferAttribute(position, i),
-  );
-})();
-
 /** Low warts over the back and flanks, spread evenly by area so the fine mesh
  * around the head isn't crowded. Each is skinned like the nearest corner of
  * the face it grows from, so it moves with the body. */
@@ -661,7 +664,7 @@ function tubercles(skin: THREE.BufferGeometry, random: () => number) {
         .multiply(
           new THREE.Quaternion().setFromAxisAngle(up, random() * Math.PI),
         );
-      for (const corner of WART) {
+      for (const corner of WART_DOME) {
         const point = corner
           .clone()
           .multiplyScalar(radius)
@@ -799,4 +802,72 @@ function moveEyes(geometry: THREE.BufferGeometry, shape: Shape) {
         positions.getZ(v) + offset.z,
       );
   }
+}
+
+/** Splits the faces of a non-indexed skinned geometry that `split` picks into
+ * four, through the midpoints of their edges, and keeps the rest. A midpoint
+ * follows both corners' bones equally. */
+function subdivided(
+  geometry: THREE.BufferGeometry,
+  split: (corners: THREE.Vector3[]) => boolean,
+) {
+  const position = geometry.getAttribute("position");
+  const skinIndex = geometry.getAttribute("skinIndex");
+  const skinWeight = geometry.getAttribute("skinWeight");
+  const positions: number[] = [],
+    indices: number[] = [],
+    weights: number[] = [];
+  type Corner = { point: THREE.Vector3; bones: Map<number, number> };
+  const corner = (i: number): Corner => {
+    const bones = new Map<number, number>();
+    for (let k = 0; k < 4; k++) {
+      const weight = skinWeight.getComponent(i, k);
+      if (weight > 0) bones.set(skinIndex.getComponent(i, k), weight);
+    }
+    return {
+      point: new THREE.Vector3().fromBufferAttribute(position, i),
+      bones,
+    };
+  };
+  const midpoint = (a: Corner, b: Corner): Corner => {
+    const bones = new Map<number, number>();
+    for (const [bone, weight] of [...a.bones, ...b.bones])
+      bones.set(bone, (bones.get(bone) ?? 0) + weight / 2);
+    return { point: a.point.clone().lerp(b.point, 0.5), bones };
+  };
+  const push = (c: Corner) => {
+    positions.push(c.point.x, c.point.y, c.point.z);
+    const strongest = [...c.bones].sort((x, y) => y[1] - x[1]).slice(0, 4);
+    const total = strongest.reduce((sum, [, weight]) => sum + weight, 0);
+    for (let k = 0; k < 4; k++) {
+      indices.push(strongest[k]?.[0] ?? 0);
+      weights.push((strongest[k]?.[1] ?? 0) / total);
+    }
+  };
+  for (let i = 0; i < position.count; i += 3) {
+    const [a, b, c] = [i, i + 1, i + 2].map(corner);
+    const [ab, bc, ca] = [midpoint(a, b), midpoint(b, c), midpoint(c, a)];
+    if (!split([a, b, c, ab, bc, ca].map((c) => c.point))) {
+      [a, b, c].forEach(push);
+      continue;
+    }
+    for (const face of [
+      [a, ab, ca],
+      [ab, b, bc],
+      [ca, bc, c],
+      [ab, bc, ca],
+    ])
+      face.forEach(push);
+  }
+  const finer = new THREE.BufferGeometry();
+  finer.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(positions, 3),
+  );
+  finer.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(indices, 4));
+  finer.setAttribute(
+    "skinWeight",
+    new THREE.Float32BufferAttribute(weights, 4),
+  );
+  return finer;
 }
