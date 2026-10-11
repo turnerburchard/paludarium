@@ -22,8 +22,9 @@ export function useSceneTouch(
     let tap: { id: number; x: number; y: number } | null = null;
     let span = 0;
     let zoomEnabled = true;
-    function restoreZoom() {
+    function restore() {
       if (controls.current) controls.current.enableZoom = zoomEnabled;
+      events.enabled = true;
     }
     function distance(touches: TouchList) {
       const [first, second] = touches;
@@ -35,7 +36,7 @@ export function useSceneTouch(
     function start(event: TouchEvent) {
       // One finger marks a fresh gesture, even if the previous end was lost.
       if (event.touches.length === 1) {
-        if (active) restoreZoom();
+        if (active) restore();
         zoomEnabled = controls.current?.enableZoom ?? true;
       }
       active = true;
@@ -46,8 +47,12 @@ export function useSceneTouch(
           ? { id: first.identifier, x: first.clientX, y: first.clientY }
           : null;
       span = event.touches.length === 2 ? distance(event.touches) : 0;
-      if (event.touches.length > 1 && controls.current)
-        controls.current.enableZoom = false;
+      if (event.touches.length > 1) {
+        if (controls.current) controls.current.enableZoom = false;
+        // Nothing needs scene hits mid-pinch, and each finger would raycast
+        // the whole tank on every move. Captured pointers still get events.
+        events.enabled = false;
+      }
     }
     function move(event: TouchEvent) {
       if (!active) return;
@@ -82,7 +87,7 @@ export function useSceneTouch(
       span = 0;
       if (event.touches.length !== 0) return;
       active = false;
-      restoreZoom();
+      restore();
       if (!finished || event.changedTouches.length !== 1) return;
       const point = event.changedTouches[0];
       const box = canvas.getBoundingClientRect();
@@ -98,7 +103,7 @@ export function useSceneTouch(
         commit.current(point);
     }
     function cancel() {
-      if (active) restoreZoom();
+      if (active) restore();
       active = false;
       tap = null;
       span = 0;
