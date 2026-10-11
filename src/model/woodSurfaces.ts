@@ -186,6 +186,131 @@ export function logDens(): Den[] {
   ];
 }
 
+/** How tall the strangler fig's trunk stands, how many roots make it, and
+ * how far out they flare at the ground. */
+const FIG_HEIGHT = 1.55,
+  FIG_STRANDS = 11,
+  FIG_SPREAD = 0.56;
+
+/** Where each of the strangler fig's roots meets the ground, at the foot of
+ * its buttress. */
+export const FIG_ROOT_ENDS = Array.from({ length: FIG_STRANDS }, (_, i) => ({
+  x: Math.cos((i / FIG_STRANDS) * Math.PI * 2) * FIG_SPREAD,
+  z: Math.sin((i / FIG_STRANDS) * Math.PI * 2) * FIG_SPREAD,
+}));
+
+/** A strangler fig's trunk: roots flared at the base climb and wind around a
+ * hollow where its host tree rotted away, crossing and fusing into a
+ * lattice. No two roots are alike: they differ in thickness and path, a few
+ * fuse into their neighbors partway up, and one hangs loose from the crown.
+ * At the top, three uneven branches reach out. */
+export function figLimbs(random: () => number): Limb[] {
+  const between = (low: number, high: number) => low + random() * (high - low);
+  const heights = [-0.06, 0.08, 0.26, 0.5, 0.78, 1.06, 1.32, FIG_HEIGHT];
+  // Out from the hollow at each height: a wide buttress, then a column that
+  // narrows into the crown, where the branches hide the roots' ends.
+  const reach = [FIG_SPREAD, 0.4, 0.27, 0.21, 0.2, 0.19, 0.16, 0.08];
+  const radii = [0.11, 0.09, 0.078, 0.072, 0.068, 0.064, 0.058, 0.045];
+  const strands = Array.from({ length: FIG_STRANDS }, (_, i): Limb => {
+    const start = (i / FIG_STRANDS) * Math.PI * 2;
+    // Neighbors wind opposite ways, most of a turn, so they cross often.
+    const twist = (i % 2 ? 1 : -1) * between(1.4, 2.6);
+    const girth = between(0.65, 1.3);
+    // Odd roots that climbers don't use may fuse into the trunk early.
+    const ends = i % 2 && random() < 0.5 ? Math.floor(between(4, 6)) : 8;
+    return {
+      points: heights.slice(0, ends).map((y, k) => {
+        // The flared foot keeps one shape, so every root sinks into a slope
+        // the same way; above it, each root bulges and kinks its own way.
+        const free = k > 1;
+        const wander = free ? between(-0.25, 0.25) : 0;
+        const angle = start + (twist * Math.max(0, y)) / FIG_HEIGHT + wander;
+        const out = reach[k] * (free ? between(0.8, 1.25) : 1);
+        return {
+          x: Math.cos(angle) * out,
+          y: y + (free ? between(-0.05, 0.05) : 0),
+          z: Math.sin(angle) * out,
+        };
+      }),
+      radii: radii
+        .slice(0, ends)
+        .map((r, k) =>
+          k === 0
+            ? r
+            : k === ends - 1 && ends < 8
+              ? r * girth * 0.5
+              : r * girth,
+        ),
+    };
+  });
+  // A thick, lopsided knot of fused roots at the crown.
+  const lean = between(-0.06, 0.06);
+  const crown: Limb = {
+    points: [
+      { x: 0, y: FIG_HEIGHT - 0.22, z: 0 },
+      { x: lean, y: FIG_HEIGHT + between(0, 0.12), z: -lean },
+    ],
+    radii: [0.17, between(0.12, 0.16)],
+  };
+  // Three branches of different lengths and heights, unevenly spaced.
+  const branches = [0, 1, 2].map((i): Limb => {
+    const angle = (i / 3) * Math.PI * 2 + between(-0.45, 0.45);
+    const length = between(0.42, 0.75);
+    const lift = between(0.02, 0.3);
+    const at = (fraction: number, rise: number) => ({
+      x: Math.cos(angle) * (0.05 + (length - 0.05) * fraction),
+      y: FIG_HEIGHT - 0.12 + rise,
+      z: Math.sin(angle) * (0.05 + (length - 0.05) * fraction),
+    });
+    return {
+      points: [at(0, 0), at(0.5, lift * 0.8 + 0.1), at(1, lift)],
+      radii: [0.075, 0.048 * between(0.8, 1.2), 0.022],
+    };
+  });
+  // An aerial root hanging from one branch, not yet reaching the ground.
+  const hanger = branches[Math.floor(random() * 3)].points[1];
+  const drop = between(0.5, 0.8);
+  const aerial: Limb = {
+    points: [0, 0.5, 1].map((t) => ({
+      x: hanger.x * (1 + 0.1 * t),
+      y: hanger.y - drop * t,
+      z: hanger.z * (1 + 0.1 * t),
+    })),
+    radii: [0.022, 0.015, 0.008],
+  };
+  return [...strands, crown, ...branches, aerial];
+}
+
+/** Climbers go up the outside of a root, around the trunk's crown, and out
+ * along a branch. */
+export function figPerches(random: () => number): PlantPerch[] {
+  const limbs = figLimbs(random);
+  const branches = limbs.slice(FIG_STRANDS + 1, FIG_STRANDS + 4);
+  return branches.map((branch, i) => {
+    const root = limbs[i * 2];
+    const outside = root.points.slice(1).map((point, k) => {
+      const out = Math.hypot(point.x, point.z);
+      const normal = { x: point.x / out, y: 0, z: point.z / out };
+      const lift = root.radii[k + 1] + 0.008;
+      return {
+        point: {
+          x: point.x + normal.x * lift,
+          y: point.y,
+          z: point.z + normal.z * lift,
+        },
+        normal,
+      };
+    });
+    const along = alongTop(branch, [0.4, 0.9]);
+    return {
+      stem: [...outside.map((o) => o.point), along.points[0]],
+      barkNormals: [...outside.map((o) => o.normal), along.normals[0]],
+      perch: along.points[1],
+      perchNormal: along.normals[1],
+    };
+  });
+}
+
 /** Points just above the top of a limb's bark, at fractions along its
  * length, with the bark's upward-facing normal there. */
 export function alongTop(limb: Limb, fractions: readonly number[]) {

@@ -16,6 +16,7 @@ import {
   bluePoisonDartFrog,
   goldenMantella,
   greenPoisonDartFrog,
+  glassFrog,
   canyonTreeFrog,
   chorusFrog,
   europeanTreeFrog,
@@ -88,6 +89,7 @@ import { begonia } from "./plants/begonia";
 import { alocasia } from "./plants/alocasia";
 import { peaceLily } from "./plants/peaceLily";
 import { treePhilodendron } from "./plants/treePhilodendron";
+import { treeFern } from "./plants/treeFern";
 import { hairgrass } from "./plants/hairgrass";
 import { orchid } from "./plants/orchid";
 import { waterLily } from "./plants/waterLily";
@@ -100,6 +102,7 @@ import { wood } from "./landscape/wood";
 import { branch } from "./landscape/branch";
 import { log } from "./landscape/log";
 import { rootArch } from "./landscape/rootArch";
+import { stranglerFig } from "./landscape/stranglerFig";
 import { forkedBranch } from "./landscape/forkedBranch";
 import { spiderwood } from "./landscape/spiderwood";
 import { capstone, standingStone } from "./landscape/shelterStones";
@@ -164,6 +167,7 @@ export const assets = {
   "dart-frog": strawberryPoisonFrog,
   "blue-dart-frog": bluePoisonDartFrog,
   "green-dart-frog": greenPoisonDartFrog,
+  "glass-frog": glassFrog,
   "golden-mantella": goldenMantella,
   "mossy-frog": mossyFrog,
   "chorus-frog": chorusFrog,
@@ -183,6 +187,7 @@ export const assets = {
   monstera,
   "swiss-cheese-plant": swissCheesePlant,
   "tree-philodendron": treePhilodendron,
+  "tree-fern": treeFern,
   alocasia,
   "peace-lily": peaceLily,
   fern,
@@ -250,6 +255,7 @@ export const assets = {
   branch,
   log,
   "root-arch": rootArch,
+  "strangler-fig": stranglerFig,
   "forked-branch": forkedBranch,
   spiderwood,
   "fungus-log": fungusLog,

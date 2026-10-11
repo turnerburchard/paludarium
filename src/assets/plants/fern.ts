@@ -27,49 +27,12 @@ function build(random: () => number) {
   const root = new THREE.Group(),
     stem = material("#536f2d"),
     greens = [material("#4f8a3c"), material("#3b7643"), material("#649a45")];
-  for (const [i, frond] of fernFronds(random).entries()) {
-    const curve = new THREE.CatmullRomCurve3(
-      frond.points.map((point) => new THREE.Vector3(point.x, point.y, point.z)),
-    );
-    curvedStem(root, curve.getPoints(8), 0.007, stem);
-    // Paired leaflets along the stalk, longest a third of the way out and
-    // tapering to the tip, each swept slightly toward it.
-    const pairs = 20;
-    const corners: Point[] = [];
-    for (let j = 0; j < pairs; j++) {
-      const t = 0.14 + (j / (pairs - 1)) * 0.84;
-      const at = curve.getPointAt(t);
-      const along = curve.getTangentAt(t);
-      const across = new THREE.Vector3().crossVectors(along, UP).normalize();
-      const size = Math.sin(Math.min(1, t * 1.6) * Math.PI * 0.5) * (1 - t);
-      const length = 0.05 + size * 0.26;
-      for (const side of [-1, 1]) {
-        const out = across
-          .clone()
-          .multiplyScalar(side)
-          .addScaledVector(along, 0.35)
-          .addScaledVector(UP, -0.12)
-          .normalize();
-        const tip = at.clone().addScaledVector(out, length);
-        const width = along.clone().multiplyScalar(length * 0.2);
-        const mid = at.clone().addScaledVector(out, length * 0.45);
-        corners.push(
-          [at.x, at.y, at.z],
-          [mid.x + width.x, mid.y + width.y + 0.004, mid.z + width.z],
-          [tip.x, tip.y, tip.z],
-          [at.x, at.y, at.z],
-          [tip.x, tip.y, tip.z],
-          [mid.x - width.x, mid.y - width.y + 0.004, mid.z - width.z],
-        );
-      }
-    }
-    mesh(
-      triangles(
-        corners,
-        corners.map((_, k) => k),
-      ),
-      greens[i % 3],
+  for (const [i, shape] of fernFronds(random).entries()) {
+    frond(
       root,
+      shape.points.map((point) => new THREE.Vector3(point.x, point.y, point.z)),
+      stem,
+      greens[i % 3],
     );
   }
   // A few young fronds still coiled at the crown: a short stalk, then a
@@ -93,4 +56,55 @@ function build(random: () => number) {
     curvedStem(root, [...stalk, ...coil], 0.008, young);
   }
   return root;
+}
+
+/** A frond along `points`: a stalk with paired leaflets, longest a third of
+ * the way out and tapering to the tip, each swept slightly toward it.
+ * `leaflets` scales their length. */
+export function frond(
+  root: THREE.Object3D,
+  points: THREE.Vector3[],
+  stem: THREE.Material,
+  leaf: THREE.Material,
+  leaflets = 1,
+) {
+  const curve = new THREE.CatmullRomCurve3(points);
+  curvedStem(root, curve.getPoints(8), 0.007 * leaflets, stem);
+  const pairs = 20;
+  const corners: Point[] = [];
+  for (let j = 0; j < pairs; j++) {
+    const t = 0.14 + (j / (pairs - 1)) * 0.84;
+    const at = curve.getPointAt(t);
+    const along = curve.getTangentAt(t);
+    const across = new THREE.Vector3().crossVectors(along, UP).normalize();
+    const size = Math.sin(Math.min(1, t * 1.6) * Math.PI * 0.5) * (1 - t);
+    const length = (0.05 + size * 0.26) * leaflets;
+    for (const side of [-1, 1]) {
+      const out = across
+        .clone()
+        .multiplyScalar(side)
+        .addScaledVector(along, 0.35)
+        .addScaledVector(UP, -0.12)
+        .normalize();
+      const tip = at.clone().addScaledVector(out, length);
+      const width = along.clone().multiplyScalar(length * 0.2);
+      const mid = at.clone().addScaledVector(out, length * 0.45);
+      corners.push(
+        [at.x, at.y, at.z],
+        [mid.x + width.x, mid.y + width.y + 0.004, mid.z + width.z],
+        [tip.x, tip.y, tip.z],
+        [at.x, at.y, at.z],
+        [tip.x, tip.y, tip.z],
+        [mid.x - width.x, mid.y - width.y + 0.004, mid.z - width.z],
+      );
+    }
+  }
+  mesh(
+    triangles(
+      corners,
+      corners.map((_, k) => k),
+    ),
+    leaf,
+    root,
+  );
 }

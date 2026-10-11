@@ -17,6 +17,10 @@ interface Appearance {
   spots?: number;
   /** Color of the spots. Defaults to near black. */
   markings?: string;
+  /** Scales the spots, below 1 for fine speckles. */
+  spotSize?: number;
+  /** A see-through belly and limbs, as on a glass frog. */
+  glassy?: boolean;
   /** Moss-like light and dark patches. */
   mottled?: boolean;
   /** Dark stripes down the back and through the eye, as on a chorus frog. */
@@ -159,6 +163,39 @@ export const greenPoisonDartFrog: AssetDefinition = {
         spots: 40,
         markings: "#141a17",
         detailed: true,
+      },
+      random,
+    ),
+};
+
+export const glassFrog: AssetDefinition = {
+  kind: "glass-frog",
+  name: "Reticulated glass frog",
+  scientificName: "Hyalinobatrachium valerioi",
+  group: "Amphibians",
+  biomes: ["Tropical"],
+  description:
+    "A tiny lime-green frog of Costa Rica's forest streams, speckled with yellow, with skin so thin underneath that its heart shows through. Males guard eggs laid on leaves hanging over the water.",
+  radius: 0.14,
+  size: 0.7,
+  habitat: "land",
+  behavior: { nocturnal: true, climbs: true, speed: 0.04, movement: "climb" },
+  build: (random) =>
+    buildFrog(
+      {
+        back: "#93cf45",
+        belly: "#c9dbb0",
+        iris: "#d8c98f",
+        feet: "#b4d461",
+        height: 1.02,
+        size: 0.42,
+        roughness: 0.45,
+        spots: 70,
+        markings: "#cfd66a",
+        spotSize: 0.4,
+        detailed: true,
+        glassy: true,
+        shape: climber,
       },
       random,
     ),
@@ -455,7 +492,7 @@ function buildFrog(appearance: Appearance, random: () => number) {
   const spots = Array.from({ length: appearance.spots ?? 0 }, () => ({
     x: (random() - 0.5) * 0.28,
     z: (random() - 0.5) * 0.43,
-    radius: 0.009 + random() * 0.019,
+    radius: (0.009 + random() * 0.019) * (appearance.spotSize ?? 1),
     stretch: 0.65 + random() * 0.7,
   }));
   const spotted = (x: number, y: number, z: number) =>
@@ -517,9 +554,12 @@ function buildFrog(appearance: Appearance, random: () => number) {
           : part.material === "Black"
             ? dark
             : back;
+    const clear = appearance.glassy && part.material === "Yellow";
     const material = new THREE.MeshStandardMaterial({
       color: skin ? "#ffffff" : baseColor,
       vertexColors: skin,
+      transparent: clear,
+      opacity: clear ? 0.55 : 1,
       flatShading: true,
       metalness: 0,
       roughness: skin
