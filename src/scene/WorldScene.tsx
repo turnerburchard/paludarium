@@ -454,6 +454,16 @@ function HideSplashWhenDrawn() {
 }
 
 export function WorldScene(props: SceneProps) {
+  // Canvas's own fallback sits inside the canvas element, which a browser
+  // without WebGL still shows, so it never appears.
+  const [noWebgl, setNoWebgl] = useState(false);
+  if (noWebgl)
+    return (
+      <div className="webgl-fallback">
+        This terrarium needs WebGL. Try a current browser with hardware
+        acceleration enabled. Your saved world is still available to export.
+      </div>
+    );
   return (
     <Canvas
       frameloop={props.editor.paused ? "demand" : "always"}
@@ -468,6 +478,7 @@ export function WorldScene(props: SceneProps) {
             alpha: false,
           });
         } catch (error) {
+          setNoWebgl(true);
           // Nothing will ever draw, so the loading screen must not wait.
           hideSplash();
           throw error;
@@ -476,12 +487,6 @@ export function WorldScene(props: SceneProps) {
       onPointerMissed={() => {
         if (props.editor.tool.type === "select") props.editor.select(null);
       }}
-      fallback={
-        <div className="webgl-fallback">
-          This terrarium needs WebGL. Try a current browser with hardware
-          acceleration enabled. Your saved world is still available to export.
-        </div>
-      }
     >
       <Suspense fallback={null}>
         <Scene {...props} />

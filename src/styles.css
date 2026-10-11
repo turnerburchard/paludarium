@@ -785,8 +785,13 @@ button:hover:not(:disabled) {
   margin: 4px 0;
 }
 .webgl-fallback {
-  padding: 60px 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
   max-width: 550px;
+  margin: 0 auto;
+  padding: 30px;
   line-height: var(--leading-body);
   color: var(--text);
 }
