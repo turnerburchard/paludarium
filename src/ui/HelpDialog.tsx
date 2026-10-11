@@ -4,9 +4,9 @@ import { Modal } from "./Modal";
 
 export function HelpDialog({ onClose }: { onClose: () => void }) {
   return (
-    <Modal label="Controls and help" onClose={onClose}>
+    <Modal label="Controls" onClose={onClose}>
       <div className="modal-heading">
-        <h2>Controls and help</h2>
+        <h2>Controls</h2>
         <IconButton label="Close dialog" onClick={onClose}>
           <X size={20} />
         </IconButton>
@@ -16,30 +16,27 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
           <Move size={16} aria-hidden="true" /> Look around
         </dt>
         <dd>
-          Drag with one finger or the mouse to rotate, even while placing
-          objects. Pinch or scroll to zoom. Drag with two fingers to move across
-          the tank.
+          Drag to rotate. Pinch or scroll to zoom. Drag with two fingers to pan.
         </dd>
         <dt>
           <Hammer size={16} aria-hidden="true" /> Build
         </dt>
         <dd>
-          Switch to Build, choose an object, then tap the tank to place it.
-          Choose Done to finish. Select an object to move, turn, or remove it.
+          In Build, pick an object and tap the tank to place it. Tap a placed
+          object to move, turn, or remove it.
         </dd>
         <dt>
           <Eye size={16} aria-hidden="true" /> Watch
         </dt>
-        <dd>Tap an animal, then choose Watch up close to follow it.</dd>
+        <dd>Tap an animal, then Watch up close to follow it.</dd>
         <dt>
           <Share2 size={16} aria-hidden="true" /> Save and share
         </dt>
         <dd>
-          Your edits save in this browser. Worlds opens presets and saved
-          habitats. Share makes a link others can explore.
+          Edits save in this browser. Worlds has presets and your saved tanks.
+          Share makes a link.
         </dd>
       </dl>
-      <p className="panel-note">Open this help again from the info menu.</p>
     </Modal>
   );
 }

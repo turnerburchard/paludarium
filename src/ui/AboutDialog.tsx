@@ -1,4 +1,4 @@
-import { Binoculars, Eye, Hammer, HelpCircle, X } from "lucide-react";
+import { Binoculars, Bug, Egg, HelpCircle, Hourglass, X } from "lucide-react";
 import type { EcosystemController } from "../simulation/useEcosystem";
 import { IconButton } from "./IconButton";
 import { Modal } from "./Modal";
@@ -25,18 +25,28 @@ export function AboutDialog({
           <X size={20} />
         </IconButton>
       </div>
+      <p>Build a planted tank, add frogs and fish, and watch them live.</p>
       <dl>
         <dt>
-          <Eye size={16} aria-hidden="true" /> View
+          <Bug size={16} aria-hidden="true" /> Food
         </dt>
         <dd>
-          Tap a creature to learn about it, then watch up close. Drag to look
-          around; pinch or scroll to get closer.
+          Plants shelter the insects that animals eat. Plan on one healthy plant
+          per animal.
         </dd>
         <dt>
-          <Hammer size={16} aria-hidden="true" /> Build
+          <Egg size={16} aria-hidden="true" /> Breeding
         </dt>
-        <dd>Switch to Build to add objects or edit the terrain.</dd>
+        <dd>
+          Grown pairs of the same kind breed when there is spare food and room.
+        </dd>
+        <dt>
+          <Hourglass size={16} aria-hidden="true" /> Death
+        </dt>
+        <dd>
+          Animals live a few hours. Hunger and crowding cut that short, and
+          frogs need land while fish need water.
+        </dd>
       </dl>
       {creatureIds.length > 0 && (
         <button
@@ -48,12 +58,8 @@ export function AboutDialog({
           <Binoculars size={19} aria-hidden="true" /> Follow a creature
         </button>
       )}
-      <p className="panel-note">
-        Your layout saves on this device. Share sends a snapshot others can
-        explore and copy; Export keeps a backup.
-      </p>
       <button className="intro-build-button" onClick={onHelp}>
-        <HelpCircle size={16} aria-hidden="true" /> Controls and help
+        <HelpCircle size={16} aria-hidden="true" /> Controls
       </button>
       <div className="modal-footer">
         <a
