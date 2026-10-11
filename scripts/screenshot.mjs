@@ -88,6 +88,8 @@ try {
         .locator(".preset-options")
         .getByRole("button", { name: preset.button, exact: true })
         .click();
+      // The loading screen covers the switch and fades once the tank is drawn.
+      await page.locator("#splash").waitFor({ state: "hidden" });
       await page.waitForTimeout(1500);
       await page
         .locator(".asset-picture img")
