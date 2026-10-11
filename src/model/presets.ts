@@ -703,6 +703,18 @@ function limestoneGrotto(
     [1.3, 1.65, 5.4],
   ])
     add("micro-crab", x, z, 1, heading);
+  // Crocodile newts wander the moss at the shelf's edge, where they can drop
+  // into the pool.
+  add("crocodile-newt", -0.6, -0.35, 1, 2.6);
+  add("crocodile-newt", 1.75, -0.55, 1, 5.1);
+  // Bucephalandra on the wet stone by the seep, on the step down the cliff,
+  // and under the water.
+  for (const [x, z, rotation] of [
+    [1.15, -1.2, 0.7],
+    [1.05, 0.15, 2.4],
+    [-1.0, 1.15, 4.1],
+  ])
+    add("bucephalandra", x, z, 1, rotation);
   return objects;
 }
 

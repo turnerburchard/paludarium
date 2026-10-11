@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import type { AssetDefinition } from "../types";
-import { buildSkinned, type Painter } from "../skinned";
+import { buildSkinned, type Painter, type SkinnedModel } from "../skinned";
 import geckoModel from "./gecko.json";
 
 export const gecko: AssetDefinition = {
@@ -107,6 +107,29 @@ export const tigerSalamander: AssetDefinition = {
   build: (random) => buildLizard(paintTigerSalamander, random),
 };
 
+export const crocodileNewt: AssetDefinition = {
+  kind: "crocodile-newt",
+  name: "Vietnamese crocodile newt",
+  scientificName: "Tylototriton vietnamensis",
+  group: "Amphibians",
+  biomes: ["Tropical"],
+  description:
+    "A near-black newt with an orange ridge down its spine and a row of orange warts along each side. It lives in the limestone hills of northern Vietnam, wandering between damp moss and slow pools.",
+  radius: 0.42,
+  size: 0.75,
+  habitat: "land",
+  behavior: {
+    nocturnal: true,
+    climbs: false,
+    speed: 0.03,
+    movement: "crawl",
+    restsOn: ["ground", "stone", "bark"],
+    water: "visits",
+  },
+  build: (random) =>
+    buildSkinned(knobblyModel(), paintCrocodileNewt, random, EYE),
+};
+
 export const chuckwalla: AssetDefinition = {
   kind: "chuckwalla",
   name: "Common chuckwalla",
@@ -136,6 +159,7 @@ export const lizardKinds = new Set<string>([
   desertSpinyLizard.kind,
   fenceLizard.kind,
   tigerSalamander.kind,
+  crocodileNewt.kind,
   chuckwalla.kind,
 ]);
 
@@ -143,12 +167,101 @@ export const lizardKinds = new Set<string>([
 const BACK = "98e043",
   UNDERSIDE = "ddcec7",
   TOES = "d3bfb4",
-  EYE = "d69f8a";
+  EYE = "d69f8a",
+  WARTS = "warts";
 
 /** Model: "Salamander" by Poly by Google, CC-BY 3.0, recolored per species.
  * scripts/prepare-gecko-model.mjs bakes the mesh, skeleton and skin weights. */
 function buildLizard(paint: Painter, random: () => number) {
   return buildSkinned(geckoModel, paint, random, EYE);
+}
+
+let knobbly: SkinnedModel | undefined;
+
+/** The salamander mesh with a crocodile newt's warts: a knobbly ridge down
+ * the spine and tail, and a row along each flank from the head to the hips.
+ * Each wart is skinned like the skin beneath it, so it moves with the body. */
+function knobblyModel(): SkinnedModel {
+  if (knobbly) return knobbly;
+  const back = geckoModel.parts.find((part) => part.color === BACK)!;
+  const faces = Array.from({ length: back.positions.length / 9 }, (_, i) => {
+    const [a, b, c] = [0, 1, 2].map((corner) =>
+      new THREE.Vector3().fromArray(back.positions, i * 9 + corner * 3),
+    );
+    return {
+      center: a.clone().add(b).add(c).divideScalar(3),
+      normal: new THREE.Triangle(a, b, c).getNormal(new THREE.Vector3()),
+      skinIndex: back.skinIndex.slice(i * 12, i * 12 + 4),
+      skinWeight: back.skinWeight.slice(i * 12, i * 12 + 4),
+    };
+  });
+  const warts: SkinnedModel["parts"][number] = {
+    color: WARTS,
+    positions: [],
+    skinIndex: [],
+    skinWeight: [],
+  };
+  /** Raises a four-sided wart on the face that best matches `score`. */
+  function wart(
+    candidates: typeof faces,
+    score: (face: (typeof faces)[number]) => number,
+    size: number,
+  ) {
+    if (!candidates.length) return;
+    const face = candidates.reduce((best, face) =>
+      score(face) > score(best) ? face : best,
+    );
+    const side = new THREE.Vector3(0, 0, 1).cross(face.normal).normalize();
+    const along = face.normal.clone().cross(side);
+    const tip = face.center.clone().addScaledVector(face.normal, size * 0.75);
+    const corners = [
+      side,
+      along,
+      side.clone().negate(),
+      along.clone().negate(),
+    ].map((direction) =>
+      face.center
+        .clone()
+        .addScaledVector(direction, size)
+        .addScaledVector(face.normal, -size * 0.3),
+    );
+    for (let i = 0; i < 4; i++) {
+      for (const point of [corners[i], corners[(i + 1) % 4], tip])
+        warts.positions.push(point.x, point.y, point.z);
+      for (let corner = 0; corner < 3; corner++) {
+        warts.skinIndex.push(...face.skinIndex);
+        warts.skinWeight.push(...face.skinWeight);
+      }
+    }
+  }
+  // Bones from the root through the head and tail; the rest are limbs.
+  const LIMBS = 12;
+  const near = (z: number) =>
+    faces.filter(
+      (face) =>
+        Math.abs(face.center.z - z) < 0.02 &&
+        face.skinIndex[face.skinWeight.indexOf(Math.max(...face.skinWeight))] <
+          LIMBS,
+    );
+  for (let z = -0.22; z < 0.36; z += 0.02)
+    wart(
+      near(z).filter(
+        (face) => face.normal.y > 0.5 && Math.abs(face.center.x) < 0.025,
+      ),
+      (face) => face.center.y,
+      z > 0.13 ? 0.01 : 0.014,
+    );
+  for (const flank of [-1, 1])
+    for (let z = -0.33; z < 0.11; z += 0.036)
+      wart(
+        near(z).filter(
+          (face) => face.normal.y > 0 && flank * face.normal.x > 0.35,
+        ),
+        (face) => flank * face.center.x + face.center.y,
+        0.016,
+      );
+  knobbly = { ...geckoModel, parts: [...geckoModel.parts, warts] };
+  return knobbly;
 }
 
 /** Bright green above with gold flecks across the neck and shoulders and red
@@ -227,6 +340,18 @@ function paintTigerSalamander(
     0.4 * Math.sin(at.z * 130 - at.x * 40);
   if (blotch > 0.55) return new THREE.Color("#d2b23c");
   return new THREE.Color("#3a3d29");
+}
+
+/** Near black all over, with orange warts, toes and a stripe under the
+ * tail. */
+function paintCrocodileNewt(source: string, at: THREE.Vector3) {
+  const orange = new THREE.Color("#d8752b");
+  if (source === EYE) return new THREE.Color("#16130f");
+  if (source === TOES || source === WARTS) return orange;
+  if (source === UNDERSIDE)
+    return at.z > 0.13 ? orange : new THREE.Color("#3a2a20");
+  if (source !== BACK) throw new Error(`Unexpected newt color ${source}.`);
+  return new THREE.Color("#211b17");
 }
 
 /** A dark body from head to hips, flecked with grey, and a rusty orange

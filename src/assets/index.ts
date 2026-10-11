@@ -28,6 +28,7 @@ import {
 import { fish } from "./animals/fish";
 import {
   chuckwalla,
+  crocodileNewt,
   desertSpinyLizard,
   fenceLizard,
   gecko,
@@ -71,6 +72,7 @@ import { swissCheesePlant } from "./plants/swissCheese";
 import { strawberry } from "./plants/strawberry";
 import { amazonSword } from "./plants/amazonSword";
 import { anubias } from "./plants/anubias";
+import { bucephalandra } from "./plants/bucephalandra";
 import { javaFern } from "./plants/javaFern";
 import { rotala } from "./plants/rotala";
 import { vallisneria } from "./plants/vallisneria";
@@ -175,6 +177,7 @@ export const assets = {
   "fence-lizard": fenceLizard,
   chuckwalla,
   "tiger-salamander": tigerSalamander,
+  "crocodile-newt": crocodileNewt,
   turtle,
   "desert-tortoise": desertTortoise,
   monstera,
@@ -213,6 +216,7 @@ export const assets = {
   ludwigia,
   "dwarf-sagittaria": dwarfSagittaria,
   anubias,
+  bucephalandra,
   "java-fern": javaFern,
   cryptocoryne,
   "water-lily": waterLily,

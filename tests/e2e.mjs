@@ -249,6 +249,7 @@ try {
         "leopard-lizard",
         "desert-spiny-lizard",
         "fence-lizard",
+        "crocodile-newt",
         "canyon-tree-frog",
         "snail",
         "turtle",
