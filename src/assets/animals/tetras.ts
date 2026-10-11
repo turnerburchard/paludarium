@@ -10,7 +10,7 @@ export const cardinalTetra: AssetDefinition = {
   group: "Fish",
   biomes: ["Tropical"],
   description:
-    "A slender schooling fish with an electric blue stripe over a red belly. Add several.",
+    "A slender schooling fish from tea-colored blackwater streams of the Amazon, with an electric blue stripe over a red belly.",
   radius: 0.12,
   habitat: "water",
   swims: { speed: 0.3, depth: [0.12, 0.28] },
@@ -35,7 +35,7 @@ export const emberTetra: AssetDefinition = {
   group: "Fish",
   biomes: ["Tropical"],
   description:
-    "A tiny glowing orange fish that drifts in loose groups near the surface.",
+    "A tiny, glowing orange fish from slow, plant-filled waters in central Brazil. It lives in loose schools near the surface.",
   radius: 0.08,
   habitat: "water",
   swims: { speed: 0.24, depth: [0.04, 0.16] },

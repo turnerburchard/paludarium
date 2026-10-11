@@ -9,7 +9,7 @@ export const tigerBarb: AssetDefinition = {
   group: "Fish",
   biomes: ["Tropical"],
   description:
-    "A lively gold fish with four black bands, quick in a busy school.",
+    "A lively schooling fish from the clear forest streams of Sumatra and Borneo, gold with four bold black bands.",
   radius: 0.19,
   habitat: "water",
   swims: { speed: 0.32, depth: [0.08, 0.24] },

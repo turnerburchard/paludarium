@@ -8,7 +8,8 @@ export const fish: AssetDefinition = {
   name: "Pond fish",
   group: "Fish",
   biomes: ["Tropical", "Temperate"],
-  description: "A small golden fish that cruises the open water.",
+  description:
+    "A hardy golden carp of cool, still ponds. It browses soft plants, insects and debris along the bottom.",
   radius: 0.18,
   habitat: "water",
   swims: { speed: 0.22, depth: [0.06, 0.2] },

@@ -15,7 +15,7 @@ export const gecko: AssetDefinition = {
   group: "Reptiles",
   biomes: ["Tropical"],
   description:
-    "A bright green day gecko flecked with gold, quick on glass and broad leaves.",
+    "A bright green gecko from the warm forests of northern Madagascar, active by day. It laps nectar and hunts insects among broad leaves.",
   radius: 0.45,
   size: 0.9,
   habitat: "land",
@@ -36,7 +36,7 @@ export const leopardLizard: AssetDefinition = {
   group: "Reptiles",
   biomes: ["Desert"],
   description:
-    "A sandy desert lizard dotted with dark spots, a fast sprinter that hunts in the open.",
+    "A fast, spotted lizard of open desert flats in the American West. It waits in the shade of shrubs and sprints out after insects and smaller lizards.",
   radius: 0.45,
   size: 1.15,
   habitat: "land",
@@ -57,7 +57,7 @@ export const desertSpinyLizard: AssetDefinition = {
   group: "Reptiles",
   biomes: ["Desert"],
   description:
-    "A heavy, spiny-scaled lizard, dark with yellow bands and a black collar, that climbs rock and wood to bask.",
+    "A large, heavy-scaled lizard of the southwestern deserts, with a dark collar on its neck. It climbs boulders and trees to bask.",
   radius: 0.45,
   habitat: "land",
   behavior: {
@@ -77,7 +77,7 @@ export const fenceLizard: AssetDefinition = {
   group: "Reptiles",
   biomes: ["Temperate", "Desert"],
   description:
-    "A grey-brown mountain lizard with pale side stripes, dark chevrons and a blue-washed belly, quick up rock and bark.",
+    "A grey-brown lizard of rocky, wooded slopes on the Colorado Plateau. Males flash blue belly patches in push-up displays.",
   radius: 0.45,
   size: 0.75,
   habitat: "land",
@@ -98,7 +98,7 @@ export const tigerSalamander: AssetDefinition = {
   group: "Amphibians",
   biomes: ["Temperate"],
   description:
-    "A stout, slow salamander, dark olive blotched with yellow. It spends the day under logs and stones and hunts at night.",
+    "A stout, blotched salamander of western North America. Adults spend most of the year in burrows and emerge on rainy nights to breed in ponds.",
   radius: 0.45,
   size: 0.9,
   habitat: "land",
@@ -119,7 +119,7 @@ export const crocodileNewt: AssetDefinition = {
   group: "Amphibians",
   biomes: ["Tropical"],
   description:
-    "A near-black newt with an orange ridge down its spine and a row of orange warts along each side. It lives in the limestone hills of northern Vietnam, wandering between damp moss and slow pools.",
+    "A knobbly, near-black newt from the humid hill forests of northern Vietnam. It lives among damp moss on the forest floor and breeds in small, still pools.",
   radius: 0.42,
   size: 0.75,
   habitat: "land",
@@ -142,7 +142,7 @@ export const chuckwalla: AssetDefinition = {
   group: "Reptiles",
   biomes: ["Desert"],
   description:
-    "A big, easygoing desert lizard with a dark body and a rusty tail. It basks on rocks and grazes on flowers and leaves.",
+    "A large, plant-eating lizard of rocky desert slopes. It basks on boulders, and when threatened wedges into a crack and puffs itself up.",
   radius: 0.45,
   size: 1.4,
   habitat: "land",

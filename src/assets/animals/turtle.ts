@@ -9,7 +9,7 @@ export const turtle: AssetDefinition = {
   group: "Reptiles",
   biomes: ["Tropical"],
   description:
-    "A slow, domed forest turtle that browses fallen fruit and leaves on the ground.",
+    "A small, brightly striped turtle of forests and streams from Mexico to Costa Rica. It forages on the damp forest floor for fruit, leaves and insects.",
   radius: 0.28,
   habitat: "land",
   behavior: {
@@ -37,7 +37,7 @@ export const desertTortoise: AssetDefinition = {
   group: "Reptiles",
   biomes: ["Desert"],
   description:
-    "A patient, sand-colored tortoise that grazes on grasses and cactus flowers and rests out the heat in the shade.",
+    "A slow, domed tortoise of the Mojave Desert. It grazes grasses and wildflowers, and spends the hottest months in its burrow.",
   radius: 0.28,
   size: 1.8,
   habitat: "land",

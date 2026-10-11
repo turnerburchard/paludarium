@@ -10,7 +10,7 @@ export const angelfish: AssetDefinition = {
   group: "Fish",
   biomes: ["Tropical"],
   description:
-    "A tall, silver disc of a fish with black bars and long trailing fins. It glides slowly through the middle of the water.",
+    "A tall, flat-bodied cichlid from slow, weedy waters of the Amazon basin. Its dark bars blend in among reeds and submerged roots.",
   radius: 0.26,
   habitat: "water",
   swims: { speed: 0.14, depth: [0.16, 0.34] },
@@ -65,7 +65,7 @@ export const pearlGourami: AssetDefinition = {
   group: "Fish",
   biomes: ["Tropical"],
   description:
-    "A peaceful, oval fish dusted with pearly spots, feeling its way with long threadlike fins.",
+    "A peaceful fish from warm Southeast Asian swamps, able to breathe air at the surface. It feels its way with long, threadlike pelvic fins.",
   radius: 0.22,
   habitat: "water",
   swims: { speed: 0.16, depth: [0.04, 0.2] },
@@ -123,7 +123,7 @@ export const rainbowShark: AssetDefinition = {
   group: "Fish",
   biomes: ["Tropical"],
   description:
-    "Not a shark at all: a sleek black minnow with bright red fins that patrols low over the bottom.",
+    "Not a shark at all, but a sleek minnow from Southeast Asian rivers. It grazes algae from rocks and wood and fiercely defends its patch of bottom.",
   radius: 0.26,
   habitat: "water",
   // Keeps to the bottom of any pool.
@@ -177,7 +177,7 @@ export const corydoras: AssetDefinition = {
   group: "Fish",
   biomes: ["Tropical"],
   description:
-    "A small armored catfish that roots through the sand in busy little groups. Add several.",
+    "A small armored catfish from South American streams. It lives in busy groups, sifting the soft bottom with its whiskers.",
   radius: 0.13,
   habitat: "water",
   swims: { speed: 0.12, depth: [0.36, 1] },
@@ -224,7 +224,7 @@ export const cutthroatTrout: AssetDefinition = {
   group: "Fish",
   biomes: ["Temperate"],
   description:
-    "A young mountain trout, olive and black-spotted with a red slash under the jaw. It holds in the current and darts after drifting insects.",
+    "A trout of cold, clear streams in western North America, named for the red slash under its jaw. It holds in the current and rises for drifting insects.",
   radius: 0.35,
   habitat: "water",
   swims: { speed: 0.32, depth: [0.2, 0.4] },
@@ -279,7 +279,7 @@ export const sculpin: AssetDefinition = {
   group: "Fish",
   biomes: ["Temperate"],
   description:
-    "A big-headed, mottled little fish that hugs the stream bed and hides among the stones.",
+    "A big-headed, mottled fish of cold, rocky North American streams. It has no swim bladder, so it rests on the bottom and darts between stones.",
   radius: 0.22,
   habitat: "water",
   swims: { speed: 0.08, depth: [0.36, 1] },
@@ -336,7 +336,7 @@ export const convictCichlid: AssetDefinition = {
   group: "Fish",
   biomes: ["Tropical"],
   description:
-    "A bold little Central American cichlid, pale grey crossed with black bars. Pairs guard their patch of stream bed.",
+    "A small, bold cichlid of Central American streams, pale grey crossed with black bars. Pairs guard their eggs and young together.",
   radius: 0.27,
   habitat: "water",
   swims: { speed: 0.2, depth: [0.28, 1] },
@@ -387,7 +387,7 @@ export const harlequinRasbora: AssetDefinition = {
   group: "Fish",
   biomes: ["Tropical"],
   description:
-    "A small copper-pink fish with a black wedge on its side. Schools through the shaded streams of Southeast Asia.",
+    "A copper-pink schooling fish from shaded blackwater streams of Southeast Asia. It lays its eggs on the underside of broad leaves.",
   radius: 0.17,
   habitat: "water",
   swims: { speed: 0.22, depth: [0.08, 0.22] },
@@ -429,7 +429,7 @@ export const pupfish: AssetDefinition = {
   group: "Fish",
   biomes: ["Desert"],
   description:
-    "A chunky little fish from desert springs. Breeding males turn bright blue and chase each other around the pool.",
+    "A chunky little fish found only in warm desert springs around Death Valley. Breeding males turn bright blue and chase each other through the shallows.",
   radius: 0.17,
   habitat: "water",
   swims: { speed: 0.18, depth: [0.25, 1] },

@@ -9,7 +9,7 @@ export const snail: AssetDefinition = {
   group: "Invertebrates",
   biomes: ["Tropical", "Temperate"],
   description:
-    "A slow grazer that wanders the glass and leaves at night, cleaning as it goes.",
+    "A land snail native to the Mediterranean. It feeds on soft leaves at night and after rain, and seals itself into its shell in dry weather.",
   radius: 0.16,
   habitat: "land",
   behavior: {

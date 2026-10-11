@@ -18,7 +18,7 @@ export const vampireCrab: AssetDefinition = {
   group: "Invertebrates",
   biomes: ["Tropical"],
   description:
-    "A tiny purple land crab with bright yellow eyes that hides by day, picks at the ground at night, and wanders into shallow water.",
+    "A small purple land crab from the humid forests of Java. It hides among roots by day and forages at the water's edge at night.",
   radius: 0.21,
   habitat: "land",
   behavior: {
@@ -40,7 +40,7 @@ export const scorpion: AssetDefinition = {
   group: "Invertebrates",
   biomes: ["Desert"],
   description:
-    "A small straw-colored scorpion with a striped tail that shelters under stone and hunts at night.",
+    "A small scorpion of the Sonoran Desert with dark stripes under its tail. It shelters beneath flat rocks by day and hunts insects at night.",
   radius: 0.22,
   habitat: "land",
   behavior: {
@@ -60,7 +60,7 @@ export const tarantula: AssetDefinition = {
   group: "Invertebrates",
   biomes: ["Desert"],
   description:
-    "A big, gentle, golden-haired tarantula with a dark abdomen that wanders slowly after dusk.",
+    "A large, slow tarantula of the Sonoran Desert that lives in a silk-lined burrow. Females can live over 25 years; males wander far after the summer rains.",
   radius: 0.22,
   habitat: "land",
   behavior: {
@@ -80,7 +80,7 @@ export const microCrab: AssetDefinition = {
   group: "Invertebrates",
   biomes: ["Tropical"],
   description:
-    "A fingernail-sized, almost see-through crab that lives its whole life underwater, sifting food from the water among roots and stones.",
+    "A nearly transparent crab about a centimeter across, from slow, plant-choked rivers in Thailand. It lives fully underwater, filtering food from the current with hairs on its legs.",
   radius: 0.12,
   habitat: "water",
   behavior: {
@@ -103,7 +103,7 @@ export const dwarfCrayfish: AssetDefinition = {
   group: "Invertebrates",
   biomes: ["Temperate", "Tropical"],
   description:
-    "A small, bright orange crayfish that picks over the bottom for scraps and backs into cover under stone and wood.",
+    "A small crayfish found only in one highland lake in central Mexico. It scavenges the soft bottom and backs into cover under stones and wood.",
   radius: 0.14,
   habitat: "water",
   behavior: {
@@ -126,7 +126,7 @@ export const cherryShrimp: AssetDefinition = {
   group: "Invertebrates",
   biomes: ["Tropical", "Temperate"],
   description:
-    "A tiny red freshwater shrimp that spends all day picking algae and biofilm off stones, wood and leaves.",
+    "A small freshwater shrimp from slow streams of East Asia. It spends its days grazing algae and biofilm from stones, wood and leaves.",
   radius: 0.11,
   habitat: "water",
   behavior: {

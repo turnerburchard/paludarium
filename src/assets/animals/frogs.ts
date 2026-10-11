@@ -57,7 +57,7 @@ export const treeFrog: AssetDefinition = {
   group: "Amphibians",
   biomes: ["Tropical"],
   description:
-    "A green canopy frog with scarlet eyes, striped flanks, and orange toe pads.",
+    "A slender tree frog of humid Central American rainforest. By day it sleeps pressed flat to a leaf with its bright colors hidden, and at night it climbs through the canopy hunting insects.",
   radius: 0.26,
   size: 0.7,
   habitat: "land",
@@ -85,7 +85,7 @@ export const strawberryPoisonFrog: AssetDefinition = {
   group: "Amphibians",
   biomes: ["Tropical"],
   description:
-    "A small Central American frog, shown in a red and blue-legged color form.",
+    "A tiny poison frog of humid lowland forest from Nicaragua to Panama. Mothers carry each tadpole to its own small pool of water in a bromeliad.",
   radius: 0.14,
   size: 0.8,
   habitat: "land",
@@ -113,7 +113,7 @@ export const bluePoisonDartFrog: AssetDefinition = {
   group: "Amphibians",
   biomes: ["Tropical"],
   description:
-    "Cobalt skin with individual dark spots. A striking forest-floor frog.",
+    "A cobalt poison frog from isolated patches of rainforest in southern Suriname. It hunts ants and mites on the forest floor, and each frog's spot pattern is unique.",
   radius: 0.21,
   size: 0.85,
   habitat: "land",
@@ -141,7 +141,7 @@ export const greenPoisonDartFrog: AssetDefinition = {
   group: "Amphibians",
   biomes: ["Tropical"],
   description:
-    "Mint green splashed with black, from the rainforests of Costa Rica and Panama. Bolder than most frogs, it forages by day.",
+    "A poison frog of humid lowland forest from Nicaragua to Colombia, active by day on the forest floor. Males carry tadpoles on their backs to small pools of water.",
   radius: 0.18,
   size: 0.8,
   habitat: "land",
@@ -171,7 +171,7 @@ export const goldenMantella: AssetDefinition = {
   group: "Amphibians",
   biomes: ["Tropical"],
   description:
-    "A tiny, solid orange frog from Madagascar that lives in small groups on damp forest floor.",
+    "A tiny, bright orange frog from the damp forest floor of eastern Madagascar. It forages by day in small groups, its color warning of toxic skin.",
   radius: 0.14,
   size: 0.75,
   habitat: "land",
@@ -198,7 +198,7 @@ export const mossyFrog: AssetDefinition = {
   group: "Amphibians",
   biomes: ["Tropical"],
   description:
-    "A squat, rough-skinned frog with moss-like green and brown camouflage.",
+    "A rough-skinned frog from wet mountain forests of northern Vietnam, camouflaged as a clump of moss. It hides in flooded rock crevices and curls into a ball when threatened.",
   radius: 0.32,
   size: 0.75,
   habitat: "land",
@@ -234,7 +234,7 @@ export const canyonTreeFrog: AssetDefinition = {
   group: "Amphibians",
   biomes: ["Temperate", "Desert"],
   description:
-    "A small, granite-grey frog with dark blotches that clings to boulders beside desert streams.",
+    "A grey, blotched frog of rocky canyon streams in the southwestern US and Mexico. It rests pressed against boulders near water, nearly invisible against the stone.",
   radius: 0.21,
   size: 0.85,
   habitat: "land",
@@ -269,7 +269,7 @@ export const chorusFrog: AssetDefinition = {
   group: "Amphibians",
   biomes: ["Temperate"],
   description:
-    "A small brown frog with dark stripes down its back. Lives in moist meadows and forests near wetlands, breeding in shallow pools and ponds. Its call sounds like a thumb running over the teeth of a comb.",
+    "A small striped frog of wet meadows and woodland from Canada to the Rocky Mountains. It survives winter partly frozen under leaf litter, and calls from shallow pools in early spring.",
   radius: 0.16,
   size: 0.9,
   habitat: "land",
@@ -298,7 +298,7 @@ export const europeanTreeFrog: AssetDefinition = {
   group: "Amphibians",
   biomes: ["Temperate"],
   description:
-    "A small, bright green frog with a dark stripe from the nostril back through the eye. Climbs reeds and shrubs around ponds and calls loudly on spring nights.",
+    "A small, bright green frog of European ponds and hedgerows. It climbs reeds and shrubs, and males call loudly on spring nights.",
   radius: 0.24,
   size: 0.7,
   habitat: "land",
@@ -339,7 +339,7 @@ export const westernToad: AssetDefinition = {
   group: "Amphibians",
   biomes: ["Temperate"],
   description:
-    "A warty, olive-brown toad of mountain meadows and forest near water. It walks rather than hops, and hunts at night.",
+    "A large, warty toad of mountain meadows and forest edges in western North America. It walks rather than hops, and hunts insects at night.",
   radius: 0.36,
   habitat: "land",
   behavior: { nocturnal: true, climbs: false, speed: 0.03, movement: "crawl" },
@@ -369,7 +369,7 @@ export const hornedFrog: AssetDefinition = {
   group: "Amphibians",
   biomes: ["Tropical"],
   description:
-    "A round, wide-mouthed frog from the Gran Chaco, green with brown blotches. It sits half buried in leaf litter and ambushes anything that passes.",
+    "A round, wide-mouthed frog from the dry Gran Chaco of South America. It sits half buried in leaf litter and ambushes almost anything that passes.",
   radius: 0.36,
   habitat: "land",
   behavior: { nocturnal: true, climbs: false, speed: 0.012, movement: "crawl" },
