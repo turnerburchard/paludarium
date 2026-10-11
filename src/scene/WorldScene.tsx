@@ -502,7 +502,9 @@ export function WorldScene(props: SceneProps) {
     >
       <Suspense fallback={null}>
         <Scene {...props} />
-        <HideSplashWhenDrawn />
+        {/* Opening another world shows the loading screen again and resets
+            the camera, so a fresh watcher waits for that world to draw. */}
+        <HideSplashWhenDrawn key={props.resetCamera} />
       </Suspense>
     </Canvas>
   );

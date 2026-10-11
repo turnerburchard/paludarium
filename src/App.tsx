@@ -1,8 +1,8 @@
+import { hideSplash, showSplash } from "./ui/splash";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { assets, isAnimal } from "./assets";
 import { useEditor } from "./editor/useEditor";
-import type { Preset } from "./model/presets";
 import { WorldScene } from "./scene/WorldScene";
 import { useEcosystem } from "./simulation/useEcosystem";
 import { BottomHud } from "./ui/BottomHud";
@@ -119,12 +119,23 @@ export default function App({
     setSheetOpen(true);
   }
 
-  function startPreset(preset: Preset) {
-    if (!editor.startPreset(preset)) return;
-    clearWorldLink();
-    setWatchRequest(null);
-    setDialog(null);
-    setResetCamera((n) => n + 1);
+  /** Building a new tank holds up the page for a moment, so the loading
+   * screen covers it. The scene hides it again once the tank is drawn. */
+  function switchWorld(open: () => boolean) {
+    showSplash();
+    // Let the loading screen paint before the page is busy.
+    requestAnimationFrame(() =>
+      setTimeout(() => {
+        if (!open()) {
+          hideSplash();
+          return;
+        }
+        clearWorldLink();
+        setWatchRequest(null);
+        setDialog(null);
+        setResetCamera((n) => n + 1);
+      }),
+    );
   }
 
   function setMode(next: boolean) {
@@ -281,16 +292,10 @@ export default function App({
         <WorldsDialog
           editor={editor}
           onClose={() => setDialog(null)}
-          onPreset={startPreset}
+          onPreset={(preset) => switchWorld(() => editor.startPreset(preset))}
           onImport={files.importWorld}
           importError={files.importError}
-          onOpen={(id) => {
-            if (!editor.openWorld(id)) return;
-            clearWorldLink();
-            setDialog(null);
-            setWatchRequest(null);
-            setResetCamera((n) => n + 1);
-          }}
+          onOpen={(id) => switchWorld(() => editor.openWorld(id))}
         />
       )}
       {dialog === "shared-copy" && (

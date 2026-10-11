@@ -293,6 +293,9 @@ try {
   );
   await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page.getByRole("button", { name: "Smoke check", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Worlds" })
+    .waitFor({ state: "detached" });
   await page.waitForFunction(
     (key) => JSON.parse(localStorage.getItem(key)).worlds.length === 2,
     storageKey,

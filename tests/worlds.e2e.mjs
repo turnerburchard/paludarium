@@ -103,6 +103,10 @@ try {
     );
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     await page.getByRole("button", { name: "My creek", exact: true }).click();
+    // The world opens once the loading screen has painted.
+    await page
+      .getByRole("dialog", { name: "Worlds" })
+      .waitFor({ state: "detached" });
     assert.equal(
       await page
         .getByRole("textbox", { name: "World name", includeHidden: true })
@@ -187,6 +191,10 @@ try {
       .locator(".world-list")
       .getByRole("button", { name: "My creek", exact: true })
       .click();
+    await page
+      .getByRole("dialog", { name: "Worlds" })
+      .getByText("Your worlds could not be saved.", { exact: false })
+      .waitFor();
     assert.equal(await page.getByRole("dialog", { name: "Worlds" }).count(), 1);
     assert.equal(
       await page.evaluate((key) => localStorage.getItem(key), storageKey),
