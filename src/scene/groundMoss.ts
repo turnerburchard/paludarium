@@ -16,7 +16,9 @@ const TUFT_SIDES = 5;
 export function makeGroundMoss(env: Environment) {
   const paint = env.terrain?.paint;
   if (!paint?.includes("moss")) return undefined;
-  const [light, dark] = MOSS_COLORS.sheet.map((c) => new THREE.Color(c));
+  // A deeper green than the sheet moss it's modelled on, so a whole carpet
+  // of it doesn't read as lime.
+  const [light, dark] = ["#4c7a32", "#36602a"].map((c) => new THREE.Color(c));
   const shade = dark.clone().multiplyScalar(0.5);
   // Moss on the tops of hummocks dries and yellows a little.
   const bleached = new THREE.Color(MOSS_COLORS.fern[1]);
@@ -24,7 +26,7 @@ export function makeGroundMoss(env: Environment) {
     shade
       .clone()
       .lerp(light, amount)
-      .lerp(bleached, dryness * amount * 0.6);
+      .lerp(bleached, dryness * amount * 0.3);
   // How thickly moss grows at a spot, from 0 on its ragged edge to 1.
   const growth = (x: number, z: number) => {
     const coverage = paintSamples(x, z, env).reduce(
