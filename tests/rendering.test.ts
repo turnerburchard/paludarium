@@ -6,17 +6,29 @@ import { randomFromSeed } from "../src/model/random";
 
 function stats(root: THREE.Group) {
   let meshes = 0,
-    triangles = 0,
-    coloredVertices = 0;
+    triangles = 0;
+  // The color each triangle corner is drawn with, summed over the model.
+  const drawn = new THREE.Color(0, 0, 0);
   root.traverse((part) => {
     if (!(part instanceof THREE.Mesh)) return;
     meshes++;
-    triangles +=
-      (part.geometry.index?.count ??
-        part.geometry.getAttribute("position").count) / 3;
-    coloredVertices += part.geometry.getAttribute("color")?.count ?? 0;
+    const { geometry } = part;
+    const material = part.material as THREE.MeshStandardMaterial;
+    const colors = material.vertexColors
+      ? geometry.getAttribute("color")
+      : undefined;
+    const corners =
+      geometry.index?.count ?? geometry.getAttribute("position").count;
+    triangles += corners / 3;
+    for (let i = 0; i < corners; i++) {
+      const vertex = geometry.index?.getX(i) ?? i;
+      const corner = material.color.clone();
+      if (colors)
+        corner.multiply(new THREE.Color().fromBufferAttribute(colors, vertex));
+      drawn.add(corner);
+    }
   });
-  return { meshes, triangles, coloredVertices };
+  return { meshes, triangles, drawn };
 }
 
 describe("static rendering batches", () => {
@@ -31,7 +43,9 @@ describe("static rendering batches", () => {
       const resultBounds = new THREE.Box3().setFromObject(batched, true);
       expect(after.meshes).toBeLessThan(before.meshes / 10);
       expect(after.triangles).toBe(before.triangles);
-      expect(after.coloredVertices).toBe(before.coloredVertices);
+      expect(after.drawn.r).toBeCloseTo(before.drawn.r, 3);
+      expect(after.drawn.g).toBeCloseTo(before.drawn.g, 3);
+      expect(after.drawn.b).toBeCloseTo(before.drawn.b, 3);
       expect(resultBounds.min.distanceTo(bounds.min)).toBeLessThan(1e-6);
       expect(resultBounds.max.distanceTo(bounds.max)).toBeLessThan(1e-6);
       disposeAsset(batched);

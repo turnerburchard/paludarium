@@ -1,9 +1,11 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
-/** Bake static plant parts into one draw per material, retaining vertex colors.
- * Animals keep their separate parts for animation. Nothing is shared between
- * instances, so disposal and translucent placement previews remain safe. */
+/** Bake static model parts into one draw per kind of surface. Each part's
+ * color moves into its vertex colors, so parts that differ only in color
+ * share a draw. Animals keep their separate parts for animation. Nothing is
+ * shared between instances, so disposal and translucent placement previews
+ * remain safe. */
 export function batchStaticAsset(root: THREE.Group): THREE.Group {
   const batches = new Map<
     string,
@@ -15,20 +17,14 @@ export function batchStaticAsset(root: THREE.Group): THREE.Group {
   root.traverse((part) => {
     if (!(part instanceof THREE.Mesh)) return;
     const mat = part.material as THREE.MeshStandardMaterial;
-    const key = [
-      mat.color.getHex(),
-      mat.roughness,
-      mat.metalness,
-      mat.side,
-      mat.flatShading,
-      mat.vertexColors,
-    ].join(":");
+    const key = `${mat.roughness}:${mat.metalness}:${mat.side}:${mat.flatShading}`;
     const geometry = part.geometry.index
       ? part.geometry.toNonIndexed()
       : part.geometry.clone();
     geometry.applyMatrix4(part.matrixWorld);
     // These procedural assets have no textures. UVs differ between primitives.
     geometry.deleteAttribute("uv");
+    bakeColor(geometry, mat);
     let batch = batches.get(key);
     if (!batch) {
       batch = { material: mat, geometries: [] };
@@ -42,6 +38,9 @@ export function batchStaticAsset(root: THREE.Group): THREE.Group {
   for (const { material, geometries } of batches.values()) {
     const merged = mergeGeometries(geometries);
     if (!merged) throw new Error("Could not batch procedural asset geometry.");
+    // The vertex colors now carry each part's color.
+    material.color.set(0xffffff);
+    material.vertexColors = true;
     const part = new THREE.Mesh(merged, material);
     part.castShadow = part.receiveShadow = true;
     result.add(part);
@@ -56,4 +55,25 @@ export function batchStaticAsset(root: THREE.Group): THREE.Group {
       material.dispose();
   });
   return result;
+}
+
+/** The shader multiplies the material color by the vertex colors, so baking
+ * the one into the other draws the same. Vertex colors the material ignores
+ * are replaced. */
+function bakeColor(
+  geometry: THREE.BufferGeometry,
+  material: THREE.MeshStandardMaterial,
+) {
+  const tint = material.vertexColors
+    ? geometry.getAttribute("color")
+    : undefined;
+  const { count } = geometry.getAttribute("position");
+  const colors = new Float32Array(count * 3);
+  const { r, g, b } = material.color;
+  for (let i = 0; i < count; i++) {
+    colors[i * 3] = r * (tint?.getX(i) ?? 1);
+    colors[i * 3 + 1] = g * (tint?.getY(i) ?? 1);
+    colors[i * 3 + 2] = b * (tint?.getZ(i) ?? 1);
+  }
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 }
