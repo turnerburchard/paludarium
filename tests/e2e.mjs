@@ -62,10 +62,10 @@ try {
     .click();
   await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.locator(".asset-picture img").first().waitFor({ timeout: 90000 });
-  // A first visit opens on the Amazon river; start from an empty tank.
+  // A first visit opens on the limestone grotto; start from an empty tank.
   assert.equal(
     await page.getByRole("textbox", { name: "World name" }).inputValue(),
-    "Amazon river",
+    "Limestone grotto",
     "first visit opens on a finished habitat",
   );
   await page.getByRole("button", { name: "Worlds", exact: true }).click();

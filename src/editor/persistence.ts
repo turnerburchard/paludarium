@@ -136,7 +136,7 @@ export function loadLibrary(): {
     return {
       library: saved
         ? parseLibrary(saved)
-        : createLibrary(makePreset("amazon"), true),
+        : createLibrary(makePreset("grotto"), true),
       warning: null,
     };
   } catch {

@@ -73,7 +73,7 @@ describe("saved world collection", () => {
     const loaded = loadLibrary();
     expect(loaded.library.worlds).toHaveLength(1);
     expect(loaded.library.worlds[0].preview).toBe(true);
-    expect(activeWorld(loaded.library).name).toBe("Amazon river");
+    expect(activeWorld(loaded.library).name).toBe("Limestone grotto");
   });
   it("migrates an existing world without losing its layout or life", () => {
     const world = makePreset("tropical");
