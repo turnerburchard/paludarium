@@ -5,7 +5,11 @@ import { objectBase } from "../model/stacking";
 import { groundHeight, onlyAppearanceDiffers } from "../model/terrain";
 import { createWorldEcosystem } from "./worldHabitat";
 import type { Ecosystem } from "./engine";
-import { advanceLife as evolveLife, habitatSupport } from "./lifeCycle";
+import {
+  advanceLife as evolveLife,
+  habitatSupport,
+  withAnimalPositions,
+} from "./lifeCycle";
 import type { Vec3 } from "./types";
 
 /** A dead animal's body, from where it was last seen until it has faded. */
@@ -143,8 +147,14 @@ export function useEcosystem(
         .filter((o) => isAnimal(o.kind) && !canLive(o.id))
         .map((o) => o.id),
     );
-    const next = evolveLife(
+    // Recorded where the engine already has them, so the rebuild below
+    // doesn't take the new spots for an edit and move anyone.
+    const placed = withAnimalPositions(
       current.world,
+      (id) => current.engine.observeAnimal(id)?.position,
+    );
+    const next = evolveLife(
+      placed,
       current.lifeRemainder,
       Math.random,
       stranded,
@@ -162,7 +172,10 @@ export function useEcosystem(
       );
       const bodies = died.map(remainsOf);
       if (bodies.length) setRemains((r) => [...r, ...bodies]);
-      current.engine = createWorldEcosystem(next, current);
+      current.engine = createWorldEcosystem(next, {
+        ...current,
+        world: placed,
+      });
     }
     current.world = next;
     onLifeChange(previous, next);

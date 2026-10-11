@@ -39,6 +39,26 @@ export function juvenileScale(object: HabitatObject) {
   return 0.45 + 0.55 * Math.min(1, animalLife(object).age / MATURITY_AGE);
 }
 
+/** Animals keep where they have wandered to, so a reload doesn't send them
+ * back to where they were placed. Rounded to the millimetre to keep saves
+ * small. */
+export function withAnimalPositions(
+  world: World,
+  positionOf: (id: string) => { x: number; z: number } | undefined,
+): World {
+  const round = (n: number) => Math.round(n * 1000) / 1000;
+  const objects = world.objects.map((object) => {
+    const position = isAnimal(object.kind) && positionOf(object.id);
+    if (!position) return object;
+    const x = round(position.x),
+      z = round(position.z);
+    return x === object.x && z === object.z ? object : { ...object, x, z };
+  });
+  return objects.every((object, i) => object === world.objects[i])
+    ? world
+    : { ...world, objects };
+}
+
 /** A deliberate death uses the same population and log as natural deaths. */
 export function killAnimal(world: World, id: string, now = Date.now()): World {
   const object = world.objects.find((o) => o.id === id);

@@ -18,6 +18,7 @@ import {
   killAnimal,
   MATURITY_AGE,
   BREEDING_INTERVAL,
+  withAnimalPositions,
 } from "../src/simulation/lifeCycle";
 
 function object(kind: AssetKind, id: string): HabitatObject {
@@ -264,5 +265,20 @@ describe("automatic life changes and editor history", () => {
         world: next,
       }),
     ).toBe(built);
+  });
+});
+
+describe("animal positions", () => {
+  it("records where animals have wandered, and only animals", () => {
+    const world = habitat(["tree-frog"], 1);
+    const moved = withAnimalPositions(world, () => ({ x: 1.23456, z: -0.5 }));
+    expect(moved.objects[0]).toMatchObject({ x: 1.235, z: -0.5 });
+    expect(moved.objects[1]).toBe(world.objects[1]);
+  });
+
+  it("keeps the same world when no one has moved", () => {
+    const world = habitat(["tree-frog"], 1);
+    expect(withAnimalPositions(world, () => ({ x: -2, z: 0 }))).toBe(world);
+    expect(withAnimalPositions(world, () => undefined)).toBe(world);
   });
 });
