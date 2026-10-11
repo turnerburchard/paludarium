@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Binoculars, Eye, Leaf, Moon, ScrollText } from "lucide-react";
 import { assets } from "../assets";
 import type { AssetKind, LogEntry, World } from "../model/schema";
-import type { EcosystemController } from "../simulation/useEcosystem";
+import {
+  useEcosystemSnapshot,
+  type EcosystemController,
+} from "../simulation/useEcosystem";
 import { CreatureList } from "./CreatureList";
 
 export function LifePanel({
@@ -18,7 +21,7 @@ export function LifePanel({
   paused: boolean;
   onWatch: (id: string) => void;
 }) {
-  const { snapshot } = ecosystem;
+  const snapshot = useEcosystemSnapshot(ecosystem);
   const { habitat } = ecosystem;
   // Fish are listed by species instead.
   const animals = snapshot.animals.filter(

@@ -1,7 +1,10 @@
 import { X } from "lucide-react";
 import { assets } from "../assets";
 import type { HabitatObject } from "../model/schema";
-import type { EcosystemController } from "../simulation/useEcosystem";
+import {
+  useEcosystemSnapshot,
+  type EcosystemController,
+} from "../simulation/useEcosystem";
 import { activityLabels } from "./AnimalStatus";
 import { IconButton } from "./IconButton";
 
@@ -16,7 +19,8 @@ export function WatchCard({
   onStop: () => void;
 }) {
   const asset = assets[object.kind];
-  const animal = ecosystem.snapshot.animals.find((a) => a.id === object.id);
+  const snapshot = useEcosystemSnapshot(ecosystem);
+  const animal = snapshot.animals.find((a) => a.id === object.id);
   return (
     <aside className="inspector watch-card" aria-label="Watching">
       <div className="inspector-heading">

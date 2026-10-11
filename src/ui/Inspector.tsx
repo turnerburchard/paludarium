@@ -15,7 +15,10 @@ import { MAX_SCALE, type HabitatObject } from "../model/schema";
 import { IconButton } from "./IconButton";
 import { MossPicker } from "./MossPicker";
 import { RangeControl } from "./RangeControl";
-import type { EcosystemController } from "../simulation/useEcosystem";
+import {
+  useEcosystemSnapshot,
+  type EcosystemController,
+} from "../simulation/useEcosystem";
 import { animalLife, MATURITY_AGE } from "../simulation/lifeCycle";
 import { AnimalStatus } from "./AnimalStatus";
 
@@ -37,7 +40,8 @@ export function Inspector({
   const asset = assets[object.kind];
   const animal = isAnimal(object.kind);
   const life = animal ? animalLife(object) : null;
-  const state = ecosystem.snapshot.animals.find((a) => a.id === object.id);
+  const snapshot = useEcosystemSnapshot(ecosystem);
+  const state = snapshot.animals.find((a) => a.id === object.id);
   const condition = plantCondition(object, editor.world.environment);
   return (
     <aside className="inspector" aria-label="Selected object">

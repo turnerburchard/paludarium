@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { isAnimal } from "../assets";
 import type { HabitatObject, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
@@ -22,7 +28,9 @@ export interface Remains {
   restY: number;
 }
 
-/** React is a consumer of the engine; it receives HUD snapshots four times a second. */
+/** React is a consumer of the engine; it receives HUD snapshots four times a
+ * second. Only the components that show them re-render, through
+ * useEcosystemSnapshot, so the rest of the app and scene don't. */
 export function useEcosystem(
   world: World,
   onLifeChange: (base: World, next: World) => void,
@@ -42,8 +50,8 @@ export function useEcosystem(
       engine: createWorldEcosystem(world),
       lifeRemainder: 0,
     };
-  const [snapshot, setSnapshot] = useState(() =>
-    live.current!.engine.snapshot(),
+  const [snapshotStore] = useState(() =>
+    latestValue(live.current!.engine.snapshot()),
   );
   const [remains, setRemains] = useState<Remains[]>([]);
   const habitat = useMemo(() => habitatSupport(world), [world]);
@@ -92,16 +100,16 @@ export function useEcosystem(
       engine: createWorldEcosystem(world, sharesAnimals ? previous : undefined),
       lifeRemainder: 0,
     };
-    setSnapshot(live.current.engine.snapshot());
-  }, [world, holding]);
+    snapshotStore.set(live.current.engine.snapshot());
+  }, [world, holding, snapshotStore]);
   useEffect(() => {
     const timer = setInterval(() => {
       const next = live.current!.engine.snapshot();
-      // Paused life keeps the same snapshot, so the paused scene stops drawing.
-      setSnapshot((shown) => (shown.elapsed === next.elapsed ? shown : next));
+      // Paused life keeps the same snapshot, so nothing re-renders.
+      if (next.elapsed !== snapshotStore.get().elapsed) snapshotStore.set(next);
     }, 250);
     return () => clearInterval(timer);
-  }, []);
+  }, [snapshotStore]);
   /** Whether the animal has anywhere it can live: ground it can walk, or
    * water it can swim. */
   function canLive(id: string) {
@@ -182,7 +190,7 @@ export function useEcosystem(
   }
   return {
     live,
-    snapshot,
+    snapshotStore,
     canLive,
     advanceLife,
     remains,
@@ -193,3 +201,28 @@ export function useEcosystem(
   };
 }
 export type EcosystemController = ReturnType<typeof useEcosystem>;
+
+/** The engine's latest HUD snapshot, re-rendering the caller when it changes. */
+export function useEcosystemSnapshot(ecosystem: EcosystemController) {
+  const { subscribe, get } = ecosystem.snapshotStore;
+  return useSyncExternalStore(subscribe, get);
+}
+
+/** A value that tells its subscribers when it changes, for useSyncExternalStore. */
+function latestValue<T>(first: T) {
+  let value = first;
+  const listeners = new Set<() => void>();
+  return {
+    get: () => value,
+    set(next: T) {
+      value = next;
+      listeners.forEach((listener) => listener());
+    },
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+}

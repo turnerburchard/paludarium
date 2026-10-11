@@ -1,5 +1,8 @@
 import { Binoculars, CircleHelp, X } from "lucide-react";
-import type { EcosystemController } from "../simulation/useEcosystem";
+import {
+  useEcosystemSnapshot,
+  type EcosystemController,
+} from "../simulation/useEcosystem";
 import { IconButton } from "./IconButton";
 import { Modal } from "./Modal";
 
@@ -14,7 +17,8 @@ export function AboutDialog({
   ecosystem: EcosystemController;
   onWatch: (id: string) => void;
 }) {
-  const creatureIds = ecosystem.snapshot.animals.map((animal) => animal.id);
+  const snapshot = useEcosystemSnapshot(ecosystem);
+  const creatureIds = snapshot.animals.map((animal) => animal.id);
   return (
     <Modal label="About Paludarium" onClose={onClose}>
       <div className="modal-heading">

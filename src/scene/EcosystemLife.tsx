@@ -1,6 +1,9 @@
 import { useMemo, useRef, type RefObject } from "react";
 import { useFrame } from "@react-three/fiber";
-import type { EcosystemController } from "../simulation/useEcosystem";
+import {
+  useEcosystemSnapshot,
+  type EcosystemController,
+} from "../simulation/useEcosystem";
 import * as THREE from "three";
 import type { Vec3 } from "../simulation/types";
 import { assetRadius, isAnimal } from "../assets";
@@ -19,6 +22,7 @@ export function EcosystemLife({
   heldId: string | null;
 }) {
   const held = useMemo(() => new Set(heldId ? [heldId] : []), [heldId]);
+  const snapshot = useEcosystemSnapshot(ecosystem);
   useFrame((_, dt) => {
     const { engine } = ecosystem.live.current!;
     const stopped = paused || document.hidden;
@@ -52,7 +56,7 @@ export function EcosystemLife({
   const engine = ecosystem.live.current!.engine;
   return (
     <group>
-      {ecosystem.snapshot.food
+      {snapshot.food
         .filter((p) => p.amount > 0.01)
         .map((patch) => {
           const node = engine.graph.nodes.get(patch.nodeId);
