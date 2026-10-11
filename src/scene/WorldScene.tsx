@@ -187,8 +187,10 @@ function Scene({
   function groundUnder(e: ThreeEvent<MouseEvent>) {
     return e.intersections.find((hit) => hit.object === terrain.current)?.point;
   }
+  // Every pointer move raycasts the whole tank while this is attached, so it
+  // is only attached for the tools that follow the pointer.
+  const tracking = placing || tool.type === "terrain" || tool.type === "spring";
   function track(e: ThreeEvent<PointerEvent>) {
-    if (!placing && tool.type !== "terrain" && tool.type !== "spring") return;
     e.stopPropagation();
     if (placing && e.nativeEvent.pointerType === "touch") return;
     if (tool.type === "terrain" || tool.type === "spring") {
@@ -254,7 +256,7 @@ function Scene({
       </EnvironmentLight>
       <group
         ref={inhabitants}
-        onPointerMove={track}
+        onPointerMove={tracking ? track : undefined}
         onClick={place}
         onPointerDown={(e) => {
           if (tool.type !== "terrain" || e.button !== 0) return;
