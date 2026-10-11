@@ -46,7 +46,7 @@ export class TurtleRig {
       bone.rotation.set(0, 0, 0);
       bone.scale.setScalar(1);
     }
-    const stride = 0.4 * this.walk * Math.sin(this.phase);
+    const stride = 0.3 * this.walk * Math.sin(this.phase);
     this.bone("legFL").rotation.x = stride;
     this.bone("legBR").rotation.x = stride;
     this.bone("legFR").rotation.x = -stride;

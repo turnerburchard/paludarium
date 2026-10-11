@@ -32,10 +32,10 @@ const JOINTS = [
   ["neck", "body", [0, 2.5, 5.5]],
   ["head", "neck", [0, 4.5, 8.3]],
   ["tail", "body", [0, 0.5, -8.4]],
-  ["legFL", "body", [4.3, 0.8, 4.4]],
-  ["legFR", "body", [-4.3, 0.8, 4.4]],
-  ["legBL", "body", [4.3, 0.8, -5.2]],
-  ["legBR", "body", [-4.3, 0.8, -5.2]],
+  ["legFL", "body", [4.3, 1.6, 4.4]],
+  ["legFR", "body", [-4.3, 1.6, 4.4]],
+  ["legBL", "body", [4.3, 1.6, -5.2]],
+  ["legBR", "body", [-4.3, 1.6, -5.2]],
 ];
 const at = new Map(JOINTS.map(([name, , p]) => [name, habitat(...p)]));
 const bones = JOINTS.map(([name, parent]) => ({
@@ -55,13 +55,18 @@ const EYES = "303030";
 /** The share of vertices to remove from each color; eyes and claws stay. */
 const REDUCTION = { 507927: 0.55, 612719: 0.45, baac6c: 0.4 };
 
-/** Shell and belly are rigid; skin and claws go to the nearest limb. */
+/** The height of the hip and shoulder joints the legs swing from. */
+const LEG_TOP = JOINTS.find(([name]) => name === "legFL")[2][1];
+
+/** Shell and belly are rigid; skin and claws go to the nearest limb. Skin
+ * above the joints sits up inside the shell, so it stays with the body rather
+ * than swinging out through the carapace. */
 function bone(source, color) {
   if (SHELL.has(color)) return index("body");
-  const { x, z } = source;
+  const { x, y, z } = source;
   if (z > 5.2 && Math.abs(x) < 3.2) return index(z > 7.4 ? "head" : "neck");
   if (z < -7.6 && Math.abs(x) < 2.5) return index("tail");
-  if (Math.abs(x) > 3.2)
+  if (Math.abs(x) > 3.2 && y < LEG_TOP)
     return index(`leg${z > 0 ? "F" : "B"}${x > 0 ? "L" : "R"}`);
   return index("body");
 }

@@ -103,6 +103,9 @@ function build(colors: Record<string, string>) {
       new THREE.MeshStandardMaterial({
         color,
         flatShading: true,
+        // The shell plates are open panels, so from below the rim their
+        // backs would otherwise show straight through.
+        side: THREE.DoubleSide,
         roughness: part.color === "303030" ? 0.2 : 0.7,
       }),
     );
