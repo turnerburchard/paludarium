@@ -769,14 +769,17 @@ function swimmingFish(
         z: object.z,
         heading: object.rotation,
       };
-  const start = (x: number, z: number, wanted: number) => {
+  const start = (x: number, z: number, wanted: number, curl = 0) => {
     const y = water.steady(object.id, x, z, wanted).y;
-    if (!water.canStart(object.id, x, y, z, fish.heading)) return undefined;
+    if (!water.canStart(object.id, x, y, z, fish.heading, { curl }))
+      return undefined;
     const position = { ...fish, x, y, z };
     const node = graph.nearest(position, species);
     return node && { position, node };
   };
-  let found = start(fish.x, fish.z, fish.y);
+  // A fish curled in a tight turn has pushed into the leaves, so its own
+  // spot is judged by the curled body it has there.
+  let found = start(fish.x, fish.z, fish.y, unmoved ? swimming.curl : 0);
   // An edit may put stone or wood around a live fish. Only that fish moves
   // to the nearest available gap; the rest of the school stays put.
   const reach = Math.hypot(env.width, env.depth);
