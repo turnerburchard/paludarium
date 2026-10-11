@@ -24,7 +24,7 @@ export function SharedWorldDialog({
         saved, and your changes won’t affect the original.
       </p>
       {error && <p role="status">{error}</p>}
-      <div className="shared-world-actions">
+      <div className="dialog-actions">
         <button className="intro-build-button" onClick={onCopy}>
           Build a copy
         </button>

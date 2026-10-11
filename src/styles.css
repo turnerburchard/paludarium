@@ -1389,13 +1389,13 @@ button:hover:not(:disabled) {
   color: var(--text);
   font-size: var(--text-body);
 }
-.shared-world-actions {
+.dialog-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
 }
-.shared-world-actions > button:not(.intro-build-button) {
+.dialog-actions > button:not(.intro-build-button) {
   min-height: 44px;
   border: 0;
   background: transparent;

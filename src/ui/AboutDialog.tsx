@@ -1,4 +1,4 @@
-import { Binoculars, Bug, Egg, HelpCircle, Hourglass, X } from "lucide-react";
+import { Binoculars, Eye, Hammer, Leaf, X } from "lucide-react";
 import type { EcosystemController } from "../simulation/useEcosystem";
 import { IconButton } from "./IconButton";
 import { Modal } from "./Modal";
@@ -28,39 +28,36 @@ export function AboutDialog({
       <p>Build a planted tank, add frogs and fish, and watch them live.</p>
       <dl>
         <dt>
-          <Bug size={16} aria-hidden="true" /> Food
+          <Eye size={16} aria-hidden="true" /> Watch
         </dt>
-        <dd>
-          Plants shelter the insects that animals eat. Plan on one healthy plant
-          per animal.
-        </dd>
+        <dd>Tap any animal to see what it is doing and follow it.</dd>
         <dt>
-          <Egg size={16} aria-hidden="true" /> Breeding
+          <Hammer size={16} aria-hidden="true" /> Build
         </dt>
-        <dd>
-          Grown pairs of the same kind breed when there is spare food and room.
-        </dd>
+        <dd>Add plants, rocks and animals, or reshape the land and water.</dd>
         <dt>
-          <Hourglass size={16} aria-hidden="true" /> Death
+          <Leaf size={16} aria-hidden="true" /> Life
         </dt>
         <dd>
-          Animals live a few hours. Hunger and crowding cut that short, and
-          frogs need land while fish need water.
+          Animals eat insects that live among the plants. Over hours they grow,
+          breed and die.
         </dd>
       </dl>
-      {creatureIds.length > 0 && (
-        <button
-          className="life-follow"
-          onClick={() =>
-            onWatch(creatureIds[Math.floor(Math.random() * creatureIds.length)])
-          }
-        >
-          <Binoculars size={19} aria-hidden="true" /> Follow a creature
-        </button>
-      )}
-      <button className="intro-build-button" onClick={onHelp}>
-        <HelpCircle size={16} aria-hidden="true" /> Controls
-      </button>
+      <div className="dialog-actions">
+        {creatureIds.length > 0 && (
+          <button
+            className="intro-build-button"
+            onClick={() =>
+              onWatch(
+                creatureIds[Math.floor(Math.random() * creatureIds.length)],
+              )
+            }
+          >
+            <Binoculars size={16} aria-hidden="true" /> Follow a creature
+          </button>
+        )}
+        <button onClick={onHelp}>Controls</button>
+      </div>
       <div className="modal-footer">
         <a
           className="source-link"
