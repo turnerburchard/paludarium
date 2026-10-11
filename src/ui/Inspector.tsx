@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   Copy,
   Eye,
@@ -40,15 +39,6 @@ export function Inspector({
   const life = animal ? animalLife(object) : null;
   const state = ecosystem.snapshot.animals.find((a) => a.id === object.id);
   const condition = plantCondition(object, editor.world.environment);
-  const [aboutOpen, setAboutOpen] = useState(
-    () => !matchMedia("(max-width: 760px)").matches,
-  );
-  useEffect(() => {
-    const media = matchMedia("(max-width: 760px)");
-    const update = () => setAboutOpen(!media.matches);
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
   return (
     <aside className="inspector" aria-label="Selected object">
       <div className="inspector-heading">
@@ -65,11 +55,7 @@ export function Inspector({
           <X size={17} />
         </IconButton>
       </div>
-      <details
-        className="more-options object-about"
-        open={aboutOpen}
-        onToggle={(event) => setAboutOpen(event.currentTarget.open)}
-      >
+      <details className="more-options object-about" open>
         <summary>About this {animal ? "animal" : "object"}</summary>
         {asset.scientificName && (
           <p className="species-name">{asset.scientificName}</p>

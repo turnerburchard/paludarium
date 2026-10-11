@@ -97,9 +97,8 @@ try {
       await followed.getByRole("button", { name: "Stop watching" }).click();
       const card = page.getByRole("complementary", { name: "Selected object" });
       await card.getByRole("heading", { name, exact: true }).waitFor();
-      assert.equal(
+      assert.ok(
         await card.locator(".object-about").evaluate((details) => details.open),
-        width > 760,
       );
       assert.equal(await card.getByRole("meter").count(), 0);
       assert.equal(await card.locator(".object-actions").count(), 0);
