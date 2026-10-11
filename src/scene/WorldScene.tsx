@@ -1,7 +1,12 @@
 import type { EcosystemController } from "../simulation/useEcosystem";
 import { EcosystemLife } from "./EcosystemLife";
 import { Suspense, useEffect, useRef, useState } from "react";
-import { Canvas, useThree, type ThreeEvent } from "@react-three/fiber";
+import {
+  Canvas,
+  useFrame,
+  useThree,
+  type ThreeEvent,
+} from "@react-three/fiber";
 import {
   OrbitControls,
   Environment as EnvironmentLight,
@@ -25,6 +30,7 @@ import { Tank, Terrain, Water } from "./Terrain";
 import { SpringMarker } from "./SpringMarker";
 import { TerrainBrushCursor } from "./TerrainBrushCursor";
 import { useSceneTouch } from "./useSceneTouch";
+import { hideSplash } from "../ui/splash";
 
 const lighting = {
   day: { background: "#080b0d", intensity: 4.2, ambient: 0.25 },
@@ -428,6 +434,25 @@ function Scene({
     </>
   );
 }
+/** Lifts the loading screen once the tank is drawn. Its shaders compile
+ * over the first few frames that draw it, and the page stalls while they
+ * do, so it waits for a frame that draws without compiling anything new. */
+function HideSplashWhenDrawn() {
+  const programs = useRef(-1);
+  const drawn = useRef(false);
+  useFrame(({ gl, invalidate }) => {
+    if (drawn.current) return;
+    // The renderer's counts are still the last frame's at this point.
+    const compiled = gl.info.programs?.length ?? 0;
+    drawn.current = gl.info.render.calls > 0 && compiled === programs.current;
+    programs.current = compiled;
+    if (drawn.current) hideSplash();
+    // A paused scene only draws on demand.
+    else invalidate();
+  });
+  return null;
+}
+
 export function WorldScene(props: SceneProps) {
   return (
     <Canvas
@@ -435,7 +460,19 @@ export function WorldScene(props: SceneProps) {
       shadows
       dpr={[1, 1.7]}
       camera={{ position: [8, 6.6, 9.8], fov: 36, near: 0.1, far: 100 }}
-      gl={{ antialias: true, alpha: false }}
+      gl={(defaults) => {
+        try {
+          return new THREE.WebGLRenderer({
+            ...defaults,
+            antialias: true,
+            alpha: false,
+          });
+        } catch (error) {
+          // Nothing will ever draw, so the loading screen must not wait.
+          hideSplash();
+          throw error;
+        }
+      }}
       onPointerMissed={() => {
         if (props.editor.tool.type === "select") props.editor.select(null);
       }}
@@ -448,6 +485,7 @@ export function WorldScene(props: SceneProps) {
     >
       <Suspense fallback={null}>
         <Scene {...props} />
+        <HideSplashWhenDrawn />
       </Suspense>
     </Canvas>
   );

@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { hideSplash } from "./splash";
 
 /** Keeps the world controls usable if WebGL or the scene crashes. */
 export class SceneBoundary extends Component<
@@ -11,6 +12,7 @@ export class SceneBoundary extends Component<
   }
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("Terrarium renderer", error, info);
+    hideSplash();
   }
   render() {
     return this.state.error ? (
