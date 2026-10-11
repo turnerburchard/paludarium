@@ -1,37 +1,12 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { startServer } from "../scripts/server.mjs";
 
-const root = fileURLToPath(new URL("../", import.meta.url));
-const url = "http://127.0.0.1:5200";
 const storageKey = "little-worlds:v4";
-const server = spawn(
-  process.execPath,
-  [
-    `${root}node_modules/vite/bin/vite.js`,
-    root,
-    "--host",
-    "127.0.0.1",
-    "--port",
-    "5200",
-    "--strictPort",
-  ],
-  { stdio: "ignore" },
-);
-// A taken port would leave these checks quietly testing another app.
-server.on("exit", (code) => {
-  if (code && !server.killed)
-    throw new Error("Vite exited early. Is its port already in use?");
-});
+const server = await startServer();
+const { url } = server;
 let browser;
 try {
-  for (let i = 0; i < 50; i++) {
-    try {
-      if ((await fetch(url)).ok) break;
-    } catch {}
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
   browser = await chromium.launch({
     executablePath: process.env.CHROMIUM_PATH || undefined,
     args: [
@@ -281,5 +256,5 @@ try {
   }
 } finally {
   await browser?.close();
-  server.kill();
+  await server.stop();
 }

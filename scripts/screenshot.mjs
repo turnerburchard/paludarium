@@ -3,13 +3,12 @@
  * SCREENSHOT_PRESET and SCREENSHOT_VIEWPORT select a single scene or size.
  */
 import { mkdirSync } from "node:fs";
-import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { startServer } from "./server.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const outDir = process.argv[2] ?? `${root}screenshots`;
-const port = 5192;
 const presets = [
   { name: "cloud-forest", button: "Cloud forest" },
   { name: "alpine-creek", button: "Alpine creek" },
@@ -32,34 +31,10 @@ const viewports = [
 );
 
 mkdirSync(outDir, { recursive: true });
-const server = spawn(
-  process.execPath,
-  [
-    `${root}node_modules/vite/bin/vite.js`,
-    root,
-    "--host",
-    "127.0.0.1",
-    "--port",
-    String(port),
-    "--strictPort",
-  ],
-  { stdio: "ignore" },
-);
-// A taken port would leave these checks quietly testing another app.
-server.on("exit", (code) => {
-  if (code && !server.killed)
-    throw new Error("Vite exited early. Is its port already in use?");
-});
+const server = await startServer();
+const { url } = server;
 let browser;
 try {
-  for (let i = 0; i < 50; i++) {
-    try {
-      await fetch(`http://127.0.0.1:${port}`);
-      break;
-    } catch {
-      await new Promise((r) => setTimeout(r, 100));
-    }
-  }
   browser = await chromium.launch({
     executablePath: process.env.CHROMIUM_PATH || undefined,
     args: [
@@ -93,7 +68,7 @@ try {
         }),
       );
     });
-    await page.goto(`http://127.0.0.1:${port}`);
+    await page.goto(url);
     // Phones have no pause button, so use the shortcut on every size.
     await page.keyboard.press("Space");
     await page.getByRole("button", { name: "Build", exact: true }).click();
@@ -160,5 +135,5 @@ try {
   }
 } finally {
   await browser?.close();
-  server.kill();
+  await server.stop();
 }

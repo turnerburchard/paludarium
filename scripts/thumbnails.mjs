@@ -1,39 +1,15 @@
 /** Regenerate library pictures after changing an asset or prebuilt. */
-import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { startServer } from "./server.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const url = "http://127.0.0.1:5195";
-const server = spawn(
-  process.execPath,
-  [
-    `${root}node_modules/vite/bin/vite.js`,
-    root,
-    "--host",
-    "127.0.0.1",
-    "--port",
-    "5195",
-    "--strictPort",
-  ],
-  { stdio: "inherit" },
-);
-server.on("exit", (code) => {
-  if (code && !server.killed)
-    throw new Error("Thumbnail Vite server exited early");
-});
+const server = await startServer();
+const { url } = server;
 let browser;
 try {
-  for (let i = 0; i < 50; i++) {
-    try {
-      await fetch(url);
-      break;
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-  }
   browser = await chromium.launch({
     executablePath: process.env.CHROMIUM_PATH || undefined,
     args: [
@@ -86,5 +62,5 @@ try {
   console.log(`${Object.keys(images).length} thumbnails, ${total} bytes total`);
 } finally {
   await browser?.close();
-  server.kill();
+  await server.stop();
 }

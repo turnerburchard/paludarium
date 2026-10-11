@@ -1,23 +1,11 @@
 /** Generate the link preview: the logo and wordmark beside a frog among plants. */
-import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { startServer } from "./server.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const url = "http://127.0.0.1:5194";
-const server = spawn(
-  process.execPath,
-  [
-    `${root}node_modules/vite/bin/vite.js`,
-    root,
-    "--host",
-    "127.0.0.1",
-    "--port",
-    "5194",
-    "--strictPort",
-  ],
-  { stdio: "ignore" },
-);
+const server = await startServer();
+const { url } = server;
 
 const card = `<!doctype html>
 <html>
@@ -74,14 +62,6 @@ const card = `<!doctype html>
 
 let browser;
 try {
-  for (let i = 0; i < 50; i++) {
-    try {
-      await fetch(url);
-      break;
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-  }
   browser = await chromium.launch({
     executablePath: process.env.CHROMIUM_PATH || undefined,
     args: [
@@ -111,5 +91,5 @@ try {
   console.log("public/share.jpg (1200 × 630)");
 } finally {
   await browser?.close();
-  server.kill();
+  await server.stop();
 }

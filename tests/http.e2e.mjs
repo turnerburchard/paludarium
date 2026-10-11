@@ -1,31 +1,11 @@
 /** Actual HTTP origins lack crypto.randomUUID; localhost does not expose that bug. */
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { chromium, webkit, devices } from "playwright";
+import { startServer } from "../scripts/server.mjs";
 
-const root = fileURLToPath(new URL("../", import.meta.url));
-const serverUrl = "http://127.0.0.1:5199";
 const origin = "http://paludarium.test";
 const safari = process.env.TOUCH_BROWSER === "webkit";
-const server = spawn(
-  process.execPath,
-  [
-    `${root}node_modules/vite/bin/vite.js`,
-    "preview",
-    "--host",
-    "127.0.0.1",
-    "--port",
-    "5199",
-    "--strictPort",
-  ],
-  { cwd: root, stdio: "ignore" },
-);
-// A taken port would leave these checks quietly testing another app.
-server.on("exit", (code) => {
-  if (code && !server.killed)
-    throw new Error("Vite exited early. Is its port already in use?");
-});
+const server = await startServer({ preview: true });
 const empty = {
   version: 1,
   name: "HTTP empty tank",
@@ -43,14 +23,6 @@ const empty = {
 };
 let browser;
 try {
-  for (let attempt = 0; attempt < 50; attempt++) {
-    try {
-      await fetch(serverUrl);
-      break;
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-  }
   browser = await (safari ? webkit : chromium).launch(
     safari
       ? {}
@@ -77,7 +49,7 @@ try {
   await page.route(`${origin}/**`, async (route) => {
     const url = new URL(route.request().url());
     const response = await route.fetch({
-      url: `${serverUrl}${url.pathname}${url.search}`,
+      url: `${server.url}${url.pathname}${url.search}`,
     });
     await route.fulfill({ response });
   });
@@ -161,5 +133,5 @@ try {
   );
 } finally {
   await browser?.close();
-  server.kill();
+  await server.stop();
 }

@@ -2,39 +2,13 @@
  * CHROMIUM_PATH optionally selects an existing Chromium executable (useful in containers).
  */
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
-const root = fileURLToPath(new URL("../", import.meta.url));
-const server = spawn(
-  process.execPath,
-  [
-    `${root}node_modules/vite/bin/vite.js`,
-    root,
-    "--host",
-    "127.0.0.1",
-    "--port",
-    "5191",
-    "--strictPort",
-  ],
-  { stdio: "ignore" },
-);
-// A taken port would leave these checks quietly testing another app.
-server.on("exit", (code) => {
-  if (code && !server.killed)
-    throw new Error("Vite exited early. Is its port already in use?");
-});
+import { startServer } from "../scripts/server.mjs";
+const server = await startServer();
+const { url } = server;
 let browser;
 const storageKey = "little-worlds:v4";
 try {
-  for (let i = 0; i < 50; i++) {
-    try {
-      await fetch("http://127.0.0.1:5191");
-      break;
-    } catch {
-      await new Promise((r) => setTimeout(r, 100));
-    }
-  }
   browser = await chromium.launch({
     executablePath: process.env.CHROMIUM_PATH || undefined,
     headless: true,
@@ -55,7 +29,7 @@ try {
     if (response.url().includes("@react-three_fiber.js"))
       fiberUrl = response.url();
   });
-  await page.goto("http://127.0.0.1:5191");
+  await page.goto(url);
   await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.locator(".asset-picture img").first().waitFor({ timeout: 90000 });
   // A first visit opens on the limestone grotto; start from an empty tank.
@@ -400,5 +374,5 @@ try {
   );
 } finally {
   await browser?.close();
-  server.kill();
+  await server.stop();
 }

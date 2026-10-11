@@ -1,30 +1,11 @@
 /** Native mobile placement, two-finger navigation and the bottom placement bar. */
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { chromium, webkit, devices } from "playwright";
+import { startServer } from "../scripts/server.mjs";
 
-const root = fileURLToPath(new URL("../", import.meta.url));
-const url = "http://127.0.0.1:5197";
 const safari = process.env.TOUCH_BROWSER === "webkit";
-const server = spawn(
-  process.execPath,
-  [
-    `${root}node_modules/vite/bin/vite.js`,
-    root,
-    "--host",
-    "127.0.0.1",
-    "--port",
-    "5197",
-    "--strictPort",
-  ],
-  { stdio: "ignore" },
-);
-// A taken port would leave these checks quietly testing another app.
-server.on("exit", (code) => {
-  if (code && !server.killed)
-    throw new Error("Vite exited early. Is its port already in use?");
-});
+const server = await startServer();
+const { url } = server;
 const world = {
   version: 1,
   name: "Aquarium touch check",
@@ -53,14 +34,6 @@ const world = {
 };
 let browser;
 try {
-  for (let retry = 0; retry < 50; retry++) {
-    try {
-      await fetch(url);
-      break;
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-  }
   browser = await (safari ? webkit : chromium).launch(
     safari
       ? {}
@@ -571,5 +544,5 @@ try {
   );
 } finally {
   await browser?.close();
-  server.kill();
+  await server.stop();
 }

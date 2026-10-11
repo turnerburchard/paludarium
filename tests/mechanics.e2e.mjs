@@ -1,29 +1,10 @@
 /** View stays read-only; advanced editing and slider gestures remain dependable. */
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { startServer } from "../scripts/server.mjs";
 
-const root = fileURLToPath(new URL("../", import.meta.url));
-const url = "http://127.0.0.1:5193";
-const server = spawn(
-  process.execPath,
-  [
-    `${root}node_modules/vite/bin/vite.js`,
-    root,
-    "--host",
-    "127.0.0.1",
-    "--port",
-    "5193",
-    "--strictPort",
-  ],
-  { stdio: "ignore" },
-);
-// A taken port would leave these checks quietly testing another app.
-server.on("exit", (code) => {
-  if (code && !server.killed)
-    throw new Error("Vite exited early. Is its port already in use?");
-});
+const server = await startServer();
+const { url } = server;
 const world = {
   version: 1,
   name: "Mechanics check",
@@ -71,17 +52,6 @@ const world = {
 };
 let browser;
 try {
-  let ready = false;
-  for (let retry = 0; retry < 50; retry++) {
-    try {
-      await fetch(url);
-      ready = true;
-      break;
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-  }
-  assert.ok(ready, "mechanics server starts");
   browser = await chromium.launch({
     executablePath: process.env.CHROMIUM_PATH || undefined,
     args: [
@@ -845,5 +815,5 @@ try {
   );
 } finally {
   await browser?.close();
-  server.kill();
+  await server.stop();
 }
