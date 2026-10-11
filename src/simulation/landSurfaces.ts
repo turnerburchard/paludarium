@@ -50,11 +50,14 @@ export class LandSurfaces {
   private readonly checks = new Map<string, boolean>();
   /** Each solid's sampled skin, before other solids cover any of it. */
   private readonly skins = new Map<HabitatObject, HabitatNode[]>();
+  /** What is left of each solid's skin once others cover what they touch. */
+  private readonly exposed = new Map<HabitatObject, HabitatNode[]>();
   /** The checks and skins from before an edit, and the bounds of every
    * solid it moved, added or removed. A check away from those still holds. */
   private readonly earlier?: {
     checks: Map<string, boolean>;
     skins: ReadonlyMap<HabitatObject, HabitatNode[]>;
+    exposed: ReadonlyMap<HabitatObject, HabitatNode[]>;
     changed: THREE.Box3[];
   };
 
@@ -103,6 +106,7 @@ export class LandSurfaces {
     this.earlier = {
       checks: previous.checks,
       skins: previous.skins,
+      exposed: previous.exposed,
       changed: [
         ...previous.solids.filter((solid) => !now.has(solid.object)),
         ...this.solids.filter((solid) => !before.has(solid.object)),
@@ -197,26 +201,45 @@ export class LandSurfaces {
   /** The skin of every solid that no other solid covers. */
   routes(margin: number): HabitatNode[] {
     const nodes: HabitatNode[] = [];
-    const env = this.world.environment;
     for (const solid of this.solids) {
-      const skin =
-        this.skins.get(solid.object) ??
-        this.earlier?.skins.get(solid.object) ??
-        this.sampleSkin(solid);
-      this.skins.set(solid.object, skin);
-      for (const node of skin) {
-        const { x, y, z } = node.position;
-        if (
-          Math.abs(x) > env.width / 2 - margin ||
-          Math.abs(z) > env.depth / 2 - margin ||
-          y < groundHeight(x, z, env) - 0.015 ||
-          this.remember("inside", node.position, node.position, () =>
-            this.inside(node.position),
-          )
-        )
-          continue;
+      // Only a solid touching this one can cover any of its skin, which
+      // sits just outside its bounds.
+      const near = solid.bounds.clone().expandByScalar(0.05);
+      const exposed =
+        this.exposed.get(solid.object) ??
+        (this.earlier?.changed.some((bounds) => bounds.intersectsBox(near))
+          ? undefined
+          : this.earlier?.exposed.get(solid.object)) ??
+        this.expose(solid, margin);
+      this.exposed.set(solid.object, exposed);
+      // The habitat adds links and room to these, so it gets its own copies.
+      for (const node of exposed)
         nodes.push({ ...node, neighbors: [...node.neighbors] });
-      }
+    }
+    return nodes;
+  }
+
+  /** The part of a solid's skin that no other solid covers. */
+  private expose(solid: Solid, margin: number): HabitatNode[] {
+    const env = this.world.environment;
+    const skin =
+      this.skins.get(solid.object) ??
+      this.earlier?.skins.get(solid.object) ??
+      this.sampleSkin(solid);
+    this.skins.set(solid.object, skin);
+    const nodes: HabitatNode[] = [];
+    for (const node of skin) {
+      const { x, y, z } = node.position;
+      if (
+        Math.abs(x) > env.width / 2 - margin ||
+        Math.abs(z) > env.depth / 2 - margin ||
+        y < groundHeight(x, z, env) - 0.015 ||
+        this.remember("inside", node.position, node.position, () =>
+          this.inside(node.position),
+        )
+      )
+        continue;
+      nodes.push({ ...node, neighbors: [...node.neighbors] });
     }
     const exposed = new Map(nodes.map((node) => [node.id, node]));
     for (const node of nodes)
