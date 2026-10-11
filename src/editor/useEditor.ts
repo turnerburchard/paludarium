@@ -1,4 +1,5 @@
 import { createObjectId } from "../model/objectId";
+import { randomFromSeed } from "../model/random";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { assetRadius, isAnimal, placementScale } from "../assets";
 import { killAnimal } from "../simulation/lifeCycle";
@@ -49,10 +50,14 @@ import {
   updateLibrary,
   type WorldLibrary,
 } from "./persistence";
+const newSeed = () => Math.floor(Math.random() * 2147483647);
+
+/** Placing tools pick the seed up front, so the preview shows the very
+ * shape that gets placed. */
 export type Tool =
   | { type: "select" }
-  | { type: "place"; kind: AssetKind; scale: number }
-  | { type: "prebuilt"; prebuilt: Prebuilt }
+  | { type: "place"; kind: AssetKind; scale: number; seed: number }
+  | { type: "prebuilt"; prebuilt: Prebuilt; seed: number }
   | { type: "move"; id: string }
   | { type: "copy"; id: string }
   | ({ type: "terrain" } & TerrainBrush)
@@ -269,12 +274,17 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     setTool({ type: "select" });
   }
   function choose(kind: AssetKind) {
-    setTool({ type: "place", kind, scale: placementScale(kind) });
+    setTool({
+      type: "place",
+      kind,
+      scale: placementScale(kind),
+      seed: newSeed(),
+    });
     select(null);
     setPlacementRotation(0);
   }
   function choosePrebuilt(prebuilt: Prebuilt) {
-    setTool({ type: "prebuilt", prebuilt });
+    setTool({ type: "prebuilt", prebuilt, seed: newSeed() });
     select(null);
     setPlacementRotation(0);
   }
@@ -282,7 +292,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
    * or wood piece when `surface` names one and the height of the spot. */
   function placeAt(x: number, z: number, surface?: Surface) {
     if (tool.type === "prebuilt") {
-      placePrebuilt(tool.prebuilt, x, z);
+      placePrebuilt(tool.prebuilt, tool.seed, x, z);
       return;
     }
     const moving =
@@ -290,7 +300,8 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
         ? world.objects.find((o) => o.id === tool.id)
         : null;
     const kind = tool.type === "place" ? tool.kind : moving?.kind;
-    if (!kind) return;
+    const seed = tool.type === "place" ? tool.seed : moving?.seed;
+    if (!kind || seed === undefined) return;
     const scale = tool.type === "place" ? tool.scale : (moving?.scale ?? 1);
     const position = boundedPosition(
       x,
@@ -344,7 +355,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       ...(resting.support && resting),
       rotation: placementRotation,
       scale,
-      seed: moving?.seed ?? Math.floor(Math.random() * 2147483647),
+      seed,
       ...(moving?.moss && { moss: moving.moss }),
     };
     commit({ ...world, objects: [...world.objects, object] });
@@ -353,10 +364,15 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       setTool({ type: "select" });
     }
     if (tool.type === "place")
-      setTool({ ...tool, scale: placementScale(kind) });
+      setTool({ ...tool, scale: placementScale(kind), seed: newSeed() });
   }
   /** Adds every piece of a prebuilt at once, so one undo takes it away. */
-  function placePrebuilt(prebuilt: Prebuilt, x: number, z: number) {
+  function placePrebuilt(
+    prebuilt: Prebuilt,
+    seed: number,
+    x: number,
+    z: number,
+  ) {
     const position = boundedPosition(x, z, world.environment, prebuilt.radius);
     const pieces = prebuiltObjects(
       prebuilt,
@@ -364,6 +380,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       position.z,
       placementRotation,
       world.environment,
+      randomFromSeed(seed),
     );
     const problem = prebuiltProblem(pieces, world.environment);
     if (problem) {
@@ -375,6 +392,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       return;
     }
     commit({ ...world, objects: [...world.objects, ...pieces] });
+    setTool({ type: "prebuilt", prebuilt, seed: newSeed() });
   }
   /** Adds a spring where the ground is tapped, or moves the chosen one
    * there. */

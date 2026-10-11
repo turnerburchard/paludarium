@@ -31,6 +31,7 @@ import { SpringMarker } from "./SpringMarker";
 import { TerrainBrushCursor } from "./TerrainBrushCursor";
 import { useSceneTouch } from "./useSceneTouch";
 import { hideSplash } from "../ui/splash";
+import { randomFromSeed } from "../model/random";
 
 const lighting = {
   day: { background: "#080b0d", intensity: 4.2, ambient: 0.25 },
@@ -97,6 +98,8 @@ function Scene({
   const kind = tool.type === "place" ? tool.kind : moving?.kind;
   const scale = tool.type === "place" ? tool.scale : (moving?.scale ?? 1);
   const prebuilt = tool.type === "prebuilt" ? tool.prebuilt : null;
+  const seed =
+    tool.type === "place" || tool.type === "prebuilt" ? tool.seed : 0;
   const placing = !!kind || !!prebuilt;
   const reach = tankReach(env);
   useCameraLayout(controls, resetCamera, view, env.height, reach);
@@ -144,7 +147,7 @@ function Scene({
           point.z,
           editor.placementRotation,
           env,
-          () => 0.3,
+          randomFromSeed(seed),
         )
       : null;
   let problem: string | null = null;
@@ -360,7 +363,7 @@ function Scene({
                   lift,
                   rotation: editor.placementRotation,
                   scale,
-                  seed: 42,
+                  seed,
                 }
           }
           environment={env}
