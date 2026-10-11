@@ -519,22 +519,22 @@ function limestoneGrotto(
   // Karst stone along the top of the wall in broken tiers, furred with moss
   // and leaving room for the seep's gully.
   add("limestone-pinnacle", -2.55, -2.25, 1.35, 0.6, "cushion");
-  add("limestone", -1.45, -2.33, 1, 1);
-  add("limestone-pinnacle", -1.4, -2.5, 0.7, 2.6, "sheet");
+  add("limestone", -1.45, -2.24, 1, 1);
+  add("limestone-pinnacle", -1.4, -2.42, 0.7, 2.6, "sheet");
   stack(0.7);
-  add("limestone-pinnacle", 0.2, -2.34, 1.2, 2.2, "java");
+  add("limestone-pinnacle", 0.2, -2.24, 1.2, 2.2, "java");
   add("limestone", 2.45, -2.25, 1.1, 0.3, "sheet");
-  add("limestone", 2.5, -2.48, 0.6, 3.4, "cushion");
+  add("limestone", 2.5, -2.42, 0.6, 3.4, "cushion");
   stack(0.8);
   add("capstone", -0.7, -2.25, 1);
-  add("orchid", -0.75, -2.2, 0.8, 0.9);
+  add("orchid", -0.6, -1.5, 0.8, 0.9);
   add("orchid", 2.75, -1.65, 0.75, 2.4);
-  add("nest-fern", -0.1, -1.6, 0.8, 1.3);
-  add("nest-fern", 2.1, -1.65, 0.7, 4);
-  add("fittonia", -1.55, -1.55, 1);
+  add("nest-fern", -0.35, -1.3, 0.8, 1.3);
+  add("nest-fern", 1.65, -1.95, 0.7, 4);
+  add("fittonia", 0.95, -0.55, 1);
   for (const [kind, x, z, scale] of [
     ["sheet-moss", -2.1, -1.95, 1],
-    ["fern-moss", 1.95, -1.4, 0.9],
+    ["fern-moss", 1.05, -2.0, 0.9],
     ["moss", -0.45, -1.2, 0.8],
   ] as const)
     add(kind, x, z, scale);
@@ -555,15 +555,15 @@ function limestoneGrotto(
   add("mossy-frog", -1.7, -0.75, 1, 0.6);
   add("mossy-frog", 2.05, -0.85, 1, 2.4);
   add("mossy-frog", -0.2, -1.3, 1, 4);
-  add("alocasia", -2.7, -1.0, 1.15, 0.5);
-  add("alocasia", 2.8, -0.6, 0.95, 2.4);
+  add("alocasia", -2.45, -0.95, 1.05, 0.5);
+  add("alocasia", 2.5, -0.55, 0.95, 2.4);
   add("alocasia", -0.75, -1.4, 0.8, 1.6);
   add("begonia", -2.75, -0.35, 1, 0.3);
-  add("begonia", -1.15, -0.95, 0.9, 2.8);
+  add("begonia", -1.0, -0.8, 0.9, 2.8);
   add("begonia", 1.65, -1.0, 0.95, 1.6);
   add("begonia", -0.35, -0.7, 0.85, 4.4);
-  add("fern", -2.3, -0.1, 0.85, 1.1);
-  add("fern", -0.85, -1.85, 0.8, 2);
+  add("fern", -2.15, -0.1, 0.85, 1.1);
+  add("fern", -0.9, -1.7, 0.8, 2);
   // Mossy stones, wood and java fern where the seep crosses the shelf.
   add("rock", 1.4, -1.55, 0.6, 0.8, "java");
   add("wood", 0.35, -0.95, 0.8, 2.1, "java");
@@ -571,7 +571,7 @@ function limestoneGrotto(
   for (const [kind, x, z, scale] of [
     ["sheet-moss", -1.35, -0.45, 1.1],
     ["fern-moss", 0.0, -1.0, 1],
-    ["moss", 1.75, -1.5, 0.9],
+    ["moss", 0.85, -1.7, 0.9],
     ["sheet-moss", -2.55, -0.65, 0.9],
   ] as const)
     add(kind, x, z, scale);
@@ -588,11 +588,11 @@ function limestoneGrotto(
   add("quaternius-crag", -0.15, 0.65, 1, 1);
   add("quaternius-outcrop", 1.6, 0.35, 0.9, 2.8, "java");
   add("quaternius-boulder", 2.75, 0.7, 0.8, 1.6);
-  add("java-fern", -2.05, 1.45, 1.1);
+  add("java-fern", -1.95, 1.6, 1.1);
   add("java-fern", 2.2, 0.4, 1);
   add("java-fern", 0.3, 0.9, 0.9);
   for (const [x, z, scale] of [
-    [-2.85, 1.5, 1],
+    [-2.05, 2.35, 1],
     [-0.8, 1.15, 1.1],
     [1.15, 0.5, 1],
     [2.4, 0.85, 0.9],
@@ -603,15 +603,15 @@ function limestoneGrotto(
   // Rotala and eelgrass up against the cliff, crypts through the middle,
   // and a lawn of sagittaria in front.
   for (const [x, z] of [
-    [-2.9, 1.0],
+    [-2.9, 1.7],
     [-0.6, 0.75],
     [0.6, 0.6],
   ])
     add("rotala", x, z, 1.2);
   for (const [x, z] of [
     [-1.95, 0.95],
-    [0.05, 0.7],
-    [2.9, 0.85],
+    [0.3, 0.8],
+    [2.2, 0.95],
   ])
     add("vallisneria", x, z, 1.3);
   for (const [x, z, scale] of [
@@ -625,10 +625,10 @@ function limestoneGrotto(
     add("cryptocoryne", x, z, scale, x * 2);
   for (const [x, z] of [
     [-2.6, 2.35],
-    [-0.9, 2.4],
+    [-0.9, 2.3],
     [0.3, 2.35],
     [1.4, 2.4],
-    [2.8, 2.35],
+    [2.45, 2.35],
   ])
     add("dwarf-sagittaria", x, z, 1);
   add("quaternius-dome", -2.4, 1.9, 0.6, 1.2);
@@ -637,7 +637,7 @@ function limestoneGrotto(
   add("quaternius-crag", 2.85, 2.1, 0.55, 3);
   add("water-lily", -2.75, 2.2, 0.9, 1);
   // A school each of rasboras and tiger barbs, two gouramis and a rainbow
-  // shark in the open water, and cherry shrimp on the stones.
+  // shark in the open water, and cherry shrimp and micro crabs on the stones.
   for (let i = 0; i < 8; i++)
     add(
       "harlequin-rasbora",
@@ -664,6 +664,12 @@ function limestoneGrotto(
     [-0.4, 2.2, 3],
   ])
     add("cherry-shrimp", x, z, 1, heading);
+  for (const [x, z, heading] of [
+    [-2.15, 1.7, 1.1],
+    [-0.4, 1.8, 3.6],
+    [1.3, 1.65, 5.4],
+  ])
+    add("micro-crab", x, z, 1, heading);
   return objects;
 }
 
