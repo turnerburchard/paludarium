@@ -5,6 +5,15 @@ import { startServer } from "../scripts/server.mjs";
 
 const server = await startServer();
 const { url } = server;
+/** The page stalls while the tank's shaders compile, which software WebGL
+ * on CI can take half a minute to do, so this one step gets longer. */
+async function waitForTank(page) {
+  await page.locator("canvas").waitFor();
+  await page
+    .locator("#splash.hidden")
+    .waitFor({ state: "attached", timeout: 45_000 });
+}
+
 let browser;
 try {
   browser = await chromium.launch({
@@ -21,7 +30,8 @@ try {
     viewport: { width: 960, height: 640 },
     hasTouch: true,
   });
-  page.setDefaultTimeout(30000);
+  // Short, so a stuck check names the step it stuck on.
+  page.setDefaultTimeout(15_000);
   const errors = [];
   let fiberUrl;
   page.on("response", (response) => {
@@ -30,8 +40,9 @@ try {
   });
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(url);
+  await waitForTank(page);
   await page.getByRole("button", { name: "Build", exact: true }).click();
-  await page.locator(".asset-picture img").first().waitFor({ timeout: 90000 });
+  await page.locator(".asset-picture img").first().waitFor();
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
     .click();
@@ -60,13 +71,10 @@ try {
           requestAnimationFrame(() => requestAnimationFrame(resolve)),
         ),
     );
-    await page.waitForFunction(
-      () =>
-        document
-          .querySelector(".save-status")
-          ?.textContent?.includes("Saved on this device"),
-      null,
-      { timeout: 30000 },
+    await page.waitForFunction(() =>
+      document
+        .querySelector(".save-status")
+        ?.textContent?.includes("Saved on this device"),
     );
     return page.evaluate(() =>
       JSON.parse(localStorage.getItem("little-worlds:v4"), (key, value) =>
@@ -262,6 +270,7 @@ try {
     "export and import preserve the landscape",
   );
   await page.reload();
+  await waitForTank(page);
   await page.getByRole("button", { name: "Build", exact: true }).click();
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
