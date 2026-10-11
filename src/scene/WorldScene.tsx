@@ -21,6 +21,7 @@ import { boundedPosition, groundHeight } from "../model/terrain";
 import { prebuiltObjects, prebuiltProblem } from "../model/prebuilts";
 import { restingOn, type Surface } from "../model/stacking";
 import { keepTankInReach, useCameraNavigation } from "./useCameraNavigation";
+import { useWheelZoom } from "./useWheelZoom";
 import { useFollowCamera } from "./useFollowCamera";
 import { tankReach, useCameraLayout } from "./useCameraLayout";
 import { Inhabitant } from "./Inhabitant";
@@ -93,6 +94,7 @@ function Scene({
     onCameraStart();
   }
   useCameraNavigation(controls, env, true, startCamera);
+  useWheelZoom(controls, startCamera);
   const [cursor, setCursor] = useState<{
     x: number;
     z: number;
