@@ -117,10 +117,6 @@ try {
     world,
   );
   await page.goto(url);
-  await page
-    .getByRole("dialog", { name: "Controls and help" })
-    .getByRole("button", { name: "Close dialog" })
-    .click();
   await page.waitForFunction(() => document.querySelector("canvas"));
   // Phones have no Pause button, so use the Space shortcut.
   await page.locator("body").press("Space");
@@ -754,10 +750,6 @@ try {
     fishWorld,
   );
   await fishPage.goto(url);
-  await fishPage
-    .getByRole("dialog", { name: "Controls and help" })
-    .getByRole("button", { name: "Close dialog" })
-    .click();
   await fishPage.bringToFront();
   await fishPage.getByRole("button", { name: "About Paludarium" }).waitFor();
   assert.ok(fishFiberUrl);

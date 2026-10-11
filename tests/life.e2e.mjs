@@ -95,10 +95,6 @@ try {
     { world: habitat("tree-frog", 0.44), storageKey },
   );
   await page.goto(url);
-  await page
-    .getByRole("dialog", { name: "Controls and help" })
-    .getByRole("button", { name: "Close dialog" })
-    .click();
   await page.getByRole("button", { name: "Build", exact: true }).click();
   await page
     .getByRole("button", { name: "Pause life (Space)", exact: true })
@@ -228,10 +224,6 @@ try {
     },
   );
   await fishPage.goto(url);
-  await fishPage
-    .getByRole("dialog", { name: "Controls and help" })
-    .getByRole("button", { name: "Close dialog" })
-    .click();
   await fishPage.waitForFunction(
     (key) =>
       JSON.parse(localStorage.getItem(key), (key, value) =>
@@ -305,10 +297,6 @@ try {
     { world: dying, storageKey },
   );
   await deathPage.goto(url);
-  await deathPage
-    .getByRole("dialog", { name: "Controls and help" })
-    .getByRole("button", { name: "Close dialog" })
-    .click();
   await deathPage.getByRole("button", { name: "About Paludarium" }).click();
   // With one animal left, following a creature watches that frog.
   await deathPage.getByRole("button", { name: "Follow a creature" }).click();

@@ -54,6 +54,8 @@ interface SceneProps {
   /** An animal the camera follows. It keeps living while watched. */
   watchingId: string | null;
   onActivateObject: (id: string) => void;
+  /** Called whenever someone starts moving the camera themselves. */
+  onCameraStart: () => void;
 }
 function Scene({
   editor,
@@ -62,6 +64,7 @@ function Scene({
   ecosystem,
   watchingId,
   onActivateObject,
+  onCameraStart,
 }: SceneProps) {
   const { world, tool } = editor,
     env = world.environment,
@@ -85,7 +88,11 @@ function Scene({
     watchingId,
     resetCamera,
   );
-  useCameraNavigation(controls, env, true, followCamera.interrupt);
+  function startCamera() {
+    followCamera.interrupt();
+    onCameraStart();
+  }
+  useCameraNavigation(controls, env, true, startCamera);
   const [cursor, setCursor] = useState<{
     x: number;
     z: number;
@@ -429,7 +436,7 @@ function Scene({
         dampingFactor={0.09}
         autoRotate={view && !editor.paused && !followCamera.active}
         autoRotateSpeed={0.35}
-        onStart={followCamera.interrupt}
+        onStart={startCamera}
         onChange={() => {
           if (controls.current) keepTankInReach(controls.current, env);
         }}

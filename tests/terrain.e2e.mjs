@@ -60,10 +60,6 @@ try {
   });
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(url);
-  await page
-    .getByRole("dialog", { name: "Controls and help" })
-    .getByRole("button", { name: "Close dialog" })
-    .click();
   await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.locator(".asset-picture img").first().waitFor({ timeout: 90000 });
   await page

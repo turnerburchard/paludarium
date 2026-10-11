@@ -6,6 +6,7 @@ import type { Preset } from "./model/presets";
 import { WorldScene } from "./scene/WorldScene";
 import { useEcosystem } from "./simulation/useEcosystem";
 import { BottomHud } from "./ui/BottomHud";
+import { CameraHint } from "./ui/CameraHint";
 import { HelpDialog } from "./ui/HelpDialog";
 import { hasDismissedHelp, rememberHelpDismissal } from "./ui/helpPreference";
 import { Inspector } from "./ui/Inspector";
@@ -55,12 +56,9 @@ export default function App({
     | "share-error"
     | "rename-animal"
     | null
-  >(() =>
-    shareError
-      ? "share-error"
-      : !sharedWorld && !hasDismissedHelp()
-        ? "help"
-        : null,
+  >(() => (shareError ? "share-error" : null));
+  const [cameraHint, setCameraHint] = useState<"shown" | "fading" | null>(() =>
+    hasDismissedHelp() ? null : "shown",
   );
   const [watchRequest, setWatchRequest] = useState<string | null>(null);
   // Deselecting (Escape, clicking away) also stops watching.
@@ -95,9 +93,11 @@ export default function App({
     if (tool.type !== "select") setSheetOpen(false);
   }, [tool.type]);
 
-  function closeHelp() {
+  function learnCamera() {
+    if (cameraHint !== "shown") return;
     rememberHelpDismissal();
-    setDialog(null);
+    // The scene's handlers can hold an older copy of this function.
+    setCameraHint((hint) => (hint === "shown" ? "fading" : hint));
   }
 
   function watch(id: string) {
@@ -197,6 +197,7 @@ export default function App({
             ecosystem={ecosystem}
             watchingId={watchingId}
             onActivateObject={activateObject}
+            onCameraStart={learnCamera}
           />
         </SceneBoundary>
       </div>
@@ -258,6 +259,12 @@ export default function App({
           {uiHidden ? <Eye size={18} /> : <EyeOff size={18} />}
         </button>
       )}
+      {view && cameraHint && (
+        <CameraHint
+          fading={cameraHint === "fading"}
+          onFaded={() => setCameraHint(null)}
+        />
+      )}
       {!view && <BottomHud editor={editor} />}
       {dialog === "share" && (
         <ShareDialog
@@ -315,7 +322,7 @@ export default function App({
           onClose={() => setDialog(null)}
         />
       )}
-      {dialog === "help" && <HelpDialog onClose={closeHelp} />}
+      {dialog === "help" && <HelpDialog onClose={() => setDialog(null)} />}
       {dialog === "about" && (
         <AboutDialog
           onHelp={() => setDialog("help")}

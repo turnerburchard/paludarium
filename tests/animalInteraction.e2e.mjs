@@ -92,10 +92,6 @@ try {
         { world, storageKey },
       );
       await page.goto(url);
-      await page
-        .getByRole("dialog", { name: "Controls and help" })
-        .getByRole("button", { name: "Close dialog" })
-        .click();
       // Phones have no Pause button, so use the Space shortcut.
       await page.locator("body").press("Space");
       async function openLife() {

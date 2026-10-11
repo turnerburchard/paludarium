@@ -56,10 +56,6 @@ try {
       fiberUrl = response.url();
   });
   await page.goto("http://127.0.0.1:5191");
-  await page
-    .getByRole("dialog", { name: "Controls and help" })
-    .getByRole("button", { name: "Close dialog" })
-    .click();
   await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.locator(".asset-picture img").first().waitFor({ timeout: 90000 });
   // A first visit opens on the limestone grotto; start from an empty tank.

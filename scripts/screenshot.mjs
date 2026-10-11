@@ -94,10 +94,6 @@ try {
       );
     });
     await page.goto(`http://127.0.0.1:${port}`);
-    await page
-      .getByRole("dialog", { name: "Controls and help" })
-      .getByRole("button", { name: "Close dialog" })
-      .click();
     // Phones have no pause button, so use the shortcut on every size.
     await page.keyboard.press("Space");
     await page.getByRole("button", { name: "Build", exact: true }).click();

@@ -1463,7 +1463,8 @@ button:hover:not(:disabled) {
   font-variant-numeric: tabular-nums;
 }
 
-.ui-hidden :is(.topbar, .mobile-dock, .inspector, .shared-world-badge) {
+.ui-hidden
+  :is(.topbar, .mobile-dock, .inspector, .shared-world-badge, .camera-hint) {
   display: none;
 }
 /* Muted so it doesn't pull the eye away from the tank. */
@@ -1486,6 +1487,33 @@ button:hover:not(:disabled) {
 .interface-toggle:hover,
 .interface-toggle:focus-visible {
   opacity: 1;
+}
+/* Lets clicks through to the tank, which is what it asks people to drag. */
+.camera-hint {
+  position: absolute;
+  left: 50%;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 4;
+  margin: 0;
+  padding: 8px 14px;
+  max-width: calc(100% - 32px);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 85%, transparent);
+  color: var(--muted);
+  font-size: var(--text-small);
+  text-align: center;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+}
+.camera-hint.fading {
+  opacity: 0;
+}
+/* Phones keep the hint above the dock. */
+@media (max-width: 760px) {
+  .camera-hint {
+    bottom: 92px;
+  }
 }
 .shared-world-badge {
   position: absolute;
