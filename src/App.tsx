@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { assets, isAnimal } from "./assets";
 import { useEditor } from "./editor/useEditor";
 import type { Preset } from "./model/presets";
@@ -42,6 +43,8 @@ export default function App({
   // On phones the sidebar is a sheet, closed until a dock button opens it.
   const [sheetOpen, setSheetOpen] = useState(false);
   const [hasBuilt, setHasBuilt] = useState(false);
+  // View can drop the interface to leave just the tank.
+  const [uiHidden, setUiHidden] = useState(false);
   const [resetCamera, setResetCamera] = useState(0);
   const [dialog, setDialog] = useState<
     | "share"
@@ -69,6 +72,23 @@ export default function App({
     if (watchRequest && watchRequest !== editor.selectedId)
       setWatchRequest(null);
   }, [editor.selectedId]);
+
+  useEffect(() => {
+    if (!view) return;
+    const keydown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== "h" || e.metaKey || e.ctrlKey || e.altKey)
+        return;
+      const target = e.target instanceof Element ? e.target : null;
+      if (
+        target?.closest("input,textarea,select,[contenteditable=true]") ||
+        document.querySelector('[role="dialog"]')
+      )
+        return;
+      setUiHidden((hidden) => !hidden);
+    };
+    window.addEventListener("keydown", keydown);
+    return () => window.removeEventListener("keydown", keydown);
+  }, [view]);
 
   // Placing or moving needs the tank, so the sheet gets out of the way.
   useEffect(() => {
@@ -114,6 +134,7 @@ export default function App({
     setWatchRequest(null);
     if (next && selected && !isAnimal(selected.kind)) editor.select(null);
     if (!next) setHasBuilt(true);
+    setUiHidden(false);
     setView(next);
   }
 
@@ -162,7 +183,7 @@ export default function App({
 
   return (
     <main
-      className={`app ${view ? "view-mode" : ""} ${sheetOpen ? "sheet-open" : ""}`}
+      className={`app ${view ? "view-mode" : ""} ${sheetOpen ? "sheet-open" : ""} ${uiHidden ? "ui-hidden" : ""}`}
     >
       <div
         className="scene-shell"
@@ -225,6 +246,17 @@ export default function App({
           <span title={world.name}>{world.name}</span>
           <a href={location.pathname + location.search}>Back to my world</a>
         </nav>
+      )}
+      {/* An open card covers this corner and already shows the interface. */}
+      {view && (uiHidden || !selected) && (
+        <button
+          className="interface-toggle"
+          aria-label={uiHidden ? "Show interface" : "Hide interface"}
+          title={uiHidden ? "Show interface (H)" : "Hide interface (H)"}
+          onClick={() => setUiHidden((hidden) => !hidden)}
+        >
+          {uiHidden ? <Eye size={18} /> : <EyeOff size={18} />}
+        </button>
       )}
       {!view && <BottomHud editor={editor} />}
       {dialog === "share" && (

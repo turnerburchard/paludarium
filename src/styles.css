@@ -1458,6 +1458,30 @@ button:hover:not(:disabled) {
   font-variant-numeric: tabular-nums;
 }
 
+.ui-hidden :is(.topbar, .mobile-dock, .inspector, .shared-world-badge) {
+  display: none;
+}
+/* Muted so it doesn't pull the eye away from the tank. */
+.interface-toggle {
+  position: absolute;
+  right: 16px;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  opacity: 0.6;
+}
+.interface-toggle:hover,
+.interface-toggle:focus-visible {
+  opacity: 1;
+}
 .shared-world-badge {
   position: absolute;
   bottom: max(16px, env(safe-area-inset-bottom));
