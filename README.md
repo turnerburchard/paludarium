@@ -2,7 +2,7 @@
 
 A little habitat to build and watch, with plants, frogs and fish.
 
-[Try it](https://turnerburchard.com/paludarium/).
+[Try it](https://paludarium.turnerburchard.com/).
 
 Worlds opens fresh presets and your saved habitats. The open world autosaves
 in this browser, including animal life. Build edits keep a preset in Your worlds,

@@ -6,7 +6,7 @@ import { chromium } from "playwright";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const url = "http://127.0.0.1:5194";
-const projectUrl = "https://turnerburchard.com/paludarium/";
+const projectUrl = "https://paludarium.turnerburchard.com/";
 const server = spawn(
   process.execPath,
   [

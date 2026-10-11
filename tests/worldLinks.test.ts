@@ -9,7 +9,7 @@ import { makePreset } from "../src/model/presets";
 import { emptyWorld, MAX_OBJECTS } from "../src/model/schema";
 import { newTerrain } from "../src/model/terrainData";
 
-const baseURL = "https://turnerburchard.com/paludarium/";
+const baseURL = "https://paludarium.turnerburchard.com/";
 async function untrustedLink(text: string) {
   const bytes = new Uint8Array(
     await new Response(

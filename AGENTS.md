@@ -2,7 +2,7 @@
 
 Instructions for coding agents (Claude, Codex) and humans alike. `CLAUDE.md` points here.
 
-Paludarium is a browser terrarium sandbox: build a planted habitat, add frogs and fish, and watch them live. React + TypeScript + React Three Fiber, bundled with Vite, deployed as a static site to https://turnerburchard.com/paludarium/ on every push to `main`.
+Paludarium is a browser terrarium sandbox: build a planted habitat, add frogs and fish, and watch them live. React + TypeScript + React Three Fiber, bundled with Vite, deployed as a static site to https://paludarium.turnerburchard.com/ on every push to `main`.
 
 ## Commands
 
