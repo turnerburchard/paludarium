@@ -113,8 +113,17 @@ export function makePreset(preset: Preset): World {
       add("java-moss", x, z, scale);
     // Eelgrass along the back, swords and rotala through the middle, and the
     // slow growers that like to cling beside the stones and driftwood.
-    for (const x of [-2.9, -2.3, -0.9, -0.3, 0.9, 1.5, 2.9])
-      add("vallisneria", x, -1.85, 1 + (x % 0.4));
+    // Each is turned so its long leaves fall along the back glass.
+    for (const [x, z, rotation] of [
+      [-2.9, -1.8, 4.2],
+      [-2.3, -1.85, 0],
+      [-0.9, -1.8, 2],
+      [-0.3, -1.85, 0],
+      [0.9, -1.85, 3.4],
+      [1.5, -1.7, 4.9],
+      [2.9, -1.75, 5.2],
+    ])
+      add("vallisneria", x, z, 1 + (x % 0.4), rotation);
     for (const [kind, x, z, scale] of [
       ["amazon-sword", -0.35, 0.95, 1.1],
       ["amazon-sword", 2.1, -0.9, 0.9],
@@ -318,7 +327,7 @@ function cloudForest(add: Add, shelter: Shelter, objects: HabitatObject[]) {
  * gouramis, shrimp and micro crabs in the water. */
 function tropicalIsland(add: Add, objects: HabitatObject[]) {
   // Big leaves on the high ground, for the geckos to climb.
-  add("monstera", -1.75, -1.25, 1.45, 5.2);
+  add("monstera", -1.75, -1.25, 1.45, 0);
   add("swiss-cheese-plant", -0.65, -0.95, 1.3, 0.8);
   add("alocasia", 0.35, -1.35, 1.15, 2);
   add("peace-lily", -0.05, -0.55, 0.8, 2.9);
@@ -326,7 +335,7 @@ function tropicalIsland(add: Add, objects: HabitatObject[]) {
   add("wood", 0.75, -1.55, 1, 4.2);
   add("forked-branch", 0.3, -0.45, 1, 2.6);
   for (const [kind, x, z, scale, rotation] of [
-    ["fern", -2.25, -1.65, 0.75, 0.4],
+    ["fern", -2.25, -1.55, 0.75, 4.5],
     ["fern", -1.65, -0.45, 1.1, 2.2],
     ["fern", -0.55, -0.15, 0.75, 4.1],
     ["fittonia", -1.2, -0.85, 1, 1.1],
@@ -356,7 +365,7 @@ function tropicalIsland(add: Add, objects: HabitatObject[]) {
     add(kind, x, z, scale, rotation);
   // Tall vallisneria in the open water, swords and rotala in front.
   for (const [kind, x, z, scale, rotation] of [
-    ["vallisneria", 3.05, 0.2, 1, 0],
+    ["vallisneria", 3.05, 0.2, 1, 5.6],
     ["vallisneria", 2.75, 0.75, 1.1, 1.4],
     ["vallisneria", 2.6, 0.35, 0.9, 2.9],
     ["spiderwood", 2.3, 1.1, 1, 0.9],
@@ -433,7 +442,7 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
   ] as const)
     add(kind, x, z, scale, x * 1.7);
   // A granite knoll where the fence lizard suns itself.
-  add("granite", 0.3, -1.45, 1.3, 0.6, "cushion");
+  add("granite", 0.3, -1.45, 1.3, 1.1, "cushion");
   add("scree", 1.0, -1.25, 1.1, 2);
   add("granite", -0.25, -1.15, 0.9, 2.4);
   add("scree", 0.8, -0.8, 1, 0.8);
@@ -476,8 +485,8 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
     ["columbine", -2.6, 0.95, 1],
     ["columbine", -1.2, 1.5, 0.9],
     ["columbine", -0.8, 1.25, 1],
-    ["strawberry", -4.1, 1.2, 1],
-    ["strawberry", -1.6, 1.75, 0.9],
+    ["strawberry", -4.0, 1.2, 1],
+    ["strawberry", -1.6, 1.6, 0.9],
     ["kinnikinnick", -3.9, 1.65, 1],
     ["kinnikinnick", -0.95, 1.75, 0.9],
     ["spruce", -4.1, 0.2, 0.75],
@@ -694,14 +703,14 @@ function limestoneGrotto(
  * and a tarantula live on the dry ground around it. */
 function desertSpring(add: Add, shelter: Shelter, objects: HabitatObject[]) {
   // The mesa, with a cave at its foot.
-  add("sandstone", -5.3, -2.9, 1.8, 0.4);
-  add("sandstone", -3.7, -2.8, 1.4, 1.9);
+  add("sandstone", -5.3, -2.7, 1.8, 1);
+  add("sandstone", -3.7, -2.8, 1.4, 0);
   add("sandstone-pillar", -4.5, -3.0, 1.3, 0.8);
   add("sandstone-ledge", -2.5, -2.2, 1.2, 2.1);
   add("sandstone-ledge", -5.7, -1.4, 1, 0.3);
   shelter(-3.5, -1.2, 1.4);
   add("dead-tree", -4.7, -2.0, 1.2, 0.9);
-  add("agave", -2.9, -3.1, 1.1, 0.6);
+  add("agave", -2.9, -3.05, 1.1, 1.6);
   add("hedgehog-cactus", -5.7, -2.3, 1, 0.5);
   add("hedgehog-cactus", -4.0, -1.9, 0.9, 2);
   add("bunchgrass", -5.0, -1.1, 1);
@@ -717,7 +726,7 @@ function desertSpring(add: Add, shelter: Shelter, objects: HabitatObject[]) {
   add("bunchgrass", -1.2, -2.0, 0.9, 2.5);
   add("branch", 2.9, -1.4, 1.2, 0.9);
   // The ridge, with a second cave and an agave stand.
-  add("sandstone", 4.8, -2.8, 1.5, 1.2);
+  add("sandstone", 4.8, -2.8, 1.5, 0.4);
   shelter(3.6, -2.6, 3.4);
   add("sandstone-pillar", 5.8, -2.2, 0.9, 2.8);
   add("agave", 5.5, -1.0, 1.2, 2.2);
