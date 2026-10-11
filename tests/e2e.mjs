@@ -244,6 +244,7 @@ try {
         "dart-frog",
         "blue-dart-frog",
         "green-dart-frog",
+        "glass-frog",
         "mossy-frog",
         "gecko",
         "leopard-lizard",

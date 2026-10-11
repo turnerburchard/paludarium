@@ -195,7 +195,12 @@ export function makePreset(preset: Preset): World {
       version: 1,
       name: "Cloud forest",
       environment,
-      objects: cloudForest(add, shelters(environment), objects),
+      objects: cloudForest(
+        add,
+        shelters(environment),
+        stacks(environment),
+        objects,
+      ),
     };
   }
   if (preset === "mountain")
@@ -228,94 +233,100 @@ export function makePreset(preset: Preset): World {
   };
 }
 
-/** Costa Rican cloud forest on a mossy knoll that reads from every side:
- * philodendrons and a branch for the tree frogs on top, poison frogs on its
- * slopes, a spring tumbling down to a lagoon of convict cichlids, and a pond
- * behind. */
-function cloudForest(add: Add, shelter: Shelter, objects: HabitatObject[]) {
-  // The crown of the knoll: the tallest leaves in the tank, with a branch
-  // the red-eyed tree frogs climb.
-  add("tree-philodendron", -0.75, -0.3, 1.15, 0.4);
-  add("monstera", 0.05, 0.05, 1.0, 2.2);
-  add("monstera", -1.25, -0.9, 0.85, 4.1);
-  add("forked-branch", -1.05, 0.25, 1.1, 0.9);
-  add("bromeliad", -0.5, -0.75, 0.9, 1.3);
-  add("orchid", -1.45, 0.05, 0.85, 2.6);
-  add("tree-frog", -1.0, 0.2, 1.2, 1.4);
-  add("tree-frog", -0.35, -0.3, 1.2, 4.2);
-  // Mossy stones where the spring comes out, and ferns down the brook.
-  add("quaternius-outcrop", 0.35, -0.85, 0.8, 1.2, "cushion");
-  add("rock", -0.1, -0.6, 0.55, 2.4, "sheet");
+/** Costa Rican cloud forest on a mossy knoll that reads from every side: a
+ * strangler fig on top for the tree frogs, tree ferns down its slopes,
+ * poison frogs and glass frogs, springs tumbling to a deep lagoon of convict
+ * cichlids, and a pond behind. */
+function cloudForest(
+  add: Add,
+  shelter: Shelter,
+  stack: Stack,
+  objects: HabitatObject[],
+) {
+  // The crown of the knoll: a strangler fig with the springs welling up
+  // between its roots, and big leaves crowding its base.
+  add("strangler-fig", -0.5, -0.3, 1, 0);
+  add("monstera", 0.4, 0.15, 0.95, 2.2);
+  add("tree-philodendron", -1.4, -1, 1.0, 0.4);
+  add("bromeliad", -1.25, 0.1, 0.85, 1.3);
+  add("orchid", 0.2, -1.25, 0.8, 2.6);
+  add("anthurium", -0.1, 0.7, 0.85, 0.9);
+  add("tree-frog", -0.95, 0.35, 1.2, 1.4);
+  add("tree-frog", 0.15, -0.7, 1.2, 4.2);
+  // Mossy stones where the brook comes off the knoll, and a tree fern over
+  // it.
+  add("quaternius-outcrop", 0.45, -0.85, 0.8, 1.2, "cushion");
   add("rock", 1.05, -0.65, 0.5, 0.6, "fern");
-  add("fern", 0.75, 0.15, 0.85, 3.4);
-  add("fern", 1.35, -0.2, 0.9, 1.1);
-  add("nest-fern", 1.15, -1.3, 0.8, 0.2);
-  // The back slope: a cave in the second summit where the frogs shelter,
-  // with elephant ears and a monstera around it.
+  add("tree-fern", 1.35, -1.25, 1.0, 0.7);
+  add("fern", 0.95, -0.05, 0.85, 3.4);
+  add("nest-fern", 0.65, -1.55, 0.8, 0.2);
+  // The back slope: a cave where the frogs shelter, with elephant ears and a
+  // monstera around it.
   shelter(-0.35, -1.55, 3.3, "sheet");
-  add("monstera", 1.35, -1.7, 0.9, 5);
-  add("alocasia", -1.4, -1.6, 0.95, 1.9);
-  add("calathea", 0.45, -1.75, 0.85, 3.6);
-  add("fittonia", -0.95, -1.95, 0.9);
-  add("fern", 2.25, -1.35, 0.9, 0.7);
-  add("begonia", 2.0, -1.15, 0.9, 2.2);
-  add("philodendron", 2.85, -0.75, 1.0, 4.4);
-  add("rock", 0.45, -2.1, 0.5, 2.9, "fern");
-  add("begonia", 2.6, -1.95, 0.85, 0.8);
-  add("sheet-moss", 1.05, -2.1, 1);
-  // The pond in the back corner, edged with sedge and a lily.
-  add("water-lily", -2.85, -1.75, 0.9, 1.1);
+  add("monstera", 2.05, -1.7, 0.85, 5);
+  add("alocasia", -1.4, -1.75, 0.9, 1.9);
+  add("calathea", 0.25, -1.9, 0.85, 3.6);
+  add("begonia", 2.65, -1.15, 0.9, 2.2);
+  add("philodendron", 2.85, -0.6, 0.95, 4.4);
+  add("leaf-litter", 1.3, -2.05, 1);
+  add("fittonia", -0.95, -2.05, 0.9);
+  // The pond in the back corner: java moss and cobbles under the water,
+  // sedge and a tree fern on its bank.
+  add("java-moss", -2.95, -2.05, 1);
+  add("cobble", -2.55, -1.6, 0.9, 1.1);
+  add("cobble", -3.05, -1.45, 0.8, 2.6);
   add("grass", -1.7, -1.35, 0.85, 0.3);
   add("grass", -2.3, -1.2, 0.8, 2.6);
-  add("rock", -1.9, -2.1, 0.55, 4.0, "fern");
+  add("tree-fern", -1.9, -0.4, 0.9, 2.1);
   // The left side: a fallen log with fungus, ferns and leaf litter.
-  add("log", -2.45, 0.35, 0.85, 1.5, "fern");
-  add("turkey-tail", -2.2, 0.75, 0.9, 0.4);
-  add("fern", -2.35, -0.4, 0.85, 2.1);
-  add("peace-lily", -1.7, -0.1, 0.85, 1.2);
-  add("leaf-litter", -1.85, 0.95, 1.0);
+  add("log", -2.55, 0.45, 0.85, 1.5, "fern");
+  add("turkey-tail", -2.53, 0.6, 0.9, 0.4);
+  stack(0.24);
+  add("fern", -2.65, -0.3, 0.8, 2.1);
+  add("peace-lily", -1.65, -0.05, 0.85, 1.2);
+  add("bonnet-mushrooms", -2.95, 1.05, 0.9, 2.2);
   // The front slope, where the poison frogs patrol among the bromeliads.
-  add("anthurium", -0.6, 0.95, 0.9, 0.9);
-  add("bromeliad", 0.15, 1.05, 0.85, 2.3);
-  add("calathea", -1.35, 1.25, 0.85, 0.2);
-  add("fittonia", 0.55, 1.6, 0.9);
-  add("fittonia", -0.95, 1.4, 1);
-  add("dart-frog", -0.25, 1.35, 1.15, 1.1);
-  add("dart-frog", -1.05, 0.85, 1.15, 3.5);
+  add("bromeliad", 0.25, 1.05, 0.85, 2.3);
+  add("calathea", -1.2, 1.15, 0.85, 0.2);
+  add("fittonia", 0.45, 1.75, 0.9);
+  add("leaf-litter", -0.4, 1.95, 1.1);
+  add("dart-frog", -0.35, 1.3, 1.15, 1.1);
+  add("dart-frog", -0.95, 0.75, 1.15, 3.5);
   add("dart-frog", 0.6, 0.75, 1.15, 5.2);
   // An old stump in the front corner, and a root arch the frogs can shelter
-  // under, with elephant ears and a philodendron for height on this side.
+  // under, with an elephant ear for height on this side.
   add("stump", -2.8, 1.8, 1.2, 0.6, "sheet");
-  add("chicken-of-the-woods", -2.3, 1.8, 0.9, 1.6);
-  add("bonnet-mushrooms", -2.2, 2.1, 0.8, 4);
-  add("root-arch", -1.75, 1.4, 0.9, 2.5, "cushion");
-  add("alocasia", -2.85, 0.75, 0.9, 0.8);
-  add("philodendron", -2.2, 1.0, 0.9, 2.1);
-  add("bromeliad", -1.15, 1.75, 0.8, 0.6);
-  add("fern", -0.45, 1.6, 0.7, 5.1);
-  // Sedge, a fern and a turtle's basking spot around the lagoon.
-  add("grass", 0.95, 2.05, 0.9, 1.4);
-  add("grass", 2.85, -0.15, 0.85, 3.1);
-  add("anthurium", 2.5, -0.6, 0.85, 4);
-  add("rock", 1.05, 0.85, 0.6, 1.8);
-  add("turtle", 0.85, 1.25, 1, 2.4);
-  add("water-lily", 2.6, 1.25, 1, 0.4);
-  add("water-lily", 1.85, 2.0, 0.8, 2);
-  add("java-moss", 2.9, 2.0, 1);
+  add("chicken-of-the-woods", -2.6, 1.85, 0.9, 1.6);
+  stack(0.32);
+  add("root-arch", -1.65, 1.6, 0.9, 2.5, "cushion");
+  add("alocasia", -2.9, 1.0, 0.85, 0.8);
+  add("fern", -1, 1.7, 0.7, 5.1);
+  // The lagoon: sunken wood with java fern on it, crypts and java moss on
+  // the bottom, sedge and a basking stone on the shore.
+  add("wood", 2.1, 1.35, 1.0, 0.6, "java");
+  add("java-fern", 1.8, 1.1, 1);
+  add("java-fern", 2.55, 1.75, 0.9, 2);
+  add("cryptocoryne", 2.9, 0.75, 1, 1.3);
+  add("cryptocoryne", 1.35, 2.15, 0.9, 3.8);
+  add("java-moss", 2.95, 2.1, 1);
+  add("pebbles", 2.3, 2.1, 1, 0.4);
+  add("grass", 0.6, 2.15, 0.9, 1.4);
+  add("grass", 2.6, -0.35, 0.85, 3.1);
+  add("rock", 0.75, 1.1, 0.6, 1.8);
+  add("turtle", 0.45, 1.45, 1, 2.4);
   for (const [kind, x, z, scale] of [
     ["sheet-moss", -1.65, 0.6, 1.1],
-    ["fern-moss", 0.35, 0.7, 1],
-    ["moss", -2.3, -0.4, 1],
-    ["sheet-moss", 2.4, -0.7, 1],
+    ["fern-moss", 0.75, 0.15, 1],
+    ["moss", -2.35, -0.35, 1],
+    ["sheet-moss", 2.2, -0.8, 1],
     ["fern-moss", -1.0, -1.25, 0.9],
-    ["moss", 0.2, 2.0, 1],
   ] as const)
     add(kind, x, z, scale);
   for (const [x, z, turn] of [
-    [2.2, 1.55, 0.2],
-    [1.95, 1.3, 0.1],
-    [2.45, 1.1, 3.3],
-    [2.9, 1.5, 3.1],
+    [1.5, 1.4, 0.2],
+    [2.2, 0.8, 0.1],
+    [2.9, 1.35, 3.3],
+    [2.95, 1.6, 3.1],
   ])
     add("convict-cichlid", x, z, 0.8, turn);
   add("micro-crab", 2.25, 1.85, 1, 0.6);
@@ -328,6 +339,9 @@ function cloudForest(add: Add, shelter: Shelter, objects: HabitatObject[]) {
     [2.1, -0.35, 0.9],
   ])
     add("green-dart-frog", x, z, 1, heading);
+  // Glass frogs on the leaves over the brook and the lagoon.
+  add("glass-frog", 1.2, -0.35, 1, 2.8);
+  add("glass-frog", 2.75, -0.95, 1, 1.2);
   return objects;
 }
 
@@ -931,23 +945,24 @@ function forestFloor() {
     const knoll =
       1.0 * dome(x, z, [-0.5, -0.3, 2.1, 1.8, 0.5]) +
       0.35 * dome(x, z, [0.55, -1.05, 1.0, 0.85, 2]);
-    const lagoon = Math.min(1, 1.7 * dome(x, z, [2.35, 1.4, 1.75, 1.55, 4]));
+    const lagoon = Math.min(1, 1.6 * dome(x, z, [2.25, 1.2, 2.05, 1.8, 4]));
     const pond = Math.min(1, 1.8 * dome(x, z, [-2.8, -1.9, 1.2, 1.05, 1]));
     let ground = floor + knoll;
-    ground += (0.1 - ground) * lagoon;
+    ground += (-0.15 - ground) * lagoon;
     ground += (0.3 - ground) * pond;
     const channel = 1 - smooth((brookDistance(x, z) - 0.1) / 0.3);
     const height = ground - 0.14 * channel * smooth(ground - env.water);
     return Math.round((height - baseGroundHeight(x, z, env)) * 100) / 100 || 0;
   });
-  // Moss everywhere above the water, stone along the brooks, and gravel in
-  // the pools.
   const paint = terrain.heights.map((_, i): GroundMaterial => {
     const { x, z } = terrainPoint(i, { ...env, terrain });
     const ground = groundHeight(x, z, { ...env, terrain });
-    if (ground < env.water + 0.04) return "sand";
-    if (brookDistance(x, z) < 0.25) return "stone";
+    // Pools in forest are dark with silt and fallen leaves, and bare earth
+    // breaks up the moss in patches.
     if (ground < env.water + 0.1) return "soil";
+    if (brookDistance(x, z) < 0.25) return "stone";
+    const patches = Math.sin(x * 2.3 + z * 1.7) * Math.sin(x * 1.1 - z * 2.9);
+    if (patches > 0.55) return "soil";
     return "moss";
   });
   return {
