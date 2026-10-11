@@ -98,9 +98,8 @@ try {
       .getByRole("dialog", { name: "Controls and help" })
       .getByRole("button", { name: "Close dialog" })
       .click();
-    await page
-      .getByRole("button", { name: "Pause life (Space)", exact: true })
-      .click();
+    // Phones have no pause button, so use the shortcut on every size.
+    await page.keyboard.press("Space");
     await page.getByRole("button", { name: "Build", exact: true }).click();
     if (viewport.name === "phone")
       await page
@@ -127,6 +126,11 @@ try {
       const path = `${outDir}/${preset.name}-${viewport.name}.png`;
       await page.screenshot({ path });
       console.log(path);
+      // On phones the dock that holds View sits under an open panel.
+      if (viewport.name === "phone")
+        await page
+          .getByRole("button", { name: "Close panel", exact: true })
+          .click();
       await page.getByRole("button", { name: "View", exact: true }).click();
       await page.waitForTimeout(700);
       const viewPath = `${outDir}/${preset.name}-${viewport.name}-view.png`;
@@ -151,13 +155,10 @@ try {
       const lifePath = `${outDir}/${preset.name}-${viewport.name}-life.png`;
       await page.screenshot({ path: lifePath });
       console.log(lifePath);
+      // Every preset starts from the Add panel, open on phones too.
       await page
         .getByRole("button", { name: "Add to your world", exact: true })
         .click();
-      if (viewport.name === "phone")
-        await page
-          .getByRole("button", { name: "Close panel", exact: true })
-          .click();
     }
     await page.close();
   }
