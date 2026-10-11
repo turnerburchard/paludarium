@@ -229,8 +229,9 @@ export function makePreset(preset: Preset): World {
 }
 
 /** Costa Rican cloud forest on a mossy knoll that reads from every side:
- * philodendrons and a branch for the tree frogs on top, a spring tumbling
- * down to a lagoon of convict cichlids, and a pond behind. */
+ * philodendrons and a branch for the tree frogs on top, poison frogs on its
+ * slopes, a spring tumbling down to a lagoon of convict cichlids, and a pond
+ * behind. */
 function cloudForest(add: Add, shelter: Shelter, objects: HabitatObject[]) {
   // The crown of the knoll: the tallest leaves in the tank, with a branch
   // the red-eyed tree frogs climb.
@@ -319,6 +320,14 @@ function cloudForest(add: Add, shelter: Shelter, objects: HabitatObject[]) {
     add("convict-cichlid", x, z, 0.8, turn);
   add("micro-crab", 2.25, 1.85, 1, 0.6);
   add("micro-crab", -2.9, -2.1, 1, 2.5);
+  // Green-and-black poison frogs, bolder than the strawberry frogs, on the
+  // left, back and right slopes.
+  for (const [x, z, heading] of [
+    [-1.55, 0.95, 2.2],
+    [0.95, -1.75, 4.4],
+    [2.1, -0.35, 0.9],
+  ])
+    add("green-dart-frog", x, z, 1, heading);
   return objects;
 }
 

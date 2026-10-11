@@ -15,6 +15,7 @@ import { growMoss } from "./landscape/mossCover";
 import {
   bluePoisonDartFrog,
   goldenMantella,
+  greenPoisonDartFrog,
   canyonTreeFrog,
   chorusFrog,
   europeanTreeFrog,
@@ -160,6 +161,7 @@ export const assets = {
   "tree-frog": treeFrog,
   "dart-frog": strawberryPoisonFrog,
   "blue-dart-frog": bluePoisonDartFrog,
+  "green-dart-frog": greenPoisonDartFrog,
   "golden-mantella": goldenMantella,
   "mossy-frog": mossyFrog,
   "chorus-frog": chorusFrog,

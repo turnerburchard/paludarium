@@ -131,6 +131,35 @@ export const bluePoisonDartFrog: AssetDefinition = {
     ),
 };
 
+export const greenPoisonDartFrog: AssetDefinition = {
+  kind: "green-dart-frog",
+  name: "Green-and-black poison dart frog",
+  scientificName: "Dendrobates auratus",
+  group: "Amphibians",
+  biomes: ["Tropical"],
+  description:
+    "Mint green splashed with black, from the rainforests of Costa Rica and Panama. Bolder than most frogs, it forages by day.",
+  radius: 0.18,
+  size: 0.8,
+  habitat: "land",
+  behavior: { nocturnal: false, climbs: true, speed: 0.04, movement: "hop" },
+  build: (random) =>
+    buildFrog(
+      {
+        back: "#45c27f",
+        belly: "#2f9a63",
+        iris: "#10171e",
+        feet: "#1d2a23",
+        height: 0.9,
+        size: 0.52,
+        roughness: 0.62,
+        spots: 40,
+        markings: "#141a17",
+      },
+      random,
+    ),
+};
+
 export const goldenMantella: AssetDefinition = {
   kind: "golden-mantella",
   name: "Golden mantella",
