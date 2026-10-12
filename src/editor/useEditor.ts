@@ -42,12 +42,13 @@ import {
   type Prebuilt,
 } from "../model/prebuilts";
 import {
-  activeWorld,
+  activeEntry,
   loadLibrary,
   openLibraryWorld,
+  parseLibrary,
   renameLibraryWorld,
   saveLibrary,
-  updateLibrary,
+  STORAGE_KEY,
   type WorldLibrary,
 } from "./persistence";
 const newSeed = () => Math.floor(Math.random() * 2147483647);
@@ -65,8 +66,15 @@ export type Tool =
   | { type: "spring"; index: number | null };
 export function useEditor(readOnly = false, sharedWorld?: World) {
   const [initial] = useState(loadLibrary);
+  // The worlds as last saved, by this tab or another one.
   const [library, setLibrary] = useState(initial.library);
-  const initialWorld = activeWorld(initial.library);
+  // The world this tab has open. Each tab saves only its own world, so tabs
+  // never write over each other's work.
+  const [opened, setOpened] = useState(() => {
+    const { id, preview } = activeEntry(initial.library);
+    return { id, preview };
+  });
+  const initialWorld = activeEntry(initial.library).world;
   const [history, dispatch] = useReducer(historyReducer, {
     past: [],
     present: initialWorld,
@@ -91,13 +99,20 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   const [placementRotation, setPlacementRotation] = useState(0);
   const worldRef = useRef(world);
   worldRef.current = world;
+  const libraryRef = useRef(library);
+  libraryRef.current = library;
+  /** The worlds as this tab would save them, with its own world first. */
+  const current = openLibraryWorld(library, {
+    ...opened,
+    world: history.present,
+  });
   // Undo can take away the selected object.
   const selected = world.objects.find((o) => o.id === chosenId) ?? null;
   const selectedId = selected?.id ?? null;
   const commit = useCallback((next: World) => {
     setPreview(null);
     if (JSON.stringify(next) === JSON.stringify(worldRef.current)) return;
-    setLibrary((current) => updateLibrary(current, next, true));
+    setOpened(({ id }) => ({ id, preview: undefined }));
     dispatch({ type: "commit", world: next });
   }, []);
   const updateLife = useCallback(
@@ -116,7 +131,12 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       return;
     setSaving(true);
     const persist = () => {
-      const saved = saveLibrary(updateLibrary(library, history.present));
+      const saved = saveLibrary(
+        openLibraryWorld(libraryRef.current, {
+          ...opened,
+          world: history.present,
+        }),
+      );
       setSaved(saved);
       setSaveError(
         saved
@@ -136,7 +156,31 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       window.removeEventListener("pagehide", persist);
       document.removeEventListener("visibilitychange", onHidden);
     };
-  }, [history.present, isShared, initial, initialWorld, library]);
+  }, [history.present, isShared, initial, initialWorld, opened]);
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY || !event.newValue) return;
+      let next: WorldLibrary;
+      try {
+        next = parseLibrary(event.newValue);
+      } catch {
+        return;
+      }
+      setLibrary(next);
+      // A tab in the background takes up changes made to its world in
+      // another one, so coming back to it doesn't undo them.
+      const mine = next.worlds.find((entry) => entry.id === opened.id);
+      if (
+        document.hidden &&
+        mine &&
+        !isShared &&
+        JSON.stringify(mine.world) !== JSON.stringify(history.present)
+      )
+        show(mine);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [history.present, isShared, opened.id]);
   useEffect(() => {
     stroke.current = null;
     setPreview(null);
@@ -432,15 +476,11 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     if (name !== world.name) commit({ ...world, name });
   }
   function renameWorld(id: string, name: string): boolean {
-    if (id === library.activeId && !isShared) {
+    if (id === opened.id && !isShared) {
       rename(name);
       return true;
     }
-    const next = renameLibraryWorld(
-      updateLibrary(library, history.present),
-      id,
-      name,
-    );
+    const next = renameLibraryWorld(current, id, name);
     if (!saveLibrary(next)) {
       setSaved(false);
       setSaveError("Your worlds could not be saved.");
@@ -458,24 +498,26 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       return false;
     }
     setLibrary(next);
-    dispatch({ type: "open", world: activeWorld(next) });
+    show(activeEntry(next));
     setIsShared(false);
     setSaved(true);
     setSaveError("");
+    return true;
+  }
+  function show({ id, world, preview }: WorldLibrary["worlds"][number]) {
+    dispatch({ type: "open", world });
+    setOpened({ id, preview });
     select(null);
     setTool({ type: "select" });
     setPreview(null);
     stroke.current = null;
-    return true;
   }
   function createWorld(next: World): boolean {
-    const current = updateLibrary(library, history.present);
     return switchLibrary(
       openLibraryWorld(current, { id: createObjectId(), world: next }),
     );
   }
   function startPreset(preset: Preset): boolean {
-    const current = updateLibrary(library, history.present);
     return switchLibrary(
       openLibraryWorld(current, {
         id: createObjectId(),
@@ -485,8 +527,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     );
   }
   function openWorld(id: string): boolean {
-    if (id === library.activeId && !isShared) return true;
-    const current = updateLibrary(library, history.present);
+    if (id === opened.id && !isShared) return true;
     return switchLibrary(
       openLibraryWorld(
         current,
@@ -495,7 +536,6 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     );
   }
   function deleteWorld(id: string): boolean {
-    const current = updateLibrary(library, history.present);
     const worlds = current.worlds.filter((entry) => entry.id !== id);
     if (!worlds.length) return false;
     const next = {
@@ -510,8 +550,11 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       return false;
     }
     setLibrary(next);
-    if (id === current.activeId)
-      dispatch({ type: "open", world: activeWorld(next) });
+    if (id === current.activeId) {
+      const { world, preview } = activeEntry(next);
+      dispatch({ type: "open", world });
+      setOpened({ id: next.activeId, preview });
+    }
     return true;
   }
   function move() {
@@ -528,7 +571,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     world: shown,
     isShared,
     updateLife,
-    library: updateLibrary(library, history.present),
+    library: current,
     createWorld,
     startPreset,
     openWorld,

@@ -84,22 +84,8 @@ export function parseLibrary(text: string): WorldLibrary {
     })),
   };
 }
-export function activeWorld(library: WorldLibrary): World {
-  return library.worlds.find((entry) => entry.id === library.activeId)!.world;
-}
-export function updateLibrary(
-  library: WorldLibrary,
-  world: World,
-  edited = false,
-): WorldLibrary {
-  return {
-    ...library,
-    worlds: library.worlds.map((entry) => {
-      if (entry.id !== library.activeId) return entry;
-      if (edited) return { id: entry.id, world };
-      return { ...entry, world };
-    }),
-  };
+export function activeEntry(library: WorldLibrary) {
+  return library.worlds.find((entry) => entry.id === library.activeId)!;
 }
 export function renameLibraryWorld(
   library: WorldLibrary,

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import {
-  activeWorld,
+  activeEntry,
   createLibrary,
   loadLibrary,
   MAX_WORLD_SIZE,
@@ -10,7 +10,6 @@ import {
   renameLibraryWorld,
   saveLibrary,
   STORAGE_KEY,
-  updateLibrary,
   worldFile,
 } from "../src/editor/persistence";
 import { makePreset } from "../src/model/presets";
@@ -44,18 +43,18 @@ describe("saved world collection", () => {
     library = openLibraryWorld(library, saved.worlds[0]);
     expect(library.worlds).toEqual(saved.worlds);
   });
-  it("keeps a preview's life on reload and only promotes a manual edit", () => {
+  it("keeps a preview's life on reload and keeps an edited one", () => {
     const library = createLibrary(makePreset("amazon"), true);
-    const evolved = { ...activeWorld(library), objects: [] };
-    const watched = updateLibrary(library, evolved);
+    const preview = activeEntry(library);
+    const evolved = { ...preview.world, objects: [] };
+    const watched = openLibraryWorld(library, { ...preview, world: evolved });
     const reloaded = parseLibrary(JSON.stringify(watched));
     expect(reloaded.worlds[0].preview).toBe(true);
-    expect(activeWorld(reloaded)).toEqual(evolved);
-    const edited = updateLibrary(
-      reloaded,
-      { ...evolved, name: "My aquarium" },
-      true,
-    );
+    expect(activeEntry(reloaded).world).toEqual(evolved);
+    const edited = openLibraryWorld(reloaded, {
+      id: preview.id,
+      world: { ...evolved, name: "My aquarium" },
+    });
     expect(edited.worlds[0].preview).toBeUndefined();
     const next = openLibraryWorld(edited, {
       id: "new-preset",
@@ -86,29 +85,36 @@ describe("saved world collection", () => {
     const loaded = loadLibrary();
     expect(loaded.library.worlds).toHaveLength(1);
     expect(loaded.library.worlds[0].preview).toBe(true);
-    expect(activeWorld(loaded.library).name).toBe("Cloud forest");
+    expect(activeEntry(loaded.library).world.name).toBe("Cloud forest");
   });
   it("migrates an existing world without losing its layout or life", () => {
     const world = makePreset("tropical");
     const library = parseLibrary(JSON.stringify(world));
     expect(library.worlds).toHaveLength(1);
-    expect(activeWorld(library)).toEqual(world);
-    expect(activeWorld(parseLibrary(JSON.stringify(library)))).toEqual(world);
-  });
-  it("updates only the active world and preserves the others", () => {
-    const first = makePreset("tropical");
-    const second = makePreset("amazon");
-    const original = createLibrary(first);
-    const library = {
-      ...original,
-      activeId: "second",
-      worlds: [...original.worlds, { id: "second", world: second }],
-    };
-    const updated = updateLibrary(library, { ...second, name: "My aquarium" });
-    expect(updated.worlds[0].world).toEqual(first);
-    expect(activeWorld(parseLibrary(JSON.stringify(updated))).name).toBe(
-      "My aquarium",
+    expect(activeEntry(library).world).toEqual(world);
+    expect(activeEntry(parseLibrary(JSON.stringify(library))).world).toEqual(
+      world,
     );
+  });
+  it("saves one tab's world without undoing another tab's changes", () => {
+    const kept = createLibrary(makePreset("tropical"));
+    const first = activeEntry(kept);
+    // Another tab opens a second world and renames the first.
+    const elsewhere = renameLibraryWorld(
+      openLibraryWorld(kept, { id: "second", world: makePreset("amazon") }),
+      first.id,
+      "Front shelf",
+    );
+    // This tab saves the second world over what the other tab left.
+    const saved = openLibraryWorld(elsewhere, {
+      id: "second",
+      world: { ...makePreset("amazon"), name: "My aquarium" },
+    });
+    const reloaded = parseLibrary(JSON.stringify(saved));
+    expect(reloaded.worlds.map((entry) => entry.world.name)).toEqual([
+      "My aquarium",
+      "Front shelf",
+    ]);
   });
   it("renames a world that isn't open and keeps animal names", () => {
     const open = makePreset("amazon");
@@ -128,9 +134,9 @@ describe("saved world collection", () => {
       JSON.stringify(renameLibraryWorld(library, "other", "Back shelf")),
     );
     expect(reloaded.worlds[1].world.name).toBe("Back shelf");
-    expect(activeWorld(reloaded).name).toBe(open.name);
+    expect(activeEntry(reloaded).world.name).toBe(open.name);
     expect(
-      activeWorld(reloaded).objects.find((o) => o.id === frog.id)?.name,
+      activeEntry(reloaded).world.objects.find((o) => o.id === frog.id)?.name,
     ).toBe("Pip");
   });
   it("rejects an invalid active id, duplicate ids, and invalid worlds", () => {
