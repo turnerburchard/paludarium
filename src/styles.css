@@ -1201,7 +1201,9 @@ button:hover:not(:disabled) {
 }
 .frog-list button {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  /* A fixed activity column, so a long activity wraps in place instead of
+     squeezing the name and making rows jump in height as it changes. */
+  grid-template-columns: minmax(0, 1fr) 7.5em auto;
   align-items: center;
   gap: 8px;
   width: 100%;
@@ -1221,6 +1223,12 @@ button:hover:not(:disabled) {
 .frog-list small {
   color: var(--text-soft);
   font-size: var(--text-small);
+}
+.frog-list button > small {
+  /* Reserve two lines even when both the name and activity are short. */
+  min-height: 2lh;
+  align-content: center;
+  text-align: right;
 }
 /* Stage and age, under the name. */
 .frog-list span small {
