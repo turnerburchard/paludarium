@@ -1711,3 +1711,74 @@ button:hover:not(:disabled) {
     font-size: 17px;
   }
 }
+
+/* Life events, stacked under the top bar for a few seconds each: small
+ * and quiet, in the heading serif, so they read as notes on the habitat
+ * rather than alerts. */
+.life-toasts {
+  position: absolute;
+  top: 88px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+.life-toasts li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 14px;
+  min-height: 32px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 18px #0003;
+  color: var(--text-soft);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-style: italic;
+  pointer-events: auto;
+  animation: toast-in 0.3s ease-out;
+}
+.life-toasts li > svg {
+  flex: none;
+  color: var(--accent);
+}
+.life-toasts li:not(:has(button)) {
+  padding-right: 16px;
+}
+.life-toasts button {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--selected);
+  color: var(--text);
+  cursor: pointer;
+}
+.life-toasts button:hover {
+  background: var(--hover);
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@media (max-width: 760px) {
+  .life-toasts {
+    top: 80px;
+  }
+}

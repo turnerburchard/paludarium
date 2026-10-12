@@ -20,6 +20,7 @@ import { TopBar } from "./ui/TopBar";
 import { shareLink, shortWorldLink, useWorldLink } from "./ui/useWorldLink";
 import { useWorldFiles } from "./ui/useWorldFiles";
 import { WatchCard } from "./ui/WatchCard";
+import { LifeToasts } from "./ui/LifeToasts";
 import { AboutDialog } from "./ui/AboutDialog";
 import type { World } from "./model/schema";
 import { WorldLinkError } from "./ui/WorldLinkError";
@@ -272,6 +273,7 @@ export default function App({
         />
       )}
       {!view && <BottomHud editor={editor} />}
+      {!uiHidden && <LifeToasts world={editor.savedWorld} onWatch={watch} />}
       {dialog === "share" && (
         <ShareDialog
           world={editor.savedWorld}
