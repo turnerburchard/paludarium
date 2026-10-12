@@ -55,6 +55,7 @@ Rules that keep this working:
 - Put logic in plain functions and cover it with Vitest unit tests in `tests/`. Filters, simulation rules, collision and placement math all belong there, with a fixed seed so results are the same on every run.
 - The quick browser checks (`npm run test:e2e`) are there to prove the built app loads, renders and its main flows run without errors. Don't add steps to them for a new feature. If a rule can only be checked by clicking through the UI, pull the rule out into a function and unit test it instead.
 - Browser checks shouldn't depend on timing, frame rate, or animals reaching a spot in a live scene. Software WebGL on CI is slow and uneven, so those checks turn flaky.
+- Browser checks share their setup in `tests/browser.mjs`. Every step gets the short `STEP_TIMEOUT`; only building a tank waits longer, through `waitForTank`. Don't raise a timeout to get past a slow step. Wait for the tank, or move the check into a unit test.
 - Don't write screenshots from tests unless the test compares them.
 
 ## Workflow
