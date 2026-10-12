@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Binoculars, Eye, Leaf, Moon, ScrollText } from "lucide-react";
-import { assets } from "../assets";
-import type { AssetKind, LogEntry, World } from "../model/schema";
+import { Binoculars, Leaf, Moon, ScrollText } from "lucide-react";
+import { assets, isAnimal } from "../assets";
+import type { LogEntry, World } from "../model/schema";
 import {
   useEcosystemSnapshot,
   type EcosystemController,
 } from "../simulation/useEcosystem";
 import { CreatureList } from "./CreatureList";
+import { describe } from "./lifeEvents";
 
 export function LifePanel({
   world,
@@ -23,34 +24,26 @@ export function LifePanel({
 }) {
   const snapshot = useEcosystemSnapshot(ecosystem);
   const { habitat } = ecosystem;
-  // Fish are listed by species instead.
-  const animals = snapshot.animals.filter(
-    (animal) => animal.surface !== "water",
-  );
-  // Fish by species, each with the ids of the fish of that kind.
-  const fish = new Map<AssetKind, string[]>();
-  for (const object of world.objects)
-    if (assets[object.kind].swims)
-      fish.set(object.kind, [...(fish.get(object.kind) ?? []), object.id]);
-  const fishIds = [...fish.values()].flat();
-  const fishCount = fishIds.length;
-  const inhabitants = animals.length + fishCount;
+  const animals = world.objects.filter((o) => isAnimal(o.kind));
+  const land = animals.filter((o) => !assets[o.kind].swims);
+  const fish = animals.filter((o) => assets[o.kind].swims);
 
   function surpriseMe() {
     // Busy land animals make the best viewing; fish are always on the move.
-    const active = animals
+    const active = snapshot.animals
       .filter(
         (animal) =>
-          animal.moving ||
-          animal.activity === "eating" ||
-          animal.activity === "bathing",
+          animal.surface !== "water" &&
+          (animal.moving ||
+            animal.activity === "eating" ||
+            animal.activity === "bathing"),
       )
       .map((animal) => animal.id);
-    const everyone = [...animals.map((animal) => animal.id), ...fishIds];
+    const fishIds = fish.map((o) => o.id);
     const pool = [...active, ...fishIds].filter((id) => id !== selectedId);
     const candidates = pool.length
       ? pool
-      : everyone.filter((id) => id !== selectedId);
+      : animals.map((o) => o.id).filter((id) => id !== selectedId);
     const id = candidates[Math.floor(Math.random() * candidates.length)];
     if (id) onWatch(id);
   }
@@ -67,7 +60,7 @@ export function LifePanel({
           {paused ? "Paused" : snapshot.phase === "day" ? "Day" : "Night"}
         </span>
         <span>
-          {inhabitants} {inhabitants === 1 ? "inhabitant" : "inhabitants"}
+          {animals.length} {animals.length === 1 ? "inhabitant" : "inhabitants"}
         </span>
       </div>
       {habitat.population > 0 && (
@@ -80,46 +73,36 @@ export function LifePanel({
           Breeding needs spare food and space.
         </p>
       )}
-      {inhabitants === 0 && (
+      {animals.length === 0 && (
         <p>Nothing lives here yet. Add an animal or some fish.</p>
       )}
-      {inhabitants > 0 && (
+      {animals.length > 0 && (
         <button className="life-follow" onClick={surpriseMe}>
           <Binoculars size={19} />
           Follow a creature
         </button>
       )}
-      {animals.length > 0 && (
+      {land.length > 0 && (
         <>
           <h3 className="life-group">Animals</h3>
           <CreatureList
-            world={world}
-            animals={animals}
+            objects={land}
+            animals={snapshot.animals}
             selectedId={selectedId}
             onWatch={onWatch}
           />
         </>
       )}
-      {fishCount > 0 && (
+      {fish.length > 0 && (
         <>
           <h3 className="life-group">Fish</h3>
-          <ul className="frog-list fish-list">
-            {[...fish].map(([kind, ids]) => (
-              <li key={kind}>
-                {/* Following a species picks one of its fish. */}
-                <button
-                  onClick={() =>
-                    onWatch(ids[Math.floor(Math.random() * ids.length)])
-                  }
-                  aria-pressed={ids.includes(selectedId ?? "")}
-                >
-                  <span>{assets[kind].name}</span>
-                  <small>×{ids.length}</small>
-                  <Eye size={15} />
-                </button>
-              </li>
-            ))}
-          </ul>
+          <CreatureList
+            objects={fish}
+            animals={snapshot.animals}
+            selectedId={selectedId}
+            onWatch={onWatch}
+            fish
+          />
         </>
       )}
       <LifeLog log={world.log ?? []} />
@@ -133,20 +116,6 @@ const logTime = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit",
 });
-
-function describe({ event, kind, cause }: LogEntry) {
-  const name = assets[kind].name;
-  if (event === "born") return `${name} born.`;
-  if (event === "grew-up") return `${name} grew up.`;
-  if (event === "grew-old") return `${name} is getting old.`;
-  if (cause === "age") return `${name} died of old age.`;
-  if (cause === "starved") return `${name} died of starvation.`;
-  if (cause === "crowded") return `${name} died of overcrowding.`;
-  if (cause === "drowned") return `${name} drowned.`;
-  if (cause === "stranded") return `${name} died out of water.`;
-  if (cause === "killed") return `${name} was killed.`;
-  return `${name} died.`;
-}
 
 /** Births and deaths, newest first, kept out of the way until asked for. */
 function LifeLog({ log }: { log: LogEntry[] }) {

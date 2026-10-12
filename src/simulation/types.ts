@@ -70,6 +70,7 @@ export type Activity =
   | "sleeping"
   | "resting"
   | "swimming"
+  | "schooling"
   | "courting";
 export interface AnimalSeed {
   id: string;

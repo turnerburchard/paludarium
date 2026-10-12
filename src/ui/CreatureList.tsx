@@ -1,38 +1,42 @@
 import { Eye } from "lucide-react";
 import { assets } from "../assets";
-import type { World } from "../model/schema";
+import { animalLife, lifeStage } from "../model/life";
+import type { HabitatObject } from "../model/schema";
 import type { AnimalState } from "../simulation/types";
 import { activityLabels, stageLabels } from "./AnimalStatus";
-import { animalLife, lifeStage } from "../model/life";
 
+/** Animals to watch, each with how old it is and what it is doing. */
 export function CreatureList({
-  world,
+  objects,
   animals,
   selectedId,
   onWatch,
+  fish = false,
 }: {
-  world: World;
+  objects: readonly HabitatObject[];
   animals: readonly AnimalState[];
   selectedId?: string | null;
   onWatch: (id: string) => void;
+  fish?: boolean;
 }) {
   return (
-    <ul className="frog-list">
-      {animals.map((animal) => {
-        const object = world.objects.find((object) => object.id === animal.id);
-        if (!object) return null;
-        const stage = lifeStage(animalLife(object));
+    <ul className={fish ? "frog-list fish-list" : "frog-list"}>
+      {objects.map((object) => {
+        const life = animalLife(object);
+        const animal = animals.find((animal) => animal.id === object.id);
         return (
-          <li key={animal.id}>
+          <li key={object.id}>
             <button
-              onClick={() => onWatch(animal.id)}
-              aria-pressed={animal.id === selectedId}
+              onClick={() => onWatch(object.id)}
+              aria-pressed={object.id === selectedId}
             >
               <span>
-                {object.name ?? assets[object.kind].name}
-                {stage !== "adult" && ` · ${stageLabels[stage]}`}
+                {object.name ?? assets[object.kind].name}{" "}
+                <small>
+                  {stageLabels[lifeStage(life)]} · {formatAge(life.age)}
+                </small>
               </span>
-              <small>{activityLabels[animal.activity]}</small>
+              <small>{animal && activityLabels[animal.activity]}</small>
               <Eye size={15} />
             </button>
           </li>
@@ -40,4 +44,12 @@ export function CreatureList({
       })}
     </ul>
   );
+}
+
+/** Age in active minutes, and hours once past the first. */
+function formatAge(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 1) return "under a minute";
+  if (minutes < 60) return `${minutes} min`;
+  return `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
 }

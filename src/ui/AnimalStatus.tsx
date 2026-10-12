@@ -17,6 +17,7 @@ export const activityLabels: Record<Activity, string> = {
   sleeping: "Sleeping",
   resting: "Resting",
   swimming: "Swimming",
+  schooling: "Schooling",
   courting: "Courting",
 };
 

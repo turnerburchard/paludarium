@@ -104,7 +104,7 @@ try {
     .click();
   await page.getByRole("button", { name: "Habitat life", exact: true }).click();
   await page
-    .getByRole("button", { name: /Red-eyed tree frog · Juvenile/ })
+    .getByRole("button", { name: /Red-eyed tree frog Juvenile/ })
     .click();
   await page.getByText("Juvenile", { exact: true }).waitFor();
   assert.equal(

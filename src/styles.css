@@ -1222,6 +1222,11 @@ button:hover:not(:disabled) {
   color: var(--text-soft);
   font-size: var(--text-small);
 }
+/* Stage and age, under the name. */
+.frog-list span small {
+  display: block;
+  color: var(--muted);
+}
 .life-needs {
   display: grid;
   gap: 5px;

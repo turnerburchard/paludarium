@@ -998,7 +998,7 @@ export class Ecosystem {
       bend: fish.curl,
     };
     state.moving = true;
-    state.activity = "swimming";
+    state.activity = fish.roaming ? "swimming" : "schooling";
     state.reason = fish.roaming
       ? "Exploring on its own"
       : "Swimming with the school";
