@@ -1,6 +1,12 @@
 # Rendering measurements
 
-The object limit remains 120. Static plants and hardscape are batched by material within each object; animals retain separate parts for animation. Terrain pebbles use one instanced mesh. Water ripples and their surface normals run in the vertex shader, updating one time uniform instead of rewriting 1,189 vertices and rebuilding normals every frame. The renderer observes live animal state without allocating a copied snapshot per animal per frame.
+The object limit is 500. Static plants and hardscape are batched by material within each object; animals retain separate parts for animation. Terrain pebbles use one instanced mesh. Water ripples and their surface normals run in the vertex shader, updating one time uniform instead of rewriting 1,189 vertices and rebuilding normals every frame. The renderer observes live animal state without allocating a copied snapshot per animal per frame.
+
+## Phone observations
+
+On October 12, 2026, the owner tested two shared 250-object worlds in Firefox on an iPhone described as approximately a 16 Pro: one with dense planting and one with animated fish. Both felt mostly smooth during steady use. Adding a plant or killing an animal caused roughly one second of severe lag, then normal performance resumed. These are subjective observations, without recorded frame timings or a sustained thermal test.
+
+The owner chose to raise the cap to 500. Real-phone testing at 500 remains pending in #72; the 250-object observations do not establish performance at the new cap. Edit-time habitat rebuilds remain tracked in #54.
 
 ## Crowded scene
 

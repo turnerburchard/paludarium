@@ -147,7 +147,7 @@ export const assetKinds = [
   "european-tree-frog",
 ] as const;
 export type AssetKind = (typeof assetKinds)[number];
-export const MAX_OBJECTS = 250;
+export const MAX_OBJECTS = 500;
 export const MAX_SPRINGS = 6;
 export const MAX_TANK_WIDTH = 24;
 export const MAX_TANK_DEPTH = 14;

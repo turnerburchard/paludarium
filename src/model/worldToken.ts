@@ -3,7 +3,7 @@
 
 /** Room for the largest world the editor can make: a full tank of animals on
  * the finest sculpted grid. */
-export const MAX_WORLD_SIZE = 500_000;
+export const MAX_WORLD_SIZE = 600_000;
 
 export async function packWorld(text: string) {
   const source = new TextEncoder().encode(text);
