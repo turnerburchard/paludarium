@@ -838,18 +838,42 @@ button:hover:not(:disabled) {
     display: none;
   }
 }
-/* Side by side when both labels fit on one line, stacked on phones. */
+.modal .about-lede {
+  margin: 18px 0 6px;
+  font-family: var(--font-heading);
+  font-size: var(--text-title);
+  line-height: var(--leading-title);
+  color: var(--text);
+}
+.about-lede + p {
+  margin: 0;
+}
+.about-lede,
+.about-lede + p {
+  text-wrap: pretty;
+}
 .about-actions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 10px;
+  gap: 8px;
   margin-top: 22px;
 }
 .about-actions button {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  gap: 14px;
+  text-align: left;
+}
+.about-actions button > span {
+  flex: 1;
+}
+.about-actions small {
+  display: block;
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+.about-actions button > svg {
+  flex: none;
+  color: var(--text-soft);
 }
 .about-footer {
   display: flex;
