@@ -1313,34 +1313,10 @@ button:hover:not(:disabled) {
 .moss-options {
   margin-top: 16px;
 }
-.moss-options > div {
-  display: flex;
-  gap: 4px;
+.moss-options .tile-grid {
   margin-top: 8px;
 }
-.moss-options button {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  min-height: 44px;
-  padding: 6px 0;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  font-size: var(--text-body);
-}
-.moss-options button[aria-pressed="true"] {
-  border-color: var(--accent);
-  background: var(--selected);
-}
-.moss-swatch {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-}
-.moss-swatch.bare {
+.swatch.bare {
   border: 1px dashed var(--line-strong);
 }
 @media (max-width: 760px) {

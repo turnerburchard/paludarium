@@ -19,15 +19,16 @@ export function MossPicker({
   return (
     <div className="moss-options" role="group" aria-label="Moss">
       <span className="section-label">MOSS</span>
-      <div>
+      <div className="tile-grid">
         {[undefined, ...mossSpecies].map((species) => (
           <button
             key={species ?? "none"}
+            className="tile"
             aria-pressed={value === species}
             onClick={() => onChange(species)}
           >
             <span
-              className={species ? "moss-swatch" : "moss-swatch bare"}
+              className={species ? "swatch" : "swatch bare"}
               style={{
                 background: species ? MOSS_COLORS[species][0] : undefined,
               }}
