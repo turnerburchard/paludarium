@@ -1,4 +1,4 @@
-import { Binoculars, Eye, Hammer, Leaf, X } from "lucide-react";
+import { Binoculars, CircleHelp, X } from "lucide-react";
 import type { EcosystemController } from "../simulation/useEcosystem";
 import { IconButton } from "./IconButton";
 import { Modal } from "./Modal";
@@ -25,58 +25,40 @@ export function AboutDialog({
           <X size={20} />
         </IconButton>
       </div>
-      <p>Build a planted tank, add frogs and fish, and watch them live.</p>
-      <dl>
-        <dt>
-          <Eye size={16} aria-hidden="true" /> Watch
-        </dt>
-        <dd>Tap any animal to see what it is doing and follow it.</dd>
-        <dt>
-          <Hammer size={16} aria-hidden="true" /> Build
-        </dt>
-        <dd>Add plants, rocks and animals, or reshape the land and water.</dd>
-        <dt>
-          <Leaf size={16} aria-hidden="true" /> Life
-        </dt>
-        <dd>
-          Animals eat insects that live among the plants. Over hours they grow,
-          breed and die.
-        </dd>
-      </dl>
-      <div className="dialog-actions">
+      <p>
+        Plant a tank, add frogs and fish, and watch them live. They hunt the
+        insects that shelter in your plants, and over a few hours they mature,
+        breed, and grow old.
+      </p>
+      <div className="about-actions">
         {creatureIds.length > 0 && (
           <button
-            className="intro-build-button"
             onClick={() =>
               onWatch(
                 creatureIds[Math.floor(Math.random() * creatureIds.length)],
               )
             }
           >
-            <Binoculars size={16} aria-hidden="true" /> Follow a creature
+            <Binoculars size={18} aria-hidden="true" /> Follow a creature
           </button>
         )}
-        <button onClick={onHelp}>Controls</button>
+        <button onClick={onHelp}>
+          <CircleHelp size={18} aria-hidden="true" /> Controls
+        </button>
       </div>
-      <div className="modal-footer">
-        <a
-          className="source-link"
-          href="https://turnerburchard.com"
-          target="_blank"
-          rel="noreferrer"
-        >
+      <footer className="about-footer">
+        <a href="https://turnerburchard.com" target="_blank" rel="noreferrer">
           Made by Turner Burchard
         </a>
-        <p> · </p>
+        <span aria-hidden="true">·</span>
         <a
-          className="source-link"
           href="https://github.com/turnerburchard/paludarium"
           target="_blank"
           rel="noreferrer"
         >
           View source
         </a>
-      </div>
+      </footer>
     </Modal>
   );
 }

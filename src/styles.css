@@ -666,11 +666,6 @@ button:hover:not(:disabled) {
   align-items: center;
   gap: 15px;
 }
-.modal-footer {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
 .modal h2 {
   line-height: var(--leading-title);
   font-size: var(--text-dialog);
@@ -702,7 +697,8 @@ button:hover:not(:disabled) {
   gap: 10px;
   margin-top: 12px;
 }
-.preset-options button {
+.preset-options button,
+.about-actions button {
   background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
@@ -715,7 +711,8 @@ button:hover:not(:disabled) {
 .preset-options button:last-child:nth-child(odd) {
   grid-column: 1 / -1;
 }
-.preset-options button:hover {
+.preset-options button:hover,
+.about-actions button:hover {
   background: var(--selected);
 }
 .filter-heading {
@@ -778,6 +775,9 @@ button:hover:not(:disabled) {
 .modal dl {
   margin: 25px 0;
 }
+.modal dl:last-child {
+  margin-bottom: 0;
+}
 .modal dt {
   display: flex;
   align-items: center;
@@ -788,6 +788,50 @@ button:hover:not(:disabled) {
 }
 .modal dd {
   margin: 4px 0;
+}
+.modal kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: var(--text-small);
+  color: var(--text);
+}
+/* Touch screens have no keyboard to speak of. */
+@media (pointer: coarse) {
+  .help-keys {
+    display: none;
+  }
+}
+/* Side by side when both labels fit on one line, stacked on phones. */
+.about-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-top: 22px;
+}
+.about-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.about-footer {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: var(--text-small);
+  color: var(--muted);
+}
+.about-footer a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+.about-footer a:hover {
+  color: var(--text);
 }
 .webgl-fallback {
   display: flex;
@@ -1313,10 +1357,6 @@ button:hover:not(:disabled) {
   border: 0;
   border-radius: 8px;
   font-size: var(--text-body);
-}
-.source-link {
-  color: var(--muted);
-  font-size: var(--text-small);
 }
 .world-link-copy {
   display: flex;

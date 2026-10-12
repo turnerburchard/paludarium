@@ -1,4 +1,4 @@
-import { Eye, Hammer, Move, Share2, X } from "lucide-react";
+import { Eye, Hammer, Keyboard, Move, Share2, X } from "lucide-react";
 import { IconButton } from "./IconButton";
 import { Modal } from "./Modal";
 
@@ -16,26 +16,36 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
           <Move size={16} aria-hidden="true" /> Look around
         </dt>
         <dd>
-          Drag to rotate. Pinch or scroll to zoom. Drag with two fingers to pan.
+          Drag to rotate the view. Pinch or scroll to zoom. Drag with two
+          fingers, or right-drag, to pan.
         </dd>
         <dt>
           <Hammer size={16} aria-hidden="true" /> Build
         </dt>
         <dd>
-          In Build, pick an object and tap the tank to place it. Tap a placed
-          object to move, turn, or remove it.
+          Open Build, pick an object, and tap the tank to place it. Tap anything
+          you placed to move, turn, or remove it.
         </dd>
         <dt>
           <Eye size={16} aria-hidden="true" /> Watch
         </dt>
-        <dd>Tap an animal, then Watch up close to follow it.</dd>
+        <dd>Tap an animal, then choose Watch up close to follow it.</dd>
         <dt>
           <Share2 size={16} aria-hidden="true" /> Save and share
         </dt>
         <dd>
-          Edits save in this browser. Worlds has presets and your saved tanks.
-          Share makes a link.
+          Changes save in this browser. Worlds holds the presets and your saved
+          tanks. Share makes a link anyone can open.
         </dd>
+        <div className="help-keys">
+          <dt>
+            <Keyboard size={16} aria-hidden="true" /> Keys
+          </dt>
+          <dd>
+            <kbd>Space</kbd> pause · <kbd>R</kbd> turn · <kbd>Delete</kbd>{" "}
+            remove · <kbd>Ctrl</kbd> <kbd>Z</kbd> undo
+          </dd>
+        </div>
       </dl>
     </Modal>
   );
