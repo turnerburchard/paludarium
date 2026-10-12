@@ -34,6 +34,7 @@ export function LifePanel({
       fish.set(object.kind, [...(fish.get(object.kind) ?? []), object.id]);
   const fishIds = [...fish.values()].flat();
   const fishCount = fishIds.length;
+  const inhabitants = animals.length + fishCount;
 
   function surpriseMe() {
     // Busy land animals make the best viewing; fish are always on the move.
@@ -65,7 +66,9 @@ export function LifePanel({
           )}
           {paused ? "Paused" : snapshot.phase === "day" ? "Day" : "Night"}
         </span>
-        <span>{animals.length + fishCount} inhabitants</span>
+        <span>
+          {inhabitants} {inhabitants === 1 ? "inhabitant" : "inhabitants"}
+        </span>
       </div>
       {habitat.population > 0 && (
         <p>
@@ -77,10 +80,10 @@ export function LifePanel({
           Breeding needs spare food and space.
         </p>
       )}
-      {animals.length + fishCount === 0 && (
+      {inhabitants === 0 && (
         <p>Nothing lives here yet. Add an animal or some fish.</p>
       )}
-      {animals.length + fishCount > 0 && (
+      {inhabitants > 0 && (
         <button className="life-follow" onClick={surpriseMe}>
           <Binoculars size={19} />
           Follow a creature

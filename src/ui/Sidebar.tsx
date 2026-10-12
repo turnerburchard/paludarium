@@ -5,6 +5,7 @@ import {
   Sprout,
 } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
+import { MAX_OBJECTS } from "../model/schema";
 import type { EcosystemController } from "../simulation/useEcosystem";
 import { EnvironmentPanel } from "./EnvironmentPanel";
 import { IconButton } from "./IconButton";
@@ -89,7 +90,9 @@ export function Sidebar({
         )}
       </div>
       <div className="sidebar-footer">
-        <span>{editor.world.objects.length} inhabitants & objects</span>
+        <span>
+          {editor.world.objects.length} of {MAX_OBJECTS} objects
+        </span>
       </div>
     </aside>
   );
