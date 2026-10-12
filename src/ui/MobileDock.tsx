@@ -14,7 +14,7 @@ const panels = [
 ] as const;
 
 /** Phones keep the scene clear: switching modes and Build's tools sit here,
- * within thumb reach. View shows only the way into Build. */
+ * within thumb reach. View shows only the Build icon. */
 export function MobileDock({
   view,
   onChangeMode,
@@ -27,9 +27,12 @@ export function MobileDock({
   if (view)
     return (
       <nav className="mobile-dock" aria-label="Tools">
-        <button onClick={() => onChangeMode(false)}>
-          <Hammer size={19} />
-          Build
+        <button
+          aria-label="Build"
+          title="Build"
+          onClick={() => onChangeMode(false)}
+        >
+          <Hammer size={22} />
         </button>
       </nav>
     );
