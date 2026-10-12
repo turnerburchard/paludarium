@@ -14,7 +14,7 @@ import { thumbnails } from "../scene/thumbnails";
 import { hasDryGround } from "../model/water";
 import { prebuilts } from "../model/prebuilts";
 import { LibraryFilter, type Place } from "./LibraryFilter";
-const categories: Category[] = ["Plants", "Hardscape", "Animals"];
+const categories: Category[] = ["Plants", "Animals", "Hardscape"];
 export function Library({ editor }: { editor: Editor }) {
   const [category, setCategory] = useState<Category>("Plants");
   const dryGround = hasDryGround(editor.world.environment);

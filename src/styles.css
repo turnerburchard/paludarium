@@ -301,10 +301,14 @@ button:hover:not(:disabled) {
 /* Small pills, so the categories read as a filter on the list below and not
    as a second row of panel tabs. */
 .category-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   justify-content: center;
   gap: 6px;
-  margin: 0 8px 14px;
+  padding: 0 8px 14px;
+  background: var(--panel);
 }
 .category-tabs button {
   min-width: 0;
@@ -1072,12 +1076,7 @@ button:hover:not(:disabled) {
     overflow-y: auto;
   }
   .category-tabs {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    margin: 0;
     padding: 0 12px 8px;
-    background: var(--panel);
   }
   .category-tabs button {
     min-height: 34px;
