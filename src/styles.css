@@ -1403,6 +1403,20 @@ button:hover:not(:disabled) {
   color: var(--text);
   font-size: var(--text-body);
 }
+.app-error {
+  display: grid;
+  min-height: 100dvh;
+  place-content: center;
+  justify-items: start;
+  gap: 12px;
+  padding: 24px;
+  background: #0e1c16;
+  color: var(--text);
+}
+.app-error p {
+  margin: 0;
+  color: var(--text-soft);
+}
 .dialog-actions {
   display: flex;
   flex-wrap: wrap;
