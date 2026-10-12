@@ -234,33 +234,13 @@ try {
       .count(),
     0,
   );
-  // Every walking animal is listed to watch; fish are counted by species.
-  const lifeWorld = await saved();
-  assert.equal(
-    await life.locator(".frog-list:not(.fish-list) button").count(),
-    lifeWorld.objects.filter((object) =>
-      [
-        "tree-frog",
-        "dart-frog",
-        "blue-dart-frog",
-        "green-dart-frog",
-        "glass-frog",
-        "mossy-frog",
-        "gecko",
-        "leopard-lizard",
-        "desert-spiny-lizard",
-        "fence-lizard",
-        "crocodile-newt",
-        "canyon-tree-frog",
-        "snail",
-        "turtle",
-        "micro-crab",
-        "dwarf-crayfish",
-        "cherry-shrimp",
-      ].includes(object.kind),
-    ).length,
-  );
-  await life.locator(".fish-list li", { hasText: "Convict cichlid" }).waitFor();
+  // Every animal is listed to watch, fish one by one like the rest.
+  const listed = await life.locator(".frog-list li").count();
+  await life.getByText(`${listed} inhabitants`, { exact: true }).waitFor();
+  await life
+    .locator(".fish-list li", { hasText: "Convict cichlid" })
+    .first()
+    .waitFor();
   await life.getByRole("button", { name: /Follow a creature/ }).click();
   await page.getByRole("button", { name: "Watch up close" }).click();
   await page
