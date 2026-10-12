@@ -22,7 +22,11 @@ function TurnButton({
   return (
     <button
       aria-label={left ? "Turn placement left" : "Turn placement right"}
-      title="Tap to turn, hold to spin"
+      title={
+        matchMedia("(pointer: coarse)").matches
+          ? "Tap to turn, hold to spin"
+          : `Click to turn, hold to spin (${left ? "Q" : "E"})`
+      }
       onPointerDown={(event) => {
         if (event.button !== 0) return;
         stop();

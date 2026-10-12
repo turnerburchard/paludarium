@@ -42,8 +42,10 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
             <Keyboard size={16} aria-hidden="true" /> Keys
           </dt>
           <dd>
-            <kbd>Space</kbd> pause · <kbd>R</kbd> turn · <kbd>Delete</kbd>{" "}
-            remove · <kbd>Ctrl</kbd> <kbd>Z</kbd> undo
+            <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> move the view ·{" "}
+            <kbd>Q</kbd> <kbd>E</kbd> turn · <kbd>Delete</kbd> remove ·{" "}
+            <kbd>Space</kbd> pause · <kbd>H</kbd> hide controls in View ·{" "}
+            <kbd>Ctrl</kbd> <kbd>Z</kbd> undo
           </dd>
         </div>
       </dl>

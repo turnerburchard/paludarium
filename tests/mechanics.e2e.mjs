@@ -140,7 +140,7 @@ try {
     "needs start collapsed",
   );
   await page.keyboard.press("Delete");
-  await page.keyboard.press("r");
+  await page.keyboard.press("e");
   await page.keyboard.press("Control+z");
   await page.waitForTimeout(400);
   assert.deepEqual(
@@ -360,7 +360,7 @@ try {
   await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page.getByRole("dialog", { name: "Worlds" }).waitFor();
   await page.keyboard.press("Backspace");
-  await page.keyboard.press("r");
+  await page.keyboard.press("e");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
   assert.deepEqual(

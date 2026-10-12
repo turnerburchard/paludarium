@@ -137,7 +137,7 @@ try {
   );
   await clickWorld(frog.x, 0.95, frog.z);
   await page.getByRole("button", { name: "Move", exact: true }).click();
-  await page.keyboard.press("r");
+  await page.keyboard.press("e");
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
   assert.equal(
     (await saved()).objects[0].rotation,

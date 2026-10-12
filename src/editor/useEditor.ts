@@ -294,12 +294,13 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
         e.preventDefault();
         remove();
       } else if (
-        e.key.toLowerCase() === "r" &&
+        (e.code === "KeyQ" || e.code === "KeyE") &&
         !e.metaKey &&
         !e.ctrlKey &&
         !e.altKey
       )
-        rotate(e.shiftKey ? -Math.PI / 6 : Math.PI / 6);
+        // Beside WASD, Q and E turn the way the Left and Right buttons do.
+        rotate(e.code === "KeyQ" ? -Math.PI / 6 : Math.PI / 6);
       // Space on a focused control presses it; elsewhere it pauses life.
       else if (e.code === "Space" && !target?.closest("button,a,summary")) {
         e.preventDefault();
