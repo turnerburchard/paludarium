@@ -559,7 +559,8 @@ function buildFrog(appearance: Appearance, random: () => number) {
           : part.material === "Black"
             ? dark
             : back;
-    const glassy = appearance.glassy && (skin || part.material === "Yellow");
+    const glassy =
+      Boolean(appearance.glassy) && (skin || part.material === "Yellow");
     const material = new THREE.MeshStandardMaterial({
       color: skin ? "#ffffff" : baseColor,
       vertexColors: skin,

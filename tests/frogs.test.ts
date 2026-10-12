@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
 import { buildAsset } from "../src/assets";
 import { frogClips } from "../src/assets/animals/frogs";
@@ -53,6 +53,15 @@ function bellyWidth(kind: AssetKind) {
 }
 
 describe("frog body shapes", () => {
+  it.each(["dart-frog", "glass-frog"] as const)(
+    "builds the %s without material warnings",
+    (kind) => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      buildAsset(kind, 5);
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
+    },
+  );
   it("makes squat frogs broader than climbers", () => {
     expect(bellyWidth("western-toad")).toBeGreaterThan(
       bellyWidth("tree-frog") * 1.3,
