@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import type { Editor } from "../editor/useEditor";
-import { MAX_WORLD_SIZE, parseWorld } from "../editor/persistence";
+import { parseWorld } from "../editor/persistence";
+import { MAX_WORLD_SIZE } from "../model/worldToken";
 
 /** Render the input once so importing creates a saved world from any menu. */
 export function useWorldFiles(editor: Editor, onCreated: () => void) {

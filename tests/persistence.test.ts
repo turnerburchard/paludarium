@@ -3,7 +3,6 @@ import {
   activeEntry,
   createLibrary,
   loadLibrary,
-  MAX_WORLD_SIZE,
   openLibraryWorld,
   parseLibrary,
   parseWorld,
@@ -12,6 +11,7 @@ import {
   worldFile,
 } from "../src/editor/persistence";
 import { makePreset } from "../src/model/presets";
+import { MAX_WORLD_SIZE } from "../src/model/worldToken";
 import {
   emptyWorld,
   LOG_LENGTH,

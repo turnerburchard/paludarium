@@ -882,11 +882,17 @@ button:hover:not(:disabled) {
   flex: none;
   color: var(--text-soft);
 }
+.about-privacy {
+  margin: 22px 0 0;
+  font-size: var(--text-small);
+  color: var(--muted);
+  text-align: center;
+}
 .about-footer {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin-top: 22px;
+  margin-top: 14px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
   font-size: var(--text-small);

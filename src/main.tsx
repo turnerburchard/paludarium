@@ -2,7 +2,12 @@ import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import { AppBoundary } from "./ui/AppBoundary";
-import { isWorldLink, readWorldLink } from "./editor/worldLinks";
+import {
+  isWorldLink,
+  readShortLink,
+  readWorldLink,
+  shortLinkId,
+} from "./editor/worldLinks";
 import "./styles.css";
 const root = createRoot(document.getElementById("root")!);
 let opening = 0;
@@ -16,7 +21,8 @@ function show(key: string, app: ReactNode) {
 async function openWorld() {
   const request = ++opening;
   const hash = location.hash;
-  if (!isWorldLink(hash)) {
+  const id = shortLinkId(location.search);
+  if (!id && !isWorldLink(hash)) {
     show("local", <App />);
     return;
   }
@@ -27,10 +33,10 @@ async function openWorld() {
     </main>,
   );
   try {
-    const world = await readWorldLink(hash);
-    if (request === opening) show(hash, <App sharedWorld={world} />);
+    const world = await (id ? readShortLink(id) : readWorldLink(hash));
+    if (request === opening) show(id ?? hash, <App sharedWorld={world} />);
   } catch {
-    if (request === opening) show(hash, <App shareError />);
+    if (request === opening) show(id ?? hash, <App shareError />);
   }
 }
 window.addEventListener("hashchange", () => void openWorld());

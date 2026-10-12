@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { World } from "../model/schema";
-import { createWorldLink } from "../editor/worldLinks";
+import { createShortLink, createWorldLink } from "../editor/worldLinks";
 import { project } from "./project";
 
 /** Builds the world's link ahead of the tap. Native sharing and copying need
@@ -26,6 +26,21 @@ export function useWorldLink(world: World) {
     };
   }, [world]);
   return prepared?.world === world ? prepared.url : undefined;
+}
+
+const shortLinks = new WeakMap<World, Promise<string | null>>();
+
+/** A short link for the world, or null when the share server can't keep it.
+ * Asking again for the same world reuses the first answer. */
+export function shortWorldLink(world: World) {
+  let link = shortLinks.get(world);
+  if (!link) {
+    link = createShortLink(world, project.url, AbortSignal.timeout(4000)).catch(
+      () => null,
+    );
+    shortLinks.set(world, link);
+  }
+  return link;
 }
 
 /** Opens the system share sheet. Resolves false when the browser has none or

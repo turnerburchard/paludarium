@@ -4,11 +4,11 @@ import type { World } from "../model/schema";
 import { downloadWorld, worldFile } from "../editor/persistence";
 import { IconButton } from "./IconButton";
 import { Modal } from "./Modal";
-import { copyText, shareLink } from "./useWorldLink";
+import { copyText, shareLink, shortWorldLink } from "./useWorldLink";
 
 export function ShareDialog({
-  world,
-  link,
+  world: current,
+  link: fullLink,
   onClose,
 }: {
   world: World;
@@ -16,6 +16,20 @@ export function ShareDialog({
   link: string | null | undefined;
   onClose: () => void;
 }) {
+  // The world as it was when sharing began. Life keeps changing the live one.
+  const [world] = useState(current);
+  const [shortLink, setShortLink] = useState<string | null>();
+  useEffect(() => {
+    let canceled = false;
+    void shortWorldLink(world).then((link) => {
+      if (!canceled) setShortLink(link);
+    });
+    return () => {
+      canceled = true;
+    };
+  }, [world]);
+  // Without the share server, the whole world goes in the link instead.
+  const link = shortLink === undefined ? undefined : (shortLink ?? fullLink);
   const [copied, setCopied] = useState(false);
   const [fileError, setFileError] = useState("");
   const [manual, setManual] = useState(false);

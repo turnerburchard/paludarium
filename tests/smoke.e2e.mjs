@@ -40,12 +40,17 @@ try {
   });
   // Software WebGL on CI can take half a minute to compile a new world's shaders.
   context.setDefaultTimeout(90_000);
+  // No share server runs here, so sharing falls back to the full link.
+  const toShareServer = (url) => url.endsWith("/api/worlds");
   context.on("page", (page) => {
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("console", (message) => {
-      if (message.type() === "error") errors.push(message.text());
+      if (message.type() === "error" && !toShareServer(message.location().url))
+        errors.push(message.text());
     });
-    page.on("requestfailed", (request) => errors.push(request.url()));
+    page.on("requestfailed", (request) => {
+      if (!toShareServer(request.url())) errors.push(request.url());
+    });
   });
   await context.addInitScript(
     ({ storageKey, original, url }) => {

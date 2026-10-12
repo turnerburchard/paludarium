@@ -77,6 +77,10 @@ export function AboutDialog({
           onClick={onHelp}
         />
       </div>
+      <p className="about-privacy">
+        Your worlds save in this browser. Shared worlds are stored so their
+        links work; nothing else is tracked.
+      </p>
       <footer className="about-footer">
         <a href="https://turnerburchard.com" target="_blank" rel="noreferrer">
           Made by Turner Burchard

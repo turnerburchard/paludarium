@@ -4,7 +4,7 @@ import {
   isWorldLink,
   readWorldLink,
 } from "../src/editor/worldLinks";
-import { MAX_WORLD_SIZE } from "../src/editor/persistence";
+import { MAX_WORLD_SIZE } from "../src/model/worldToken";
 import { makePreset } from "../src/model/presets";
 import { emptyWorld, MAX_OBJECTS } from "../src/model/schema";
 import { newTerrain } from "../src/model/terrainData";

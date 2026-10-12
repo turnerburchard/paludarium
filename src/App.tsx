@@ -17,7 +17,7 @@ import { RenameDialog } from "./ui/RenameDialog";
 import { SceneBoundary } from "./ui/SceneBoundary";
 import { Sidebar, type Panel } from "./ui/Sidebar";
 import { TopBar } from "./ui/TopBar";
-import { shareLink, useWorldLink } from "./ui/useWorldLink";
+import { shareLink, shortWorldLink, useWorldLink } from "./ui/useWorldLink";
 import { useWorldFiles } from "./ui/useWorldFiles";
 import { WatchCard } from "./ui/WatchCard";
 import { AboutDialog } from "./ui/AboutDialog";
@@ -164,13 +164,13 @@ export default function App({
 
   const worldLink = useWorldLink(editor.savedWorld);
   async function share() {
-    // Phones go straight to the share sheet; the dialog adds copying and files.
-    if (
-      worldLink &&
-      matchMedia("(pointer: coarse)").matches &&
-      (await shareLink(editor.savedWorld.name, worldLink))
-    )
-      return;
+    // Phones go straight to the share sheet; the dialog adds copying and
+    // files, and takes over if the short link took too long for the sheet.
+    if (matchMedia("(pointer: coarse)").matches) {
+      const world = editor.savedWorld;
+      const link = (await shortWorldLink(world)) ?? worldLink;
+      if (link && (await shareLink(world.name, link))) return;
+    }
     setDialog("share");
   }
 
@@ -180,7 +180,7 @@ export default function App({
   }
 
   function clearWorldLink() {
-    history.replaceState(null, "", location.pathname + location.search);
+    history.replaceState(null, "", location.pathname);
   }
 
   const files = useWorldFiles(editor, () => {
@@ -265,7 +265,7 @@ export default function App({
       {view && !watchingId && editor.isShared && (
         <nav className="shared-world-badge" aria-label="Shared world">
           <span title={world.name}>{world.name}</span>
-          <a href={location.pathname + location.search}>Back to my world</a>
+          <a href={location.pathname}>Back to my world</a>
         </nav>
       )}
       {/* An open card covers this corner and already shows the interface. */}

@@ -1,8 +1,26 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "paludarium",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-10-06",
   "assets": {
-    "directory": "dist"
-  }
+    "directory": "dist",
+    // Everything else is the static site, served without the Worker.
+    "run_worker_first": ["/api/*"],
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "paludarium",
+      "database_id": "c0b1c617-ca03-4d9a-bd80-b01591aa7fc0",
+    },
+  ],
+  "ratelimits": [
+    {
+      // Per visitor, enough for sharing and well short of filling the database.
+      "name": "SHARES",
+      "namespace_id": "1001",
+      "simple": { "limit": 20, "period": 60 },
+    },
+  ],
 }
