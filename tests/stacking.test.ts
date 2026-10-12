@@ -5,6 +5,7 @@ import { assets, buildAsset, catalog } from "../src/assets";
 import {
   defaultEnvironment,
   emptyWorld,
+  objectSchema,
   type HabitatObject,
 } from "../src/model/schema";
 import { objectBase, replaceObject } from "../src/model/stacking";
@@ -95,6 +96,19 @@ describe("stacked objects", () => {
     const b = object("b", 0.1, 0, { support: "a", lift: 0.2 });
     const moved = replaceObject([a, b], env, "a", { ...a, x: 0.5 });
     expect(find(moved, "b").x).toBeCloseTo(0.6);
+  });
+
+  it("stay in the tank and in a save's limits when a tall stack grows", () => {
+    const edge = env.width / 2;
+    const stone = object("stone", edge - 1, 0);
+    const top = object("top", edge - 0.4, 0, { support: "stone", lift: 3.5 });
+    const grown = replaceObject([stone, top], env, "stone", {
+      ...stone,
+      scale: 2,
+    });
+    const carried = find(grown, "top");
+    expect(carried.x).toBeLessThan(edge);
+    expect(objectSchema.safeParse(carried).success).toBe(true);
   });
 });
 

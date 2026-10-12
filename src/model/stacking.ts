@@ -1,6 +1,6 @@
 import { assets, modelHeight } from "../assets";
-import type { Environment, HabitatObject } from "./schema";
-import { groundHeight } from "./terrain";
+import { MAX_LIFT, type Environment, type HabitatObject } from "./schema";
+import { clamp, fitObject, groundHeight } from "./terrain";
 import { waterLevel } from "./water";
 
 /** Where an object's base sits: on the ground, on the stone or wood it was
@@ -72,7 +72,7 @@ export function restingOn(
   z: number,
   env: Environment,
 ): Pick<HabitatObject, "support" | "lift"> {
-  const lift = surface ? surface.y - groundHeight(x, z, env) : 0;
+  const lift = surface ? liftAt(surface.y, x, z, env) : 0;
   return surface && lift > 0.02
     ? { support: surface.support, lift }
     : { support: undefined, lift: undefined };
@@ -120,17 +120,19 @@ function carried(
   const dx = child.x - before.x,
     dz = child.z - before.z;
   // Matches how Three.js turns a model about its vertical axis.
-  const x = after.x + (dx * Math.cos(turn) + dz * Math.sin(turn)) * grow;
-  const z = after.z + (-dx * Math.sin(turn) + dz * Math.cos(turn)) * grow;
   const height = objectBase(child, env) - objectBase(before, env);
   const base = objectBase(after, env) + height * grow;
-  return {
-    ...child,
-    x,
-    z,
-    rotation: child.rotation + turn,
-    lift: Math.max(0, base - groundHeight(x, z, env)),
-  };
+  // A grown support can carry its edge past the glass.
+  const moved = fitObject(
+    {
+      ...child,
+      x: after.x + (dx * Math.cos(turn) + dz * Math.sin(turn)) * grow,
+      z: after.z + (-dx * Math.sin(turn) + dz * Math.cos(turn)) * grow,
+      rotation: child.rotation + turn,
+    },
+    env,
+  );
+  return { ...moved, lift: liftAt(base, moved.x, moved.z, env) };
 }
 
 /** Keeps stacked objects at their height on their supports when the ground
@@ -153,13 +155,18 @@ export function keepStacked(
       const base = objectBase(settle(support), after) + height;
       result = {
         ...object,
-        lift: Math.max(0, base - groundHeight(object.x, object.z, after)),
+        lift: liftAt(base, object.x, object.z, after),
       };
     }
     settled.set(object.id, result);
     return result;
   };
   return objects.map(settle);
+}
+
+/** How far a base at height `y` rests above the ground at x, z. */
+function liftAt(y: number, x: number, z: number, env: Environment) {
+  return clamp(y - groundHeight(x, z, env), 0, MAX_LIFT);
 }
 
 /** Whether `lower` holds up `upper`, directly or through things stacked
