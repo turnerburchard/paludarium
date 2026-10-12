@@ -122,9 +122,7 @@ try {
   await page
     .getByRole("button", { name: "About Paludarium", exact: true })
     .waitFor();
-  await page
-    .getByRole("button", { name: "Pause life (Space)", exact: true })
-    .click();
+  await page.keyboard.press("Space");
   const preview = await page.evaluate(async () => {
     const image = new Image();
     image.src = "/share.jpg";

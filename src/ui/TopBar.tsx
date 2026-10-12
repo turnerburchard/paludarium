@@ -14,8 +14,8 @@ import type { Editor } from "../editor/useEditor";
 import { IconButton } from "./IconButton";
 
 /** One header for both modes, so switching never moves a control. Build
- * adds the world name, and Undo and Redo at the start of the actions. Phones
- * drop Redo and Pause here and switch modes from the dock. */
+ * adds the world name, Undo, Redo and Pause; View leaves pausing to Space.
+ * Phones drop Redo and Pause here and switch modes from the dock. */
 export function TopBar({
   editor,
   view,
@@ -106,17 +106,19 @@ export function TopBar({
                 <Redo2 size={18} />
               </IconButton>
             </span>
+            <span className="life-toggle">
+              <IconButton
+                label={
+                  editor.paused ? "Resume life (Space)" : "Pause life (Space)"
+                }
+                onClick={() => editor.setPaused((p) => !p)}
+                active={editor.paused}
+              >
+                {editor.paused ? <Play size={18} /> : <Pause size={18} />}
+              </IconButton>
+            </span>
           </>
         )}
-        <span className="life-toggle">
-          <IconButton
-            label={editor.paused ? "Resume life (Space)" : "Pause life (Space)"}
-            onClick={() => editor.setPaused((p) => !p)}
-            active={editor.paused}
-          >
-            {editor.paused ? <Play size={18} /> : <Pause size={18} />}
-          </IconButton>
-        </span>
         <button
           className="worlds-button"
           aria-label="Worlds"
