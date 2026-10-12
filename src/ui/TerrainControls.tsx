@@ -56,7 +56,7 @@ function BrushTile({
         editor.setTool({
           type: "terrain",
           mode: tool.mode,
-          radius: brush?.radius ?? 0.65,
+          radius: brush?.radius ?? 0.4,
         });
       }}
     >
