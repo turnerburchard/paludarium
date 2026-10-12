@@ -1,16 +1,10 @@
 /** Routine CI checks the actual production bundle. Longer gesture regressions
  * remain in test:e2e:full rather than holding up every deployment. */
 import assert from "node:assert/strict";
+import { chromium } from "playwright";
 import { startServer } from "../scripts/server.mjs";
-import {
-  launchChromium,
-  savedWorld,
-  STEP_TIMEOUT,
-  storageKey,
-  waitForSave,
-  waitForTank,
-} from "./browser.mjs";
 
+const storageKey = "little-worlds:v4";
 const started = Date.now();
 const original = {
   version: 2,
@@ -30,13 +24,22 @@ const server = await startServer({ preview: true });
 const { url } = server;
 let browser;
 try {
-  browser = await launchChromium();
+  browser = await chromium.launch({
+    executablePath: process.env.CHROMIUM_PATH || undefined,
+    args: [
+      "--no-sandbox",
+      "--use-gl=angle",
+      "--use-angle=swiftshader",
+      "--enable-unsafe-swiftshader",
+    ],
+  });
   const errors = [];
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     hasTouch: true,
   });
-  context.setDefaultTimeout(STEP_TIMEOUT);
+  // Software WebGL on CI can take half a minute to compile a new world's shaders.
+  context.setDefaultTimeout(90_000);
   // No share server runs here, so sharing falls back to the full link.
   const toShareServer = (url) => url.endsWith("/api/worlds");
   context.on("page", (page) => {
@@ -62,7 +65,7 @@ try {
   );
   const page = await context.newPage();
   await page.goto(url);
-  await waitForTank(page);
+  await page.getByRole("button", { name: "About Paludarium" }).waitFor();
   assert.deepEqual(await page.getByRole("heading").allTextContents(), [
     "paludarium",
   ]);
@@ -114,13 +117,23 @@ try {
     .locator(".preset-options")
     .getByRole("button", { name: "Amazon river", exact: true })
     .click();
-  await waitForTank(page);
-  await waitForSave(
-    page,
-    (world) => world.name === "Amazon river",
-    "The Amazon river was not opened",
+  await page.waitForFunction((key) => {
+    const world = JSON.parse(localStorage.getItem(key), (key, value) =>
+      key === "" && value.worlds
+        ? value.worlds.find((entry) => entry.id === value.activeId).world
+        : value,
+    );
+    return world?.name === "Amazon river" && world.environment.water > 2;
+  }, storageKey);
+  const aquarium = await page.evaluate(
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ),
+    storageKey,
   );
-  const aquarium = await savedWorld(page);
   await page
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Add", exact: true })
@@ -223,10 +236,14 @@ try {
   await page
     .getByRole("button", { name: "Undo (⌘/Ctrl Z)", exact: true })
     .click();
-  await waitForSave(
-    page,
-    (world) => world.environment.water > 2,
-    "Undo did not restore the water",
+  await page.waitForFunction(
+    (key) =>
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).environment.water > 2,
+    storageKey,
   );
   await page.getByRole("button", { name: "Close panel", exact: true }).click();
   await page.getByRole("button", { name: "View", exact: true }).click();
@@ -248,33 +265,56 @@ try {
     { storageKey, original },
   );
   await page.goto(url + "/" + hash);
-  await waitForTank(page);
   // The link opens like a preset, and leaves the address once it has.
-  await page.waitForFunction(() => !location.hash);
-  await waitForSave(
-    page,
-    (world) => world.name === "Amazon river",
-    "The shared world was not opened",
+  await page.waitForFunction(
+    (key) =>
+      !location.hash &&
+      JSON.parse(localStorage.getItem(key), (key, value) =>
+        key === "" && value.worlds
+          ? value.worlds.find((entry) => entry.id === value.activeId).world
+          : value,
+      ).name === "Amazon river",
+    storageKey,
   );
   await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page.getByRole("button", { name: "Smoke check", exact: true }).click();
-  await waitForTank(page);
+  await page
+    .getByRole("dialog", { name: "Worlds" })
+    .waitFor({ state: "detached" });
   // Unedited, it goes the way of an unedited preset.
   await page.waitForFunction(
     (key) => JSON.parse(localStorage.getItem(key)).worlds.length === 1,
     storageKey,
   );
-  assert.deepEqual(await savedWorld(page), {
-    ...original,
-    environment: { ...original.environment, height: 2.9 },
-  });
+  assert.deepEqual(
+    await page.evaluate((key) => {
+      const library = JSON.parse(localStorage.getItem(key));
+      return library.worlds.find((entry) => entry.id === library.activeId)
+        .world;
+    }, storageKey),
+    { ...original, environment: { ...original.environment, height: 2.9 } },
+  );
+  const unreadable = await browser.newPage();
+  unreadable.setDefaultTimeout(90_000);
+  await unreadable.addInitScript((key) => {
+    // Seed once, so a reload can't hide an overwrite.
+    if (sessionStorage.getItem("seeded")) return;
+    sessionStorage.setItem("seeded", "yes");
+    localStorage.setItem(key, '{"version":1,"name":"Broken"');
+  }, storageKey);
+  await unreadable.goto(url);
+  // A save this version can't read opens the cloud forest, as a first visit does.
+  await unreadable.waitForFunction(
+    (key) => localStorage.getItem(key).includes('"name":"Cloud forest"'),
+    storageKey,
+  );
   assert.deepEqual(
     errors,
     [],
     "production rendering and interactions have no runtime errors",
   );
   console.log(
-    `PASS (${Math.round((Date.now() - started) / 1000)}s): production bundle, minimal mobile View, aquarium, water Undo, persistent scene, preview image, share snapshot, opening a shared world and switching away`,
+    `PASS (${Math.round((Date.now() - started) / 1000)}s): production bundle, minimal mobile View, aquarium, water Undo, persistent scene, preview image, share snapshot, opening a shared world and switching away, unreadable save replaced`,
   );
 } finally {
   await browser?.close();
