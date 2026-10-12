@@ -13,6 +13,7 @@ import { placementProblem, swimmingHeight } from "../src/model/water";
 import { boundedPosition, groundHeight } from "../src/model/terrain";
 import { assets, buildAsset, disposeAsset } from "../src/assets";
 import { Box3 } from "three";
+import stackedLookout from "../examples/stacked-lookout.json";
 import {
   terrainGrid,
   terrainPoint,
@@ -167,6 +168,11 @@ describe("safe files and valid habitat", () => {
 });
 
 describe("saved world compatibility", () => {
+  it("imports the example world", () => {
+    expect(parseWorld(JSON.stringify(stackedLookout)).name).toBe(
+      "Stacked lookout",
+    );
+  });
   it.each(["stone", "cork"])(
     "loads a saved %s backdrop world with its layout intact and clear glass",
     (material) => {
