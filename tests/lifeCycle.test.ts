@@ -138,15 +138,15 @@ describe("slow animal life cycles", () => {
   });
   it("gives shortages time to recover but eventually loses unsupported animals", () => {
     let world = habitat(["tree-frog"], 0);
-    world = advanceLife(world, 60);
-    expect(world.objects[0].life!.condition).toBeGreaterThan(0.9);
+    world = advanceLife(world, 10);
+    expect(world.objects[0].life!.condition).toBeGreaterThan(0.8);
     const hungry = world.objects[0].life!.condition;
     world.objects.push(...habitat([], 4).objects);
     world = advanceLife(world, 60);
     expect(world.objects[0].life!.condition).toBeGreaterThan(hungry);
+    // A bare tank is empty within the minute.
     world = habitat(["tree-frog"], 0);
-    for (let i = 0; i < 2000 && world.objects.length; i++)
-      world = advanceLife(world, 5);
+    for (let i = 0; i < 12; i++) world = advanceLife(world, 5);
     expect(world.objects).toHaveLength(0);
   });
   it("loses a stranded animal within minutes and keeps it from breeding", () => {
