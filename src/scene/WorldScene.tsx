@@ -34,19 +34,7 @@ import { useSceneTouch } from "./useSceneTouch";
 import { hideSplash } from "../ui/splash";
 import { randomFromSeed } from "../model/random";
 
-const lighting = {
-  day: { background: "#080b0d", intensity: 4.2, ambient: 0.25 },
-  golden: {
-    background: "#080b0d",
-    intensity: 3.2,
-    ambient: 0.25,
-  },
-  moon: {
-    background: "#06090e",
-    intensity: 1.6,
-    ambient: 0.2,
-  },
-};
+const BACKGROUND = "#080b0d";
 interface SceneProps {
   editor: Editor;
   resetCamera: number;
@@ -68,8 +56,7 @@ function Scene({
   onCameraStart,
 }: SceneProps) {
   const { world, tool } = editor,
-    env = world.environment,
-    light = lighting[env.light];
+    env = world.environment;
   const keyColor = new THREE.Color("#c6ddff").lerp(
     new THREE.Color("#ffcc8b"),
     env.warmth,
@@ -224,14 +211,14 @@ function Scene({
   }
   return (
     <>
-      <color attach="background" args={[light.background]} />
-      <fog attach="fog" args={[light.background, 23 * reach, 55 * reach]} />
-      <ambientLight intensity={light.ambient * env.brightness} />
+      <color attach="background" args={[BACKGROUND]} />
+      <fog attach="fog" args={[BACKGROUND, 23 * reach, 55 * reach]} />
+      <ambientLight intensity={0.25 * env.brightness} />
       <hemisphereLight args={["#dae4ef", "#141a17", 0.35]} />
       <directionalLight
         position={[-2, 9, 1]}
         color={keyColor}
-        intensity={light.intensity * env.brightness}
+        intensity={4.2 * env.brightness}
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-7 * reach}
@@ -421,7 +408,7 @@ function Scene({
         receiveShadow
       >
         <planeGeometry args={[200, 200]} />
-        <meshBasicMaterial color={light.background} />
+        <meshBasicMaterial color={BACKGROUND} />
       </mesh>
 
       <OrbitControls

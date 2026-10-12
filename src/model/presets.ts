@@ -872,8 +872,7 @@ function blackwater(): Environment {
       {
         ...defaultEnvironment,
         water: AQUARIUM_WATER,
-        light: "golden",
-        brightness: 0.8,
+        brightness: 0.6,
       },
       0.35,
     ),
@@ -1089,8 +1088,8 @@ function creekBed() {
     width: 9,
     depth: 4.2,
     water: 0.8,
-    light: "golden",
     warmth: 0.3,
+    brightness: 0.75,
   };
   const smooth = (t: number) => {
     t = Math.min(1, Math.max(0, t));

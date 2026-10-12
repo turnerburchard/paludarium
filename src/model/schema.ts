@@ -203,7 +203,6 @@ export const environmentSchema = z
     substrate: finite.min(0.12).max(0.55),
     water: finite.min(0).max(waterCeiling({ height: MAX_TANK_HEIGHT })),
     springs: z.array(springSchema).max(MAX_SPRINGS),
-    light: z.enum(["day", "golden", "moon"]),
     warmth: finite.min(0).max(1).default(0.45),
     brightness: finite.min(0.4).max(1.6).default(1),
     // Additive version-1 data: older saves keep their original bank and palette.
@@ -263,7 +262,6 @@ export const defaultEnvironment: Environment = {
   substrate: 0.25,
   water: 0.44,
   springs: [],
-  light: "day",
   warmth: 0.45,
   brightness: 1,
 };

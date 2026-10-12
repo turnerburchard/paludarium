@@ -32,20 +32,19 @@ const SPOT = (() => {
 })();
 
 describe("saved landscape brushes", () => {
-  it.each([
-    { light: "golden" as const, warmth: 0.9 },
-    { warmth: 0.8 },
-    { brightness: 1.3 },
-  ])("keeps the landscape and objects unchanged for lighting %j", (patch) => {
-    const world = makePreset("tropical");
-    const next = withEnvironment(world, patch);
-    expect(next.environment).toMatchObject(patch);
-    expect(next.objects).toBe(world.objects);
-    expect(next.environment.terrain).toBe(world.environment.terrain);
-    expect(onlyAppearanceDiffers(world.environment, next.environment)).toBe(
-      true,
-    );
-  });
+  it.each([{ warmth: 0.8 }, { brightness: 1.3 }])(
+    "keeps the landscape and objects unchanged for lighting %j",
+    (patch) => {
+      const world = makePreset("tropical");
+      const next = withEnvironment(world, patch);
+      expect(next.environment).toMatchObject(patch);
+      expect(next.objects).toBe(world.objects);
+      expect(next.environment.terrain).toBe(world.environment.terrain);
+      expect(onlyAppearanceDiffers(world.environment, next.environment)).toBe(
+        true,
+      );
+    },
+  );
   it("invalidates the landscape for physical environment changes", () => {
     const env = emptyWorld().environment;
     for (const patch of [

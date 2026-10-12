@@ -42,7 +42,6 @@ try {
           substrate: 0.25,
           water,
           springs: [],
-          light: "day",
           warmth: 0.45,
           brightness: 1,
         },

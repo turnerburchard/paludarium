@@ -36,18 +36,11 @@ export function groundHeight(x: number, z: number, env: Environment): number {
 export function onlyAppearanceDiffers(a: Environment, b: Environment): boolean {
   const {
       terrain: before,
-      light: lightA,
       warmth: warmthA,
       brightness: brightnessA,
       ...restA
     } = a,
-    {
-      terrain: after,
-      light: lightB,
-      warmth: warmthB,
-      brightness: brightnessB,
-      ...restB
-    } = b;
+    { terrain: after, warmth: warmthB, brightness: brightnessB, ...restB } = b;
   const keys = Object.keys(restA) as (keyof typeof restA)[];
   return (
     before?.heights === after?.heights &&

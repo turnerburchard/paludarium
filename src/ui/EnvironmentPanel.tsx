@@ -1,5 +1,4 @@
 import { useRef } from "react";
-import { Sun, Sunset, Moon } from "lucide-react";
 import type { Editor } from "../editor/useEditor";
 import { RangeControl } from "./RangeControl";
 import { TerrainControls } from "./TerrainControls";
@@ -16,31 +15,6 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
   const pausedBeforeDrag = useRef<boolean | null>(null);
   return (
     <div className="environment-panel">
-      <div className="section-label">LIGHT & ATMOSPHERE</div>
-      <div className="light-options">
-        {(
-          [
-            { key: "day", name: "Daylight", Icon: Sun },
-            { key: "golden", name: "Golden", Icon: Sunset },
-            { key: "moon", name: "Moonlight", Icon: Moon },
-          ] as const
-        ).map(({ key, name, Icon }) => (
-          <button
-            key={key}
-            className={env.light === key ? "active" : ""}
-            onClick={() =>
-              editor.changeEnvironment({
-                light: key,
-                warmth: key === "golden" ? 0.9 : key === "moon" ? 0.1 : 0.45,
-              })
-            }
-            aria-pressed={env.light === key}
-          >
-            <Icon size={21} />
-            {name}
-          </button>
-        ))}
-      </div>
       <div className="section-label">WATER</div>
       <div className="water-options">
         {[

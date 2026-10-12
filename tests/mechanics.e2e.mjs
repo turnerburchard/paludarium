@@ -15,7 +15,6 @@ const world = {
     substrate: 0.25,
     water: 0,
     springs: [],
-    light: "day",
     warmth: 0.45,
     brightness: 1,
   },
@@ -570,14 +569,19 @@ try {
     .click();
   const beforeLight = await fishPositions();
   assert.ok(beforeLight.shark && beforeLight.cory);
-  await fishPage.getByRole("button", { name: "Golden", exact: true }).click();
+  await fishPage.locator("summary", { hasText: "Fine-tune habitat" }).click();
+  await fishPage
+    .getByRole("slider", { name: "Light brightness", exact: true })
+    .focus();
+  await fishPage.keyboard.press("ArrowRight");
+  await fishPage.keyboard.press("Tab");
   await fishPage.waitForFunction(
     () =>
       JSON.parse(localStorage.getItem("little-worlds:v4"), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
-      ).environment.light === "golden",
+      ).environment.brightness === 1.05,
   );
   await fishPage.evaluate(
     () =>

@@ -189,6 +189,11 @@ describe("saved world compatibility", () => {
     expect(loaded.environment.warmth).toBe(0.45);
     expect(loaded.environment.brightness).toBe(1);
   });
+  it("drops the light presets older worlds saved", () => {
+    const legacy = JSON.parse(JSON.stringify(emptyWorld()));
+    legacy.environment.light = "golden";
+    expect(parseWorld(JSON.stringify(legacy))).toEqual(emptyWorld());
+  });
   it("preserves new species and lighting on round trip", () => {
     const world = emptyWorld();
     world.environment.warmth = 0.8;

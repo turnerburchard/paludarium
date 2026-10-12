@@ -611,29 +611,6 @@ button:hover:not(:disabled) {
   color: var(--muted);
   margin: 19px 0 15px;
 }
-.light-options {
-  display: flex;
-  gap: 6px;
-  margin: 0 0 30px;
-}
-.light-options button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  background: var(--surface);
-  border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 14px 8px;
-  font-size: var(--text-body);
-  flex: 1;
-  color: var(--text-soft);
-}
-.light-options button.active {
-  border-color: var(--accent);
-  background: var(--selected);
-  color: var(--text);
-}
 .panel-note {
   font-size: var(--text-body);
   line-height: var(--leading-body);
@@ -1073,20 +1050,6 @@ button:hover:not(:disabled) {
   .environment-panel .section-label,
   .environment-panel .panel-note {
     display: none;
-  }
-  .light-options {
-    grid-column: span 2;
-    margin: 5px 0;
-  }
-  .light-options button {
-    flex-direction: row;
-    justify-content: center;
-    padding: 8px;
-    gap: 7px;
-  }
-  .light-options button svg {
-    width: 16px;
-    height: 16px;
   }
   .modal {
     padding: 20px;

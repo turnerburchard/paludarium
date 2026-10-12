@@ -15,7 +15,6 @@ const original = {
     substrate: 0.25,
     water: 0.44,
     springs: [],
-    light: "day",
     warmth: 0.45,
     brightness: 1,
   },
@@ -122,7 +121,7 @@ try {
         .getByRole("button", { name: "Habitat settings", exact: true })
         .click();
       await page
-        .getByRole("button", { name: "Daylight", exact: true })
+        .getByRole("slider", { name: "Water level", exact: true })
         .waitFor();
       // The rest is the same save logic at either size, and software
       // rendering makes the large desktop canvas slow, so only the phone runs it.

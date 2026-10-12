@@ -66,7 +66,6 @@ try {
           substrate: 0.25,
           water: 0,
           springs: [],
-          light: "day",
           warmth: 0.45,
           brightness: 1,
         },
