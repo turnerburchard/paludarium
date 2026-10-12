@@ -7,7 +7,7 @@ import {
 import * as THREE from "three";
 import type { Vec3 } from "../simulation/types";
 import { assetRadius, isAnimal } from "../assets";
-import { juvenileScale } from "../simulation/lifeCycle";
+import { juvenileScale } from "../model/life";
 import type { FoliageVisitor } from "./foliageMotion";
 
 export function EcosystemLife({

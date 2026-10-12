@@ -25,7 +25,7 @@ import { TurtleRig } from "./turtleRig";
 import { SwimRig } from "./swimRig";
 import { FishCurl } from "./fishCurl";
 import { barbSwim } from "../assets/animals/barb";
-import { juvenileScale } from "../simulation/lifeCycle";
+import { juvenileScale } from "../model/life";
 import { FoliageMotion, type FoliageVisitor } from "./foliageMotion";
 
 interface Props {

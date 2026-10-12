@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { assets, buildAsset, disposeAsset } from "../assets";
-import { juvenileScale } from "../simulation/lifeCycle";
+import { juvenileScale } from "../model/life";
 import type { Remains as Body } from "../simulation/useEcosystem";
 
 // Seconds from death: the body rolls over and settles, lies still, then fades.

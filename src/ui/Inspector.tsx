@@ -19,7 +19,7 @@ import {
   useEcosystemSnapshot,
   type EcosystemController,
 } from "../simulation/useEcosystem";
-import { animalLife, MATURITY_AGE } from "../simulation/lifeCycle";
+import { animalLife, MATURITY_AGE } from "../model/life";
 import { AnimalStatus } from "./AnimalStatus";
 
 export function Inspector({

@@ -27,7 +27,7 @@ import { LandSurfaces } from "./landSurfaces";
 import { Solids } from "./solids";
 import { Ecosystem } from "./engine";
 import type { Body } from "./bodyPose";
-import { juvenileScale } from "./lifeCycle";
+import { juvenileScale } from "../model/life";
 import { HabitatGraph, distance } from "./navigation";
 import type {
   AnimalSeed,

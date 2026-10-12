@@ -11,14 +11,16 @@ import { parseWorld } from "../src/editor/persistence";
 import { makePreset } from "../src/model/presets";
 import { historyReducer } from "../src/editor/history";
 import {
-  advanceLife,
   animalLife,
+  BREEDING_INTERVAL,
+  juvenileScale,
+  MATURITY_AGE,
+} from "../src/model/life";
+import {
+  advanceLife,
   breed,
   habitatSupport,
-  juvenileScale,
   killAnimal,
-  MATURITY_AGE,
-  BREEDING_INTERVAL,
   readyToBreed,
   withAnimalPositions,
 } from "../src/simulation/lifeCycle";

@@ -3,7 +3,7 @@ import { assets } from "../assets";
 import type { World } from "../model/schema";
 import type { AnimalState } from "../simulation/types";
 import { activityLabels } from "./AnimalStatus";
-import { animalLife, MATURITY_AGE } from "../simulation/lifeCycle";
+import { animalLife, MATURITY_AGE } from "../model/life";
 
 export function CreatureList({
   world,
