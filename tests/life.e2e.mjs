@@ -28,11 +28,23 @@ function habitat(kind, water) {
       warmth: 0.45,
       brightness: 1,
     },
+    // Births need a pair to walk or swim to each other, which a slow
+    // software renderer can't be relied on to do in time. Old age needs only
+    // the clock, so the life changes checked here are a death.
     objects: [
       ...[0, 1].map((i) => ({
         ...object(kind, `adult-${i}`, -2 + i * 0.4, 0),
-        life: { age: 900, lifespan: 18000, condition: 1, breeding: 1800 },
+        life: { age: 900, lifespan: 18000, condition: 1, breeding: 0 },
       })),
+      {
+        ...object(kind, "born:young", -1.8, 0.4),
+        life: { age: 30, lifespan: 18000, condition: 1, breeding: 0 },
+        parents: ["adult-0", "adult-1"],
+      },
+      {
+        ...object(kind, "old", 1, 0),
+        life: { age: 17998, lifespan: 18000, condition: 1, breeding: 0 },
+      },
       ...[
         [-2.5, -1],
         [-1.5, -1],
@@ -135,7 +147,7 @@ try {
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
-      ).objects.length === 6,
+      ).objects.length === 8,
     storageKey,
   );
   assert.equal(
@@ -168,7 +180,7 @@ try {
       storageKey,
     ),
     saved,
-    "reload preserves the juvenile and its age",
+    "reload preserves the juvenile, its age and the death",
   );
 
   // Aquatic animals use the same lifecycle while retaining their separate swim engine.
@@ -213,17 +225,17 @@ try {
     .click();
   await fishPage.getByText("3 inhabitants", { exact: true }).waitFor();
   await fishPage.screenshot({ path: "/tmp/paludarium-life-phone.png" });
-  const bornFish = await fishPage.evaluate(
+  const youngFish = await fishPage.evaluate(
     (key) =>
       JSON.parse(localStorage.getItem(key), (key, value) =>
         key === "" && value.worlds
           ? value.worlds.find((entry) => entry.id === value.activeId).world
           : value,
-      ).objects.find((o) => o.id.startsWith("born:")),
+      ).objects.find((o) => o.id === "born:young"),
     storageKey,
   );
-  assert.equal(bornFish.kind, "fish");
-  assert.equal(bornFish.life.age, 0);
+  assert.equal(youngFish.kind, "fish");
+  assert.ok(youngFish.life.age > 30, "the juvenile fish has aged");
   await fishPage.reload();
   // Phones have no Pause button, so use the Space shortcut.
   await fishPage.locator("body").press("Space");
@@ -238,8 +250,8 @@ try {
     "watching and opening Build do not keep a preset",
   );
   assert.ok(
-    resumed.worlds[0].world.objects.some((o) => o.id === bornFish.id),
-    "offspring survive refresh in an unedited preset",
+    !resumed.worlds[0].world.objects.some((o) => o.id === "old"),
+    "life changes survive refresh in an unedited preset",
   );
   await fishPage.getByRole("button", { name: "Worlds", exact: true }).click();
   assert.equal(await fishPage.locator(".world-list .saved-world").count(), 0);
@@ -253,7 +265,9 @@ try {
   // A watched animal dying must leave neither a rendered ghost nor a stale watch card.
   await fishPage.close();
   const dying = habitat("tree-frog", 0.44);
-  dying.objects = dying.objects.filter((o) => o.id !== "adult-1");
+  dying.objects = dying.objects.filter(
+    (o) => !["adult-1", "born:young", "old"].includes(o.id),
+  );
   dying.objects[0].life = {
     age: 17999,
     lifespan: 18000,
@@ -302,7 +316,7 @@ try {
     .waitFor();
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: land and fish births, juvenile watching, pause, save/reload, Undo/Redo, watched animal death and the life log on desktop and phone",
+    "PASS: land and fish deaths, juvenile watching, pause, save/reload, Undo/Redo, watched animal death and the life log on desktop and phone",
   );
 } finally {
   await browser?.close();
