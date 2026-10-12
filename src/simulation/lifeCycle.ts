@@ -7,7 +7,8 @@ import {
   newLifespan,
 } from "../model/life";
 import { plantCondition } from "../model/plants";
-import { placementProblem } from "../model/water";
+import { objectBase } from "../model/stacking";
+import { placementProblem, waterLevel } from "../model/water";
 import {
   LOG_LENGTH,
   MAX_OBJECTS,
@@ -66,28 +67,59 @@ export function killAnimal(world: World, id: string, now = Date.now()): World {
 }
 
 export function habitatSupport(world: World) {
-  const population = world.objects.filter((o) => isAnimal(o.kind)).length;
-  const plants = world.objects.filter((o) => {
-    const asset = assets[o.kind];
+  const land = { population: 0, plants: 0 };
+  const aquatic = { population: 0, plants: 0 };
+  for (const object of world.objects) {
+    const asset = assets[object.kind];
+    if (isAnimal(object.kind)) {
+      (asset.habitat === "water" ? aquatic : land).population++;
+      continue;
+    }
     const planted =
       categoryOf(asset) === "Plants" ||
       asset.soil !== undefined ||
-      o.kind === "java-moss";
-    return (
-      planted &&
-      plantCondition(o, world.environment)?.thriving !== false &&
-      !placementProblem(o.kind, o.x, o.z, world.environment, o.lift ?? 0)
-    );
-  }).length;
-  const foodCapacity = plants / PLANTS_PER_ANIMAL;
+      object.kind === "java-moss";
+    if (
+      !planted ||
+      plantCondition(object, world.environment)?.thriving === false ||
+      placementProblem(
+        object.kind,
+        object.x,
+        object.z,
+        world.environment,
+        object.lift ?? 0,
+      )
+    )
+      continue;
+    // Amphibious plants feed the habitat they are actually planted in.
+    const inWater =
+      asset.habitat === "water" ||
+      (asset.habitat === "either" &&
+        objectBase(object, world.environment) <
+          waterLevel(object.x, object.z, world.environment));
+    (inWater ? aquatic : land).plants++;
+  }
+  const population = land.population + aquatic.population;
+  const plants = land.plants + aquatic.plants;
   const spaceCapacity =
     (world.environment.width * world.environment.depth) / SPACE_PER_ANIMAL;
+  const foodSupport = (group: typeof land) => ({
+    ...group,
+    capacity: group.plants / PLANTS_PER_ANIMAL,
+    food: group.population
+      ? Math.min(1, group.plants / PLANTS_PER_ANIMAL / group.population)
+      : 1,
+  });
+  const landSupport = foodSupport(land);
+  const aquaticSupport = foodSupport(aquatic);
   return {
     population,
     plants,
-    capacity: Math.min(foodCapacity, spaceCapacity),
-    food: population ? Math.min(1, foodCapacity / population) : 1,
+    capacity: Math.min(plants / PLANTS_PER_ANIMAL, spaceCapacity),
+    food: Math.min(landSupport.food, aquaticSupport.food),
     space: population ? Math.min(1, spaceCapacity / population) : 1,
+    land: landSupport,
+    aquatic: aquaticSupport,
   };
 }
 
@@ -102,10 +134,12 @@ export function advanceLife(
   if (seconds === 0 || !world.objects.some((o) => isAnimal(o.kind)))
     return world;
   const habitat = habitatSupport(world);
-  const support = Math.min(habitat.food, habitat.space);
   const log: LogEntry[] = [];
   const objects = world.objects.flatMap((object) => {
     if (!isAnimal(object.kind)) return [object];
+    const group =
+      assets[object.kind].habitat === "water" ? habitat.aquatic : habitat.land;
+    const support = Math.min(group.food, habitat.space);
     const previous = animalLife(object);
     const homeless = stranded.has(object.id);
     let change = 1 / RECOVERY_TIME;
@@ -133,7 +167,10 @@ export function advanceLife(
         event: "died",
         kind: object.kind,
         id: object.id,
-        cause: causeOfDeath(object, life, homeless, habitat),
+        cause: causeOfDeath(object, life, homeless, {
+          food: group.food,
+          space: habitat.space,
+        }),
       });
       return [];
     }
@@ -169,6 +206,11 @@ export function readyToBreed(world: World): Set<string> {
     world.objects
       .filter((object) => {
         if (!isAnimal(object.kind)) return false;
+        const group =
+          assets[object.kind].habitat === "water"
+            ? habitat.aquatic
+            : habitat.land;
+        if (group.population + 1 > Math.floor(group.capacity)) return false;
         const life = animalLife(object);
         return (
           life.age >= MATURITY_AGE &&

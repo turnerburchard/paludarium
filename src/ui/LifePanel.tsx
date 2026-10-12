@@ -66,7 +66,11 @@ export function LifePanel({
       {habitat.population > 0 && (
         <p>
           {habitat.food < 1
-            ? "More planting would support this population."
+            ? habitat.land.food < 1 && habitat.aquatic.food < 1
+              ? "More land and aquatic planting would support this population."
+              : habitat.aquatic.food < 1
+                ? "More aquatic planting would support this population."
+                : "More land planting would support this population."
             : "Enough planting for this population."}
           {habitat.space < 1 &&
             " The tank is crowded. A larger habitat would help."}{" "}

@@ -304,18 +304,15 @@ export const catalog: readonly AssetDefinition[] = Object.values(assets);
 export function categoryOf(asset: AssetDefinition): Category {
   return groupCategories[asset.group];
 }
-/** Underwater takes in anything that can live in the water, whatever its biome. */
-export function livesIn(asset: AssetDefinition, place: Biome | "Underwater") {
-  return place === "Underwater"
+/** Aquatic takes in anything that can live in the water, whatever its biome. */
+export function livesIn(asset: AssetDefinition, place: Biome | "Aquatic") {
+  return place === "Aquatic"
     ? asset.habitat !== "land"
     : asset.biomes.includes(place);
 }
-/** A prebuilt counts as underwater only when every piece can live there. */
-export function prebuiltLivesIn(
-  prebuilt: Prebuilt,
-  place: Biome | "Underwater",
-) {
-  return place === "Underwater"
+/** A prebuilt counts as aquatic only when every piece can live there. */
+export function prebuiltLivesIn(prebuilt: Prebuilt, place: Biome | "Aquatic") {
+  return place === "Aquatic"
     ? prebuilt.pieces.every((piece) => livesIn(assets[piece.kind], place))
     : prebuilt.biomes.includes(place);
 }

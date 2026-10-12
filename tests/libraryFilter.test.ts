@@ -8,10 +8,10 @@ describe("livesIn", () => {
     expect(livesIn(assets["prickly-pear"], "Tropical")).toBe(false);
   });
 
-  it("counts anything that can live in water as underwater", () => {
-    expect(livesIn(assets.pupfish, "Underwater")).toBe(true);
-    expect(livesIn(assets["java-fern"], "Underwater")).toBe(true);
-    expect(livesIn(assets.monstera, "Underwater")).toBe(false);
+  it("counts anything that can live in water as aquatic", () => {
+    expect(livesIn(assets.pupfish, "Aquatic")).toBe(true);
+    expect(livesIn(assets["java-fern"], "Aquatic")).toBe(true);
+    expect(livesIn(assets.monstera, "Aquatic")).toBe(false);
   });
 });
 
@@ -30,7 +30,7 @@ describe("prebuiltLivesIn", () => {
     ]);
   });
 
-  it("counts a prebuilt as underwater only when every piece can live there", () => {
-    expect(namesIn("Underwater")).toEqual([]);
+  it("counts a prebuilt as aquatic only when every piece can live there", () => {
+    expect(namesIn("Aquatic")).toEqual([]);
   });
 });

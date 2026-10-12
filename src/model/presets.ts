@@ -388,6 +388,8 @@ function cloudForest(
   // Glass frogs on the leaves over the brook and the lagoon.
   add("glass-frog", 1.2, -0.35, 1, 2.8);
   add("glass-frog", 2.75, -0.95, 1, 1.2);
+  add("cryptocoryne", 2.65, 1.15, 0.75, 2.6);
+  add("java-moss", 1.75, 1.95, 0.8, 1.2);
   return objects;
 }
 
@@ -477,6 +479,13 @@ function tropicalIsland(add: Add, objects: HabitatObject[]) {
     ["micro-crab", -0.75, 1.75, 5.0],
   ] as const)
     add(kind, x, z, 1, heading);
+  // Low planting follows the submerged ledges, leaving the lagoon open.
+  add("cryptocoryne", -1.65, 1.35, 0.8, 2.3);
+  add("cryptocoryne", -0.65, 1.7, 0.7, 4.1);
+  add("dwarf-sagittaria", -2.3, 1.5, 0.9, 0.6);
+  add("dwarf-sagittaria", -0.1, 1.8, 0.85, 2.8);
+  add("dwarf-sagittaria", 2.85, 1.45, 0.8, 1.3);
+  add("java-moss", 2.65, 1.0, 0.8, 3.5);
   return objects;
 }
 
@@ -596,6 +605,8 @@ function alpineCreek(add: Add, objects: HabitatObject[]) {
   add("dwarf-crayfish", 1.1, 0.25, 1, 4);
   add("dwarf-crayfish", 3.8, 1.5, 1, 2.4);
   add("canyon-tree-frog", 0.0, 1.6, 1.2, 0.4);
+  add("dwarf-sagittaria", 3.35, 1.45, 0.8, 1.8);
+  add("java-moss", 1.9, 0.65, 0.75, 0.9);
   return objects;
 }
 
@@ -869,6 +880,15 @@ function desertSpring(add: Add, shelter: Shelter, objects: HabitatObject[]) {
   add("bunchgrass", 4.6, 0.6, 1, 2.1);
   add("dead-tree", 6.0, 1.7, 0.8, 2.4);
   add("pebbles", 3.8, 2.2, 1, 1.1);
+  // Sparse ribbons at the back and low rosettes around the spring's rim
+  // keep the pupfish pool open against the surrounding bare sand.
+  add("vallisneria", 1.1, 0.15, 0.45, 1.1);
+  add("vallisneria", 2.15, 0.25, 0.5, 3.2);
+  add("dwarf-sagittaria", 0.85, 0.6, 0.8, 0.4);
+  add("dwarf-sagittaria", 0.7, 0.95, 0.7, 2.1);
+  add("dwarf-sagittaria", 1.65, 1.25, 0.85, 4.3);
+  add("dwarf-sagittaria", 2.65, 1.05, 0.75, 1.6);
+  add("dwarf-sagittaria", 2.45, 0.65, 0.7, 3.7);
   return objects;
 }
 

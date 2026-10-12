@@ -4,12 +4,7 @@ import type { Group } from "../assets";
 import { IconButton } from "./IconButton";
 import { Modal } from "./Modal";
 
-export const places = [
-  "Tropical",
-  "Temperate",
-  "Desert",
-  "Underwater",
-] as const;
+export const places = ["Tropical", "Temperate", "Desert", "Aquatic"] as const;
 export type Place = (typeof places)[number];
 
 export function LibraryFilter({

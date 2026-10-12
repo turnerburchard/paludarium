@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { catalog, isAnimal } from "../src/assets";
+import { assets, catalog, isAnimal } from "../src/assets";
 import {
   emptyWorld,
   LOG_LENGTH,
@@ -36,7 +36,14 @@ function object(kind: AssetKind, id: string): HabitatObject {
 function habitat(kinds: AssetKind[], plants = 8): World {
   return {
     ...emptyWorld(),
-    environment: { ...emptyWorld().environment, water: 0 },
+    environment: {
+      ...emptyWorld().environment,
+      water:
+        kinds.length > 0 &&
+        kinds.every((kind) => assets[kind].habitat === "water")
+          ? 2.65
+          : 0,
+    },
     objects: [
       ...kinds.map((kind, i) => {
         const animal = object(kind, `animal-${i}`);
@@ -169,6 +176,41 @@ describe("slow animal life cycles", () => {
       expect(ready[0]).toBe(ready[1]);
     },
   );
+  it("does not let land planting feed aquatic animals or aquatic planting feed land animals", () => {
+    for (const aquatic of [false, true]) {
+      const world = habitat([aquatic ? "fish" : "tree-frog"], 3);
+      world.objects[0].kind = aquatic ? "tree-frog" : "fish";
+      const support = habitatSupport(world);
+      expect(support.food).toBe(0);
+      expect(readyToBreed(world).size).toBe(0);
+      const next = advanceLife(world, 61);
+      expect(next.objects.some((o) => isAnimal(o.kind))).toBe(false);
+      expect(next.log?.at(-1)?.cause).toBe("starved");
+    }
+  });
+  it("keeps an aquatic shortage from hurting land animals", () => {
+    const world = habitat(["tree-frog"], 3);
+    world.objects.push(object("fish", "hungry-fish"));
+    const next = advanceLife(world, 61);
+    expect(
+      next.objects.filter((o) => isAnimal(o.kind)).map((o) => o.kind),
+    ).toEqual(["tree-frog"]);
+    expect(readyToBreed(world).has("animal-0")).toBe(true);
+  });
+  it("requires spare food in the parents' habitat for breeding", () => {
+    const world = habitat(["fish", "fish"], 2);
+    // Land plants provide spare total capacity, but cannot feed another fish.
+    world.objects.push(
+      ...Array.from({ length: 3 }, (_, i) => ({
+        ...object("java-fern", `dry-${i}`),
+        lift: 3,
+      })),
+    );
+    expect(habitatSupport(world).plants).toBe(5);
+    expect(habitatSupport(world).aquatic.food).toBe(1);
+    expect(readyToBreed(world).size).toBe(0);
+    expect(breed(world, pair)).toBe(world);
+  });
   it("does not kill scenery or exceed the life log limit", () => {
     const world = habitat(["tree-frog"]);
     expect(killAnimal(world, "plant-0")).toBe(world);
@@ -195,6 +237,9 @@ describe("slow animal life cycles", () => {
       const support = habitatSupport(makePreset(preset));
       expect(support.food, preset).toBe(1);
       expect(support.space, preset).toBe(1);
+      expect(support.aquatic.capacity, preset).toBeGreaterThanOrEqual(
+        support.aquatic.population + 1,
+      );
     }
     const world = habitat(["tree-frog"], 4);
     for (const plant of world.objects.slice(1)) plant.kind = "monstera";
