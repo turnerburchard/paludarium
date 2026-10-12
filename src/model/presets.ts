@@ -1,3 +1,5 @@
+import { assets, isAnimal } from "../assets";
+import { animalLife, BREEDING_INTERVAL, MATURITY_AGE } from "./life";
 import { createObjectId } from "./objectId";
 import { WORLD_VERSION } from "./migrations";
 import {
@@ -44,6 +46,43 @@ type Shelter = (
  * that one's base. */
 type Stack = (height: number) => void;
 export function makePreset(preset: Preset): World {
+  const world = presetWorld(preset);
+  return { ...world, objects: startFamilies(world.objects) };
+}
+
+/** Each starter tank opens with the youngest of its commoner species still
+ * growing, and one pair nearly ready to court, so a new player soon sees
+ * both. Land animals are easier to watch than fish, so the pair is a land
+ * pair where there is one. */
+function startFamilies(objects: HabitatObject[]) {
+  const species = new Map<AssetKind, HabitatObject[]>();
+  for (const object of objects)
+    if (isAnimal(object.kind))
+      species.set(object.kind, [...(species.get(object.kind) ?? []), object]);
+  const groups = [...species.values()];
+  const young = groups
+    .filter((group) => group.length >= 3)
+    .map((group) => group.at(-1));
+  const pair =
+    groups.find((group) => group.length >= 2 && !assets[group[0].kind].swims) ??
+    groups.find((group) => group.length >= 2);
+  const ready = pair?.slice(0, 2) ?? [];
+  return objects.map((object) => {
+    if (young.includes(object))
+      return {
+        ...object,
+        life: { ...animalLife(object), age: MATURITY_AGE * 0.3 },
+      };
+    if (ready.includes(object))
+      return {
+        ...object,
+        life: { ...animalLife(object), breeding: BREEDING_INTERVAL - 20 },
+      };
+    return object;
+  });
+}
+
+function presetWorld(preset: Preset): World {
   if (preset === "empty") return emptyWorld();
   let serial = 0;
   const objects: HabitatObject[] = [];

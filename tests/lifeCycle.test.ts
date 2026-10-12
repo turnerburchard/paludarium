@@ -76,6 +76,30 @@ describe("slow animal life cycles", () => {
       expect(world.log).toBeUndefined();
     },
   );
+  it.each([
+    "tropical",
+    "mountain",
+    "desert",
+    "grotto",
+    "amazon",
+    "island",
+  ] as const)(
+    "starts the %s preset with a juvenile and a pair soon ready to court",
+    (preset) => {
+      const world = makePreset(preset);
+      expect(
+        world.objects.some(
+          (o) => isAnimal(o.kind) && animalLife(o).age < MATURITY_AGE,
+        ),
+      ).toBe(true);
+      expect(readyToBreed(world).size).toBe(0);
+      const ready = [...readyToBreed(advanceLife(world, 25))].map(
+        (id) => world.objects.find((o) => o.id === id)!.kind,
+      );
+      expect(ready).toHaveLength(2);
+      expect(ready[0]).toBe(ready[1]);
+    },
+  );
   it("does not kill scenery or exceed the life log limit", () => {
     const world = habitat(["tree-frog"]);
     expect(killAnimal(world, "plant-0")).toBe(world);
