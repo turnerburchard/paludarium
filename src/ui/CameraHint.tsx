@@ -15,7 +15,7 @@ export function CameraHint({
     >
       {touch
         ? "Drag to look · Pinch to zoom · Two fingers to move"
-        : "Drag to look around · Scroll to zoom · Right-drag to move"}
+        : "Drag or Alt/Option-drag to look · Scroll to zoom · Right-drag to move"}
     </p>
   );
 }

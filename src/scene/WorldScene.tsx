@@ -1,3 +1,4 @@
+import { useBuildCamera } from "./useBuildCamera";
 import type { EcosystemController } from "../simulation/useEcosystem";
 import { EcosystemLife } from "./EcosystemLife";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -82,6 +83,7 @@ function Scene({
   }
   useCameraNavigation(controls, env, true, startCamera);
   useWheelZoom(controls, startCamera);
+  useBuildCamera(controls);
   const [cursor, setCursor] = useState<{
     x: number;
     z: number;
@@ -420,6 +422,11 @@ function Scene({
         maxPolarAngle={Math.PI / 2.05}
         minPolarAngle={0.16}
         enablePan
+        mouseButtons={{
+          LEFT: THREE.MOUSE.ROTATE,
+          MIDDLE: THREE.MOUSE.ROTATE,
+          RIGHT: THREE.MOUSE.PAN,
+        }}
         screenSpacePanning={false}
         touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
         enableRotate={tool.type !== "terrain"}

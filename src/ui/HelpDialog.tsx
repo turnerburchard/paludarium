@@ -17,7 +17,8 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
         </dt>
         <dd>
           Drag to rotate the view. Pinch or scroll to zoom. Drag with two
-          fingers, or right-drag, to pan.
+          fingers, or right-drag, to pan. While building, hold Alt/Option and
+          drag, or middle-drag, to rotate without using your tool.
         </dd>
         <dt>
           <Hammer size={16} aria-hidden="true" /> Build

@@ -118,6 +118,31 @@ try {
 
   const original = await saved();
   await page.getByRole("button", { name: "Raise ground", exact: true }).click();
+  async function cameraPosition() {
+    return page.evaluate(async (url) => {
+      const { _roots } = await import(url);
+      return _roots
+        .get(document.querySelector("canvas"))
+        .store.getState()
+        .camera.position.toArray();
+    }, fiberUrl);
+  }
+  for (const button of ["middle", "right", "left"]) {
+    const before = await cameraPosition();
+    const start = await point(0, 0);
+    if (button === "left") await page.keyboard.down("Alt");
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down({ button });
+    await page.mouse.move(start.x + 30, start.y + 15, { steps: 4 });
+    await page.mouse.up({ button });
+    if (button === "left") await page.keyboard.up("Alt");
+    assert.notDeepEqual(
+      await cameraPosition(),
+      before,
+      `${button} camera drag`,
+    );
+    assert.deepEqual(await saved(), original, "camera drag does not sculpt");
+  }
   const from = await point(-1.75, 0),
     to = await point(-1.05, 0.4);
   await page.mouse.move(from.x, from.y);
