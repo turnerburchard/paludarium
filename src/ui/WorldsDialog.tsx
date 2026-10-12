@@ -85,9 +85,7 @@ export function WorldsDialog({
             <div className="saved-world-heading">
               <button className="open-world" onClick={() => onOpen(id)}>
                 <strong>{world.name}</strong>
-                {id === editor.library.activeId && !editor.isShared && (
-                  <span>Current</span>
-                )}
+                {id === editor.library.activeId && <span>Current</span>}
               </button>
               <IconButton
                 label={`Options for ${world.name}`}

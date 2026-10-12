@@ -265,22 +265,7 @@ try {
     { storageKey, original },
   );
   await page.goto(url + "/" + hash);
-  await page.getByRole("navigation", { name: "Shared world" }).waitFor();
-  assert.deepEqual(
-    await page.evaluate(
-      (key) =>
-        JSON.parse(localStorage.getItem(key), (key, value) =>
-          key === "" && value.worlds
-            ? value.worlds.find((entry) => entry.id === value.activeId).world
-            : value,
-        ),
-      storageKey,
-    ),
-    original,
-  );
-  await page.getByRole("button", { name: "Build", exact: true }).click();
-  await page.getByRole("dialog", { name: "Build a copy" }).waitFor();
-  await page.getByRole("button", { name: "Build a copy", exact: true }).click();
+  // The link opens like a preset, and leaves the address once it has.
   await page.waitForFunction(
     (key) =>
       !location.hash &&
@@ -296,8 +281,9 @@ try {
   await page
     .getByRole("dialog", { name: "Worlds" })
     .waitFor({ state: "detached" });
+  // Unedited, it goes the way of an unedited preset.
   await page.waitForFunction(
-    (key) => JSON.parse(localStorage.getItem(key)).worlds.length === 2,
+    (key) => JSON.parse(localStorage.getItem(key)).worlds.length === 1,
     storageKey,
   );
   assert.deepEqual(
@@ -328,7 +314,7 @@ try {
     "production rendering and interactions have no runtime errors",
   );
   console.log(
-    `PASS (${Math.round((Date.now() - started) / 1000)}s): production bundle, minimal mobile View, aquarium, water Undo, persistent scene, preview image, share snapshot, safe adoption and world switching, unreadable save replaced`,
+    `PASS (${Math.round((Date.now() - started) / 1000)}s): production bundle, minimal mobile View, aquarium, water Undo, persistent scene, preview image, share snapshot, opening a shared world and switching away, unreadable save replaced`,
   );
 } finally {
   await browser?.close();

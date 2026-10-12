@@ -1454,21 +1454,6 @@ button:hover:not(:disabled) {
   margin: 0;
   color: var(--text-soft);
 }
-.dialog-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-.dialog-actions > button:not(.intro-build-button) {
-  min-height: 44px;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
 .life-heading > span:first-child {
   display: flex;
   align-items: center;
@@ -1534,8 +1519,7 @@ button:hover:not(:disabled) {
   font-variant-numeric: tabular-nums;
 }
 
-.ui-hidden
-  :is(.topbar, .mobile-dock, .inspector, .shared-world-badge, .camera-hint) {
+.ui-hidden :is(.topbar, .mobile-dock, .inspector, .camera-hint) {
   display: none;
 }
 /* Muted so it doesn't pull the eye away from the tank. */
@@ -1586,39 +1570,6 @@ button:hover:not(:disabled) {
     bottom: 92px;
   }
 }
-.shared-world-badge {
-  position: absolute;
-  bottom: max(16px, env(safe-area-inset-bottom));
-  left: 16px;
-  max-width: calc(100% - 32px);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: var(--text-small);
-  color: var(--muted);
-  z-index: 4;
-}
-.shared-world-badge > span {
-  max-width: 140px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.shared-world-badge > a {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-  color: var(--muted);
-  text-underline-offset: 3px;
-}
-/* Phones keep the badge above the dock's Build button. */
-@media (max-width: 760px) {
-  .shared-world-badge {
-    bottom: 92px;
-  }
-}
-
 .world-list {
   margin-top: 4px;
 }

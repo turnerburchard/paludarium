@@ -22,7 +22,7 @@ import { useWorldFiles } from "./ui/useWorldFiles";
 import { WatchCard } from "./ui/WatchCard";
 import { AboutDialog } from "./ui/AboutDialog";
 import type { World } from "./model/schema";
-import { SharedWorldDialog, WorldLinkError } from "./ui/SharedWorldDialog";
+import { WorldLinkError } from "./ui/WorldLinkError";
 
 export default function App({
   sharedWorld,
@@ -52,7 +52,6 @@ export default function App({
     | "worlds"
     | "help"
     | "about"
-    | "shared-copy"
     | "share-error"
     | "rename-animal"
     | null
@@ -135,7 +134,6 @@ export default function App({
           hideSplash();
           return;
         }
-        clearWorldLink();
         setWatchRequest(null);
         setDialog(null);
         setResetCamera((n) => n + 1);
@@ -152,14 +150,6 @@ export default function App({
     if (!next) setHasBuilt(true);
     setUiHidden(false);
     setView(next);
-  }
-
-  function changeMode(next: boolean) {
-    if (!next && editor.isShared) {
-      setDialog("shared-copy");
-      return;
-    }
-    setMode(next);
   }
 
   const worldLink = useWorldLink(editor.savedWorld);
@@ -179,12 +169,7 @@ export default function App({
     setDialog("worlds");
   }
 
-  function clearWorldLink() {
-    history.replaceState(null, "", location.pathname);
-  }
-
   const files = useWorldFiles(editor, () => {
-    clearWorldLink();
     setDialog(null);
     setWatchRequest(null);
     setResetCamera((n) => n + 1);
@@ -224,7 +209,7 @@ export default function App({
       <TopBar
         editor={editor}
         view={view}
-        onChangeMode={changeMode}
+        onChangeMode={setMode}
         onWorlds={openWorlds}
         onShare={() => void share()}
         onAbout={() => setDialog("about")}
@@ -242,7 +227,7 @@ export default function App({
         />
       )}
       {!sheetOpen && !selected && tool.type === "select" && (
-        <MobileDock view={view} onChangeMode={changeMode} onOpen={openPanel} />
+        <MobileDock view={view} onChangeMode={setMode} onOpen={openPanel} />
       )}
       {selected && tool.type === "select" && !watchingId && (
         <Inspector
@@ -261,12 +246,6 @@ export default function App({
           ecosystem={ecosystem}
           onStop={() => setWatchRequest(null)}
         />
-      )}
-      {view && !watchingId && editor.isShared && (
-        <nav className="shared-world-badge" aria-label="Shared world">
-          <span title={world.name}>{world.name}</span>
-          <a href={location.pathname}>Back to my world</a>
-        </nav>
       )}
       {/* An open card covers this corner and already shows the interface. */}
       {view && (uiHidden || !selected) && (
@@ -303,25 +282,8 @@ export default function App({
           onOpen={(id) => switchWorld(() => editor.openWorld(id))}
         />
       )}
-      {dialog === "shared-copy" && (
-        <SharedWorldDialog
-          error={!editor.saved ? editor.saveError : ""}
-          onClose={() => setDialog(null)}
-          onCopy={() => {
-            if (!editor.adoptSharedWorld()) return;
-            clearWorldLink();
-            setDialog(null);
-            setMode(false);
-          }}
-        />
-      )}
       {dialog === "share-error" && (
-        <WorldLinkError
-          onClose={() => {
-            clearWorldLink();
-            setDialog(null);
-          }}
-        />
+        <WorldLinkError onClose={() => setDialog(null)} />
       )}
       {dialog === "rename-animal" && selected && (
         <RenameDialog

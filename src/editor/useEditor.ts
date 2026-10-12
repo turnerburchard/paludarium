@@ -65,7 +65,16 @@ export type Tool =
   /** Adding a spring, or with an index, moving or changing that one. */
   | { type: "spring"; index: number | null };
 export function useEditor(readOnly = false, sharedWorld?: World) {
-  const [initial] = useState(loadLibrary);
+  // A shared world opens as a preset does: kept once it's edited.
+  const [initial] = useState(() =>
+    sharedWorld
+      ? openLibraryWorld(loadLibrary(), {
+          id: createObjectId(),
+          world: sharedWorld,
+          preview: true,
+        })
+      : loadLibrary(),
+  );
   // The worlds as last saved, by this tab or another one.
   const [library, setLibrary] = useState(initial);
   // The world this tab has open. Each tab saves only its own world, so tabs
@@ -79,9 +88,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     present: activeEntry(initial).world,
     future: [],
   });
-  const [isShared, setIsShared] = useState(!!sharedWorld);
-  const [shared, setShared] = useState(sharedWorld);
-  const world = isShared && shared ? shared : history.present;
+  const world = history.present;
   // A gesture previews only its original world; committing retires it.
   const [preview, setPreview] = useState<{ base: World; world: World } | null>(
     null,
@@ -115,17 +122,11 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     dispatch({ type: "commit", world: next });
   }, []);
   const updateLife = useCallback(
-    (base: World, next: World) => {
-      if (isShared) {
-        setShared((current) => (current === base ? next : current));
-        return;
-      }
-      dispatch({ type: "simulate", base, world: next });
-    },
-    [isShared],
+    (base: World, next: World) =>
+      dispatch({ type: "simulate", base, world: next }),
+    [],
   );
   useEffect(() => {
-    if (isShared) return;
     setSaving(true);
     const persist = () => {
       const saved = saveLibrary(
@@ -153,7 +154,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       window.removeEventListener("pagehide", persist);
       document.removeEventListener("visibilitychange", onHidden);
     };
-  }, [history.present, isShared, opened]);
+  }, [history.present, opened]);
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
       if (event.key !== STORAGE_KEY || !event.newValue) return;
@@ -170,14 +171,13 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       if (
         document.hidden &&
         mine &&
-        !isShared &&
         JSON.stringify(mine.world) !== JSON.stringify(history.present)
       )
         show(mine);
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, [history.present, isShared, opened.id]);
+  }, [history.present, opened.id]);
   useEffect(() => {
     stroke.current = null;
     setPreview(null);
@@ -473,7 +473,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     if (name !== world.name) commit({ ...world, name });
   }
   function renameWorld(id: string, name: string): boolean {
-    if (id === opened.id && !isShared) {
+    if (id === opened.id) {
       rename(name);
       return true;
     }
@@ -496,7 +496,6 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     }
     setLibrary(next);
     show(activeEntry(next));
-    setIsShared(false);
     setSaved(true);
     setSaveError("");
     return true;
@@ -524,7 +523,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     );
   }
   function openWorld(id: string): boolean {
-    if (id === opened.id && !isShared) return true;
+    if (id === opened.id) return true;
     return switchLibrary(
       openLibraryWorld(
         current,
@@ -540,18 +539,13 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       activeId: current.activeId === id ? worlds[0].id : current.activeId,
       worlds,
     };
-    if (id === current.activeId && !isShared) return switchLibrary(next);
+    if (id === current.activeId) return switchLibrary(next);
     if (!saveLibrary(next)) {
       setSaved(false);
       setSaveError("Your worlds could not be saved.");
       return false;
     }
     setLibrary(next);
-    if (id === current.activeId) {
-      const { world, preview } = activeEntry(next);
-      dispatch({ type: "open", world });
-      setOpened({ id: next.activeId, preview });
-    }
     return true;
   }
   function move() {
@@ -566,7 +560,6 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   }
   return {
     world: shown,
-    isShared,
     updateLife,
     library: current,
     createWorld,
@@ -574,7 +567,6 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     openWorld,
     deleteWorld,
     renameWorld,
-    adoptSharedWorld: () => (shared ? createWorld(shared) : false),
     savedWorld: world,
     previewEnvironment: (patch: Partial<Environment>) =>
       setPreview({ base: world, world: withEnvironment(world, patch) }),

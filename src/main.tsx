@@ -12,10 +12,10 @@ import "./styles.css";
 const root = createRoot(document.getElementById("root")!);
 let opening = 0;
 
-/** A new key starts the app afresh, along with a boundary that hasn't caught
+/** Each open starts the app afresh, along with a boundary that hasn't caught
  * anything yet. */
-function show(key: string, app: ReactNode) {
-  root.render(<AppBoundary key={key}>{app}</AppBoundary>);
+function show(request: number, app: ReactNode) {
+  root.render(<AppBoundary key={request}>{app}</AppBoundary>);
 }
 
 async function openWorld() {
@@ -23,7 +23,7 @@ async function openWorld() {
   const hash = location.hash;
   const id = shortLinkId(location.search);
   if (!id && !isWorldLink(hash)) {
-    show("local", <App />);
+    show(request, <App />);
     return;
   }
   // Resolve the layout before mounting the scene, avoiding a flash of another world.
@@ -34,9 +34,15 @@ async function openWorld() {
   );
   try {
     const world = await (id ? readShortLink(id) : readWorldLink(hash));
-    if (request === opening) show(id ?? hash, <App sharedWorld={world} />);
+    if (request !== opening) return;
+    // The world now lives in Worlds, so a reload opens it there rather than
+    // a fresh copy of the link.
+    history.replaceState(null, "", location.pathname);
+    show(request, <App sharedWorld={world} />);
   } catch {
-    if (request === opening) show(id ?? hash, <App shareError />);
+    if (request !== opening) return;
+    history.replaceState(null, "", location.pathname);
+    show(request, <App shareError />);
   }
 }
 window.addEventListener("hashchange", () => void openWorld());

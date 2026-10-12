@@ -527,7 +527,7 @@ try {
   await page.getByRole("button", { name: "View", exact: true }).click();
   await page.screenshot({ path: "/tmp/paludarium-view-phone.png" });
   await page.close();
-  // A shared layout is a preview, not an import over the recipient's work.
+  // A shared world opens as a preset does, beside the recipient's own work.
   const receiver = await browser.newPage({
     viewport: { width: 390, height: 844 },
   });
@@ -543,85 +543,37 @@ try {
       sessionStorage.setItem("receiver-initialized", "true");
     }
   }, ownWorld);
+  const savedWorld = (page, name) =>
+    page.evaluate((name) => {
+      const library = JSON.parse(localStorage.getItem("little-worlds:v4"));
+      const entry = name
+        ? library.worlds.find((entry) => entry.world.name === name)
+        : library.worlds.find((entry) => entry.id === library.activeId);
+      return entry?.world;
+    }, name);
   const receivedURL = `${url}/${new URL(sharedLink).hash}`;
   await receiver.goto(receivedURL);
-  await receiver
-    .getByRole("navigation", { name: "Shared world", exact: true })
-    .getByText("Cleanup check", { exact: true })
-    .waitFor();
-  await receiver.waitForTimeout(500);
-  const receiverSaved = () =>
-    receiver.evaluate(() =>
-      JSON.parse(localStorage.getItem("little-worlds:v4"), (key, value) =>
-        key === "" && value.worlds
-          ? value.worlds.find((entry) => entry.id === value.activeId).world
-          : value,
-      ),
-    );
-  assert.deepEqual(await receiverSaved(), ownWorld);
-  assert.equal(
-    await receiver
-      .getByRole("textbox", { name: "World name", includeHidden: true })
-      .count(),
-    0,
+  await receiver.waitForFunction(
+    () =>
+      !location.hash &&
+      localStorage.getItem("little-worlds:v4").includes("Cleanup check"),
   );
-  await receiver.getByRole("button", { name: "Build", exact: true }).click();
-  await receiver
-    .getByRole("dialog", { name: "Build a copy", exact: true })
-    .waitFor();
-  await receiver.screenshot({ path: "/tmp/paludarium-shared-copy-phone.png" });
-  await receiver
-    .getByRole("button", { name: "Keep watching", exact: true })
-    .click();
-  assert.deepEqual(await receiverSaved(), ownWorld);
-  await receiver.reload();
-  await receiver
-    .getByRole("navigation", { name: "Shared world", exact: true })
-    .getByText("Cleanup check", { exact: true })
-    .waitFor();
-  assert.deepEqual(await receiverSaved(), ownWorld);
-  await receiver.getByRole("button", { name: "Build", exact: true }).click();
-  await receiver
-    .getByRole("button", { name: "Keep watching", exact: true })
-    .click();
-  await receiver
-    .getByRole("link", { name: "Back to my world", exact: true })
-    .click();
-  await receiver
-    .getByRole("button", { name: "About Paludarium", exact: true })
-    .waitFor();
+  assert.deepEqual(await savedWorld(receiver), sharedWorld);
+  assert.deepEqual(await savedWorld(receiver, "My original habitat"), ownWorld);
   await receiver.getByRole("button", { name: "Build", exact: true }).click();
   assert.equal(
     await receiver
       .getByRole("textbox", { name: "World name", includeHidden: true })
       .inputValue(),
-    "My original habitat",
+    "Cleanup check",
   );
-  await receiver.goto(receivedURL);
-  await receiver
-    .getByRole("navigation", { name: "Shared world", exact: true })
-    .getByText("Cleanup check", { exact: true })
-    .waitFor();
-  await receiver.getByRole("button", { name: "Build", exact: true }).click();
-  await receiver
-    .getByRole("button", { name: "Build a copy", exact: true })
-    .click();
-  await receiver
-    .getByRole("navigation", { name: "Tools" })
-    .getByRole("button", { name: "View", exact: true })
-    .waitFor();
-  assert.deepEqual(await receiverSaved(), sharedWorld);
-  assert.equal(new URL(receiver.url()).hash, "");
-  // The copy's tank compiles its shaders now, which stalls software WebGL on
+  // The shared tank compiles its shaders now, which stalls software WebGL on
   // CI for about half a minute, so this one click waits longer.
   await receiver
     .getByRole("button", { name: "Worlds", exact: true })
     .click({ timeout: 60_000 });
   await receiver
-    .getByRole("button", {
-      name: "My original habitat",
-      exact: true,
-    })
+    .getByRole("button", { name: "My original habitat", exact: true })
     .click();
   await receiver.waitForFunction(
     () =>
@@ -631,15 +583,13 @@ try {
           : value,
       ).name === "My original habitat",
   );
-  assert.deepEqual(await receiverSaved(), ownWorld);
+  assert.deepEqual(await savedWorld(receiver), ownWorld);
   await receiver.goto(`${url}/#world=1.broken`);
   await receiver
     .getByRole("dialog", { name: "Couldn’t open this world", exact: true })
     .waitFor();
-  assert.deepEqual(await receiverSaved(), ownWorld);
-  await receiver
-    .getByRole("button", { name: "Return to my world", exact: true })
-    .click();
+  assert.deepEqual(await savedWorld(receiver), ownWorld);
+  await receiver.getByRole("button", { name: "Continue", exact: true }).click();
   assert.equal(new URL(receiver.url()).hash, "");
   await receiver.close();
 
@@ -648,35 +598,11 @@ try {
   });
   newcomer.on("pageerror", (error) => errors.push(error.message));
   await newcomer.goto(receivedURL);
-  await newcomer
-    .getByRole("navigation", { name: "Shared world", exact: true })
-    .getByText("Cleanup check", { exact: true })
-    .waitFor();
-  await newcomer.waitForTimeout(500);
-  assert.equal(
-    await newcomer.evaluate(() => localStorage.getItem("little-worlds:v4")),
-    null,
+  await newcomer.waitForFunction(
+    () => !location.hash && localStorage.getItem("little-worlds:v4"),
   );
-  await newcomer.getByRole("button", { name: "Build", exact: true }).click();
-  assert.equal(
-    await newcomer
-      .getByRole("button", { name: "Export my world", exact: true })
-      .count(),
-    0,
-  );
-  await newcomer
-    .getByRole("button", { name: "Build a copy", exact: true })
-    .click();
-  assert.deepEqual(
-    await newcomer.evaluate(() =>
-      JSON.parse(localStorage.getItem("little-worlds:v4"), (key, value) =>
-        key === "" && value.worlds
-          ? value.worlds.find((entry) => entry.id === value.activeId).world
-          : value,
-      ),
-    ),
-    sharedWorld,
-  );
+  assert.deepEqual(await savedWorld(newcomer), sharedWorld);
+  // A reload opens the world from Worlds, as the link has left the address.
   await newcomer.reload();
   await newcomer.getByRole("button", { name: "Build", exact: true }).click();
   assert.equal(
