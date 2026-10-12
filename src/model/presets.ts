@@ -1,4 +1,5 @@
 import { createObjectId } from "./objectId";
+import { WORLD_VERSION } from "./migrations";
 import {
   defaultEnvironment,
   AQUARIUM_WATER,
@@ -176,7 +177,7 @@ export function makePreset(preset: Preset): World {
     ])
       add("dwarf-sagittaria", x, z, 1.1);
     return {
-      version: 1,
+      version: WORLD_VERSION,
       name: "Amazon river",
       environment: blackwater(),
       objects,
@@ -184,7 +185,7 @@ export function makePreset(preset: Preset): World {
   }
   if (preset === "island")
     return {
-      version: 1,
+      version: WORLD_VERSION,
       name: "Tropical island",
       environment: islandLagoon(),
       objects: tropicalIsland(add, objects),
@@ -192,7 +193,7 @@ export function makePreset(preset: Preset): World {
   if (preset === "tropical") {
     const environment = forestFloor();
     return {
-      version: 1,
+      version: WORLD_VERSION,
       name: "Cloud forest",
       environment,
       objects: cloudForest(
@@ -205,7 +206,7 @@ export function makePreset(preset: Preset): World {
   }
   if (preset === "mountain")
     return {
-      version: 1,
+      version: WORLD_VERSION,
       name: "Alpine creek",
       environment: creekBed(),
       objects: alpineCreek(add, objects),
@@ -213,7 +214,7 @@ export function makePreset(preset: Preset): World {
   if (preset === "grotto") {
     const environment = grottoFloor();
     return {
-      version: 1,
+      version: WORLD_VERSION,
       name: "Limestone grotto",
       environment,
       objects: limestoneGrotto(
@@ -226,7 +227,7 @@ export function makePreset(preset: Preset): World {
   }
   const environment = desertBasin();
   return {
-    version: 1,
+    version: WORLD_VERSION,
     name: "Desert spring",
     environment,
     objects: desertSpring(add, shelters(environment), objects),

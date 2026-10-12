@@ -7,7 +7,7 @@ const origin = "http://paludarium.test";
 const safari = process.env.TOUCH_BROWSER === "webkit";
 const server = await startServer({ preview: true });
 const empty = {
-  version: 1,
+  version: 2,
   name: "HTTP empty tank",
   environment: {
     width: 7,

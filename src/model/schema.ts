@@ -8,6 +8,7 @@ import {
   waterCeiling,
 } from "./terrainData";
 import { mossSpecies } from "./moss";
+import { migrateWorld, WORLD_VERSION } from "./migrations";
 
 export const assetKinds = [
   "monstera",
@@ -235,9 +236,9 @@ const logEntrySchema = z.object({
     .optional(),
 });
 export type LogEntry = z.infer<typeof logEntrySchema>;
-export const worldSchema = z
+const currentWorldSchema = z
   .object({
-    version: z.literal(1),
+    version: z.literal(WORLD_VERSION),
     name: z.string().trim().min(1).max(60),
     environment: environmentSchema,
     objects: z.array(objectSchema).max(MAX_OBJECTS),
@@ -251,6 +252,8 @@ export const worldSchema = z
         message: "Every object must have a unique ID.",
       });
   });
+/** Reads a world saved by any version of the app. */
+export const worldSchema = z.preprocess(migrateWorld, currentWorldSchema);
 export type World = z.infer<typeof worldSchema>;
 export const defaultEnvironment: Environment = {
   width: 7,
@@ -264,7 +267,7 @@ export const defaultEnvironment: Environment = {
 };
 export function emptyWorld(): World {
   return {
-    version: 1,
+    version: WORLD_VERSION,
     name: "Untitled",
     environment: { ...defaultEnvironment },
     objects: [],

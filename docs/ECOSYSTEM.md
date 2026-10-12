@@ -60,7 +60,7 @@ The renderer does not decide where food is, when an animal sleeps, or how needs 
 
 No wall-clock catch-up or equilibrium jump exists. Hidden tabs and Pause freeze simulation; editing placement also pauses it. Frame gaps above 250 ms are discarded rather than replayed. Selecting a frog holds its position/needs while inspecting it.
 
-World JSON remains version 1 with optional validated `life` data on animals. Worlds without `life` data load with deterministic adult starting ages and lifespans derived from their seeds. Saves from before springs joined the environment are not migrated. Live activity, food, short-term needs and field notes restart on reload. Normal edits retain needs and available food, remapping animals to the new surface graph. Age, condition and offspring survive reload, export and sharing. Shared worlds evolve in memory without overwriting the recipient's own save.
+World JSON is version 2, with optional validated `life` data on animals. Worlds without `life` data load with deterministic adult starting ages and lifespans derived from their seeds. Version 1 worlds, from before springs joined the environment, open with none. Live activity, food, short-term needs and field notes restart on reload. Normal edits retain needs and available food, remapping animals to the new surface graph. Age, condition and offspring survive reload, export and sharing. Shared worlds evolve in memory without overwriting the recipient's own save.
 
 ## Forgiving population rules
 

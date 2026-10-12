@@ -7,7 +7,7 @@ import { startServer } from "../scripts/server.mjs";
 const storageKey = "little-worlds:v4";
 const started = Date.now();
 const original = {
-  version: 1,
+  version: 2,
   name: "Smoke check",
   environment: {
     width: 7,

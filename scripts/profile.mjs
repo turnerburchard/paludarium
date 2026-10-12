@@ -9,7 +9,7 @@ import { chromium } from "playwright";
 const [url = "http://127.0.0.1:5173", output = "/tmp/paludarium-profile.json"] =
   process.argv.slice(2);
 const world = {
-  version: 1,
+  version: 2,
   name: "Crowded habitat",
   environment: {
     width: 7,

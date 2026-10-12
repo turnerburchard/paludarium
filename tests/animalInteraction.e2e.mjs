@@ -34,7 +34,7 @@ try {
           fiberUrl = response.url();
       });
       const world = {
-        version: 1,
+        version: 2,
         name: "Animal interaction",
         environment: {
           width: 7,

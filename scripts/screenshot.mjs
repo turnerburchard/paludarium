@@ -53,7 +53,7 @@ try {
       localStorage.setItem(
         "little-worlds:v3",
         JSON.stringify({
-          version: 1,
+          version: 2,
           name: "Screenshot",
           environment: {
             width: 7,

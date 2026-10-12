@@ -9,6 +9,7 @@ import {
   type World,
 } from "../src/model/schema";
 import { makePreset } from "../src/model/presets";
+import { WORLD_VERSION } from "../src/model/migrations";
 import { placementProblem, swimmingHeight } from "../src/model/water";
 import { boundedPosition, groundHeight } from "../src/model/terrain";
 import { assets, buildAsset, disposeAsset } from "../src/assets";
@@ -120,7 +121,7 @@ describe("safe files and valid habitat", () => {
   it("rejects bad numbers, unsupported versions, duplicate IDs and excessive objects", () => {
     const world = makePreset("tropical");
     expect(() =>
-      parseWorld(JSON.stringify({ ...world, version: 2 })),
+      parseWorld(JSON.stringify({ ...world, version: WORLD_VERSION + 1 })),
     ).toThrow();
     expect(() =>
       parseWorld(

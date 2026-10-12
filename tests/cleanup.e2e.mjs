@@ -58,7 +58,7 @@ try {
     localStorage.setItem(
       "little-worlds:v4",
       JSON.stringify({
-        version: 1,
+        version: 2,
         name: "Cleanup check",
         environment: {
           width: 7,

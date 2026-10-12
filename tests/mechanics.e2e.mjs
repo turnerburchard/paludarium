@@ -6,7 +6,7 @@ import { startServer } from "../scripts/server.mjs";
 const server = await startServer();
 const { url } = server;
 const world = {
-  version: 1,
+  version: 2,
   name: "Mechanics check",
   environment: {
     width: 7,

@@ -17,7 +17,7 @@ function habitat(kind, water) {
     seed: 173,
   });
   return {
-    version: 1,
+    version: 2,
     name: "Life check",
     environment: {
       width: 7,

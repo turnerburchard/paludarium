@@ -7,7 +7,7 @@ const safari = process.env.TOUCH_BROWSER === "webkit";
 const server = await startServer();
 const { url } = server;
 const world = {
-  version: 1,
+  version: 2,
   name: "Aquarium touch check",
   environment: {
     width: 7,
