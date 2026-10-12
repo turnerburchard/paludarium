@@ -191,6 +191,9 @@ try {
       .locator(".world-list")
       .getByRole("button", { name: "My creek", exact: true })
       .click();
+    // The open waits a frame behind the loading screen, and autosave can show
+    // the same error first, so wait for the screen to lift again.
+    await page.locator("#splash.hidden").waitFor({ state: "attached" });
     await page
       .getByRole("dialog", { name: "Worlds" })
       .getByText("Your worlds could not be saved.", { exact: false })
