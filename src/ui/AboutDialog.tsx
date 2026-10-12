@@ -39,12 +39,17 @@ export function AboutDialog({
           <X size={20} />
         </IconButton>
       </div>
-      <p className="about-lede">
-        Plant a tank, add frogs and fish, and watch them live.
-      </p>
-      <p>
-        Animals hunt the insects living in your plants. Over a few hours they
-        mature, breed, and grow old.
+      <div className="about-definition">
+        <p>
+          <strong>pa·lu·dar·i·um</strong> <i>noun</i>
+        </p>
+        <p>
+          A glass tank of land and water, planted and home to small animals.
+        </p>
+      </div>
+      <p className="about-intro">
+        Pick a preset and watch its frogs and fish feed, grow, and raise young.
+        Or start from an empty tank and build your own.
       </p>
       <div className="about-actions">
         {creatureIds.length > 0 && (

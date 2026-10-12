@@ -838,18 +838,25 @@ button:hover:not(:disabled) {
     display: none;
   }
 }
-.modal .about-lede {
-  margin: 18px 0 6px;
-  font-family: var(--font-heading);
-  font-size: var(--text-title);
-  line-height: var(--leading-title);
-  color: var(--text);
+.about-definition {
+  margin-top: 20px;
+  padding-left: 14px;
+  border-left: 2px solid var(--line-strong);
+  text-wrap: pretty;
 }
-.about-lede + p {
+.modal .about-definition p {
   margin: 0;
 }
-.about-lede,
-.about-lede + p {
+.about-definition strong {
+  font-weight: 500;
+  color: var(--text);
+}
+.about-definition i {
+  margin-left: 4px;
+  color: var(--muted);
+}
+.modal .about-intro {
+  margin: 16px 0 0;
   text-wrap: pretty;
 }
 .about-actions {
