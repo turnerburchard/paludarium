@@ -10,6 +10,7 @@ export const activityLabels: Record<Activity, string> = {
   sleeping: "Sleeping",
   resting: "Resting",
   swimming: "Swimming",
+  courting: "Courting",
 };
 
 /** What an animal is doing, why, and how its needs stand. */

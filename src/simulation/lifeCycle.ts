@@ -110,12 +110,11 @@ export function habitatSupport(world: World) {
   };
 }
 
-/** `stranded` lists the animals with nowhere they can live. Births and
- * deaths are logged at `now`. */
+/** `stranded` lists the animals with nowhere they can live. Deaths are
+ * logged at `now`. */
 export function advanceLife(
   world: World,
   seconds: number,
-  random = Math.random,
   stranded: ReadonlySet<string> = new Set(),
   now = Date.now(),
 ): World {
@@ -156,34 +155,69 @@ export function advanceLife(
     return [{ ...object, life }];
   });
 
-  let population = objects.filter((o) => isAnimal(o.kind)).length;
-  const pairs = new Map<HabitatObject["kind"], HabitatObject>();
-  for (const object of objects.slice()) {
-    if (!isAnimal(object.kind)) continue;
-    const life = animalLife(object);
-    if (life.age < MATURITY_AGE || life.breeding < BREEDING_INTERVAL) continue;
-    const partner = pairs.get(object.kind);
-    if (!partner) {
-      pairs.set(object.kind, object);
-      continue;
-    }
-    // New offspring need their own share of food and space.
+  if (!log.length) return { ...world, objects };
+  return {
+    ...world,
+    objects,
+    log: [...(world.log ?? []), ...log].slice(-LOG_LENGTH),
+  };
+}
+
+/** Mature animals that have been well long enough to breed, while the
+ * habitat has food and space for one more. */
+export function readyToBreed(world: World): Set<string> {
+  const habitat = habitatSupport(world);
+  if (
+    habitat.population + 1 > Math.floor(habitat.capacity) ||
+    world.objects.length >= MAX_OBJECTS
+  )
+    return new Set();
+  return new Set(
+    world.objects
+      .filter((object) => {
+        if (!isAnimal(object.kind)) return false;
+        const life = animalLife(object);
+        return life.age >= MATURITY_AGE && life.breeding >= BREEDING_INTERVAL;
+      })
+      .map((object) => object.id),
+  );
+}
+
+/** Each pair that met while courting has a juvenile between them, so long
+ * as both are still ready and there is room for it. Births are logged at
+ * `now`. */
+export function breed(
+  world: World,
+  meetings: readonly (readonly [string, string])[],
+  random = Math.random,
+  now = Date.now(),
+): World {
+  let objects = world.objects;
+  const log: LogEntry[] = [];
+  for (const [a, b] of meetings) {
+    const current = { ...world, objects };
+    const ready = readyToBreed(current);
+    const first = objects.find((o) => o.id === a);
+    const second = objects.find((o) => o.id === b);
     if (
-      population + 1 > Math.floor(habitat.capacity) ||
-      objects.length >= MAX_OBJECTS
+      !first ||
+      !second ||
+      first.kind !== second.kind ||
+      !ready.has(a) ||
+      !ready.has(b)
     )
-      break;
+      continue;
     const seed = Math.floor(random() * 2147483647);
-    const birthId = `born:${seed}:${Math.floor(life.age)}`;
+    const birthId = `born:${seed}:${Math.floor(animalLife(first).age)}`;
     let serial = 0;
     let id = birthId;
     while (objects.some((o) => o.id === id)) id = `${birthId}:${++serial}`;
     const juvenile: HabitatObject = {
       id,
-      kind: object.kind,
-      x: object.x,
-      z: object.z,
-      rotation: object.rotation,
+      kind: first.kind,
+      x: (first.x + second.x) / 2,
+      z: (first.z + second.z) / 2,
+      rotation: random() * Math.PI * 2,
       scale: 1,
       seed,
       life: {
@@ -193,14 +227,17 @@ export function advanceLife(
         breeding: 0,
       },
     };
-    objects.push(juvenile);
-    log.push({ at: now, event: "born", kind: object.kind });
-    object.life = { ...life, breeding: 0 };
-    partner.life = { ...animalLife(partner), breeding: 0 };
-    pairs.delete(object.kind);
-    population++;
+    objects = [
+      ...objects.map((o) =>
+        o === first || o === second
+          ? { ...o, life: { ...animalLife(o), breeding: 0 } }
+          : o,
+      ),
+      juvenile,
+    ];
+    log.push({ at: now, event: "born", kind: first.kind });
   }
-  if (!log.length) return { ...world, objects };
+  if (!log.length) return world;
   return {
     ...world,
     objects,

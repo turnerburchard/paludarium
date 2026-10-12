@@ -13,7 +13,9 @@ import { createWorldEcosystem } from "./worldHabitat";
 import type { Ecosystem } from "./engine";
 import {
   advanceLife as evolveLife,
+  breed,
   habitatSupport,
+  readyToBreed,
   withAnimalPositions,
 } from "./lifeCycle";
 import type { Vec3 } from "./types";
@@ -100,6 +102,7 @@ export function useEcosystem(
       engine: createWorldEcosystem(world, sharesAnimals ? previous : undefined),
       lifeRemainder: 0,
     };
+    live.current.engine.court(readyToBreed(world));
     snapshotStore.set(live.current.engine.snapshot());
   }, [world, holding, snapshotStore]);
   useEffect(() => {
@@ -149,7 +152,8 @@ export function useEcosystem(
     const current = live.current!;
     if (paused) return;
     current.lifeRemainder += Math.min(seconds, 0.25);
-    if (current.lifeRemainder < 5) return;
+    // A pair that has just met has its juvenile straight away.
+    if (current.lifeRemainder < 5 && !current.engine.meetings.length) return;
     const stranded = new Set(
       current.world.objects
         .filter((o) => isAnimal(o.kind) && !canLive(o.id))
@@ -161,11 +165,9 @@ export function useEcosystem(
       current.world,
       (id) => current.engine.observeAnimal(id)?.position,
     );
-    const next = evolveLife(
-      placed,
-      current.lifeRemainder,
-      Math.random,
-      stranded,
+    const next = breed(
+      evolveLife(placed, current.lifeRemainder, stranded),
+      current.engine.takeMeetings(),
     );
     current.lifeRemainder = 0;
     if (next === current.world) return;
@@ -186,6 +188,7 @@ export function useEcosystem(
       });
     }
     current.world = next;
+    current.engine.court(readyToBreed(next));
     onLifeChange(previous, next);
   }
   return {

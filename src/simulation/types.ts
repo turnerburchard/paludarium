@@ -69,7 +69,8 @@ export type Activity =
   | "seeking-shelter"
   | "sleeping"
   | "resting"
-  | "swimming";
+  | "swimming"
+  | "courting";
 export interface AnimalSeed {
   id: string;
   species: SpeciesProfile;

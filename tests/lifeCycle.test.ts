@@ -13,13 +13,17 @@ import { historyReducer } from "../src/editor/history";
 import {
   advanceLife,
   animalLife,
+  breed,
   habitatSupport,
   juvenileScale,
   killAnimal,
   MATURITY_AGE,
   BREEDING_INTERVAL,
+  readyToBreed,
   withAnimalPositions,
 } from "../src/simulation/lifeCycle";
+
+const pair = [["animal-0", "animal-1"]] as const;
 
 function object(kind: AssetKind, id: string): HabitatObject {
   return { id, kind, x: -2, z: 0, rotation: 0, scale: 1, seed: 173 };
@@ -104,37 +108,64 @@ describe("slow animal life cycles", () => {
   });
   it.each(
     catalog.filter((asset) => isAnimal(asset.kind)).map((asset) => asset.kind),
-  )("lets a healthy %s pair have a juvenile of their own species", (kind) => {
+  )("lets a %s pair that met have a juvenile between them", (kind) => {
     const world = habitat([kind, kind]);
-    const next = advanceLife(world, 5, () => 0.5);
+    world.objects[1].x = -1;
+    const next = breed(world, pair, () => 0.5);
     const animals = next.objects.filter((o) => isAnimal(o.kind));
     expect(animals).toHaveLength(3);
     expect(animals[2].kind).toBe(kind);
+    expect(animals[2]).toMatchObject({ x: -1.5, z: 0 });
+    expect(animals[0].life?.breeding).toBe(0);
+    expect(animals[1].life?.breeding).toBe(0);
     expect(animals[2].life?.age).toBe(0);
     expect(juvenileScale(animals[2])).toBeLessThan(1);
     expect(new Set(animals.map((o) => o.id)).size).toBe(3);
     expect(world.objects).toHaveLength(10);
     expect(world.objects[0].life?.breeding).toBe(BREEDING_INTERVAL);
   });
-  it("requires two mature animals of the same species", () => {
-    expect(advanceLife(habitat(["tree-frog"]), 5).objects).toHaveLength(9);
+  it("waits for a pair to meet rather than breeding as time passes", () => {
     expect(
-      advanceLife(habitat(["tree-frog", "dart-frog"]), 5).objects,
+      advanceLife(habitat(["tree-frog", "tree-frog"]), 5).objects,
     ).toHaveLength(10);
-    const world = habitat(["tree-frog", "tree-frog"]);
-    world.objects[1].life!.age = 0;
-    expect(advanceLife(world, 5).objects).toHaveLength(10);
+  });
+  it("requires two ready animals of the same species", () => {
+    expect([...readyToBreed(habitat(["tree-frog", "tree-frog"]))]).toEqual([
+      "animal-0",
+      "animal-1",
+    ]);
+    const mixed = habitat(["tree-frog", "dart-frog"]);
+    expect(breed(mixed, pair)).toBe(mixed);
+    const young = habitat(["tree-frog", "tree-frog"]);
+    young.objects[1].life!.age = 0;
+    expect([...readyToBreed(young)]).toEqual(["animal-0"]);
+    expect(breed(young, pair)).toBe(young);
+    const resting = habitat(["tree-frog", "tree-frog"]);
+    resting.objects[1].life!.breeding = BREEDING_INTERVAL - 5;
+    expect(breed(resting, pair)).toBe(resting);
+    expect(breed(resting, [["animal-0", "missing"]])).toBe(resting);
   });
   it("does not breed in a bare or crowded tank", () => {
-    expect(
-      advanceLife(habitat(["tree-frog", "tree-frog"], 0), 5).objects,
-    ).toHaveLength(2);
+    const bare = habitat(["tree-frog", "tree-frog"], 0);
+    expect(readyToBreed(bare).size).toBe(0);
+    expect(breed(bare, pair)).toBe(bare);
     const world = habitat(
       Array.from({ length: 100 }, () => "tree-frog"),
       200,
     );
-    expect(advanceLife(world, 5).objects).toHaveLength(300);
+    expect(readyToBreed(world).size).toBe(0);
+    expect(breed(world, pair)).toBe(world);
     expect(habitatSupport(world).space).toBeLessThan(1);
+    // Room for one juvenile, not two.
+    const tight = habitat(
+      Array.from({ length: 4 }, () => "tree-frog"),
+      5,
+    );
+    const both = breed(tight, [
+      ["animal-0", "animal-1"],
+      ["animal-2", "animal-3"],
+    ]);
+    expect(both.objects.filter((o) => isAnimal(o.kind))).toHaveLength(5);
   });
   it("gives shortages time to recover but eventually loses unsupported animals", () => {
     let world = habitat(["tree-frog"], 0);
@@ -152,13 +183,12 @@ describe("slow animal life cycles", () => {
   it("loses a stranded animal within minutes and keeps it from breeding", () => {
     let world = habitat(["tree-frog", "tree-frog"]);
     const stranded = new Set(["animal-0"]);
-    world = advanceLife(world, 60, Math.random, stranded);
+    world = advanceLife(world, 60, stranded);
     const [frog, other] = world.objects;
     expect(frog.life!.condition).toBeLessThan(0.7);
     expect(frog.life!.breeding).toBe(0);
     expect(other.life!.condition).toBe(1);
-    for (let i = 0; i < 30; i++)
-      world = advanceLife(world, 5, Math.random, stranded);
+    for (let i = 0; i < 30; i++) world = advanceLife(world, 5, stranded);
     expect(world.objects.some((o) => o.id === "animal-0")).toBe(false);
     expect(world.objects.some((o) => o.id === "animal-1")).toBe(true);
   });
@@ -195,7 +225,7 @@ describe("slow animal life cycles", () => {
   });
   it("logs births and deaths with the cause of each death", () => {
     let world = habitat(["tree-frog", "tree-frog"]);
-    world = advanceLife(world, 5, () => 0.5, new Set(), 1000);
+    world = breed(world, pair, () => 0.5, 1000);
     expect(world.log).toEqual([{ at: 1000, event: "born", kind: "tree-frog" }]);
     const deaths = (world: World, stranded = new Set<string>()) => {
       for (
@@ -203,7 +233,7 @@ describe("slow animal life cycles", () => {
         i < 3000 && world.objects.some((o) => isAnimal(o.kind));
         i++
       )
-        world = advanceLife(world, 5, () => 0.5, stranded, 2000);
+        world = advanceLife(world, 5, stranded, 2000);
       return world.log!.filter((entry) => entry.event === "died");
     };
     const old = habitat(["fish"]);
@@ -227,7 +257,7 @@ describe("slow animal life cycles", () => {
       kind: "fish" as const,
     }));
     world.objects[0].life!.age = world.objects[0].life!.lifespan;
-    const next = advanceLife(world, 5, Math.random, new Set(), 500);
+    const next = advanceLife(world, 5, new Set(), 500);
     expect(next.log).toHaveLength(LOG_LENGTH);
     expect(next.log![0].at).toBe(1);
     expect(next.log!.at(-1)!.event).toBe("died");
@@ -235,7 +265,12 @@ describe("slow animal life cycles", () => {
   });
   it("can sustain successive generations from a planted pair", () => {
     let world = habitat(["tree-frog", "tree-frog"], 4);
-    for (let i = 0; i < 18_000; i++) world = advanceLife(world, 5, () => 0.5);
+    for (let i = 0; i < 18_000; i++) {
+      world = advanceLife(world, 5);
+      // The first two ready meet straight away.
+      const [a, b] = readyToBreed(world);
+      if (b) world = breed(world, [[a, b]], () => 0.5);
+    }
     const animals = world.objects.filter((o) => isAnimal(o.kind));
     expect(animals.length).toBeGreaterThanOrEqual(2);
     expect(animals.length).toBeLessThanOrEqual(4);

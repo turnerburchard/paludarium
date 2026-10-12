@@ -43,6 +43,14 @@ const WAYPOINT_REACH = 0.3;
  * for it to follow them. */
 const SWIM_RANGE = [1, 3.5];
 const SCHOOL_RANGE = 1.3;
+/** A courting pair spend this long face to face before their juvenile is
+ * born. One that can't reach its mate within COURTING_PATIENCE gives up
+ * for COURTING_BREAK. All in simulated seconds. */
+const KISS_TIME = 15;
+const COURTING_PATIENCE = 240;
+const COURTING_BREAK = 600;
+/** How close courting fish come, since they never stop swimming. */
+const FISH_MEETING = 0.6;
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const validAmount = (n: number) => Number.isFinite(n) && n >= 0;
 interface Agent {
@@ -78,6 +86,13 @@ interface Agent {
   idle?: boolean;
   /** Since when it has waited for another animal to get out of its way. */
   waitingSince?: number;
+  /** The animal it is courting, and since when. */
+  mate?: Agent;
+  courtingSince?: number;
+  /** Since when it has been face to face with its mate. */
+  together?: number;
+  /** It won't court again before this, having failed to reach its mate. */
+  shyUntil?: number;
   /** Where the body was drawn for the current and previous steps. */
   pose?: BodyPose;
   previousPose?: BodyPose;
@@ -103,6 +118,8 @@ export class Ecosystem {
   private readonly agents = new Map<string, Agent>();
   private readonly food = new Map<string, FoodPatch>();
   private readonly discoveries: Discovery[];
+  /** Courting pairs that have met, until taken. */
+  private readonly met: [string, string][] = [];
   private remainder = 0;
   private elapsed: number;
   private readonly random: () => number;
@@ -281,6 +298,75 @@ export class Ecosystem {
       discoveries: this.discoveries.map((note) => ({ ...note })),
     };
   }
+  /** Pairs up animals of a species that are ready to breed and can reach
+   * each other. Each pair makes for the other, and once they have met face
+   * to face `takeMeetings` reports them. */
+  court(ready: ReadonlySet<string>) {
+    for (const agent of this.agents.values())
+      if (
+        agent.mate &&
+        !(ready.has(agent.state.id) && ready.has(agent.mate.state.id))
+      )
+        this.part(agent);
+    const single = [...this.agents.values()].filter(
+      (agent) =>
+        !agent.mate &&
+        ready.has(agent.state.id) &&
+        this.elapsed >= (agent.shyUntil ?? 0),
+    );
+    for (const agent of single) {
+      if (agent.mate) continue;
+      const mate = single.find(
+        (other) =>
+          other !== agent &&
+          !other.mate &&
+          other.profile.id === agent.profile.id &&
+          this.graph
+            .routes(agent.state.nodeId, agent.profile)
+            .distances.has(other.state.nodeId),
+      );
+      if (!mate) continue;
+      agent.mate = mate;
+      mate.mate = agent;
+      agent.courtingSince = mate.courtingSince = this.elapsed;
+    }
+  }
+  /** Pairs that have met since last asked. */
+  takeMeetings() {
+    return this.met.splice(0);
+  }
+  get meetings(): readonly (readonly [string, string])[] {
+    return this.met;
+  }
+  /** Ends a courtship, and sends both back to their usual business. */
+  private part(agent: Agent) {
+    for (const one of [agent, agent.mate]) {
+      if (!one) continue;
+      one.mate = undefined;
+      one.together = undefined;
+      if (one.arrival === "courting") one.arrival = "resting";
+      if (one.state.activity === "courting" && !one.state.moving) {
+        one.state.activity = "resting";
+        one.reconsiderAt = Math.min(one.reconsiderAt, this.elapsed);
+      }
+    }
+  }
+  /** Face to face for long enough, the pair have met. */
+  private meet(agent: Agent, mate: Agent, near: boolean) {
+    if (!near) {
+      agent.together = undefined;
+      return;
+    }
+    agent.together ??= this.elapsed;
+    if (
+      mate.together === undefined ||
+      this.elapsed - agent.together < KISS_TIME ||
+      this.elapsed - mate.together < KISS_TIME
+    )
+      return;
+    this.met.push([agent.state.id, mate.state.id]);
+    this.part(agent);
+  }
   addFood(nodeId: string, amount: number) {
     this.graph.node(nodeId);
     if (!validAmount(amount))
@@ -437,8 +523,12 @@ export class Ecosystem {
         STEP *
           (0.0007 + (state.moving ? WALK_ENERGY * agent.profile.speed : 0)),
     );
-    // A long idle sit ends early once hunger or thirst presses.
-    if (agent.idle && (needs.hunger > 0.7 || needs.hydration < 0.35)) {
+    // A long idle sit ends early once hunger or thirst presses, or a mate
+    // is waiting.
+    if (
+      agent.idle &&
+      (needs.hunger > 0.7 || needs.hydration < 0.35 || agent.mate)
+    ) {
       agent.idle = false;
       agent.reconsiderAt = Math.min(agent.reconsiderAt, this.elapsed);
     }
@@ -449,6 +539,16 @@ export class Ecosystem {
       return;
     }
     if (state.activity === "resting") this.lookAround(agent);
+    const mate = agent.mate;
+    if (state.activity === "courting" && mate) {
+      const near =
+        !mate.state.moving &&
+        mate.state.activity === "courting" &&
+        distance(state.position, mate.state.position) <=
+          this.meetingDistance(agent, mate);
+      if (near) this.turnToward(agent, mate.state.position);
+      this.meet(agent, mate, near);
+    }
     if (state.activity === "eating") {
       const patch = this.food.get(state.nodeId);
       const available = patch?.amount ?? 0;
@@ -600,6 +700,39 @@ export class Ecosystem {
       go(food, "eating", "seeking-food", "Hunting small insects", 30);
       return;
     }
+    if (agent.mate && needs.energy >= 0.3) {
+      const mate = agent.mate;
+      if (this.elapsed - agent.courtingSince! > COURTING_PATIENCE) {
+        agent.shyUntil = mate.shyUntil = this.elapsed + COURTING_BREAK;
+        this.part(agent);
+      } else {
+        // One waits where it is for the other to come as near as there is
+        // room for.
+        const meeting =
+          agent.state.id < mate.state.id
+            ? state.nodeId
+            : [...roomy].sort(
+                (a, b) =>
+                  distance(this.graph.node(a).position, mate.state.position) -
+                  distance(this.graph.node(b).position, mate.state.position),
+              )[0];
+        const near =
+          distance(state.position, mate.state.position) <=
+          this.meetingDistance(agent, mate);
+        go(
+          meeting,
+          "courting",
+          "courting",
+          meeting !== state.nodeId
+            ? "Heading to its mate"
+            : near
+              ? "Courting"
+              : "Waiting for its mate",
+          meeting !== state.nodeId ? 2 : 6,
+        );
+        return;
+      }
+    }
     const unmet =
       thirsty && !water
         ? "No reachable damp shoreline. Shape a shallow pool or raise the water slightly."
@@ -714,6 +847,13 @@ export class Ecosystem {
     // With every need met, a need can cut the sit short.
     agent.idle = !unmet;
   }
+  /** Near enough for a courting pair to have met: as close as their bodies
+   * allow, and a step more, since they meet where there is a spot free. */
+  private meetingDistance(agent: Agent, mate: Agent) {
+    return (
+      0.8 * ((agent.profile.radius ?? 0.1) + (mate.profile.radius ?? 0.1)) + 0.4
+    );
+  }
   /** The other land animals, each with how close it and this one can come
    * before their bodies meet. */
   private neighbors(agent: Agent) {
@@ -782,6 +922,17 @@ export class Ecosystem {
       STEP / NORMAL_SPEED,
     );
     this.showSwimmer(agent, fish, lift);
+    const mate = agent.mate?.swimmer && agent.mate;
+    if (mate) {
+      if (this.elapsed - agent.courtingSince! > COURTING_PATIENCE) {
+        agent.shyUntil = mate.shyUntil = this.elapsed + COURTING_BREAK;
+        this.part(agent);
+        return;
+      }
+      agent.state.activity = "courting";
+      agent.state.reason = "Courting";
+      this.meet(agent, mate, distance(fish, mate.swimmer!) <= FISH_MEETING);
+    }
   }
   private showSwimmer(agent: Agent, fish: Swimmer, lift: number) {
     const state = agent.state;
@@ -818,6 +969,14 @@ export class Ecosystem {
     agent.state.nodeId = start.id;
     const navigation = this.graph.routes(start.id, agent.profile);
     const lengths = navigation.distances;
+    // A courting fish swims to its mate, checking often where it has got to.
+    const mate = agent.mate?.swimmer;
+    const meeting = mate && this.graph.nearest(mate, agent.profile)?.id;
+    if (meeting && lengths.has(meeting)) {
+      agent.path = navigation.pathTo(meeting);
+      agent.reconsiderAt = this.elapsed + 3;
+      return;
+    }
     let target: string | undefined;
     let nearest = SCHOOL_RANGE;
     for (const other of fish.roaming || blocked ? [] : this.agents.values()) {
