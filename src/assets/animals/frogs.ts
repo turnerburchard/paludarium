@@ -19,7 +19,7 @@ interface Appearance {
   markings?: string;
   /** Scales the spots, below 1 for fine speckles. */
   spotSize?: number;
-  /** A see-through belly and limbs, as on a glass frog. */
+  /** See-through skin over visible organs, as on a glass frog. */
   glassy?: boolean;
   /** Moss-like light and dark patches. */
   mottled?: boolean;
@@ -184,7 +184,7 @@ export const glassFrog: AssetDefinition = {
     buildFrog(
       {
         back: "#93cf45",
-        belly: "#c9dbb0",
+        belly: "#b8db8c",
         iris: "#d8c98f",
         feet: "#b4d461",
         height: 1.02,
@@ -504,6 +504,11 @@ function buildFrog(appearance: Appearance, random: () => number) {
     );
 
   for (const part of frogModel.parts) {
+    if (appearance.glassy && part.material === "Yellow") {
+      const inside = organs(part, shape);
+      root.add(inside);
+      inside.bind(skeleton);
+    }
     const indexed = new THREE.BufferGeometry();
     indexed.setAttribute(
       "position",
@@ -554,23 +559,32 @@ function buildFrog(appearance: Appearance, random: () => number) {
           : part.material === "Black"
             ? dark
             : back;
-    const clear = appearance.glassy && part.material === "Yellow";
+    const glassy = appearance.glassy && (skin || part.material === "Yellow");
     const material = new THREE.MeshStandardMaterial({
       color: skin ? "#ffffff" : baseColor,
       vertexColors: skin,
-      transparent: clear,
-      opacity: clear ? 0.55 : 1,
+      transparent: glassy,
+      opacity: glassy && !skin ? 0.45 : 1,
+      // The far side shows through the near one, as in clear skin.
+      side: glassy ? THREE.DoubleSide : THREE.FrontSide,
       flatShading: true,
       metalness: 0,
       roughness: skin
         ? appearance.roughness
         : part.material === "Red" || part.material === "Black"
           ? 0.28
-          : 0.75,
+          : glassy
+            ? 0.3
+            : 0.75,
     });
+    if (glassy && skin) letLightThrough(material);
     if (skin) {
       const positions = geometry.getAttribute("position");
-      const colors = new Float32Array(positions.count * 3);
+      const skinIndex = geometry.getAttribute("skinIndex");
+      const skinWeight = geometry.getAttribute("skinWeight");
+      // Glassy skin carries a see-through alpha with each color.
+      const channels = appearance.glassy ? 4 : 3;
+      const colors = new Float32Array(positions.count * channels);
       const color = new THREE.Color();
       // Paint whole faces so markings reinforce the broad planes, not a tiled grid.
       for (let i = 0; i < positions.count; i += 3) {
@@ -595,10 +609,26 @@ function buildFrog(appearance: Appearance, random: () => number) {
             Math.abs(mottling) * 0.9,
           );
         }
+        // The back is thickest; the limbs and lower flanks let light through.
+        let trunk = 0;
+        for (let k = 0; k < 4; k++)
+          if (TRUNK.has(skinIndex.getComponent(i, k)))
+            trunk += skinWeight.getComponent(i, k);
+        const alpha = THREE.MathUtils.lerp(
+          0.84,
+          THREE.MathUtils.clamp(0.6 + (y - 0.1) * 3, 0.6, 0.96),
+          trunk,
+        );
         for (let corner = 0; corner < 3; corner++)
-          colors.set([color.r, color.g, color.b], (i + corner) * 3);
+          colors.set(
+            [color.r, color.g, color.b, alpha].slice(0, channels),
+            (i + corner) * channels,
+          );
       }
-      geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+      geometry.setAttribute(
+        "color",
+        new THREE.BufferAttribute(colors, channels),
+      );
     }
     const mesh = new THREE.SkinnedMesh(geometry, material);
     mesh.castShadow = true;
@@ -607,6 +637,114 @@ function buildFrog(appearance: Appearance, random: () => number) {
     mesh.bind(skeleton);
   }
   return root;
+}
+
+/** Adds the light from lamps behind a surface, as thin skin glows when held
+ * up to the light. The more see-through the skin, the more comes through. */
+function letLightThrough(material: THREE.MeshStandardMaterial) {
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <lights_fragment_end>",
+      `#include <lights_fragment_end>
+      #if NUM_DIR_LIGHTS > 0
+      for (int i = 0; i < NUM_DIR_LIGHTS; i++) {
+        float behind = saturate(dot(-normal, directionalLights[i].direction));
+        reflectedLight.directDiffuse += diffuseColor.rgb *
+          directionalLights[i].color * behind * (1.0 - diffuseColor.a) * 2.0;
+      }
+      #endif`,
+    );
+  };
+  material.customProgramCacheKey = () => "frog-skin-glow-v1";
+}
+
+/** A glass frog's organs as seen through its belly: the heart just behind
+ * the forelimbs, the white-sheathed liver behind it, and the gut toward the
+ * hips. Centers and sizes are in the base model, before it is reshaped. */
+const ORGANS = [
+  {
+    color: "#c8202a",
+    center: [0, 0.145, -0.05],
+    size: [0.028, 0.023, 0.032],
+    tilt: 0.5,
+  },
+  ...[-1, 1].map((side) => ({
+    color: "#e6ece3",
+    center: [side * 0.03, 0.122, side * 0.006],
+    size: [0.038, 0.026, 0.048],
+    tilt: side * 0.25,
+  })),
+  ...[-1, 1].map((side) => ({
+    color: "#d8cfb8",
+    center: [side * 0.022, 0.108, 0.07 + side * 0.012],
+    size: [0.024, 0.018, 0.026],
+    tilt: side * 0.6,
+  })),
+];
+
+/** The faceted lump each organ is shaped from. */
+const LUMP = new THREE.IcosahedronGeometry(1, 0).getAttribute("position");
+
+/** The organs as one skinned mesh. Each corner moves with the nearest point of
+ * the belly that follows the trunk alone, so the legs don't tug at them. */
+function organs(belly: (typeof frogModel.parts)[number], shape: Shape) {
+  const anchors: {
+    point: THREE.Vector3;
+    bones: number[];
+    weights: number[];
+  }[] = [];
+  for (let v = 0; v < belly.positions.length / 3; v++) {
+    const bones = belly.skinIndex.slice(v * 4, v * 4 + 4);
+    const weights = belly.skinWeight.slice(v * 4, v * 4 + 4);
+    if (bones.every((bone, k) => weights[k] === 0 || TRUNK.has(bone)))
+      anchors.push({
+        point: new THREE.Vector3().fromArray(belly.positions, v * 3),
+        bones,
+        weights,
+      });
+  }
+  const positions: number[] = [],
+    colors: number[] = [],
+    skinIndex: number[] = [],
+    skinWeight: number[] = [];
+  const point = new THREE.Vector3();
+  const color = new THREE.Color();
+  const across = new THREE.Vector3(1, 0, 0);
+  for (const organ of ORGANS) {
+    const size = new THREE.Vector3().fromArray(organ.size);
+    const center = new THREE.Vector3().fromArray(organ.center);
+    const placed = fatten(center.clone(), 1, shape);
+    color.set(organ.color);
+    let nearest = anchors[0];
+    for (const anchor of anchors)
+      if (
+        anchor.point.distanceToSquared(center) <
+        nearest.point.distanceToSquared(center)
+      )
+        nearest = anchor;
+    for (let i = 0; i < LUMP.count; i++) {
+      point
+        .fromBufferAttribute(LUMP, i)
+        .multiply(size)
+        .applyAxisAngle(across, organ.tilt)
+        .add(placed);
+      positions.push(point.x, point.y, point.z);
+      colors.push(color.r, color.g, color.b);
+      skinIndex.push(...nearest.bones);
+      skinWeight.push(...nearest.weights);
+    }
+  }
+  const geometry = skinned(positions, skinIndex, skinWeight);
+  geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+  geometry.computeVertexNormals();
+  return new THREE.SkinnedMesh(
+    geometry,
+    new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      flatShading: true,
+      roughness: 0.35,
+    }),
+  );
 }
 
 /** Three broken stripes down the back, and a band from the snout through the

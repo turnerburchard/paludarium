@@ -103,7 +103,8 @@ export function Inhabitant({
         mats.forEach((m) => {
           // Some animals, such as micro crabs, are see-through already.
           m.userData.opacity ??= m.opacity;
-          m.transparent = ghost || m.userData.opacity < 1;
+          m.userData.transparent ??= m.transparent;
+          m.transparent = ghost || m.userData.transparent;
           m.opacity = m.userData.opacity * (ghost ? 0.55 : 1);
         });
       }
