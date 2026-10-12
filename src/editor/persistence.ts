@@ -7,7 +7,9 @@ export const STORAGE_KEY = "little-worlds:v4";
 /** Worlds saved before springs joined the environment. They are not
  * migrated, only cleared. */
 const RETIRED_STORAGE_KEY = "little-worlds:v3";
-export const MAX_WORLD_SIZE = 250_000;
+/** Room for the largest world the editor can make: a full tank of animals on
+ * the finest sculpted grid. */
+export const MAX_WORLD_SIZE = 500_000;
 export function parseWorld(text: string): World {
   if (text.length > MAX_WORLD_SIZE)
     throw new Error("This file is too large for a terrarium.");
@@ -156,13 +158,19 @@ export function saveLibrary(library: WorldLibrary): boolean {
     return false;
   }
 }
-export function downloadWorld(world: World) {
-  const url = URL.createObjectURL(
-    new Blob([JSON.stringify(world, null, 2)], { type: "application/json" }),
+export function worldFile(world: World) {
+  return new File(
+    [JSON.stringify(world)],
+    `${world.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "terrarium"}.json`,
+    { type: "application/json" },
   );
+}
+export function downloadWorld(world: World) {
+  const file = worldFile(world);
+  const url = URL.createObjectURL(file);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${world.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "terrarium"}.json`;
+  a.download = file.name;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

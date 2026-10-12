@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Check, X } from "lucide-react";
 import type { World } from "../model/schema";
-import { downloadWorld } from "../editor/persistence";
+import { downloadWorld, worldFile } from "../editor/persistence";
 import { IconButton } from "./IconButton";
 import { Modal } from "./Modal";
 import { copyText, shareLink } from "./useWorldLink";
@@ -40,11 +40,7 @@ export function ShareDialog({
     setManual(!done);
   }
   async function shareFile() {
-    const file = new File(
-      [JSON.stringify(world, null, 2)],
-      `${world.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "terrarium"}.json`,
-      { type: "application/json" },
-    );
+    const file = worldFile(world);
     if (navigator.canShare?.({ files: [file] })) {
       try {
         await navigator.share({ title: world.name, files: [file] });

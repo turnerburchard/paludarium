@@ -3,14 +3,27 @@ import {
   activeWorld,
   createLibrary,
   loadLibrary,
+  MAX_WORLD_SIZE,
   openLibraryWorld,
   parseLibrary,
+  parseWorld,
   renameLibraryWorld,
   saveLibrary,
   STORAGE_KEY,
   updateLibrary,
+  worldFile,
 } from "../src/editor/persistence";
 import { makePreset } from "../src/model/presets";
+import {
+  emptyWorld,
+  LOG_LENGTH,
+  MAX_OBJECTS,
+  MAX_SPRINGS,
+  MAX_TANK_DEPTH,
+  MAX_TANK_WIDTH,
+  type World,
+} from "../src/model/schema";
+import { terrainPointCount } from "../src/model/terrainData";
 import { historyReducer } from "../src/editor/history";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -180,5 +193,59 @@ describe("saved world collection", () => {
     );
     expect(history).toEqual({ past: [], present: first, future: [] });
     expect(historyReducer(history, { type: "undo" }).present).toBe(first);
+  });
+});
+
+describe("world files", () => {
+  // Every field at its longest, on the finest grid resizing keeps (points
+  // 0.15 apart) with heights at the brush's four decimals.
+  function largestWorld(): World {
+    const columns = Math.floor(MAX_TANK_WIDTH / 0.15),
+      rows = Math.floor(MAX_TANK_DEPTH / 0.15);
+    const points = terrainPointCount({ columns, rows });
+    const long = 1234.123456789012;
+    const id = (i: number) => `${"x".repeat(36)}${i}`;
+    return {
+      ...emptyWorld(),
+      name: "x".repeat(60),
+      environment: {
+        ...emptyWorld().environment,
+        width: MAX_TANK_WIDTH,
+        depth: MAX_TANK_DEPTH,
+        height: 6,
+        springs: Array(MAX_SPRINGS).fill({ x: -0.1234, z: 0.1234, flow: 0.1 }),
+        terrain: {
+          columns,
+          rows,
+          heights: Array(points).fill(-0.8765),
+          paint: Array(points).fill("natural"),
+        },
+      },
+      objects: Array.from({ length: MAX_OBJECTS }, (_, i) => ({
+        id: id(i),
+        kind: "stripe-tailed-scorpion",
+        x: -11.123456789012345,
+        z: -6.123456789012345,
+        rotation: -12.123456789012345,
+        scale: 1.1234567890123456,
+        seed: 2147483647,
+        life: { age: long, lifespan: long, condition: 0.123, breeding: long },
+        support: id(i + 1),
+        lift: 1.123456789012345,
+        name: "x".repeat(40),
+      })),
+      log: Array(LOG_LENGTH).fill({
+        at: 1760000000000.123,
+        event: "died",
+        kind: "stripe-tailed-scorpion",
+        cause: "stranded",
+      }),
+    };
+  }
+
+  it("import the largest world the editor can make", async () => {
+    const text = await worldFile(largestWorld()).text();
+    expect(text.length).toBeLessThan(MAX_WORLD_SIZE);
+    expect(() => parseWorld(text)).not.toThrow();
   });
 });
