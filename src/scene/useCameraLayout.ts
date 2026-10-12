@@ -35,7 +35,7 @@ export function useCameraLayout(
     )
       return;
     framed.current = { reset, aspect, height, reach };
-    const fit = Math.max(1, 1.18 / aspect) * Math.max(1, height / 4) * reach;
+    const fit = Math.max(1, 0.85 / aspect) * Math.max(1, height / 4) * reach;
     const rise = (height - DEFAULT_TANK_HEIGHT) / 2;
     orbit.object.position.set(8 * fit, 6.6 * fit + rise, 9.8 * fit);
     orbit.target.set(0, 0.8 + rise, 0);
