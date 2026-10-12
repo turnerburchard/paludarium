@@ -20,6 +20,11 @@ export function useCameraLayout(
   reach: number,
 ) {
   const { camera, size } = useThree();
+  // The same breakpoint as the phone layout in styles.css, which has no
+  // sidebar to make room for. Resizing re-renders through size.
+  const phone = matchMedia(
+    "(max-width: 760px), (pointer: coarse) and (max-height: 500px)",
+  ).matches;
   const framed = useRef({ reset: -1, aspect: 0, height: 0, reach: 0 });
   const offset = useRef({ x: 0, y: 0 });
   useEffect(() => {
@@ -43,7 +48,7 @@ export function useCameraLayout(
   }, [reset, size.width, size.height, height, reach]);
   useFrame(({ invalidate }, dt) => {
     if (!(camera instanceof THREE.PerspectiveCamera)) return;
-    const desktopBuild = !view && size.width > 760;
+    const desktopBuild = !view && !phone;
     const x = desktopBuild ? -150 : 0;
     const y = desktopBuild ? -39 : 0;
     const ease = 1 - Math.exp(-Math.min(dt, 0.1) * 12);

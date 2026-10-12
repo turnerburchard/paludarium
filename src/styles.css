@@ -126,7 +126,8 @@ button:hover:not(:disabled) {
   /* Matches the scene background so the area doesn't flash before the first frame. */
   background: #080b0d;
 }
-/* Phone-only controls; see the max-width: 760px block. */
+/* Phone-only controls; see the max-width: 760px block, which also covers
+ * phones held sideways. */
 .mobile-dock,
 .sheet-only {
   display: none;
@@ -938,9 +939,11 @@ button:hover:not(:disabled) {
     right: 15px;
   }
 }
-@media (max-width: 760px) {
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
+  /* A phone held sideways is shorter than any fixed minimum, which would
+   * push the dock below the screen. */
   .app {
-    min-height: 500px;
+    min-height: 0;
   }
   /* Phones float the brand and the world actions over the scene in both
    * modes. Switching modes and Build's tools live in the dock. */
@@ -1272,7 +1275,7 @@ button:hover:not(:disabled) {
   width: 55%;
   height: 9px;
 }
-@media (max-width: 760px) {
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
   .life-panel {
     padding: 10px 16px;
   }
@@ -1350,7 +1353,7 @@ button:hover:not(:disabled) {
 .swatch.bare {
   border: 1px dashed var(--line-strong);
 }
-@media (max-width: 760px) {
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
   .view-mode .inspector {
     bottom: 12px;
   }
@@ -1418,7 +1421,7 @@ button:hover:not(:disabled) {
   font-size: var(--text-small);
   color: var(--muted);
 }
-@media (max-width: 760px) {
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
   .placement-bar {
     flex-wrap: wrap;
   }
@@ -1565,7 +1568,7 @@ button:hover:not(:disabled) {
   opacity: 0;
 }
 /* Phones keep the hint above the dock. */
-@media (max-width: 760px) {
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
   .camera-hint {
     bottom: 92px;
   }
