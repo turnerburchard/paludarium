@@ -58,6 +58,7 @@ Rules that keep this working:
 ## Workflow
 
 - Commit straight to `main` in small, focused commits with clear messages. `git pull --rebase` before pushing; another agent may be working at the same time.
+- Commits are authored by the owner (`turnerburchard <tburchard4@gmail.com>`). Don't add co-author, session or "generated with" lines to commits or PRs.
 - Never push with failing checks. If CI fails after your push, fixing it is your top priority.
 - Work is tracked in GitHub issues. Take issues labeled for you (`agent:claude` or `agent:codex`); leave the others alone unless asked. Close issues with a short note when done.
 - Art direction (how frogs, plants, and terrain *look*) is decided with the owner. Agents can make art easier to work on, but don't change the look of existing assets on your own. Issues labeled `art` need the owner.
