@@ -74,6 +74,11 @@ export default function App({
   useEffect(() => {
     if (!view) return;
     const keydown = (e: KeyboardEvent) => {
+      // Escape always brings a hidden interface back.
+      if (e.key === "Escape") {
+        setUiHidden(false);
+        return;
+      }
       if (e.key.toLowerCase() !== "h" || e.metaKey || e.ctrlKey || e.altKey)
         return;
       const target = e.target instanceof Element ? e.target : null;
