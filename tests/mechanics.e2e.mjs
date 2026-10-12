@@ -244,17 +244,11 @@ try {
     .getByRole("button", { name: "Habitat", exact: true })
     .click();
   assert.equal(
-    await page.getByRole("slider").count(),
-    1,
-    "habitat opens with water level and the fine-tuning sliders collapsed",
-  );
-  assert.equal(
     await page
       .getByRole("slider", { name: "Water level", exact: true })
       .count(),
     1,
   );
-  await page.locator("summary", { hasText: "LIGHT" }).click();
   assert.equal(
     await page.getByRole("button", { name: "Stone", exact: true }).count(),
     0,
@@ -569,7 +563,6 @@ try {
     .click();
   const beforeLight = await fishPositions();
   assert.ok(beforeLight.shark && beforeLight.cory);
-  await fishPage.locator("summary", { hasText: "LIGHT" }).click();
   await fishPage
     .getByRole("slider", { name: "Brightness", exact: true })
     .focus();

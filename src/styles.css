@@ -633,11 +633,6 @@ button:hover:not(:disabled) {
   color: var(--muted);
   margin: 19px 0 15px;
 }
-/* The habitat's folded sections head themselves like its section labels. */
-.environment-panel .more-options summary {
-  font-size: var(--text-small);
-  letter-spacing: 1.6px;
-}
 /* A choice that puts the editor in a mode, like a brush or a light. */
 .tile {
   display: flex;
@@ -1107,7 +1102,6 @@ button:hover:not(:disabled) {
   .environment-panel {
     padding: 0 20px 15px;
   }
-  .environment-panel .section-label,
   .environment-panel .panel-note {
     display: none;
   }

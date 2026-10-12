@@ -331,7 +331,6 @@ try {
   await page
     .getByRole("button", { name: "Habitat settings", exact: true })
     .click();
-  await page.locator("summary", { hasText: "TANK" }).click();
   await page.waitForTimeout(1200);
   assert.ok(fiberUrl);
   await page.evaluate(async (url) => {
@@ -387,7 +386,6 @@ try {
           (value, i) => Math.abs(value - before.position[i]) < 0.001,
         ),
       ),
-      settingsOpen: document.querySelector(".environment-panel details").open,
     };
   }, fiberUrl);
   assert.ok(Object.values(preserved).every(Boolean), JSON.stringify(preserved));

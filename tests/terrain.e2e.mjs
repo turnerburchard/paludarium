@@ -209,7 +209,6 @@ try {
   );
   await page.getByRole("button", { name: "Done", exact: true }).click();
   await page.screenshot({ path: "/tmp/paludarium-terrain-desktop.png" });
-  await page.locator("summary", { hasText: "TANK" }).click();
   const height = page.getByRole("slider", { name: "Height", exact: true });
   await height.focus();
   await height.press("End");
