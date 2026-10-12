@@ -222,6 +222,10 @@ button:hover:not(:disabled) {
 .header-actions .worlds-button {
   height: 40px;
 }
+.app:not(.view-mode) .header-actions {
+  background: transparent;
+  border-color: transparent;
+}
 .view-mode .topbar {
   background: transparent;
   border-bottom-color: transparent;
@@ -949,14 +953,15 @@ button:hover:not(:disabled) {
   .app {
     min-height: 0;
   }
-  /* Phones float the brand and the world actions over the scene in both
-   * modes. Switching modes and Build's tools live in the dock. */
+  /* Switching modes and Build's tools live in the dock on phones. */
   .topbar,
   .view-mode .topbar {
     height: auto;
     padding: 12px;
     gap: 6px;
     align-items: flex-start;
+  }
+  .view-mode .topbar {
     background: transparent;
     border-bottom-color: transparent;
     pointer-events: none;
@@ -1772,5 +1777,12 @@ button:hover:not(:disabled) {
 @media (max-width: 760px) {
   .life-toasts {
     top: 80px;
+  }
+}
+/* View leaves room between the floating header controls on wide screens. */
+@media (min-width: 1200px) {
+  .view-mode .life-toasts {
+    top: 8px;
+    max-width: calc(100% - 1040px);
   }
 }
