@@ -35,13 +35,21 @@ function build(random: () => number) {
   // Wisps of moss hang from each branch.
   const moss = [material("#9aab82", 0.9), material("#7d9468", 0.9)];
   for (const branch of limbs.slice(-4, -1)) {
-    const [start, , end] = branch.points;
+    const last = branch.points.length - 1;
     for (let i = 0; i < 6; i++) {
-      const t = 0.3 + random() * 0.65;
+      // Follow the branch's own bends, starting just inside its underside so
+      // the wisp grows out of the bark.
+      const at = Math.min((0.3 + random() * 0.65) * last, last - 1e-6);
+      const k = Math.floor(at),
+        t = at - k;
+      const a = branch.points[k],
+        b = branch.points[k + 1];
+      const radius =
+        branch.radii[k] + (branch.radii[k + 1] - branch.radii[k]) * t;
       const from = new THREE.Vector3(
-        start.x + (end.x - start.x) * t,
-        start.y + (end.y - start.y) * t - 0.03,
-        start.z + (end.z - start.z) * t,
+        a.x + (b.x - a.x) * t,
+        a.y + (b.y - a.y) * t - radius * 0.7,
+        a.z + (b.z - a.z) * t,
       );
       mesh(
         hangingWisp(from, 0.18 + random() * 0.28, random),
