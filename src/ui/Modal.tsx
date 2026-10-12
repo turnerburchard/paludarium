@@ -8,6 +8,10 @@ export function Modal({ label, onClose, children }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
+  // A click that ends on the backdrop may have started inside the dialog,
+  // like selecting a name and letting go outside, so only a press that
+  // starts on the backdrop closes it.
+  const pressedBackdrop = useRef(false);
   useEffect(() => {
     const previous = document.activeElement;
     const dialog = ref.current!;
@@ -44,7 +48,15 @@ export function Modal({ label, onClose, children }: Props) {
     };
   }, []);
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div
+      className="modal-backdrop"
+      onPointerDown={(e) =>
+        (pressedBackdrop.current = e.target === e.currentTarget)
+      }
+      onClick={() => {
+        if (pressedBackdrop.current) onClose();
+      }}
+    >
       <section
         ref={ref}
         className="modal"
