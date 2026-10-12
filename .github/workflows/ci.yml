@@ -57,10 +57,23 @@ jobs:
       - run: npx playwright install chromium
       - run: node --import ./scripts/report-ci-errors.mjs tests/${{ matrix.test }}.e2e.mjs
 
+  # The longer flows from `npm run test:e2e:full`, likewise one runner each,
+  # so one failure doesn't hide the files after it.
   full-browser-checks:
     if: github.event_name == 'workflow_dispatch' && inputs.full_browser_checks
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        test:
+          - e2e.mjs
+          - terrain.e2e.mjs
+          - mechanics.e2e.mjs
+          - cleanup.e2e.mjs
+          - touch.e2e.mjs
+          - life.e2e.mjs
+          - animalInteraction.e2e.mjs
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -72,7 +85,7 @@ jobs:
       # The runner image already has the system libraries Chromium needs, and
       # installing them again took longer than downloading the browser.
       - run: npx playwright install chromium
-      - run: npm run test:e2e:full
+      - run: node --import ./scripts/report-ci-errors.mjs tests/${{ matrix.test }}
 
   deploy:
     if: github.ref == 'refs/heads/main'
