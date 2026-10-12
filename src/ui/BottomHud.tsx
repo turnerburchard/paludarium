@@ -29,18 +29,22 @@ export function BottomHud({ editor }: { editor: Editor }) {
       : tool.type === "copy"
         ? "Copying"
         : "Placing";
+  const touch = matchMedia("(pointer: coarse)").matches;
+  const tap = touch ? "Tap" : "Click";
+  // Phones have no Escape key; they finish with the Done button.
+  const escape = touch ? "" : " · Escape to finish";
   let title = `${verb} ${name.toLowerCase()}`,
-    hint = "Tap to place · Drag to spin";
+    hint = `${tap} to place · Drag to spin`;
   if (tool.type === "terrain") {
     title = terrainTools.find((brush) => brush.mode === tool.mode)?.label ?? "";
-    hint = "Drag to brush · Escape to finish";
+    hint = `Drag to brush${escape}`;
   } else if (tool.type === "spring") {
     title =
       tool.index === null ? "Adding a spring" : `Spring ${tool.index + 1}`;
     hint =
       tool.index === null
-        ? "Tap the ground where water should well up"
-        : "Tap the ground to move it · Escape to finish";
+        ? `${tap} the ground where water should well up`
+        : `${tap} the ground to move it${escape}`;
   }
   const turns = tool.type !== "terrain" && tool.type !== "spring";
   const done = adding || !turns;

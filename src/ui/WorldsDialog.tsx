@@ -59,7 +59,7 @@ export function WorldsDialog({
       {(editor.saveError || !editor.saved) && (
         <p role="status">
           {editor.saveError ||
-            "Saving is unavailable. Use Share to export a backup."}
+            "Saving is unavailable. To keep a copy, open a world's options and choose Export."}
         </p>
       )}
       <h3 className="world-section-heading">Presets</h3>

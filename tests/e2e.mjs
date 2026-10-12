@@ -121,7 +121,7 @@ try {
   assert.equal((await saved()).objects.length, 1, "place a frog");
   assert.equal(
     await placementHint.textContent(),
-    "Tap to place · Drag to spin",
+    "Click to place · Drag to spin",
   );
   await page.getByRole("button", { name: "Done", exact: true }).click();
   let world = await saved();
