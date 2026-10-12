@@ -6,9 +6,9 @@ The copyright notice in [LICENSE](LICENSE) covers only original material in this
 
 The frog mesh is derived from [Quaternius Frog](https://poly.pizza/m/9Z2V8fpazF), released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/). The original GLB is at `docs/inspiration/preferred-frog-original.glb`. No exclusive rights are claimed in it.
 
-## Gecko model
+## Gecko, lizard and salamander models
 
-The gecko mesh is derived from ["Salamander" by Poly by Google](https://poly.pizza/m/eqjMAgmr-pM), licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). It was reposed, rigged, rescaled and recolored for this project. The original GLB is at `docs/inspiration/models/gecko-poly-google.glb`.
+The gecko mesh is derived from ["Salamander" by Poly by Google](https://poly.pizza/m/eqjMAgmr-pM), licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). It was reposed, rigged, rescaled and recolored for this project. The leopard lizard, desert spiny lizard, fence lizard, chuckwalla, western tiger salamander and crocodile newt are built on the same mesh, reshaped and recolored. The original GLB is at `docs/inspiration/models/gecko-poly-google.glb`.
 
 ## European tree frog model
 
@@ -20,7 +20,7 @@ The tiger barb is derived from ["Fish" by Quaternius](https://poly.pizza/m/BEcU9
 
 ## Cattail, snail and turtle models
 
-The cattail, snail and turtle are derived from ["Cattail"](https://poly.pizza/m/9uT74BMpRrl), ["Snail"](https://poly.pizza/m/aZ_cT-AIu2y) and ["Turtle"](https://poly.pizza/m/2LCcq8vhqJ3) by Poly by Google, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). They were rescaled, turned, recolored and, for the turtle, simplified and rigged. The original GLBs are in `docs/inspiration/models/`.
+The cattail, snail and turtle are derived from ["Cattail"](https://poly.pizza/m/9uT74BMpRrl), ["Snail"](https://poly.pizza/m/aZ_cT-AIu2y) and ["Turtle"](https://poly.pizza/m/2LCcq8vhqJ3) by Poly by Google, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). They were rescaled, turned, recolored and, for the turtle, simplified and rigged. The desert tortoise is built on the same turtle mesh. The original GLBs are in `docs/inspiration/models/`.
 
 ## Crab, scorpion and spider models
 
@@ -47,16 +47,18 @@ The original GLBs are in `docs/inspiration/models/`.
 
 The original GLBs are in `docs/inspiration/models/`.
 
-## npm dependencies
-
-Dependencies are installed from `package-lock.json` and keep their own copyright notices and licenses, which are included in each package under `node_modules/` after `npm ci`. Runtime dependencies are permissively licensed: React, Three.js, React Three Fiber, drei and Zod under MIT; lucide-react under ISC.
-
-## Fraunces font
-
-[Fraunces](https://github.com/google/fonts/tree/main/ofl/fraunces) is licensed under the SIL Open Font License 1.1. The bundled Latin font and its copyright notice and license are in `public/fonts/`.
+## Quaternius nature packs
 
 The faceted stones use `Rock_1` through `Rock_7` (pillar, wedge, dome, outcrop, block, crag, ledge), and the saguaro, organ pipe and beavertail cacti use `CactusFlowers_2` to `CactusFlowers_4`, from [Quaternius Ultimate Nature Pack](https://quaternius.com/packs/ultimatenature.html), [CC0](https://creativecommons.org/publicdomain/zero/1.0/). Downloaded from [Quaternius’s official itch.io mirror](https://quaternius.itch.io/150-lowpoly-nature-models). Original OBJ/MTL files and license are in `docs/inspiration/models/quaternius-nature/`.
 
 The cholla uses `Cactus_4` from Quaternius [Nature Crops Pack](https://quaternius.com), [CC0](https://creativecommons.org/publicdomain/zero/1.0/). Original OBJ/MTL files and license are in `docs/inspiration/models/quaternius-crops/`.
 
 `scripts/prepare-quaternius-stones.mjs` centers and scales both packs' models, keeping one part per source material. Stones keep their source color; the cacti are recolored to the app's cactus palette.
+
+## npm dependencies
+
+Dependencies are installed from `package-lock.json` and keep their own copyright notices and licenses, which are included in each package under `node_modules/` after `npm ci`. Runtime dependencies are permissively licensed: React, Three.js, React Three Fiber, drei and Zod under MIT; lucide-react under ISC.
+
+## Fonts
+
+[Fraunces](https://github.com/google/fonts/tree/main/ofl/fraunces), [Newsreader](https://github.com/google/fonts/tree/main/ofl/newsreader) and [Figtree](https://github.com/google/fonts/tree/main/ofl/figtree) are licensed under the SIL Open Font License 1.1. The bundled Latin fonts and their copyright notices and license are in `public/fonts/`.
