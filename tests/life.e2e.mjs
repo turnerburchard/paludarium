@@ -156,9 +156,8 @@ try {
     storageKey,
   );
   await page.reload();
-  await page
-    .getByRole("button", { name: "Pause life (Space)", exact: true })
-    .click();
+  // A reload opens in View, which has no Pause button.
+  await page.locator("body").press("Space");
   assert.deepEqual(
     await page.evaluate(
       (key) =>
