@@ -312,12 +312,10 @@ try {
     localStorage.setItem(key, '{"version":1,"name":"Broken"');
   }, storageKey);
   await unreadable.goto(url);
-  await unreadable.waitForFunction(() => document.querySelector("canvas"));
-  await unreadable.waitForTimeout(600);
-  assert.equal(
-    await unreadable.evaluate((key) => localStorage.getItem(key), storageKey),
-    '{"version":1,"name":"Broken"',
-    "an unreadable save is not overwritten before the user edits",
+  // A save this version can't read opens the cloud forest, as a first visit does.
+  await unreadable.waitForFunction(
+    (key) => localStorage.getItem(key).includes('"name":"Cloud forest"'),
+    storageKey,
   );
   assert.deepEqual(
     errors,
@@ -325,7 +323,7 @@ try {
     "production rendering and interactions have no runtime errors",
   );
   console.log(
-    `PASS (${Math.round((Date.now() - started) / 1000)}s): production bundle, minimal mobile View, aquarium, water Undo, persistent scene, preview image, share snapshot, safe adoption and world switching, unreadable save kept`,
+    `PASS (${Math.round((Date.now() - started) / 1000)}s): production bundle, minimal mobile View, aquarium, water Undo, persistent scene, preview image, share snapshot, safe adoption and world switching, unreadable save replaced`,
   );
 } finally {
   await browser?.close();

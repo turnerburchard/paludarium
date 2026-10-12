@@ -9,7 +9,6 @@ import {
   parseWorld,
   renameLibraryWorld,
   saveLibrary,
-  STORAGE_KEY,
   worldFile,
 } from "../src/editor/persistence";
 import { makePreset } from "../src/model/presets";
@@ -83,9 +82,9 @@ describe("saved world collection", () => {
   it("starts a first-time visitor on a resumable preset", () => {
     vi.stubGlobal("localStorage", { getItem: () => null });
     const loaded = loadLibrary();
-    expect(loaded.library.worlds).toHaveLength(1);
-    expect(loaded.library.worlds[0].preview).toBe(true);
-    expect(activeEntry(loaded.library).world.name).toBe("Cloud forest");
+    expect(loaded.worlds).toHaveLength(1);
+    expect(loaded.worlds[0].preview).toBe(true);
+    expect(activeEntry(loaded).world.name).toBe("Cloud forest");
   });
   it("migrates an existing world without losing its layout or life", () => {
     const world = makePreset("tropical");
@@ -176,19 +175,35 @@ describe("saved world collection", () => {
       ),
     ).toThrow();
   });
-  it("leaves unreadable storage untouched and reports failed saves", () => {
-    const storage = {
-      getItem: vi.fn(() => "broken"),
-      setItem: vi.fn(() => {
+  it.each([
+    ["an unreadable save", () => "broken"],
+    [
+      "blocked storage",
+      () => {
+        throw new Error("Access denied");
+      },
+    ],
+  ])("opens the cloud forest instead of %s", (_, getItem) => {
+    vi.stubGlobal("localStorage", {
+      getItem,
+      setItem: () => {
         throw new Error("Quota exceeded");
-      }),
-    };
-    vi.stubGlobal("localStorage", storage);
+      },
+    });
     const loaded = loadLibrary();
-    expect(loaded.warning).toBeTruthy();
-    expect(storage.getItem).toHaveBeenCalledWith(STORAGE_KEY);
-    expect(storage.setItem).not.toHaveBeenCalled();
-    expect(saveLibrary(loaded.library)).toBe(false);
+    expect(loaded.worlds[0].preview).toBe(true);
+    expect(activeEntry(loaded).world.name).toBe("Cloud forest");
+    expect(saveLibrary(loaded)).toBe(false);
+  });
+  it("reads any height on a stack and any amount of turning", () => {
+    const world = makePreset("tropical");
+    const [first, ...rest] = world.objects;
+    const turned = { ...first, rotation: 250, lift: 12 };
+    expect(
+      parseLibrary(
+        JSON.stringify(createLibrary({ ...world, objects: [turned, ...rest] })),
+      ).worlds[0].world.objects[0],
+    ).toMatchObject({ rotation: 250, lift: 12 });
   });
   it("clears undo history when opening another world", () => {
     const first = makePreset("tropical");

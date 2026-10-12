@@ -67,17 +67,16 @@ export type Tool =
 export function useEditor(readOnly = false, sharedWorld?: World) {
   const [initial] = useState(loadLibrary);
   // The worlds as last saved, by this tab or another one.
-  const [library, setLibrary] = useState(initial.library);
+  const [library, setLibrary] = useState(initial);
   // The world this tab has open. Each tab saves only its own world, so tabs
   // never write over each other's work.
   const [opened, setOpened] = useState(() => {
-    const { id, preview } = activeEntry(initial.library);
+    const { id, preview } = activeEntry(initial);
     return { id, preview };
   });
-  const initialWorld = activeEntry(initial.library).world;
   const [history, dispatch] = useReducer(historyReducer, {
     past: [],
-    present: initialWorld,
+    present: activeEntry(initial).world,
     future: [],
   });
   const [isShared, setIsShared] = useState(!!sharedWorld);
@@ -92,8 +91,8 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
   const [tool, setTool] = useState<Tool>({ type: "select" });
   const [chosenId, select] = useState<string | null>(null);
   const [placementError, setPlacementError] = useState("");
-  const [saveError, setSaveError] = useState(initial.warning ?? "");
-  const [saved, setSaved] = useState(!initial.warning);
+  const [saveError, setSaveError] = useState("");
+  const [saved, setSaved] = useState(true);
   const [saving, setSaving] = useState(false);
   const [paused, setPaused] = useState(false);
   const [placementRotation, setPlacementRotation] = useState(0);
@@ -126,9 +125,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
     [isShared],
   );
   useEffect(() => {
-    // An unreadable save stays in storage until the user starts over for real.
-    if (isShared || (initial.warning && history.present === initialWorld))
-      return;
+    if (isShared) return;
     setSaving(true);
     const persist = () => {
       const saved = saveLibrary(
@@ -156,7 +153,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       window.removeEventListener("pagehide", persist);
       document.removeEventListener("visibilitychange", onHidden);
     };
-  }, [history.present, isShared, initial, initialWorld, opened]);
+  }, [history.present, isShared, opened]);
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
       if (event.key !== STORAGE_KEY || !event.newValue) return;

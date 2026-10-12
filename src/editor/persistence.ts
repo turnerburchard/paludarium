@@ -1,7 +1,7 @@
 import { createObjectId } from "../model/objectId";
 import { z } from "zod";
 import { makePreset } from "../model/presets";
-import { emptyWorld, worldSchema, type World } from "../model/schema";
+import { worldSchema, type World } from "../model/schema";
 import { fitObject } from "../model/terrain";
 export const STORAGE_KEY = "little-worlds:v4";
 /** Worlds saved before springs joined the environment. They are not
@@ -115,25 +115,16 @@ export function openLibraryWorld(
     ],
   };
 }
-export function loadLibrary(): {
-  library: WorldLibrary;
-  warning: string | null;
-} {
+/** The saved worlds, or a first visit's cloud forest when there are none
+ * or they can't be read. */
+export function loadLibrary(): WorldLibrary {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return {
-      library: saved
-        ? parseLibrary(saved)
-        : createLibrary(makePreset("tropical"), true),
-      warning: null,
-    };
+    if (saved) return parseLibrary(saved);
   } catch {
-    return {
-      library: createLibrary(emptyWorld()),
-      warning:
-        "Your saved worlds could not be opened. They stay saved until you edit or create a world.",
-    };
+    // Blocked storage or a save this version can't read.
   }
+  return createLibrary(makePreset("tropical"), true);
 }
 export function saveLibrary(library: WorldLibrary): boolean {
   try {

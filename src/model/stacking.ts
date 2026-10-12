@@ -1,6 +1,6 @@
 import { assets, modelHeight } from "../assets";
-import { MAX_LIFT, type Environment, type HabitatObject } from "./schema";
-import { clamp, fitObject, groundHeight } from "./terrain";
+import type { Environment, HabitatObject } from "./schema";
+import { fitObject, groundHeight } from "./terrain";
 import { waterLevel } from "./water";
 
 /** Where an object's base sits: on the ground, on the stone or wood it was
@@ -166,7 +166,7 @@ export function keepStacked(
 
 /** How far a base at height `y` rests above the ground at x, z. */
 function liftAt(y: number, x: number, z: number, env: Environment) {
-  return clamp(y - groundHeight(x, z, env), 0, MAX_LIFT);
+  return Math.max(0, y - groundHeight(x, z, env));
 }
 
 /** Whether `lower` holds up `upper`, directly or through things stacked

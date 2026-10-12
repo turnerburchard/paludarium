@@ -154,15 +154,12 @@ export const TANK_HEIGHT = DEFAULT_TANK_HEIGHT;
 export const AQUARIUM_WATER = waterCeiling({ height: TANK_HEIGHT });
 const finite = z.number().finite();
 export const MAX_SCALE = 2;
-/** The highest an object's base may rest above the ground, as on a stack of
- * stones in the tallest tank. */
-export const MAX_LIFT = MAX_TANK_HEIGHT;
 export const objectSchema = z.object({
   id: z.string().min(1).max(100),
   kind: z.enum(assetKinds),
   x: finite.min(-MAX_TANK_WIDTH / 2).max(MAX_TANK_WIDTH / 2),
   z: finite.min(-MAX_TANK_DEPTH / 2).max(MAX_TANK_DEPTH / 2),
-  rotation: finite.min(-100).max(100),
+  rotation: finite,
   scale: finite.min(0.4).max(MAX_SCALE),
   seed: z.number().int().min(0).max(2147483647),
   life: z
@@ -177,7 +174,7 @@ export const objectSchema = z.object({
   // wood an object rests on, with its base this far above the ground.
   moss: z.enum(mossSpecies).optional(),
   support: z.string().min(1).max(100).optional(),
-  lift: finite.min(0).max(MAX_LIFT).optional(),
+  lift: finite.min(0).optional(),
   // Additive version-1 data: a name the player gave an animal.
   name: z.string().trim().min(1).max(40).optional(),
 });
