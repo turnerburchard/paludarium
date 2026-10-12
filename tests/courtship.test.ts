@@ -93,3 +93,24 @@ describe("courtship", () => {
     expect(met).toContainEqual([...fish].sort());
   });
 });
+
+describe("juveniles", () => {
+  it("head back to a parent they have strayed from", () => {
+    const engine = new Ecosystem(
+      new HabitatGraph(row(14)),
+      [frog("parent", "n0"), frog("young", "n13")],
+      { speed: 1, elapsed: 0, random: () => 0.5 },
+    );
+    engine.raise(new Map([["young", ["parent"]]]));
+    run(engine, 2);
+    expect(engine.getAnimal("young")!.reason).toBe(
+      "Keeping close to its parent",
+    );
+    run(engine, 60);
+    const [parent, young] = [
+      engine.getAnimal("parent")!,
+      engine.getAnimal("young")!,
+    ];
+    expect(distance(parent.position, young.position)).toBeLessThan(1.2);
+  });
+});

@@ -178,6 +178,9 @@ export const objectSchema = z.object({
   lift: finite.min(0).optional(),
   // Additive version-1 data: a name the player gave an animal.
   name: z.string().trim().min(1).max(40).optional(),
+  // Additive version-2 data: the pair an animal was born to. They may since
+  // have died, so these can name animals no longer in the world.
+  parents: z.array(z.string().min(1).max(100)).max(2).optional(),
 });
 export type HabitatObject = z.infer<typeof objectSchema>;
 /** Where water wells up and runs downhill. Its place is given in fractions

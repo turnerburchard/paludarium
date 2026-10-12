@@ -51,6 +51,8 @@ const COURTING_PATIENCE = 240;
 const COURTING_BREAK = 600;
 /** How close courting fish come, since they never stop swimming. */
 const FISH_MEETING = 0.6;
+/** How far a juvenile strays from its parent before heading back. */
+const PARENT_RANGE = 1.2;
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const validAmount = (n: number) => Number.isFinite(n) && n >= 0;
 interface Agent {
@@ -93,6 +95,9 @@ interface Agent {
   together?: number;
   /** It won't court again before this, having failed to reach its mate. */
   shyUntil?: number;
+  /** Still growing, and the parent it keeps close to, if one is alive. */
+  young?: boolean;
+  parent?: Agent;
   /** Where the body was drawn for the current and previous steps. */
   pose?: BodyPose;
   previousPose?: BodyPose;
@@ -329,6 +334,17 @@ export class Ecosystem {
       agent.mate = mate;
       mate.mate = agent;
       agent.courtingSince = mate.courtingSince = this.elapsed;
+    }
+  }
+  /** Juveniles keep to cover and stay near a parent. `young` gives each
+   * juvenile's living parents. */
+  raise(young: ReadonlyMap<string, readonly string[]>) {
+    for (const agent of this.agents.values()) {
+      const parents = young.get(agent.state.id);
+      agent.young = !!parents;
+      agent.parent = parents
+        ?.map((id) => this.agents.get(id))
+        .find((parent) => parent?.profile.id === agent.profile.id);
     }
   }
   /** Pairs that have met since last asked. */
@@ -739,6 +755,10 @@ export class Ecosystem {
         : needs.hunger > 0.5 && !food
           ? "No insects within reach. Plants and moss give insects cover to breed."
           : "";
+    const parent = agent.parent?.state.position;
+    const nearParent = (id: string) =>
+      !!parent &&
+      distance(this.graph.node(id).position, parent) <= PARENT_RANGE;
     if (inactive || needs.energy < 0.3) {
       if (inactive && state.activity === "sleeping") {
         go(
@@ -756,7 +776,9 @@ export class Ecosystem {
           id,
           score:
             this.graph.node(id).shelter * 3 +
-            (restsOn.includes(this.graph.node(id).surface) ? 1 : 0) -
+            (restsOn.includes(this.graph.node(id).surface) ? 1 : 0) +
+            // Juveniles rest beside a parent.
+            (nearParent(id) ? 1.5 : 0) -
             // Slow walkers settle for nearer cover.
             (lengths.get(id)! * 0.008) / agent.profile.speed +
             this.roll() * 0.25,
@@ -775,6 +797,22 @@ export class Ecosystem {
         25,
       );
       return;
+    }
+    if (parent && distance(state.position, parent) > PARENT_RANGE) {
+      const near = roomy
+        .filter((id) => distance(this.graph.node(id).position, parent) <= 0.8)
+        .sort((a, b) => lengths.get(a)! - lengths.get(b)!)[0];
+      if (near) {
+        go(
+          near,
+          "resting",
+          "exploring",
+          unmet || "Keeping close to its parent",
+          this.sit(this.graph.node(near).surface),
+        );
+        agent.idle = !unmet;
+        return;
+      }
     }
     // Climbers now and then head up the glass to cling there a while, as
     // frogs in a tank do.
@@ -824,8 +862,17 @@ export class Ecosystem {
           node.surface === "leaf" || node.surface === "glass" ? 1.5 : 1;
         // Animals that visit the water like to poke around underwater.
         const dip = agent.profile.water === "visits" && node.submerged ? 3 : 1;
+        // Juveniles keep to cover, near a parent.
+        const young = agent.young
+          ? (1 + node.shelter * 3) * (nearParent(id) ? 2 : 1)
+          : 1;
         return (
-          fresh * perch * dip * (0.5 + ahead) * (0.3 + lengths.get(id)! / range)
+          fresh *
+          perch *
+          dip *
+          young *
+          (0.5 + ahead) *
+          (0.3 + lengths.get(id)! / range)
         );
       });
       const chosen = this.pick(candidates, weights);
@@ -977,9 +1024,16 @@ export class Ecosystem {
       agent.reconsiderAt = this.elapsed + 3;
       return;
     }
-    let target: string | undefined;
+    // A young fish follows a parent, wherever it is heading.
+    const parentGoal = agent.parent?.swimmer && agent.parent.path.at(-1);
+    let target =
+      !blocked && parentGoal && lengths.has(parentGoal)
+        ? parentGoal
+        : undefined;
     let nearest = SCHOOL_RANGE;
-    for (const other of fish.roaming || blocked ? [] : this.agents.values()) {
+    for (const other of fish.roaming || blocked || target
+      ? []
+      : this.agents.values()) {
       const mate = other.swimmer;
       const goal = other.path.at(-1);
       if (

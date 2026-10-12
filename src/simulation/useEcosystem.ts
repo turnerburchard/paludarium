@@ -17,6 +17,7 @@ import {
   habitatSupport,
   readyToBreed,
   withAnimalPositions,
+  youngAndParents,
 } from "./lifeCycle";
 import type { Vec3 } from "./types";
 
@@ -103,6 +104,7 @@ export function useEcosystem(
       lifeRemainder: 0,
     };
     live.current.engine.court(readyToBreed(world));
+    live.current.engine.raise(youngAndParents(world));
     snapshotStore.set(live.current.engine.snapshot());
   }, [world, holding, snapshotStore]);
   useEffect(() => {
@@ -189,6 +191,7 @@ export function useEcosystem(
     }
     current.world = next;
     current.engine.court(readyToBreed(next));
+    current.engine.raise(youngAndParents(next));
     onLifeChange(previous, next);
   }
   return {

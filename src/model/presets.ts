@@ -68,11 +68,14 @@ function startFamilies(objects: HabitatObject[]) {
     groups.find((group) => group.length >= 2);
   const ready = pair?.slice(0, 2) ?? [];
   return objects.map((object) => {
-    if (young.includes(object))
+    if (young.includes(object)) {
+      const [first, second] = species.get(object.kind)!;
       return {
         ...object,
         life: { ...animalLife(object), age: MATURITY_AGE * 0.3 },
+        parents: [first.id, second.id],
       };
+    }
     if (ready.includes(object))
       return {
         ...object,

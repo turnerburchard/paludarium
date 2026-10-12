@@ -162,6 +162,16 @@ export function readyToBreed(world: World): Set<string> {
   );
 }
 
+/** Each juvenile, with those of its parents still alive. */
+export function youngAndParents(world: World): Map<string, string[]> {
+  const living = new Set(world.objects.map((o) => o.id));
+  return new Map(
+    world.objects
+      .filter((o) => isAnimal(o.kind) && animalLife(o).age < MATURITY_AGE)
+      .map((o) => [o.id, (o.parents ?? []).filter((id) => living.has(id))]),
+  );
+}
+
 /** Each pair that met while courting has a juvenile between them, so long
  * as both are still ready and there is room for it. Births are logged at
  * `now`. */
@@ -199,6 +209,7 @@ export function breed(
       rotation: random() * Math.PI * 2,
       scale: 1,
       seed,
+      parents: [first.id, second.id],
       life: {
         age: 0,
         lifespan: newLifespan(random),

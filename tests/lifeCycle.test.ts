@@ -23,6 +23,7 @@ import {
   killAnimal,
   readyToBreed,
   withAnimalPositions,
+  youngAndParents,
 } from "../src/simulation/lifeCycle";
 
 const pair = [["animal-0", "animal-1"]] as const;
@@ -144,6 +145,13 @@ describe("slow animal life cycles", () => {
     expect(animals[2]).toMatchObject({ x: -1.5, z: 0 });
     expect(animals[0].life?.breeding).toBe(0);
     expect(animals[1].life?.breeding).toBe(0);
+    expect(animals[2].parents).toEqual(["animal-0", "animal-1"]);
+    expect(parseWorld(JSON.stringify(next))).toEqual(next);
+    expect(youngAndParents(next)).toEqual(
+      new Map([[animals[2].id, ["animal-0", "animal-1"]]]),
+    );
+    const orphan = killAnimal(next, "animal-0");
+    expect(youngAndParents(orphan).get(animals[2].id)).toEqual(["animal-1"]);
     expect(animals[2].life?.age).toBe(0);
     expect(juvenileScale(animals[2])).toBeLessThan(1);
     expect(new Set(animals.map((o) => o.id)).size).toBe(3);
