@@ -207,7 +207,8 @@ try {
   await page
     .getByRole("button", { name: "Habitat settings", exact: true })
     .click();
-  await page.getByRole("button", { name: "Full", exact: true }).waitFor();
+  const water = page.getByRole("slider", { name: "Water level", exact: true });
+  await water.waitFor();
   const habitatHeight = await page
     .locator(".sidebar")
     .evaluate((sheet) => sheet.getBoundingClientRect().height);
@@ -225,13 +226,8 @@ try {
         (button) => button.getBoundingClientRect().right > innerWidth - 60,
       ),
   );
-  assert.equal(
-    await page
-      .getByRole("button", { name: "Full", exact: true })
-      .getAttribute("aria-pressed"),
-    "true",
-  );
-  await page.getByRole("button", { name: "Shallow", exact: true }).click();
+  await water.focus();
+  await water.press("Home");
   await page
     .getByRole("button", { name: "Undo (⌘/Ctrl Z)", exact: true })
     .click();

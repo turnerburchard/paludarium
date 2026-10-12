@@ -55,7 +55,6 @@ try {
   await page
     .getByRole("button", { name: "Habitat settings", exact: true })
     .click();
-  await page.locator("summary", { hasText: "Shape landscape" }).click();
   assert.equal(
     await page
       .getByRole("button", { name: "Carve stream", exact: true })
@@ -210,12 +209,14 @@ try {
   );
   await page.getByRole("button", { name: "Done", exact: true }).click();
   await page.screenshot({ path: "/tmp/paludarium-terrain-desktop.png" });
-  await page.locator("summary", { hasText: "Fine-tune habitat" }).click();
-  const height = page.getByRole("slider", { name: "Tank height", exact: true });
+  await page.locator("summary", { hasText: "TANK" }).click();
+  const height = page.getByRole("slider", { name: "Height", exact: true });
   await height.focus();
   await height.press("End");
   assert.equal((await saved()).environment.height, 6, "height reaches 60 cm");
-  await page.getByRole("button", { name: "Full", exact: true }).click();
+  const water = page.getByRole("slider", { name: "Water level", exact: true });
+  await water.focus();
+  await water.press("End");
   assert.equal(
     (await saved()).environment.water,
     5.75,
@@ -236,9 +237,10 @@ try {
     5.75,
     "one undo restores height and water",
   );
-  await page.getByRole("button", { name: "Shallow", exact: true }).click();
+  await water.focus();
+  await water.press("Home");
   const resized = await saved();
-  assert.equal(resized.environment.water, 0.44);
+  assert.equal(resized.environment.water, 0);
   await page.screenshot({ path: "/tmp/paludarium-tall-tank.png" });
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Worlds", exact: true }).click();
@@ -282,7 +284,6 @@ try {
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Habitat", exact: true })
     .click();
-  await page.locator("summary", { hasText: "Shape landscape" }).click();
   await page.getByRole("button", { name: "Lower ground", exact: true }).click();
   const mobileBefore = await saved(),
     tap = await point(-1.2, -0.2);

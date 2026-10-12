@@ -439,6 +439,28 @@ button:hover:not(:disabled) {
   border-radius: var(--radius);
   box-shadow: 0 12px 40px #0002;
 }
+/* Settings for the active tool, like a spring's flow, sit under its name. */
+.placement-bar.with-settings {
+  flex-wrap: wrap;
+  width: min(460px, 100%);
+  padding: 14px 16px 16px;
+  row-gap: 14px;
+}
+.with-settings .placement-text {
+  flex: 1;
+}
+.tool-settings {
+  flex-basis: 100%;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.tool-settings .range-control {
+  flex: 1;
+  margin: 0;
+}
 .placement-icon {
   height: 36px;
   width: 36px;
@@ -610,6 +632,47 @@ button:hover:not(:disabled) {
   letter-spacing: 1.6px;
   color: var(--muted);
   margin: 19px 0 15px;
+}
+/* The habitat's folded sections head themselves like its section labels. */
+.environment-panel .more-options summary {
+  font-size: var(--text-small);
+  letter-spacing: 1.6px;
+}
+/* A choice that puts the editor in a mode, like a brush or a light. */
+.tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: var(--text-body);
+}
+.tile svg {
+  flex: none;
+}
+.tile:not(:disabled):hover {
+  background: var(--selected);
+}
+.tile[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--selected);
+  color: var(--text);
+}
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.swatch {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
 }
 .panel-note {
   font-size: var(--text-body);
@@ -1042,9 +1105,6 @@ button:hover:not(:disabled) {
     margin: 13px 0;
   }
   .environment-panel {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 25px;
     padding: 0 20px 15px;
   }
   .environment-panel .section-label,
@@ -1250,22 +1310,6 @@ button:hover:not(:disabled) {
 .inspector .plant-condition {
   margin: 0 0 16px;
 }
-.water-options {
-  display: flex;
-  gap: 8px;
-}
-.water-options button {
-  flex: 1;
-  min-height: 44px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  font-size: var(--text-body);
-}
-.water-options button[aria-pressed="true"] {
-  border-color: var(--line-strong);
-  background: var(--selected);
-}
 .moss-options {
   margin-top: 16px;
 }
@@ -1302,9 +1346,6 @@ button:hover:not(:disabled) {
 @media (max-width: 760px) {
   .view-mode .inspector {
     bottom: 12px;
-  }
-  .environment-panel {
-    display: block;
   }
 }
 [hidden] {

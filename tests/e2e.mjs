@@ -345,7 +345,6 @@ try {
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Habitat", exact: true })
     .click();
-  await page.locator("summary", { hasText: "Fine-tune habitat" }).click();
   const water = page.getByRole("slider", { name: "Water level", exact: true });
   await water.focus();
   await page.waitForFunction(

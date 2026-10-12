@@ -1,32 +1,6 @@
-.spring-controls {
-  margin-top: 14px;
-}
-.spring-list {
-  flex-wrap: wrap;
-}
-.spring-list button {
-  flex: 1 0 30%;
-}
-.spring-bar {
-  flex-wrap: wrap;
-  width: min(460px, 100%);
-  padding: 14px 16px 16px;
-  row-gap: 14px;
-}
-.spring-bar .placement-text {
-  flex: 1;
-}
-.spring-settings {
-  flex-basis: 100%;
-  display: flex;
-  align-items: flex-end;
-  gap: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
-}
-.spring-settings .range-control {
-  flex: 1;
-  margin: 0;
+.add-spring {
+  width: 100%;
+  margin-top: 10px;
 }
 .remove-spring {
   display: flex;

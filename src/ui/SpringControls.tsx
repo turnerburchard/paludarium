@@ -1,48 +1,31 @@
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { MAX_SPRINGS } from "../model/schema";
 import type { Editor } from "../editor/useEditor";
 import { RangeControl } from "./RangeControl";
 import "./SpringControls.css";
 
 /** Springs are the only running water: each wells up where it's placed and
- * runs downhill, filling the hollows on its way. */
-export function SpringControls({ editor }: { editor: Editor }) {
-  const { springs } = editor.world.environment;
+ * runs downhill, filling the hollows on its way. A placed spring is changed
+ * by tapping it in the tank. */
+export function AddSpring({ editor }: { editor: Editor }) {
   const { tool } = editor;
-  const adding = tool.type === "spring" && tool.index === null;
-  const chosen = tool.type === "spring" ? tool.index : null;
   return (
-    <section className="spring-controls" aria-label="Springs">
-      <div className="water-options spring-list">
-        {springs.map((_, i) => (
-          <button
-            key={i}
-            aria-pressed={chosen === i}
-            onClick={() => {
-              editor.select(null);
-              editor.setTool({ type: "spring", index: i });
-            }}
-          >
-            Spring {i + 1}
-          </button>
-        ))}
-        <button
-          aria-pressed={adding}
-          disabled={springs.length >= MAX_SPRINGS}
-          onClick={() => {
-            editor.select(null);
-            editor.setTool({ type: "spring", index: null });
-          }}
-        >
-          Add spring
-        </button>
-      </div>
-    </section>
+    <button
+      className="tile add-spring"
+      aria-pressed={tool.type === "spring" && tool.index === null}
+      disabled={editor.world.environment.springs.length >= MAX_SPRINGS}
+      onClick={() => {
+        editor.select(null);
+        editor.setTool({ type: "spring", index: null });
+      }}
+    >
+      <Plus size={16} />
+      Add spring
+    </button>
   );
 }
 
-/** The chosen spring's flow, shown wherever it was chosen from: the list
- * above or the spring itself in the tank. */
+/** The chosen spring's flow, shown in the bar once it is tapped. */
 export function SpringSettings({
   editor,
   index,
@@ -54,7 +37,7 @@ export function SpringSettings({
   const withFlow = (flow: number) =>
     springs.map((s, i) => (i === index ? { ...s, flow } : s));
   return (
-    <div className="spring-settings">
+    <div className="tool-settings">
       <RangeControl
         label="Flow"
         value={springs[index].flow}

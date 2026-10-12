@@ -254,7 +254,7 @@ try {
       .count(),
     1,
   );
-  await page.locator("summary", { hasText: "Fine-tune habitat" }).click();
+  await page.locator("summary", { hasText: "LIGHT" }).click();
   assert.equal(
     await page.getByRole("button", { name: "Stone", exact: true }).count(),
     0,
@@ -265,7 +265,7 @@ try {
     0,
   );
   const brightness = page.getByRole("slider", {
-    name: "Light brightness",
+    name: "Brightness",
     exact: true,
   });
   await brightness.focus();
@@ -569,9 +569,9 @@ try {
     .click();
   const beforeLight = await fishPositions();
   assert.ok(beforeLight.shark && beforeLight.cory);
-  await fishPage.locator("summary", { hasText: "Fine-tune habitat" }).click();
+  await fishPage.locator("summary", { hasText: "LIGHT" }).click();
   await fishPage
-    .getByRole("slider", { name: "Light brightness", exact: true })
+    .getByRole("slider", { name: "Brightness", exact: true })
     .focus();
   await fishPage.keyboard.press("ArrowRight");
   await fishPage.keyboard.press("Tab");

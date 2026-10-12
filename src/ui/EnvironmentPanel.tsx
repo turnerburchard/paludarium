@@ -2,7 +2,7 @@ import { useRef } from "react";
 import type { Editor } from "../editor/useEditor";
 import { RangeControl } from "./RangeControl";
 import { TerrainControls } from "./TerrainControls";
-import { SpringControls } from "./SpringControls";
+import { AddSpring } from "./SpringControls";
 import {
   waterCeiling,
   MIN_TANK_HEIGHT,
@@ -10,27 +10,15 @@ import {
 } from "../model/terrainData";
 import { MAX_TANK_DEPTH, MAX_TANK_WIDTH } from "../model/schema";
 
+/** Ordered by how often each part is reached for while building: the
+ * landscape brushes first, the tank and its light last and folded away. */
 export function EnvironmentPanel({ editor }: { editor: Editor }) {
   const env = editor.world.environment;
   const pausedBeforeDrag = useRef<boolean | null>(null);
   return (
     <div className="environment-panel">
+      <TerrainControls editor={editor} />
       <div className="section-label">WATER</div>
-      <div className="water-options">
-        {[
-          { name: "Dry", water: 0 },
-          { name: "Shallow", water: 0.44 },
-          { name: "Full", water: waterCeiling(env) },
-        ].map(({ name, water }) => (
-          <button
-            key={name}
-            aria-pressed={Math.abs(env.water - water) < 0.005}
-            onClick={() => editor.changeEnvironment({ water })}
-          >
-            {name}
-          </button>
-        ))}
-      </div>
       <RangeControl
         label="Water level"
         value={env.water}
@@ -51,35 +39,11 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
           pausedBeforeDrag.current = null;
         }}
       />
-      <SpringControls editor={editor} />
-      <details className="more-options landscape-options">
-        <summary>Shape landscape</summary>
-        <TerrainControls editor={editor} />
-      </details>
+      <AddSpring editor={editor} />
       <details className="more-options">
-        <summary>Fine-tune habitat</summary>
+        <summary>TANK</summary>
         <RangeControl
-          label="Light warmth"
-          value={env.warmth}
-          min={0}
-          max={1}
-          step={0.05}
-          format={(n) => (n < 0.35 ? "Cool" : n > 0.65 ? "Warm" : "Neutral")}
-          onPreview={(warmth) => editor.previewEnvironment({ warmth })}
-          onCommit={(warmth) => editor.changeEnvironment({ warmth })}
-        />
-        <RangeControl
-          label="Light brightness"
-          value={env.brightness}
-          min={0.4}
-          max={1.6}
-          step={0.05}
-          format={(n) => `${Math.round(n * 100)}%`}
-          onPreview={(brightness) => editor.previewEnvironment({ brightness })}
-          onCommit={(brightness) => editor.changeEnvironment({ brightness })}
-        />
-        <RangeControl
-          label="Tank width"
+          label="Width"
           value={env.width}
           min={5}
           max={MAX_TANK_WIDTH}
@@ -89,7 +53,7 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
           onCommit={(width) => editor.changeEnvironment({ width })}
         />
         <RangeControl
-          label="Tank depth"
+          label="Depth"
           value={env.depth}
           min={3}
           max={MAX_TANK_DEPTH}
@@ -99,7 +63,7 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
           onCommit={(depth) => editor.changeEnvironment({ depth })}
         />
         <RangeControl
-          label="Tank height"
+          label="Height"
           value={env.height}
           min={MIN_TANK_HEIGHT}
           max={MAX_TANK_HEIGHT}
@@ -125,6 +89,29 @@ export function EnvironmentPanel({ editor }: { editor: Editor }) {
           format={(n) => `${(n * 10).toFixed(1)} cm`}
           onPreview={(substrate) => editor.previewEnvironment({ substrate })}
           onCommit={(substrate) => editor.changeEnvironment({ substrate })}
+        />
+      </details>
+      <details className="more-options">
+        <summary>LIGHT</summary>
+        <RangeControl
+          label="Brightness"
+          value={env.brightness}
+          min={0.4}
+          max={1.6}
+          step={0.05}
+          format={(n) => `${Math.round(n * 100)}%`}
+          onPreview={(brightness) => editor.previewEnvironment({ brightness })}
+          onCommit={(brightness) => editor.changeEnvironment({ brightness })}
+        />
+        <RangeControl
+          label="Warmth"
+          value={env.warmth}
+          min={0}
+          max={1}
+          step={0.05}
+          format={(n) => (n < 0.35 ? "Cool" : n > 0.65 ? "Warm" : "Neutral")}
+          onPreview={(warmth) => editor.previewEnvironment({ warmth })}
+          onCommit={(warmth) => editor.changeEnvironment({ warmth })}
         />
       </details>
     </div>

@@ -43,12 +43,18 @@ export function makeTerrain(env: Environment) {
   );
   return faceted;
 }
-const soil = new THREE.Color("#443c2b"),
-  sand = new THREE.Color("#a5936a");
+/** The ground colors the paint brushes lay down. */
+export const paintColors = {
+  soil: "#443c2b",
+  sand: "#a5936a",
+  stone: "#74787b",
+};
+const soil = new THREE.Color(paintColors.soil),
+  sand = new THREE.Color(paintColors.sand);
 const palette: Record<Exclude<GroundMaterial, "natural">, THREE.Color> = {
   soil,
   sand,
-  stone: new THREE.Color("#74787b"),
+  stone: new THREE.Color(paintColors.stone),
   moss: soil,
 };
 /** Sets the ground's height and color from the terrain. With `area`, only

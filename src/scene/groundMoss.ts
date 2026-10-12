@@ -9,6 +9,9 @@ import { MOSS_COLORS } from "../assets/landscape/mosses";
 const TUFT_SPACING = 0.065;
 const TUFT_HEIGHT = 0.03;
 const TUFT_SIDES = 5;
+// A deeper green than the sheet moss it's modelled on, so a whole carpet
+// of it doesn't read as lime.
+export const CARPET_GREENS = ["#4c7a32", "#36602a"];
 
 /** Painted moss: a low skin over the ground, crowded with small tufts that
  * thin out toward its ragged edge. Everything is hashed from its place on
@@ -16,9 +19,7 @@ const TUFT_SIDES = 5;
 export function makeGroundMoss(env: Environment) {
   const paint = env.terrain?.paint;
   if (!paint?.includes("moss")) return undefined;
-  // A deeper green than the sheet moss it's modelled on, so a whole carpet
-  // of it doesn't read as lime.
-  const [light, dark] = ["#4c7a32", "#36602a"].map((c) => new THREE.Color(c));
+  const [light, dark] = CARPET_GREENS.map((c) => new THREE.Color(c));
   const shade = dark.clone().multiplyScalar(0.5);
   // Moss on the tops of hummocks dries and yellows a little.
   const bleached = new THREE.Color(MOSS_COLORS.fern[1]);

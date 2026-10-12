@@ -3,6 +3,7 @@ import { assets } from "../assets";
 import type { Editor } from "../editor/useEditor";
 import { PlacementRotation } from "./PlacementRotation";
 import { SpringSettings } from "./SpringControls";
+import { BrushSettings } from "./TerrainControls";
 import { terrainTools } from "./terrainTools";
 
 /** Controls for the active editing tool. */
@@ -48,7 +49,9 @@ export function BottomHud({ editor }: { editor: Editor }) {
     <div className="bottom-hud placing">
       <div
         className={
-          spring === null ? "placement-bar" : "placement-bar spring-bar"
+          tool.type === "terrain" || spring !== null
+            ? "placement-bar with-settings"
+            : "placement-bar"
         }
       >
         <span className="placement-icon">
@@ -75,6 +78,9 @@ export function BottomHud({ editor }: { editor: Editor }) {
           {done ? <Check size={16} /> : <X size={16} />}
           {done ? "Done" : "Cancel"}
         </button>
+        {tool.type === "terrain" && (
+          <BrushSettings editor={editor} brush={tool} />
+        )}
         {spring !== null && <SpringSettings editor={editor} index={spring} />}
       </div>
     </div>
