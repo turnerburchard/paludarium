@@ -5,7 +5,8 @@ import {
   useEcosystemSnapshot,
   type EcosystemController,
 } from "../simulation/useEcosystem";
-import { activityLabels } from "./AnimalStatus";
+import { activityLabels, stageLabels } from "./AnimalStatus";
+import { animalLife, lifeStage } from "../model/life";
 import { IconButton } from "./IconButton";
 
 /** Shown instead of the inspector while the camera follows an animal. */
@@ -31,11 +32,12 @@ export function WatchCard({
           <X size={17} />
         </IconButton>
       </div>
-      {animal ? (
-        <p>{activityLabels[animal.activity]}</p>
-      ) : asset.swims ? (
-        <p>Swimming</p>
-      ) : null}
+      <p>
+        {stageLabels[lifeStage(animalLife(object))]}
+        {animal
+          ? ` · ${activityLabels[animal.activity]}`
+          : asset.swims && " · Swimming"}
+      </p>
     </aside>
   );
 }

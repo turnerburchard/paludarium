@@ -2,6 +2,7 @@ import { assets, categoryOf, isAnimal } from "../assets";
 import {
   animalLife,
   BREEDING_INTERVAL,
+  lifeStage,
   MATURITY_AGE,
   newLifespan,
 } from "../model/life";
@@ -54,6 +55,7 @@ export function killAnimal(world: World, id: string, now = Date.now()): World {
     at: now,
     event: "died",
     kind: object.kind,
+    id,
     cause: "killed",
   };
   return {
@@ -127,10 +129,19 @@ export function advanceLife(
         at: now,
         event: "died",
         kind: object.kind,
+        id: object.id,
         cause: causeOfDeath(object, life, homeless, habitat),
       });
       return [];
     }
+    const stage = lifeStage(life);
+    if (stage !== lifeStage(previous))
+      log.push({
+        at: now,
+        event: stage === "older" ? "grew-old" : "grew-up",
+        kind: object.kind,
+        id: object.id,
+      });
     return [{ ...object, life }];
   });
 
@@ -225,7 +236,7 @@ export function breed(
       ),
       juvenile,
     ];
-    log.push({ at: now, event: "born", kind: first.kind });
+    log.push({ at: now, event: "born", kind: first.kind, id });
   }
   if (!log.length) return world;
   return {

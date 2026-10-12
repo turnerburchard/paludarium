@@ -227,13 +227,16 @@ export const environmentSchema = z
     path: ["water"],
   });
 export type Environment = z.infer<typeof environmentSchema>;
-/** Births and deaths, oldest first. Only the most recent are kept. */
+/** Births, growing up and old age, and deaths, oldest first. Only the most
+ * recent are kept. */
 export const LOG_LENGTH = 100;
 const logEntrySchema = z.object({
   /** Epoch milliseconds. */
   at: finite.min(0),
-  event: z.enum(["born", "died"]),
+  // Growing up and old age, and the animal's id, are additive version-2 data.
+  event: z.enum(["born", "grew-up", "grew-old", "died"]),
   kind: z.enum(assetKinds),
+  id: z.string().min(1).max(100).optional(),
   cause: z
     .enum(["age", "starved", "crowded", "drowned", "stranded", "killed"])
     .optional(),

@@ -2,8 +2,8 @@ import { Eye } from "lucide-react";
 import { assets } from "../assets";
 import type { World } from "../model/schema";
 import type { AnimalState } from "../simulation/types";
-import { activityLabels } from "./AnimalStatus";
-import { animalLife, MATURITY_AGE } from "../model/life";
+import { activityLabels, stageLabels } from "./AnimalStatus";
+import { animalLife, lifeStage } from "../model/life";
 
 export function CreatureList({
   world,
@@ -21,6 +21,7 @@ export function CreatureList({
       {animals.map((animal) => {
         const object = world.objects.find((object) => object.id === animal.id);
         if (!object) return null;
+        const stage = lifeStage(animalLife(object));
         return (
           <li key={animal.id}>
             <button
@@ -29,7 +30,7 @@ export function CreatureList({
             >
               <span>
                 {object.name ?? assets[object.kind].name}
-                {animalLife(object).age < MATURITY_AGE && " · Juvenile"}
+                {stage !== "adult" && ` · ${stageLabels[stage]}`}
               </span>
               <small>{activityLabels[animal.activity]}</small>
               <Eye size={15} />

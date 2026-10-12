@@ -19,8 +19,8 @@ import {
   useEcosystemSnapshot,
   type EcosystemController,
 } from "../simulation/useEcosystem";
-import { animalLife, MATURITY_AGE } from "../model/life";
-import { AnimalStatus } from "./AnimalStatus";
+import { animalLife, lifeStage } from "../model/life";
+import { AnimalStatus, stageLabels } from "./AnimalStatus";
 
 export function Inspector({
   editor,
@@ -85,13 +85,7 @@ export function Inspector({
       )}
       {!view && life && (
         <div className="animal-care">
-          <p>
-            {life.age < MATURITY_AGE
-              ? "Juvenile · Growing"
-              : life.age > life.lifespan * 0.8
-                ? "Older adult"
-                : "Adult"}
-          </p>
+          <p>{stageLabels[lifeStage(life)]}</p>
           <label className="animal-condition">
             <span>Condition</span>
             <meter

@@ -1,4 +1,11 @@
 import type { Activity, AnimalState } from "../simulation/types";
+import type { LifeStage } from "../model/life";
+
+export const stageLabels: Record<LifeStage, string> = {
+  juvenile: "Juvenile",
+  adult: "Adult",
+  older: "Older adult",
+};
 
 export const activityLabels: Record<Activity, string> = {
   exploring: "Exploring",

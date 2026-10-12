@@ -106,7 +106,7 @@ try {
   await page
     .getByRole("button", { name: /Red-eyed tree frog · Juvenile/ })
     .click();
-  await page.getByText("Juvenile · Growing", { exact: true }).waitFor();
+  await page.getByText("Juvenile", { exact: true }).waitFor();
   assert.equal(
     await page
       .getByRole("meter", { name: "Condition", exact: true })

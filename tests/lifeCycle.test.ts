@@ -62,7 +62,7 @@ describe("slow animal life cycles", () => {
       const killed = killAnimal(world, "animal-0", 2000);
       expect(killed.objects).toEqual(world.objects.slice(1));
       expect(killed.log).toEqual([
-        { at: 2000, event: "died", kind, cause: "killed" },
+        { at: 2000, event: "died", kind, id: "animal-0", cause: "killed" },
       ]);
       expect(parseWorld(JSON.stringify(killed))).toEqual(killed);
       expect(killAnimal(killed, "animal-0")).toBe(killed);
@@ -260,7 +260,14 @@ describe("slow animal life cycles", () => {
   it("logs births and deaths with the cause of each death", () => {
     let world = habitat(["tree-frog", "tree-frog"]);
     world = breed(world, pair, () => 0.5, 1000);
-    expect(world.log).toEqual([{ at: 1000, event: "born", kind: "tree-frog" }]);
+    expect(world.log).toEqual([
+      {
+        at: 1000,
+        event: "born",
+        kind: "tree-frog",
+        id: world.objects.at(-1)!.id,
+      },
+    ]);
     const deaths = (world: World, stranded = new Set<string>()) => {
       for (
         let i = 0;
@@ -273,7 +280,7 @@ describe("slow animal life cycles", () => {
     const old = habitat(["fish"]);
     old.objects[0].life!.age = old.objects[0].life!.lifespan - 5;
     expect(deaths(old)).toEqual([
-      { at: 2000, event: "died", kind: "fish", cause: "age" },
+      { at: 2000, event: "died", kind: "fish", id: "animal-0", cause: "age" },
     ]);
     expect(deaths(habitat(["tree-frog"], 0))[0].cause).toBe("starved");
     expect(deaths(habitat(["tree-frog"]), new Set(["animal-0"]))[0].cause).toBe(
@@ -282,6 +289,18 @@ describe("slow animal life cycles", () => {
     expect(deaths(habitat(["fish"]), new Set(["animal-0"]))[0].cause).toBe(
       "stranded",
     );
+  });
+  it("logs growing up and growing old once each", () => {
+    let world = habitat(["fish"]);
+    const life = world.objects[0].life!;
+    life.age = MATURITY_AGE - 5;
+    life.lifespan = MATURITY_AGE * 2;
+    for (let i = 0; i < 50; i++) world = advanceLife(world, 5, new Set(), 3000);
+    expect(world.log).toEqual([
+      { at: 3000, event: "grew-up", kind: "fish", id: "animal-0" },
+      { at: 3000, event: "grew-old", kind: "fish", id: "animal-0" },
+    ]);
+    expect(parseWorld(JSON.stringify(world)).log).toEqual(world.log);
   });
   it("keeps only the most recent log entries", () => {
     const world = habitat(["fish"]);

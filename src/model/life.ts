@@ -25,6 +25,13 @@ export function newLifespan(random: () => number) {
   return (1.5 + random()) * 60 * 60;
 }
 
+export type LifeStage = "juvenile" | "adult" | "older";
+/** Older adults are in the last fifth of their lives. */
+export function lifeStage(life: { age: number; lifespan: number }): LifeStage {
+  if (life.age < MATURITY_AGE) return "juvenile";
+  return life.age > life.lifespan * 0.8 ? "older" : "adult";
+}
+
 export function juvenileScale(object: HabitatObject) {
   if (!isAnimal(object.kind)) return 1;
   return 0.45 + 0.55 * Math.min(1, animalLife(object).age / MATURITY_AGE);

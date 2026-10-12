@@ -134,6 +134,8 @@ const logTime = new Intl.DateTimeFormat(undefined, {
 function describe({ event, kind, cause }: LogEntry) {
   const name = assets[kind].name;
   if (event === "born") return `${name} born.`;
+  if (event === "grew-up") return `${name} grew up.`;
+  if (event === "grew-old") return `${name} is getting old.`;
   if (cause === "age") return `${name} died of old age.`;
   if (cause === "starved") return `${name} died of starvation.`;
   if (cause === "crowded") return `${name} died of overcrowding.`;
