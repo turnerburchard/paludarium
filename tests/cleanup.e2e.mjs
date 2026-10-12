@@ -614,7 +614,11 @@ try {
     .waitFor();
   assert.deepEqual(await receiverSaved(), sharedWorld);
   assert.equal(new URL(receiver.url()).hash, "");
-  await receiver.getByRole("button", { name: "Worlds", exact: true }).click();
+  // The copy's tank compiles its shaders now, which stalls software WebGL on
+  // CI for about half a minute, so this one click waits longer.
+  await receiver
+    .getByRole("button", { name: "Worlds", exact: true })
+    .click({ timeout: 60_000 });
   await receiver
     .getByRole("button", {
       name: "My original habitat",
