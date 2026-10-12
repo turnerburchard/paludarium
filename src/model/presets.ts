@@ -950,8 +950,19 @@ function forestFloor() {
     let ground = floor + knoll;
     ground += (-0.15 - ground) * lagoon;
     ground += (0.3 - ground) * pond;
-    const channel = 1 - smooth((brookDistance(x, z) - 0.1) / 0.3);
-    const height = ground - 0.14 * channel * smooth(ground - env.water);
+    const brook = brookDistance(x, z);
+    const channel = 1 - smooth((brook - 0.1) / 0.3);
+    // A low bank of moss beside the stones keeps the brook that runs down
+    // to the lagoon in its bed where the knoll slopes away across it. Unlike
+    // the bed, it stays full height down to the water, since the low ground
+    // is where the brook strays.
+    const fromBrook = nearestOnPath(x, z, brooks[0]).distance;
+    const bank =
+      smooth((fromBrook - 0.2) / 0.1) * (1 - smooth((fromBrook - 0.3) / 0.4));
+    const height =
+      ground +
+      0.08 * bank * smooth((ground - env.water) / 0.2) -
+      0.14 * channel * smooth(ground - env.water);
     return Math.round((height - baseGroundHeight(x, z, env)) * 100) / 100 || 0;
   });
   const paint = terrain.heights.map((_, i): GroundMaterial => {
