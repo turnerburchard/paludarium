@@ -323,7 +323,7 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       seed: newSeed(),
     });
     select(null);
-    setPlacementRotation(0);
+    setPlacementRotation(isAnimal(kind) ? 0 : Math.random() * Math.PI * 2);
   }
   function choosePrebuilt(prebuilt: Prebuilt) {
     setTool({ type: "prebuilt", prebuilt, seed: newSeed() });
@@ -405,8 +405,10 @@ export function useEditor(readOnly = false, sharedWorld?: World) {
       select(object.id);
       setTool({ type: "select" });
     }
-    if (tool.type === "place")
+    if (tool.type === "place") {
       setTool({ ...tool, scale: placementScale(kind), seed: newSeed() });
+      if (!isAnimal(kind)) setPlacementRotation(Math.random() * Math.PI * 2);
+    }
   }
   /** Adds every piece of a prebuilt at once, so one undo takes it away. */
   function placePrebuilt(

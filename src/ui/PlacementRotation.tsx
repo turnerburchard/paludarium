@@ -52,13 +52,9 @@ function TurnButton({
 }
 
 export function PlacementRotation({ editor }: { editor: Editor }) {
-  const degrees =
-    ((Math.round((editor.placementRotation * 180) / Math.PI) % 360) + 360) %
-    360;
   return (
     <div className="placement-rotation" aria-label="Placement rotation">
       <TurnButton left onTurn={() => editor.rotate(-Math.PI / 12)} />
-      <output aria-label="Placement angle">{degrees}°</output>
       <TurnButton onTurn={() => editor.rotate(Math.PI / 12)} />
     </div>
   );

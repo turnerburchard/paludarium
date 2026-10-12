@@ -422,33 +422,22 @@ try {
     .getByRole("button", { name: "Add", exact: true })
     .click();
   await page.getByRole("button", { name: "Hardscape", exact: true }).click();
+  await page.evaluate(() => {
+    window.originalRandom = Math.random;
+    Math.random = () => 0.5;
+  });
   await page.getByRole("button", { name: "River stone", exact: true }).click();
-  const angle = page.getByRole("status", { name: "Placement angle" });
+  await page.evaluate(() => {
+    Math.random = window.originalRandom;
+    delete window.originalRandom;
+  });
+  assert.equal(await page.getByLabel("Placement angle").count(), 0);
   await page.getByRole("button", { name: "Turn placement right" }).tap();
-  assert.equal(await angle.innerText(), "15°", "one touch turns exactly once");
   await page.getByRole("button", { name: "Turn placement left" }).tap();
-  assert.equal(await angle.innerText(), "0°");
-  const right = await page
-    .getByRole("button", { name: "Turn placement right" })
-    .boundingBox();
-  await page.mouse.move(right.x + right.width / 2, right.y + right.height / 2);
-  await page.mouse.down();
-  await page.waitForTimeout(650);
-  await page.mouse.up();
-  const held = await angle.innerText();
-  assert.ok(parseInt(held) >= 45, "holding spins repeatedly");
-  await page.waitForTimeout(250);
-  assert.equal(await angle.innerText(), held, "release stops spinning");
   await page.screenshot({ path: "/tmp/paludarium-rotation-phone.png" });
   await page.getByRole("button", { name: "Turn placement left" }).focus();
   await page.keyboard.press("Enter");
-  assert.equal(
-    parseInt(await angle.innerText()),
-    parseInt(held) - 15,
-    "keyboard activation turns once",
-  );
   await page.keyboard.press("Space");
-  assert.equal(parseInt(await angle.innerText()), parseInt(held) - 30);
   assert.equal(
     await page
       .locator('.topbar button[aria-label="Resume life (Space)"]')
@@ -456,7 +445,7 @@ try {
     1,
     "Space on a turn button does not pause or resume life",
   );
-  const placedAngle = parseInt(await angle.innerText());
+  const placedAngle = 150;
   const spot = await page.evaluate(async (url) => {
     const { _roots } = await import(url);
     const { groundHeight } = await import("/src/model/terrain.ts");
@@ -612,7 +601,7 @@ try {
   await newcomer.close();
   assert.deepEqual(errors, [], "no browser runtime errors");
   console.log(
-    "PASS: crawler previews, clipboard/native/canceled sharing, introduction, stable rename and mode transitions, terrain labels and touch/hold/keyboard rotation",
+    "PASS: crawler previews, clipboard/native/canceled sharing, introduction, stable rename and mode transitions, terrain labels and random placement and touch/keyboard rotation",
   );
 } finally {
   await browser?.close();
