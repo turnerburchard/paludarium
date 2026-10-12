@@ -1,6 +1,7 @@
 /** Native mobile placement, two-finger navigation and the bottom placement bar. */
 import assert from "node:assert/strict";
 import { chromium, webkit, devices } from "playwright";
+import { waitForTank } from "./browser.mjs";
 import { startServer } from "../scripts/server.mjs";
 
 const safari = process.env.TOUCH_BROWSER === "webkit";
@@ -66,6 +67,7 @@ try {
     localStorage.setItem("little-worlds:v4", JSON.stringify(world));
   }, world);
   await page.goto(url);
+  await waitForTank(page);
   // Phones have no Pause button, so use the Space shortcut.
   await page.locator("body").press("Space");
   await page.getByRole("button", { name: "Build", exact: true }).tap();
@@ -116,6 +118,7 @@ try {
               ? value.worlds.find((entry) => entry.id === value.activeId).world
               : value,
         ).environment;
+        camera.updateMatrixWorld();
         const point = camera.position
           .clone()
           .set(x, groundHeight(x, z, env), z)
@@ -442,9 +445,6 @@ try {
   await bottomBar();
   await page.setViewportSize({ width: 390, height: 720 });
   await bottomBar();
-  await page.screenshot({
-    path: `/tmp/paludarium-touch-${safari ? "webkit" : "chromium"}.png`,
-  });
   await page.getByRole("button", { name: "Done", exact: true }).tap();
   stage = "Build pan";
   await pan();
@@ -460,6 +460,7 @@ try {
   await page.getByRole("button", { name: "Build", exact: true }).tap();
   await page.getByRole("button", { name: "Worlds", exact: true }).tap();
   await page.getByRole("button", { name: "Empty tank", exact: true }).tap();
+  await waitForTank(page);
   await page
     .getByRole("navigation", { name: "Tools" })
     .getByRole("button", { name: "Add", exact: true })
@@ -534,9 +535,6 @@ try {
     beforeDrag.angle,
     "single-finger placement drags spin the camera",
   );
-  await page.screenshot({
-    path: `/tmp/paludarium-frog-${safari ? "webkit" : "chromium"}.png`,
-  });
   assert.deepEqual(errors, [], "no browser runtime errors");
   console.log(
     `PASS (${safari ? "WebKit" : "Chromium"}): aquarium taps, native coordinates, cancel rejection, two-finger pan in placement/Build/View, pinch zoom, tap after navigation, bottom controls after viewport resizing, zoomed frog placement after lost pointer releases, drag to spin while placing`,

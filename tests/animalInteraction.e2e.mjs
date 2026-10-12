@@ -1,21 +1,12 @@
 import assert from "node:assert/strict";
-import { chromium } from "playwright";
+import { launchChromium, storageKey, waitForTank } from "./browser.mjs";
 import { startServer } from "../scripts/server.mjs";
 
-const storageKey = "little-worlds:v4";
 const server = await startServer();
 const { url } = server;
 let browser;
 try {
-  browser = await chromium.launch({
-    executablePath: process.env.CHROMIUM_PATH || undefined,
-    args: [
-      "--no-sandbox",
-      "--use-gl=angle",
-      "--use-angle=swiftshader",
-      "--enable-unsafe-swiftshader",
-    ],
-  });
+  browser = await launchChromium();
   const widths = process.argv.includes("--phone") ? [390] : [1440, 390];
   for (const width of widths) {
     for (const [kind, name, water] of [
@@ -66,6 +57,7 @@ try {
         { world, storageKey },
       );
       await page.goto(url);
+      await waitForTank(page);
       // Phones have no Pause button, so use the Space shortcut.
       await page.locator("body").press("Space");
       async function openLife() {
@@ -105,9 +97,6 @@ try {
         await page.getByRole("complementary", { name: "Watching" }).count(),
         0,
       );
-      await page.screenshot({
-        path: `/tmp/paludarium-animal-${kind}-${width}-info.png`,
-      });
       await card.getByRole("button", { name: "Watch up close" }).click();
       const watch = page.getByRole("complementary", { name: "Watching" });
       await watch.waitFor();
@@ -117,9 +106,6 @@ try {
         await watch.getByText("Not a shark at all", { exact: false }).count(),
         0,
       );
-      await page.screenshot({
-        path: `/tmp/paludarium-animal-${kind}-${width}-watch.png`,
-      });
       await watch.getByRole("button", { name: "Stop watching" }).click();
       await card.waitFor();
       if (width === 390) {
@@ -141,9 +127,6 @@ try {
         await card.getByRole("button", { name: "Remove", exact: true }).count(),
         0,
       );
-      await page.screenshot({
-        path: `/tmp/paludarium-animal-${kind}-${width}-build.png`,
-      });
       assert.ok(fiberUrl);
       async function sceneState() {
         return page.evaluate(async (fiberUrl) => {
@@ -199,7 +182,7 @@ try {
       assert.equal(death.log.length, 1);
       assert.deepEqual(
         { ...death.log[0], at: 0 },
-        { at: 0, event: "died", kind, cause: "killed" },
+        { at: 0, event: "died", kind, id: "animal", cause: "killed" },
       );
       assert.equal(await card.count(), 0);
       await waitFor(async () => (await sceneState()).bodies.length === 1);
@@ -214,9 +197,6 @@ try {
       await toggleLife();
       await waitFor(async () => (await sceneState()).bodies[0]?.roll > 0.1);
       await toggleLife();
-      await page.screenshot({
-        path: `/tmp/paludarium-animal-${kind}-${width}-death.png`,
-      });
       await page
         .getByRole("button", { name: "Undo (⌘/Ctrl Z)", exact: true })
         .click();
@@ -242,6 +222,7 @@ try {
         .getByText(`${name} was killed.`)
         .waitFor();
       await page.reload();
+      await waitForTank(page);
       await page.getByRole("button", { name: "About Paludarium" }).waitFor();
       assert.equal((await saved()).objects.length, 0);
       assert.equal((await saved()).log.length, 1);
