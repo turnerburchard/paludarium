@@ -43,10 +43,8 @@ const WAYPOINT_REACH = 0.3;
  * for it to follow them. */
 const SWIM_RANGE = [1, 3.5];
 const SCHOOL_RANGE = 1.3;
-/** A courting pair spend this long face to face before their juvenile is
- * born. One that can't reach its mate within COURTING_PATIENCE gives up
- * for COURTING_BREAK. All in simulated seconds. */
-const KISS_TIME = 15;
+/** A courting animal that can't reach its mate within COURTING_PATIENCE
+ * gives up for COURTING_BREAK. Both in simulated seconds. */
 const COURTING_PATIENCE = 240;
 const COURTING_BREAK = 600;
 /** How close courting fish come, since they never stop swimming. */
@@ -91,8 +89,6 @@ interface Agent {
   /** The animal it is courting, and since when. */
   mate?: Agent;
   courtingSince?: number;
-  /** Since when it has been face to face with its mate. */
-  together?: number;
   /** It won't court again before this, having failed to reach its mate. */
   shyUntil?: number;
   /** Still growing, and the parent it keeps close to, if one is alive. */
@@ -359,7 +355,6 @@ export class Ecosystem {
     for (const one of [agent, agent.mate]) {
       if (!one) continue;
       one.mate = undefined;
-      one.together = undefined;
       if (one.arrival === "courting") one.arrival = "resting";
       if (one.state.activity === "courting" && !one.state.moving) {
         one.state.activity = "resting";
@@ -367,19 +362,9 @@ export class Ecosystem {
       }
     }
   }
-  /** Face to face for long enough, the pair have met. */
+  /** Once face to face, the pair have met. */
   private meet(agent: Agent, mate: Agent, near: boolean) {
-    if (!near) {
-      agent.together = undefined;
-      return;
-    }
-    agent.together ??= this.elapsed;
-    if (
-      mate.together === undefined ||
-      this.elapsed - agent.together < KISS_TIME ||
-      this.elapsed - mate.together < KISS_TIME
-    )
-      return;
+    if (!near) return;
     this.met.push([agent.state.id, mate.state.id]);
     this.part(agent);
   }
