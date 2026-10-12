@@ -46,7 +46,9 @@ Rules that keep this working:
 - `groundHeight` is the single source of truth for terrain: rendering, placement, navigation all use it.
 - World objects are plain serializable data with a seed. Never store Three.js objects in the model.
 - Simulation randomness goes through an injected random source so behavior is testable.
-- Changing the save schema needs validation. There are no users yet, so with the owner's OK an incompatible change can bump the storage key (now `little-worlds:v4`) and drop old saves instead of migrating them. Once people rely on their saves, incompatible changes need a migration.
+- Saves, files and share links (kept for good on the share server) outlive the code that wrote them. A change old worlds can't pass needs a migration: bump `WORLD_VERSION` and add a step in `src/model/migrations.ts`, with a unit test that opens a world saved at the old version. Never edit or remove a shipped step.
+- Never remove an asset kind from `assetKinds`. Old worlds that name it would stop loading. Hide it from the library, or add a migration step that swaps it for another kind.
+- Dropping saves (bumping the storage key, now `little-worlds:v4`) is a last resort that needs the owner's OK.
 
 ## Testing
 
