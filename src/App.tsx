@@ -60,14 +60,15 @@ export default function App({
     hasDismissedHelp() ? null : "shown",
   );
   const [watchRequest, setWatchRequest] = useState<string | null>(null);
+  // Watching from build mode switches to view, so stopping switches back.
+  const [buildAfterWatch, setBuildAfterWatch] = useState(false);
   // Deselecting (Escape, clicking away) also stops watching.
   const watchingId =
     watchRequest && watchRequest === selected?.id ? watchRequest : null;
   // Watching ends for good once its frog is deselected; reselecting it later
   // shouldn't zoom back in.
   useEffect(() => {
-    if (watchRequest && watchRequest !== editor.selectedId)
-      setWatchRequest(null);
+    if (watchRequest && watchRequest !== editor.selectedId) stopWatching();
   }, [editor.selectedId]);
 
   useEffect(() => {
@@ -106,9 +107,15 @@ export default function App({
 
   function watch(id: string) {
     if (!view) setMode(true);
+    setBuildAfterWatch(!view);
     editor.select(id);
     setWatchRequest(id);
     setSheetOpen(false);
+  }
+
+  function stopWatching() {
+    if (buildAfterWatch) setMode(false);
+    else setWatchRequest(null);
   }
 
   function inspectAnimal(id: string) {
@@ -244,7 +251,7 @@ export default function App({
         <WatchCard
           object={selected}
           ecosystem={ecosystem}
-          onStop={() => setWatchRequest(null)}
+          onStop={stopWatching}
         />
       )}
       {/* An open card covers this corner and already shows the interface. */}
