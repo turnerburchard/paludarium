@@ -169,6 +169,16 @@ export const objectSchema = z.object({
       lifespan: finite.positive(),
       condition: finite.min(0).max(1),
       breeding: finite.min(0),
+      breedingTarget: finite.positive().optional(),
+      breedingCooldown: finite.min(0).optional(),
+    })
+    .optional(),
+  // Pairing and accumulated time together survive reloads.
+  courtship: z
+    .object({
+      mate: z.string().min(1).max(100),
+      together: finite.min(0).max(10),
+      elapsed: finite.min(0),
     })
     .optional(),
   // Additive version-1 data: moss grown over stone or wood, and the stone or

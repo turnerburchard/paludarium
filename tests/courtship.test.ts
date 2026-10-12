@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { Ecosystem } from "../src/simulation/engine";
 import { HabitatGraph, distance } from "../src/simulation/navigation";
 import { createWorldEcosystem } from "../src/simulation/worldHabitat";
+import { parseWorld } from "../src/editor/persistence";
+import {
+  advanceLife,
+  withAnimalCourtships,
+  withAnimalPositions,
+} from "../src/simulation/lifeCycle";
 import { makePreset } from "../src/model/presets";
 import { randomFromSeed } from "../src/model/random";
 import type { AnimalSeed, HabitatNode } from "../src/simulation/types";
@@ -36,6 +42,63 @@ function run(engine: Ecosystem, seconds: number) {
 }
 
 describe("courtship", () => {
+  it("requires ten real seconds together, counts once per step and restores progress", () => {
+    const create = () =>
+      new Ecosystem(
+        new HabitatGraph(row(3)),
+        [frog("a", "n0"), frog("b", "n1")],
+        { elapsed: 0, random: () => 0.5 },
+      );
+    const ready = new Set(["a", "b"]);
+    const engine = create();
+    engine.court(ready);
+    run(engine, 6);
+    expect(engine.meetings).toEqual([]);
+    expect(engine.courtships[0].together).toBeGreaterThan(5);
+    expect(engine.getAnimal("b")!.reason).toBe("Courting");
+    const beforePause = engine.courtships;
+    for (let i = 0; i < 20; i++) engine.advance(0.1, true);
+    expect(engine.courtships).toEqual(beforePause);
+    const restored = create();
+    restored.court(ready, JSON.parse(JSON.stringify(engine.courtships)));
+    expect(restored.courtships).toEqual(engine.courtships);
+    run(restored, 3);
+    expect(restored.meetings).toEqual([]);
+    run(restored, 2);
+    expect(restored.takeMeetings()).toEqual([["a", "b"]]);
+    expect(restored.courtships).toEqual([]);
+  });
+
+  it("retains an actual world's pair and progress through save/reload and habitat rebuilds", () => {
+    let world = advanceLife(makePreset("tropical"), 25);
+    const engine = createWorldEcosystem(world, undefined, randomFromSeed(4));
+    for (
+      let i = 0;
+      i < 30 && !engine.courtships.some((pair) => pair.together > 2);
+      i++
+    )
+      run(engine, 0.5);
+    expect(engine.courtships.some((pair) => pair.together > 2)).toBe(true);
+    world = withAnimalCourtships(
+      withAnimalPositions(world, (id) => engine.observeAnimal(id)?.position),
+      engine.courtships,
+    );
+    const reloaded = createWorldEcosystem(
+      parseWorld(JSON.stringify(world)),
+      undefined,
+      randomFromSeed(4),
+    );
+    expect(reloaded.courtships).toEqual(engine.courtships);
+    const rebuilt = createWorldEcosystem(
+      world,
+      { world, engine },
+      randomFromSeed(4),
+    );
+    expect(rebuilt.courtships).toEqual(engine.courtships);
+    reloaded.court(new Set());
+    expect(reloaded.courtships).toEqual([]);
+  });
+
   it("brings a ready pair face to face, then reports that they met", () => {
     const engine = new Ecosystem(
       new HabitatGraph(row(10)),

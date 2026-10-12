@@ -1,7 +1,7 @@
 import { assets, categoryOf, isAnimal } from "../assets";
 import {
   animalLife,
-  BREEDING_INTERVAL,
+  newBreedingInterval,
   lifeStage,
   MATURITY_AGE,
   newLifespan,
@@ -115,14 +115,17 @@ export function advanceLife(
       0,
       Math.min(1, previous.condition + seconds * change),
     );
+    const well = condition >= 0.6 && support >= 1 && !homeless;
+    // Cooldown and readiness run consecutively, even across a long life tick.
+    const available = Math.max(0, seconds - previous.breedingCooldown);
     const life = {
       ...previous,
       age: previous.age + seconds,
       condition,
-      breeding:
-        condition >= 0.6 && support >= 1 && !homeless
-          ? Math.min(BREEDING_INTERVAL, previous.breeding + seconds)
-          : 0,
+      breedingCooldown: Math.max(0, previous.breedingCooldown - seconds),
+      breeding: well
+        ? Math.min(previous.breedingTarget, previous.breeding + available)
+        : Math.max(0, previous.breeding - seconds),
     };
     if (life.age >= life.lifespan || life.condition <= 0) {
       log.push({
@@ -167,7 +170,12 @@ export function readyToBreed(world: World): Set<string> {
       .filter((object) => {
         if (!isAnimal(object.kind)) return false;
         const life = animalLife(object);
-        return life.age >= MATURITY_AGE && life.breeding >= BREEDING_INTERVAL;
+        return (
+          life.age >= MATURITY_AGE &&
+          life.condition >= 0.6 &&
+          life.breedingCooldown === 0 &&
+          life.breeding >= life.breedingTarget
+        );
       })
       .map((object) => object.id),
   );
@@ -231,7 +239,16 @@ export function breed(
     objects = [
       ...objects.map((o) =>
         o === first || o === second
-          ? { ...o, life: { ...animalLife(o), breeding: 0 } }
+          ? {
+              ...o,
+              courtship: undefined,
+              life: {
+                ...animalLife(o),
+                breeding: 0,
+                breedingTarget: newBreedingInterval(random),
+                breedingCooldown: 60 + random() * 60,
+              },
+            }
           : o,
       ),
       juvenile,
@@ -256,4 +273,28 @@ function causeOfDeath(
   if (homeless)
     return assets[object.kind].habitat === "water" ? "stranded" : "drowned";
   return habitat.food <= habitat.space ? "starved" : "crowded";
+}
+
+/** Store the live pair and its progress alongside animal positions. */
+export function withAnimalCourtships(
+  world: World,
+  courtships: readonly {
+    id: string;
+    mate: string;
+    together: number;
+    elapsed: number;
+  }[],
+): World {
+  const saved = new Map(
+    courtships.map(({ id, ...courtship }) => [id, courtship]),
+  );
+  return {
+    ...world,
+    objects: world.objects.map((object) => {
+      if (!isAnimal(object.kind)) return object;
+      const courtship = saved.get(object.id);
+      if (!courtship && !object.courtship) return object;
+      return { ...object, courtship };
+    }),
+  };
 }

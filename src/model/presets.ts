@@ -1,5 +1,5 @@
 import { assets, isAnimal } from "../assets";
-import { animalLife, BREEDING_INTERVAL, MATURITY_AGE } from "./life";
+import { animalLife, MATURITY_AGE } from "./life";
 import { createObjectId } from "./objectId";
 import { WORLD_VERSION } from "./migrations";
 import {
@@ -79,7 +79,10 @@ function startFamilies(objects: HabitatObject[]) {
     if (ready.includes(object))
       return {
         ...object,
-        life: { ...animalLife(object), breeding: BREEDING_INTERVAL - 20 },
+        life: {
+          ...animalLife(object),
+          breeding: animalLife(object).breedingTarget - 20,
+        },
       };
     return object;
   });

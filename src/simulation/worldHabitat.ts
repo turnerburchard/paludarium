@@ -26,6 +26,7 @@ import { HabitatNodeGrid } from "./nodeGrid";
 import { LandSurfaces } from "./landSurfaces";
 import { Solids } from "./solids";
 import { Ecosystem } from "./engine";
+import { readyToBreed, youngAndParents } from "./lifeCycle";
 import type { Body } from "./bodyPose";
 import { juvenileScale } from "../model/life";
 import { HabitatGraph, distance } from "./navigation";
@@ -708,7 +709,7 @@ export function createWorldEcosystem(
     target.amount += patch.amount;
     food.set(nodeId, target);
   }
-  return new Ecosystem(graph, animals, {
+  const engine = new Ecosystem(graph, animals, {
     random,
     water,
     solids,
@@ -716,6 +717,15 @@ export function createWorldEcosystem(
     discoveries: snapshot?.discoveries,
     food: [...food.values()],
   });
+  engine.court(
+    readyToBreed(world),
+    previous?.engine.courtships ??
+      world.objects.flatMap((object) =>
+        object.courtship ? [{ id: object.id, ...object.courtship }] : [],
+      ),
+  );
+  engine.raise(youngAndParents(world));
+  return engine;
 }
 /** Ordinary edits preserve live fish. A moved fish starts where it was
  * placed; a newly blocked fish finds nearby clear water. A fish with no open

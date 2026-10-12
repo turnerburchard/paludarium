@@ -49,6 +49,8 @@ const COURTING_PATIENCE = 240;
 const COURTING_BREAK = 600;
 /** How close courting fish come, since they never stop swimming. */
 const FISH_MEETING = 0.6;
+/** Active real seconds spent close together before a birth. */
+const COURTSHIP_TIME = 10;
 /** How far a juvenile strays from its parent before heading back. */
 const PARENT_RANGE = 1.2;
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
@@ -89,6 +91,7 @@ interface Agent {
   /** The animal it is courting, and since when. */
   mate?: Agent;
   courtingSince?: number;
+  together?: number;
   /** It won't court again before this, having failed to reach its mate. */
   shyUntil?: number;
   /** Still growing, and the parent it keeps close to, if one is alive. */
@@ -100,6 +103,12 @@ interface Agent {
   /** The body as last set down, before any hop's lift, the spot it was set
    * down from and when, so the next is set down from it. */
   settled?: { pose: BodyPose; from: Vec3; at: number; gliding: boolean };
+}
+export interface Courtship {
+  id: string;
+  mate: string;
+  together: number;
+  elapsed: number;
 }
 export interface SimulationOptions {
   random?: () => number;
@@ -302,7 +311,37 @@ export class Ecosystem {
   /** Pairs up animals of a species that are ready to breed and can reach
    * each other. Each pair makes for the other, and once they have met face
    * to face `takeMeetings` reports them. */
-  court(ready: ReadonlySet<string>) {
+  court(ready: ReadonlySet<string>, saved: readonly Courtship[] = []) {
+    for (const pair of saved) {
+      const agent = this.agents.get(pair.id);
+      const mate = this.agents.get(pair.mate);
+      const reciprocal = saved.find(
+        (other) => other.id === pair.mate && other.mate === pair.id,
+      );
+      if (
+        !agent ||
+        !mate ||
+        agent === mate ||
+        agent.mate ||
+        mate.mate ||
+        !ready.has(pair.id) ||
+        !ready.has(pair.mate) ||
+        !reciprocal ||
+        agent.profile.id !== mate.profile.id ||
+        !this.graph
+          .routes(agent.state.nodeId, agent.profile)
+          .distances.has(mate.state.nodeId)
+      )
+        continue;
+      agent.mate = mate;
+      mate.mate = agent;
+      agent.courtingSince = mate.courtingSince =
+        this.elapsed - Math.max(pair.elapsed, reciprocal.elapsed);
+      agent.together = mate.together = Math.min(
+        pair.together,
+        reciprocal.together,
+      );
+    }
     for (const agent of this.agents.values())
       if (
         agent.mate &&
@@ -330,7 +369,22 @@ export class Ecosystem {
       agent.mate = mate;
       mate.mate = agent;
       agent.courtingSince = mate.courtingSince = this.elapsed;
+      agent.together = mate.together = 0;
     }
+  }
+  get courtships(): Courtship[] {
+    return [...this.agents.values()].flatMap((agent) =>
+      agent.mate
+        ? [
+            {
+              id: agent.state.id,
+              mate: agent.mate.state.id,
+              together: agent.together ?? 0,
+              elapsed: this.elapsed - agent.courtingSince!,
+            },
+          ]
+        : [],
+    );
   }
   /** Juveniles keep to cover and stay near a parent. `young` gives each
    * juvenile's living parents. */
@@ -355,6 +409,8 @@ export class Ecosystem {
     for (const one of [agent, agent.mate]) {
       if (!one) continue;
       one.mate = undefined;
+      one.together = undefined;
+      one.courtingSince = undefined;
       if (one.arrival === "courting") one.arrival = "resting";
       if (one.state.activity === "courting" && !one.state.moving) {
         one.state.activity = "resting";
@@ -362,9 +418,14 @@ export class Ecosystem {
       }
     }
   }
-  /** Once face to face, the pair have met. */
+  /** Count once per step. Brief interruptions pause their time together. */
   private meet(agent: Agent, mate: Agent, near: boolean) {
-    if (!near) return;
+    if (!near || agent.state.id > mate.state.id) return;
+    agent.together = mate.together = Math.min(
+      COURTSHIP_TIME,
+      (agent.together ?? 0) + STEP / this.speed,
+    );
+    if (agent.together < COURTSHIP_TIME - 1e-9) return;
     this.met.push([agent.state.id, mate.state.id]);
     this.part(agent);
   }
@@ -721,13 +782,13 @@ export class Ecosystem {
           distance(state.position, mate.state.position) <=
           this.meetingDistance(agent, mate);
         go(
-          meeting,
+          near ? state.nodeId : meeting,
           "courting",
           "courting",
-          meeting !== state.nodeId
-            ? "Heading to its mate"
-            : near
-              ? "Courting"
+          near
+            ? "Courting"
+            : meeting !== state.nodeId
+              ? "Heading to its mate"
               : "Waiting for its mate",
           meeting !== state.nodeId ? 2 : 6,
         );

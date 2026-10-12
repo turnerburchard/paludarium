@@ -6,8 +6,19 @@ import type { HabitatObject } from "./schema";
 export const MATURITY_AGE = 5 * 60;
 export const BREEDING_INTERVAL = 8 * 60;
 
+/** A fresh readiness interval after each birth, in active real seconds. */
+export function newBreedingInterval(random: () => number) {
+  return 4 * 60 + random() * (BREEDING_INTERVAL - 4 * 60);
+}
+
 export function animalLife(object: HabitatObject) {
-  if (object.life) return object.life;
+  const breedingTarget = 30 + randomFromSeed(object.seed)() * 60;
+  if (object.life)
+    return {
+      ...object.life,
+      breedingTarget: object.life.breedingTarget ?? breedingTarget,
+      breedingCooldown: object.life.breedingCooldown ?? 0,
+    };
   const random = randomFromSeed(object.seed);
   const lifespan = newLifespan(random);
   // Placed adults start at different ages so founding pairs don't die together.
@@ -16,6 +27,8 @@ export function animalLife(object: HabitatObject) {
     lifespan,
     condition: 1,
     breeding: 0,
+    breedingTarget,
+    breedingCooldown: 0,
   };
 }
 

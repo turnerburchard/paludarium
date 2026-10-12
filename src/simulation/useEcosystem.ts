@@ -17,6 +17,7 @@ import {
   habitatSupport,
   readyToBreed,
   withAnimalPositions,
+  withAnimalCourtships,
   youngAndParents,
 } from "./lifeCycle";
 import type { Vec3 } from "./types";
@@ -154,8 +155,10 @@ export function useEcosystem(
     const current = live.current!;
     if (paused) return;
     current.lifeRemainder += Math.min(seconds, 0.25);
-    // A pair that has just met has its juvenile straight away.
-    if (current.lifeRemainder < 5 && !current.engine.meetings.length) return;
+    // Save courtship every second; ordinary life can use a slower tick.
+    const interval = current.engine.courtships.length ? 1 : 5;
+    if (current.lifeRemainder < interval && !current.engine.meetings.length)
+      return;
     const stranded = new Set(
       current.world.objects
         .filter((o) => isAnimal(o.kind) && !canLive(o.id))
@@ -168,7 +171,11 @@ export function useEcosystem(
       (id) => current.engine.observeAnimal(id)?.position,
     );
     const next = breed(
-      evolveLife(placed, current.lifeRemainder, stranded),
+      evolveLife(
+        withAnimalCourtships(placed, current.engine.courtships),
+        current.lifeRemainder,
+        stranded,
+      ),
       current.engine.takeMeetings(),
     );
     current.lifeRemainder = 0;
@@ -189,10 +196,10 @@ export function useEcosystem(
         world: placed,
       });
     }
-    current.world = next;
     current.engine.court(readyToBreed(next));
     current.engine.raise(youngAndParents(next));
-    onLifeChange(previous, next);
+    current.world = withAnimalCourtships(next, current.engine.courtships);
+    onLifeChange(previous, current.world);
   }
   return {
     live,

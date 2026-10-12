@@ -15,6 +15,7 @@ import {
   BREEDING_INTERVAL,
   juvenileScale,
   MATURITY_AGE,
+  newBreedingInterval,
 } from "../src/model/life";
 import {
   advanceLife,
@@ -23,6 +24,7 @@ import {
   killAnimal,
   readyToBreed,
   withAnimalPositions,
+  withAnimalCourtships,
   youngAndParents,
 } from "../src/simulation/lifeCycle";
 
@@ -44,6 +46,7 @@ function habitat(kinds: AssetKind[], plants = 8): World {
             ...animalLife(animal),
             age: MATURITY_AGE,
             breeding: BREEDING_INTERVAL,
+            breedingTarget: BREEDING_INTERVAL,
           },
         };
       }),
@@ -55,6 +58,71 @@ function habitat(kinds: AssetKind[], plants = 8): World {
 }
 
 describe("slow animal life cycles", () => {
+  it("starts adults quickly and chooses a fresh four-to-eight-minute interval after birth", () => {
+    const initial = animalLife(object("tree-frog", "new"));
+    expect(initial.breedingTarget).toBeGreaterThanOrEqual(30);
+    expect(initial.breedingTarget).toBeLessThanOrEqual(90);
+    expect(newBreedingInterval(() => 0)).toBe(240);
+    expect(newBreedingInterval(() => 1)).toBe(480);
+    const world = breed(habitat(["tree-frog", "tree-frog"]), pair, () => 0.5);
+    for (const parent of world.objects.slice(0, 2)) {
+      expect(parent.life).toMatchObject({
+        breeding: 0,
+        breedingTarget: 360,
+        breedingCooldown: 90,
+      });
+    }
+    const reloaded = parseWorld(JSON.stringify(world));
+    const cooling = advanceLife(reloaded, 60);
+    expect(cooling.objects[0].life).toMatchObject({
+      breeding: 0,
+      breedingCooldown: 30,
+    });
+    const recovering = advanceLife(cooling, 40);
+    expect(recovering.objects[0].life).toMatchObject({
+      breeding: 10,
+      breedingCooldown: 0,
+    });
+    expect(readyToBreed(recovering).size).toBe(0);
+    const ready = advanceLife(recovering, 350);
+    expect([...readyToBreed(ready)]).toContain("animal-0");
+    const secondBirth = breed(ready, pair, () => 0.25);
+    expect(secondBirth.objects[0].life).toMatchObject({
+      breeding: 0,
+      breedingTarget: 300,
+      breedingCooldown: 75,
+    });
+  });
+
+  it("erodes readiness at the same rate as recovery and keeps unhealthy animals from pairing", () => {
+    const world = habitat(["tree-frog", "tree-frog"]);
+    world.objects[0].life!.breeding = 100;
+    const stranded = advanceLife(world, 10, new Set(["animal-0"]));
+    expect(stranded.objects[0].life!.breeding).toBe(90);
+    expect(advanceLife(stranded, 10).objects[0].life!.breeding).toBe(100);
+    stranded.objects[0].life!.condition = 0.3;
+    stranded.objects[0].life!.breeding = BREEDING_INTERVAL;
+    expect(readyToBreed(stranded).has("animal-0")).toBe(false);
+    stranded.objects[0].life!.breeding = 5;
+    expect(advanceLife(stranded, 10).objects[0].life!.breeding).toBe(0);
+  });
+
+  it("round trips readiness, cooldown and pair progress without rejecting older saves", () => {
+    const world = withAnimalCourtships(habitat(["tree-frog", "tree-frog"]), [
+      { id: "animal-0", mate: "animal-1", together: 6, elapsed: 20 },
+      { id: "animal-1", mate: "animal-0", together: 6, elapsed: 20 },
+    ]);
+    expect(parseWorld(JSON.stringify(world))).toEqual(world);
+    const legacy = habitat(["tree-frog", "tree-frog"]);
+    delete legacy.objects[0].life!.breedingTarget;
+    delete legacy.objects[0].life!.breedingCooldown;
+    expect(parseWorld(JSON.stringify(legacy))).toEqual(legacy);
+    expect(readyToBreed(legacy).has("animal-0")).toBe(true);
+    expect(
+      withAnimalCourtships(world, []).objects[0].courtship,
+    ).toBeUndefined();
+  });
+
   it.each(["tree-frog", "fish"] as const)(
     "kills a %s once, saves the cause and supports Undo/Redo",
     (kind) => {
@@ -220,7 +288,7 @@ describe("slow animal life cycles", () => {
     world = advanceLife(world, 60, stranded);
     const [frog, other] = world.objects;
     expect(frog.life!.condition).toBeLessThan(0.7);
-    expect(frog.life!.breeding).toBe(0);
+    expect(frog.life!.breeding).toBe(BREEDING_INTERVAL - 60);
     expect(other.life!.condition).toBe(1);
     for (let i = 0; i < 30; i++) world = advanceLife(world, 5, stranded);
     expect(world.objects.some((o) => o.id === "animal-0")).toBe(false);
