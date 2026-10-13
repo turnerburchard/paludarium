@@ -48,6 +48,35 @@ function random(seed: number) {
 }
 
 describe("animal movement", () => {
+  it("walks tiny support contacts before hopping a full stretch", () => {
+    const graph = new HabitatGraph([
+      { ...node("a", 0, 0, ["b"]), surface: "plant" },
+      { ...node("b", 0.04, 0, ["a", "c"]), surface: "plant" },
+      { ...node("c", 0.32, 0, ["b"]), surface: "stone" },
+    ]);
+    const engine = new Ecosystem(graph, [seed()], {
+      speed: 1,
+      elapsed: 100,
+      random: () => 0.5,
+      food: [{ nodeId: "c", amount: 5, capacity: 0 }],
+    });
+    let walked = false,
+      hopped = false;
+    for (let i = 0; i < 200; i++) {
+      engine.advance(0.1);
+      const state = engine.getAnimal("frog")!;
+      if (state.nodeId === "a" && state.motion.progress > 0) {
+        walked = true;
+        expect(state.motion.hop).toBe(false);
+      }
+      if (state.nodeId === "b" && state.motion.progress > 0.2) {
+        hopped = true;
+        expect(state.motion.hop).toBe(true);
+      }
+    }
+    expect(walked && hopped).toBe(true);
+  });
+
   it("never walks through another animal sleeping on its way", () => {
     const graph = new HabitatGraph([
       node("a", 0, 0, ["b"]),

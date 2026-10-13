@@ -1,5 +1,12 @@
 import * as THREE from "three";
-import { visitRayFaces } from "../assets/collisionTree";
+import { assets } from "../assets";
+import { collisionShape, placeShape } from "../assets/collisionShape";
+import { objectBase } from "../model/stacking";
+import {
+  buildCollisionTree,
+  visitRayFaces,
+  type CollisionTree,
+} from "../assets/collisionTree";
 import type { World } from "../model/schema";
 import { groundHeight } from "../model/terrain";
 import { LandSurfaces } from "./landSurfaces";
@@ -16,13 +23,12 @@ export interface Caster {
 }
 
 /** The ground, the glass, and stone and wood, as one thing to cast rays at.
- * Plants are soft and left out. */
+ * Soft foliage is left out; stems and firm living surfaces count. */
 export class Solids implements Caster {
   private readonly ray = new THREE.Ray();
   private readonly hit = new THREE.Vector3();
   private readonly normal = new THREE.Vector3();
-  private readonly end = new THREE.Vector3();
-  private readonly reach = new THREE.Box3();
+  private readonly plantSupports = new Map<string, Caster>();
 
   readonly surfaces: LandSurfaces;
 
@@ -47,12 +53,66 @@ export class Solids implements Caster {
     };
   }
 
-  cast(origin: Vec3, direction: Vec3, far: number): SurfaceHit | undefined {
+  /** A moss mat is a contact layer on its underlying route, not hundreds
+   * of tiny destinations. Start above its skin so body probes never begin
+   * inside a cushion and miss the surface. */
+  covered(position: Vec3, normal: Vec3, supportId?: string) {
+    const cover = this.surfaces.at(
+      position.x,
+      position.z,
+      (object) =>
+        !!assets[object.kind].groundCover &&
+        object.support === supportId &&
+        (supportId !== undefined || (object.lift ?? 0) <= 0.025),
+    );
+    return cover &&
+      cover.position.y > position.y &&
+      cover.position.y - position.y <= 0.4
+      ? { position: cover.position, normal: cover.normal }
+      : { position, normal };
+  }
+
+  cast(
+    origin: Vec3,
+    direction: Vec3,
+    far: number,
+    includeCover = true,
+  ): SurfaceHit | undefined {
     let best = this.groundHit(origin, direction, far);
     const glass = this.glass(origin, direction, best?.distance ?? far);
     if (glass) best = glass;
-    const solid = this.hardscape(origin, direction, best?.distance ?? far);
+    const solid = this.objectHit(
+      origin,
+      direction,
+      best?.distance ?? far,
+      includeCover,
+    );
     return solid ?? best;
+  }
+
+  /** Leaves support their visitor without becoming obstacles for animals
+   * passing underneath or pushing through the rest of the foliage. */
+  onPlant(objectId: string): Caster {
+    const known = this.plantSupports.get(objectId);
+    if (known) return known;
+    const object = this.world.objects.find((object) => object.id === objectId)!;
+    const shape = placeShape(
+      collisionShape(object),
+      object,
+      objectBase(object, this.world.environment),
+    );
+    const tree = buildCollisionTree(shape.faces);
+    const caster: Caster = {
+      cast: (origin, direction, far) => {
+        const solid = this.cast(origin, direction, far);
+        return (
+          this.meshHit(tree, origin, direction, solid?.distance ?? far, true) ??
+          solid
+        );
+      },
+    };
+    this.plantSupports.set(objectId, caster);
+    return caster;
   }
 
   /** Steps along the ray, then narrows down the crossing between the last
@@ -114,42 +174,58 @@ export class Solids implements Caster {
 
   /** Only faces turned toward the ray count, so a ray that starts inside
    * stone passes out of it rather than catching its far side. */
-  private hardscape(o: Vec3, d: Vec3, far: number): SurfaceHit | undefined {
+  private objectHit(
+    o: Vec3,
+    d: Vec3,
+    far: number,
+    includeCover: boolean,
+  ): SurfaceHit | undefined {
+    let best: SurfaceHit | undefined;
+    for (const solid of this.surfaces.solids) {
+      if (!includeCover && assets[solid.object.kind].groundCover) continue;
+      best = this.meshHit(solid.tree, o, d, best?.distance ?? far) ?? best;
+    }
+    return best;
+  }
+
+  private meshHit(
+    tree: CollisionTree,
+    o: Vec3,
+    d: Vec3,
+    far: number,
+    twoSided = false,
+  ) {
     this.ray.origin.set(o.x, o.y, o.z);
     this.ray.direction.set(d.x, d.y, d.z);
     let best: SurfaceHit | undefined;
-    const end = this.end
-      .copy(this.ray.direction)
-      .multiplyScalar(far)
-      .add(this.ray.origin);
-    this.reach.setFromPoints([this.ray.origin, end]);
-    for (const solid of this.surfaces.solids)
-      if (solid.bounds.intersectsBox(this.reach))
-        visitRayFaces(
-          solid.tree,
-          this.ray,
-          ({ triangle }) => {
-            const normal = triangle.getNormal(this.normal);
-            if (normal.dot(this.ray.direction) >= 0) return;
-            if (
-              !this.ray.intersectTriangle(
-                triangle.a,
-                triangle.b,
-                triangle.c,
-                true,
-                this.hit,
-              )
-            )
-              return;
-            const distance = this.hit.distanceTo(this.ray.origin);
-            if (distance > (best?.distance ?? far)) return;
-            best = {
-              point: { x: this.hit.x, y: this.hit.y, z: this.hit.z },
-              distance,
-            };
-          },
-          best?.distance ?? far,
-        );
+    visitRayFaces(
+      tree,
+      this.ray,
+      ({ triangle }) => {
+        if (
+          !twoSided &&
+          triangle.getNormal(this.normal).dot(this.ray.direction) >= 0
+        )
+          return;
+        if (
+          !this.ray.intersectTriangle(
+            triangle.a,
+            triangle.b,
+            triangle.c,
+            !twoSided,
+            this.hit,
+          )
+        )
+          return;
+        const distance = this.hit.distanceTo(this.ray.origin);
+        if (distance > (best?.distance ?? far)) return;
+        best = {
+          point: { x: this.hit.x, y: this.hit.y, z: this.hit.z },
+          distance,
+        };
+      },
+      far,
+    );
     return best;
   }
 }

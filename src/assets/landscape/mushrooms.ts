@@ -19,6 +19,8 @@ export const bolete: AssetDefinition = {
     "A stout mushroom with a glossy brown cap on a fat white stem, pushing up through the needles under conifers.",
   radius: 0.13,
   habitat: "land",
+  supportsAnimals: true,
+  flexibility: 0.02,
   /** Model: "Mushroom" by Сергей Тиньков, CC-BY 3.0. */
   build: (random) =>
     mushroom(boleteModel, random, (source) =>
@@ -36,6 +38,8 @@ export const flyAgaric: AssetDefinition = {
     "The classic toadstool: a scarlet cap flecked with white, on a pale stem. Beautiful and poisonous.",
   radius: 0.16,
   habitat: "land",
+  supportsAnimals: true,
+  flexibility: 0.02,
   /** Model: "Mushroom" by jeremy, CC-BY 3.0. */
   build: (random) =>
     mushroom(flyAgaricModel, random, (source) => FLY_AGARIC[source]),
@@ -58,6 +62,8 @@ export const bonnetMushrooms: AssetDefinition = {
     "A damp clump of slender grey-brown mushrooms with little bell-shaped caps, growing from rotting wood and leaf litter.",
   radius: 0.21,
   habitat: "land",
+  supportsAnimals: true,
+  flexibility: 0.02,
   /** Model: "Mushroom" by Quaternius, CC0. */
   // Its texture shades each face differently, which reads as a patchwork,
   // so the whole clump takes one grey-brown.
@@ -74,6 +80,8 @@ export const chickenOfTheWoods: AssetDefinition = {
     "Overlapping orange shelves with paler, yellowish rims, a bracket fungus that grows in tiers from old hardwood.",
   radius: 0.22,
   habitat: "land",
+  supportsAnimals: true,
+  flexibility: 0.02,
   build: (random) =>
     bracket(random, {
       shelves: [3, 6],
@@ -97,6 +105,8 @@ export const turkeyTail: AssetDefinition = {
   radius: 0.16,
   size: 0.7,
   habitat: "land",
+  supportsAnimals: true,
+  flexibility: 0.02,
   build: (random) =>
     bracket(random, {
       shelves: [5, 6],
@@ -119,6 +129,8 @@ export const reishi: AssetDefinition = {
     "A few thick, lacquered red-brown shelves, growing from the base of dying hardwoods.",
   radius: 0.2,
   habitat: "land",
+  supportsAnimals: true,
+  flexibility: 0.02,
   build: (random) =>
     bracket(random, {
       shelves: [2, 3],
@@ -142,6 +154,8 @@ export const oysterMushrooms: AssetDefinition = {
     "Smooth grey-brown caps shaped like oyster shells, overlapping in clusters on fallen logs.",
   radius: 0.22,
   habitat: "land",
+  supportsAnimals: true,
+  flexibility: 0.02,
   build: (random) =>
     bracket(random, {
       shelves: [3, 5],
@@ -164,6 +178,8 @@ export const pinkOysterMushrooms: AssetDefinition = {
     "Ruffled, rosy oyster mushrooms that crowd together on rotting wood in warm, wet forests.",
   radius: 0.22,
   habitat: "land",
+  supportsAnimals: true,
+  flexibility: 0.02,
   build: (random) =>
     bracket(random, {
       shelves: [3, 5],
@@ -186,6 +202,8 @@ export const parasolMushroom: AssetDefinition = {
     "A tall mushroom whose tan cap opens out like an umbrella, on a slim stem with a loose ring. Found in grassy clearings at the edge of woods.",
   radius: 0.15,
   habitat: "land",
+  supportsAnimals: true,
+  flexibility: 0.02,
   /** Model: "Mushroom" by Quaternius, CC0. */
   build: (random) =>
     mushroom(parasolModel, random, (source) =>
@@ -203,6 +221,8 @@ export const pantherCaps: AssetDefinition = {
     "A pair of brown caps dotted with white warts, close cousins of the fly agaric and just as poisonous.",
   radius: 0.17,
   habitat: "land",
+  supportsAnimals: true,
+  flexibility: 0.02,
   /** Model: "Mushrooms" by Danni Bittman, CC-BY 3.0. */
   build: (random) =>
     mushroom(pantherModel, random, (source) => PANTHER_CAP[source]),
@@ -225,6 +245,8 @@ export const houseplantMushrooms: AssetDefinition = {
     "A little cluster of lemon-yellow caps on thin stems, a tropical mushroom that turns up in warm, damp potting soil.",
   radius: 0.2,
   habitat: "land",
+  supportsAnimals: true,
+  flexibility: 0.02,
   /** Model: "Mushroom_Common" from Quaternius's Stylized Nature MegaKit, CC0. */
   build: (random) =>
     mushroom(houseplantModel, random, (source) => HOUSEPLANT[source]),

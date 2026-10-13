@@ -7,6 +7,19 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
  * shared between instances, so disposal and translucent placement previews
  * remain safe. */
 export function batchStaticAsset(root: THREE.Group): THREE.Group {
+  // A plant can keep a rigid trunk or pole while its foliage moves. Bake
+  // each separately, retaining the shared model coordinates and calibration.
+  const foliage = root.children.find((part) => part.name === "foliage");
+  if (foliage instanceof THREE.Group) {
+    root.updateMatrixWorld(true);
+    foliage.removeFromParent();
+    foliage.applyMatrix4(root.matrixWorld);
+    const leaves = batchStaticAsset(foliage);
+    leaves.name = "foliage";
+    const result = batchStaticAsset(root);
+    result.add(leaves);
+    return result;
+  }
   const batches = new Map<
     string,
     { material: THREE.MeshStandardMaterial; geometries: THREE.BufferGeometry[] }

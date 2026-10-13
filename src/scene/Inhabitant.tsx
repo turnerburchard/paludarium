@@ -26,7 +26,11 @@ import { SwimRig } from "./swimRig";
 import { FishCurl } from "./fishCurl";
 import { barbSwim } from "../assets/animals/barb";
 import { juvenileScale } from "../model/life";
-import { FoliageMotion, type FoliageVisitor } from "./foliageMotion";
+import {
+  FoliageMotion,
+  foliageContact,
+  type FoliageVisitor,
+} from "./foliageMotion";
 
 interface Props {
   object: HabitatObject;
@@ -64,9 +68,16 @@ export function Inhabitant({
     [object.kind, model],
   );
   const plant = categoryOf(assets[object.kind]) === "Plants";
+  const movingLeaves = model.getObjectByName("foliage");
+  const flexibility =
+    assets[object.kind].flexibility ??
+    (assets[object.kind].blocksMovement ? 0 : 1);
   const foliageMotion = useMemo(
-    () => (plant ? new FoliageMotion(object.seed, object.id) : undefined),
-    [plant, object.id, object.seed],
+    () =>
+      plant
+        ? new FoliageMotion(object.seed, object.id, flexibility)
+        : undefined,
+    [plant, object.id, object.seed, flexibility],
   );
   const plantHeight = useMemo(
     () => (plant ? new THREE.Box3().setFromObject(model).max.y : 0),
@@ -85,14 +96,16 @@ export function Inhabitant({
   );
   useEffect(() => () => disposeAsset(model), [model]);
   useEffect(() => {
-    const group = foliage.current;
+    const group =
+      movingLeaves instanceof THREE.Group ? movingLeaves : foliage.current;
     if (!plant || ghost || !group || !foliagePlants) return;
     const plants = foliagePlants.current;
+    group.userData.leavesOnly = !!movingLeaves;
     plants.set(object.id, group);
     return () => {
       plants.delete(object.id);
     };
-  }, [plant, ghost, object.id, foliagePlants]);
+  }, [plant, ghost, object.id, foliagePlants, movingLeaves]);
   useEffect(() => {
     clock.current = 0;
   }, [object.x, object.z]);
@@ -113,6 +126,9 @@ export function Inhabitant({
   const pose = useMemo(
     () => ({
       normal: new THREE.Vector3(),
+      contactPosition: new THREE.Vector3(),
+      contactNormal: new THREE.Vector3(),
+      contactForward: new THREE.Vector3(),
       forward: new THREE.Vector3(),
       right: new THREE.Vector3(),
       back: new THREE.Vector3(),
@@ -151,7 +167,8 @@ export function Inhabitant({
       const cos = Math.cos(object.rotation),
         sin = Math.sin(object.rotation);
       // Convert the world-space push into the plant's rotated local axes.
-      foliage.current.rotation.set(
+      const bending = movingLeaves ?? foliage.current;
+      bending.rotation.set(
         sin * tilt.x + cos * tilt.z,
         0,
         -(cos * tilt.x - sin * tilt.z),
@@ -194,17 +211,39 @@ export function Inhabitant({
         pose.normal.set(normal.x, normal.y, normal.z).normalize();
         pose.forward.set(fit.direction.x, fit.direction.y, fit.direction.z);
         if (!state.grounded && !state.motion.hop) {
-          const plantId = live.engine.graph.node(state.nodeId).plantId;
+          const from = live.engine.graph.node(state.nodeId);
+          const to = state.nextNodeId
+            ? live.engine.graph.node(state.nextNodeId)
+            : undefined;
+          const plantId = from.plantId ?? to?.plantId;
           const support = plantId && foliagePlants?.current.get(plantId);
           const anchor = support && support.parent;
-          if (support && anchor) {
-            // Apply only the visual lean, retaining the navigation's fixed pose.
+          if (support && anchor && plantId) {
+            const contact = foliageContact(
+              from,
+              to,
+              plantId,
+              state.motion.progress,
+              !!support.userData.leavesOnly,
+            );
+            // Apply only visual motion; the simulation's contact stays fixed.
             support.updateWorldMatrix(true, false);
             pose.matrix.copy(anchor.matrixWorld).invert();
             pose.matrix.premultiply(support.matrixWorld);
-            group.position.applyMatrix4(pose.matrix);
-            pose.normal.transformDirection(pose.matrix);
-            pose.forward.transformDirection(pose.matrix);
+            pose.contactPosition.copy(group.position);
+            pose.contactNormal.copy(pose.normal);
+            pose.contactForward.copy(pose.forward);
+            group.position
+              .applyMatrix4(pose.matrix)
+              .lerp(pose.contactPosition, 1 - contact);
+            pose.normal
+              .transformDirection(pose.matrix)
+              .lerp(pose.contactNormal, 1 - contact)
+              .normalize();
+            pose.forward
+              .transformDirection(pose.matrix)
+              .lerp(pose.contactForward, 1 - contact)
+              .normalize();
           }
         }
         pose.forward.addScaledVector(

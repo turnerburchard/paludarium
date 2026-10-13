@@ -1,3 +1,5 @@
+import * as THREE from "three";
+import { branch, material } from "../geometry";
 import { buildBaked } from "../baked";
 import type { AssetDefinition } from "../types";
 import monsteraModel from "./monstera.json";
@@ -18,6 +20,20 @@ export const monstera: AssetDefinition = {
   soil: "damp",
   // Frogs climb each stem and rest on the middle of its leaves.
   perches: () => monsteraModel.perches,
+  flexibility: 0.25,
+  buildStructure: () => {
+    const root = new THREE.Group();
+    const skin = material(COLORS.under);
+    for (const { from, to, radius } of monsteraModel.stems)
+      branch(
+        root,
+        new THREE.Vector3(from.x, from.y, from.z),
+        new THREE.Vector3(to.x, to.y, to.z),
+        radius,
+        skin,
+      );
+    return root;
+  },
   build,
 };
 

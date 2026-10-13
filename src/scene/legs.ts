@@ -77,8 +77,10 @@ export class PlantedLegs {
       const offset = this.model
         .worldToLocal(leg.planted.clone())
         .distanceTo(this.model.worldToLocal(home.clone()));
-      if (!leg.step && offset > stride * 2.5) leg.planted.copy(home);
-      else if (!leg.step && offset > stride && !stepping.has(1 - leg.pair)) {
+      if (offset > stride * 2.5) {
+        leg.planted.copy(home);
+        leg.step = undefined;
+      } else if (!leg.step && offset > stride && !stepping.has(1 - leg.pair)) {
         leg.step = { from: leg.planted.clone(), progress: 0 };
         stepping.add(leg.pair);
       }

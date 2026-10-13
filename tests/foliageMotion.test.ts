@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { FoliageMotion, type FoliageVisitor } from "../src/scene/foliageMotion";
+import {
+  FoliageMotion,
+  foliageContact,
+  type FoliageVisitor,
+} from "../src/scene/foliageMotion";
 
 const base = { x: 0, y: 0, z: 0 };
 const visitor = (x: number, y = 0.2, z = 0): FoliageVisitor => ({
@@ -142,5 +146,43 @@ describe("foliage movement", () => {
         Math.hypot(motion.tilt.x - idle.tilt.x, motion.tilt.z - idle.tilt.z),
       ).toBeLessThanOrEqual(0.18);
     }
+  });
+  it("keeps moss and mushroom movement tiny under crowds and perched weight", () => {
+    for (const height of [0.03, 0.15, 0.4]) {
+      const firm = new FoliageMotion(7, "plant", 0.02);
+      const flexible = new FoliageMotion(7, "plant");
+      const crowd = Array.from({ length: 12 }, () => visitor(0.1, height));
+      crowd.push({ ...visitor(0.2, height), perchedOn: "plant" });
+      for (let i = 0; i < 150; i++) {
+        firm.update(0.02, base, 0.3, height, crowd);
+        flexible.update(0.02, base, 0.3, height, crowd);
+        expect(Math.hypot(firm.tilt.x, firm.tilt.z)).toBeLessThan(0.004);
+        expect(firm.tilt.x).toBeCloseTo(flexible.tilt.x * 0.02, 8);
+      }
+    }
+    const fixed = new FoliageMotion(7, "plant", 0);
+    expect(fixed.update(1, base, 0.3, 1, [visitor(0.1)])).toEqual({
+      x: 0,
+      z: 0,
+    });
+  });
+  it("transfers visual contact between a rigid stem and flexible leaves", () => {
+    const stem = {
+      id: "stem",
+      position: base,
+      normal: { x: 1, y: 0, z: 0 },
+      surface: "stem" as const,
+      wet: false,
+      shelter: 0,
+      neighbors: [],
+      plantId: "plant",
+    };
+    const leaf = { ...stem, id: "leaf", surface: "leaf" as const };
+    expect(foliageContact(stem, leaf, "plant", 0, true)).toBe(0);
+    expect(foliageContact(stem, leaf, "plant", 0.5, true)).toBe(0.5);
+    expect(foliageContact(stem, leaf, "plant", 1, true)).toBe(1);
+    expect(foliageContact(leaf, stem, "plant", 0.75, true)).toBe(0.25);
+    expect(foliageContact(stem, leaf, "plant", 0.5, false)).toBe(1);
+    expect(foliageContact(leaf, undefined, "plant", 0, true)).toBe(1);
   });
 });

@@ -23,12 +23,48 @@ export const philodendron: AssetDefinition = {
   shelter: true,
   soil: "damp",
   perches: philodendronPerches,
+  flexibility: 0.6,
+  buildStructure: (random) => pole(philodendronVine(random)),
   build,
 };
 
 function build(random: () => number) {
   const root = new THREE.Group();
   const { height, poleRadius, vine, leaves } = philodendronVine(random);
+  root.add(pole({ height, poleRadius }));
+  const foliage = new THREE.Group();
+  foliage.name = "foliage";
+  root.add(foliage);
+  const stem = material("#4d7438");
+  curvedStem(
+    foliage,
+    vine.map((p) => new THREE.Vector3(p.x, p.y, p.z)),
+    0.007,
+    stem,
+  );
+  const greens = ["#2c6537", "#367640", "#285b33"].map((color) =>
+    material(color, 0.45),
+  );
+  for (const [i, leaf] of leaves.entries()) {
+    const at = vine[leaf.node];
+    curvedStem(
+      foliage,
+      [
+        new THREE.Vector3(at.x, at.y, at.z),
+        new THREE.Vector3(leaf.base.x, leaf.base.y, leaf.base.z),
+      ],
+      0.005,
+      stem,
+    );
+    const blade = heart(leaf.length, leaf.width, leaf.droop, greens[i % 3]);
+    orient(blade, leaf.base, leaf.direction, leaf.normal);
+    foliage.add(blade);
+  }
+  return root;
+}
+
+function pole({ height, poleRadius }: { height: number; poleRadius: number }) {
+  const root = new THREE.Group();
   // A moss pole, mottled green and brown, ending below the vine's top leaves
   // so the plant reads as foliage rather than a post.
   const moss = material("#4f5b30", 0.97);
@@ -43,30 +79,5 @@ function build(random: () => number) {
     [poleRadius * 1.1, poleRadius, poleRadius * 0.92],
     { bark: moss, cut: material("#5e5236", 0.95) },
   );
-  const stem = material("#4d7438");
-  curvedStem(
-    root,
-    vine.map((p) => new THREE.Vector3(p.x, p.y, p.z)),
-    0.007,
-    stem,
-  );
-  const greens = ["#2c6537", "#367640", "#285b33"].map((color) =>
-    material(color, 0.45),
-  );
-  for (const [i, leaf] of leaves.entries()) {
-    const at = vine[leaf.node];
-    curvedStem(
-      root,
-      [
-        new THREE.Vector3(at.x, at.y, at.z),
-        new THREE.Vector3(leaf.base.x, leaf.base.y, leaf.base.z),
-      ],
-      0.005,
-      stem,
-    );
-    const blade = heart(leaf.length, leaf.width, leaf.droop, greens[i % 3]);
-    orient(blade, leaf.base, leaf.direction, leaf.normal);
-    root.add(blade);
-  }
   return root;
 }

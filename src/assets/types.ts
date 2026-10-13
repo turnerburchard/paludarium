@@ -35,8 +35,8 @@ export interface AnimalBehavior {
   nocturnal: boolean;
   climbs: boolean;
   speed: number;
-  /** Hoppers hop every edge, climbers hop on the ground and leap between
-   * leaves, crawlers and scurriers walk. Scurriers dash and pause. */
+  /** Hoppers and climbers hop ground stretches and leap between leaves.
+   * Short mesh contacts are walked; scurriers dash and pause. */
   movement?: "hop" | "climb" | "crawl" | "scurry";
   maxPerchHeight?: number;
   /** Surfaces it likes to rest on, beyond plain shelter. Frogs favor leaves. */
@@ -80,8 +80,18 @@ export interface AssetDefinition {
    * lowest ground under these, so on a slope no end hangs in the air. Other
    * stone and wood settles to the lowest ground around its footprint. */
   groundPoints?: readonly { x: number; z: number }[];
-  /** Frogs route around it. */
+  /** The whole model is solid, rather than just its structural parts. */
   blocksMovement?: boolean;
+  /** Firm living surfaces, such as moss cushions and mushroom caps. This
+   * changes animal contact, not placement or the asset's category. */
+  supportsAnimals?: boolean;
+  /** Low, yielding cover is walked over rather than closing ground routes. */
+  groundCover?: boolean;
+  /** Structural parts only, built from the same geometry as the visible
+   * model. Leaves remain passable. Coordinates precede size calibration. */
+  buildStructure?(random: () => number): THREE.Group;
+  /** Visual bend and sway, from stationary (0) to flexible foliage (1). */
+  flexibility?: number;
   /** Frogs prefer to rest and sleep near it, and insects breed under it. */
   shelter?: boolean;
   /** Plants grow well only in the soil they like. */

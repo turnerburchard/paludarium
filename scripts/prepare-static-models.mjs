@@ -1,7 +1,7 @@
 /** Bake downloaded static models into face lists grouped by color, so asset
  * factories can build them synchronously and recolor them by role.
  * Sources are listed in docs/inspiration/ASSET-SOURCES.md.
- * Run from the repository root: node scripts/prepare-static-models.mjs
+ * Run from the repository root: node scripts/prepare-static-models.mjs [model]
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { Box3, Mesh, Vector3 } from "three";
@@ -172,6 +172,7 @@ const MODELS = [
     roles: { top: "97c257", mid: "7bb053", under: "64a050" },
     // Each leaf's pale upper side is where frogs rest.
     perches: "top",
+    structureBelow: 0.2,
   },
   {
     // "Mushroom" by Сергей Тиньков, poly.pizza/m/1CZoDfdfHl_, CC-BY 3.0.
@@ -230,7 +231,9 @@ const MODELS = [
   },
 ];
 
-for (const model of MODELS) {
+for (const model of MODELS.filter(
+  (model) => !process.argv[2] || model.out.includes(process.argv[2]),
+)) {
   const { gltf, images } = await loadGlb(readFileSync(model.source));
   const color = images[0] && palette(images[0]);
   const roles = model.roles && Object.entries(model.roles);
@@ -312,6 +315,13 @@ for (const model of MODELS) {
         : { parts: [...parts.values()] }),
       ...(model.perches && {
         perches: leafPerches(keptFaces, model.perches),
+      }),
+      ...(model.structureBelow && {
+        stems: basalStems(
+          keptFaces,
+          leafPerches(keptFaces, model.perches),
+          model.structureBelow,
+        ),
       }),
     }),
   );
@@ -460,4 +470,60 @@ function nearestRole(hex, roles) {
     }
   }
   return best;
+}
+
+/** Solid cores below the lowest leaves. Cross sections come from all colors:
+ * a material role alone cannot distinguish stems from leaf rims. */
+function basalStems(faces, perches, height) {
+  const roots = [
+    ...new Map(
+      perches.map(({ stem }) => [String([stem[0].x, stem[0].z]), stem[0]]),
+    ).values(),
+  ];
+  const section = (level) => {
+    const points = roots.map(() => new Map());
+    for (const { corners } of faces)
+      for (let i = 0; i < 3; i++) {
+        const a = corners[i],
+          b = corners[(i + 1) % 3];
+        if ((a[1] - level) * (b[1] - level) >= 0) continue;
+        const t = (level - a[1]) / (b[1] - a[1]);
+        const p = new Vector3(...a).lerp(new Vector3(...b), t);
+        let closest = 0;
+        for (let j = 1; j < roots.length; j++)
+          if (
+            Math.hypot(p.x - roots[j].x, p.z - roots[j].z) <
+            Math.hypot(p.x - roots[closest].x, p.z - roots[closest].z)
+          )
+            closest = j;
+        points[closest].set(
+          p
+            .toArray()
+            .map((n) => n.toFixed(5))
+            .join(","),
+          p,
+        );
+      }
+    return points.map((group) => {
+      const vertices = [...group.values()];
+      const center = vertices
+        .reduce((sum, p) => sum.add(p), new Vector3())
+        .divideScalar(vertices.length);
+      const radius = Math.min(
+        ...vertices.map((p) => Math.hypot(p.x - center.x, p.z - center.z)),
+      );
+      return { center, radius };
+    });
+  };
+  const lower = section(height * 0.6),
+    upper = section(height);
+  const point = (p) =>
+    Object.fromEntries(
+      ["x", "y", "z"].map((axis) => [axis, Number(p[axis].toFixed(5))]),
+    );
+  return roots.map((_, i) => ({
+    from: point(lower[i].center.clone().lerp(upper[i].center, -1.5)),
+    to: point(upper[i].center),
+    radius: Number(Math.min(lower[i].radius, upper[i].radius).toFixed(5)),
+  }));
 }

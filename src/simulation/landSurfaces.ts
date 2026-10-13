@@ -1,8 +1,13 @@
 import * as THREE from "three";
 import { assets } from "../assets";
-import { collisionShape, type CollisionFace } from "../assets/collisionShape";
+import {
+  structuralShape,
+  placeShape,
+  type CollisionFace,
+} from "../assets/collisionShape";
 import {
   buildCollisionTree,
+  intersectsBox,
   visitRayFaces,
   type CollisionTree,
 } from "../assets/collisionTree";
@@ -32,8 +37,8 @@ function reaches(box: THREE.Box3, a: Vec3, b: Vec3) {
   );
 }
 
-/** Exposed stone and wood surfaces, sampled from the same geometry used for
- * placement and fish clearance. Overlapping stacks expose only their outer skin. */
+/** Solid structure and firm walking surfaces. Overlapping objects expose
+ * only their outer skin; soft leaves never obstruct land routes. */
 export class LandSurfaces {
   readonly solids: Solid[] = [];
   private readonly ray = new THREE.Ray();
@@ -69,32 +74,23 @@ export class LandSurfaces {
     previous?: LandSurfaces,
   ) {
     for (const object of world.objects) {
-      if (!assets[object.kind].hardscape) continue;
-      const matrix = new THREE.Matrix4().compose(
-        new THREE.Vector3(
-          object.x,
-          objectBase(object, world.environment),
-          object.z,
-        ),
-        new THREE.Quaternion().setFromAxisAngle(
-          new THREE.Vector3(0, 1, 0),
-          object.rotation,
-        ),
-        new THREE.Vector3().setScalar(object.scale),
+      const asset = assets[object.kind];
+      if (
+        !asset.hardscape &&
+        !asset.blocksMovement &&
+        !asset.buildStructure &&
+        !asset.supportsAnimals
+      )
+        continue;
+      const shape = placeShape(
+        structuralShape(object),
+        object,
+        objectBase(object, world.environment),
       );
-      const shape = collisionShape(object);
-      const faces = shape.faces.map(({ triangle }) => {
-        const moved = triangle.clone();
-        for (const point of [moved.a, moved.b, moved.c])
-          point.applyMatrix4(matrix);
-        return {
-          triangle: moved,
-          bounds: new THREE.Box3().setFromPoints([moved.a, moved.b, moved.c]),
-        };
-      });
+      const faces = shape.faces;
       this.solids.push({
         object,
-        bounds: shape.bounds.clone().applyMatrix4(matrix),
+        bounds: shape.bounds,
         faces,
         tree: buildCollisionTree(faces),
         faceOrder: new Map(faces.map((face, index) => [face, index])),
@@ -116,12 +112,7 @@ export class LandSurfaces {
 
   /** A check between two points only depends on the ground, the water and
    * the solids whose bounds it reaches. */
-  private remember(
-    kind: "inside" | "route",
-    a: Vec3,
-    b: Vec3,
-    check: () => boolean,
-  ) {
+  private remember(kind: string, a: Vec3, b: Vec3, check: () => boolean) {
     const key = `${kind}:${a.x},${a.y},${a.z},${b.x},${b.y},${b.z}`;
     const known = this.checks.get(key);
     if (known !== undefined) return known;
@@ -138,11 +129,12 @@ export class LandSurfaces {
     return result;
   }
 
-  at(x: number, z: number) {
+  at(x: number, z: number, accepts?: (object: HabitatObject) => boolean) {
     let highest:
       | { position: Vec3; normal: Vec3; object: HabitatObject }
       | undefined;
     for (const solid of this.solids) {
+      if (accepts && !accepts(solid.object)) continue;
       if (
         x < solid.bounds.min.x ||
         x > solid.bounds.max.x ||
@@ -182,10 +174,55 @@ export class LandSurfaces {
     return highest;
   }
 
+  /** Snap an authored stem contact onto its own visible structure, without
+   * inflating a thin stem into a broad imaginary platform. */
+  plantContact(point: Vec3, normal: Vec3, objectId: string) {
+    const solid = this.solids.find((solid) => solid.object.id === objectId);
+    if (!solid) return { position: point, normal };
+    const origin = new THREE.Vector3(point.x, point.y, point.z);
+    let closest = 0.1;
+    let contact: { position: Vec3; normal: Vec3 } | undefined;
+    for (const { triangle } of solid.faces) {
+      const faceNormal = triangle.getNormal(new THREE.Vector3());
+      if (
+        faceNormal.x * normal.x +
+          faceNormal.y * normal.y +
+          faceNormal.z * normal.z <=
+        0
+      )
+        continue;
+      triangle.closestPointToPoint(origin, this.hit);
+      const distance = this.hit.distanceTo(origin);
+      if (distance >= closest) continue;
+      closest = distance;
+      const position = this.hit.clone().addScaledVector(faceNormal, 0.002);
+      contact = {
+        position: { x: position.x, y: position.y, z: position.z },
+        normal: { x: faceNormal.x, y: faceNormal.y, z: faceNormal.z },
+      };
+    }
+    return contact ?? { position: point, normal };
+  }
+
   blocksGround(x: number, z: number, clearance: number) {
     const floor = groundHeight(x, z, this.world.environment);
-    // Probe the animal's footprint, rather than excluding a whole bounding
-    // circle around thin branches and irregular stones.
+    const low = new THREE.Box3(
+      new THREE.Vector3(x - clearance, floor + 0.025, z - clearance),
+      new THREE.Vector3(x + clearance, floor + 0.065, z + clearance),
+    );
+    // A tall cap does not block the ground beneath it. Headroom and the
+    // swept body query decide which animals actually fit under the cap.
+    if (
+      this.solids.some(
+        (solid) =>
+          !assets[solid.object.kind].hardscape &&
+          !assets[solid.object.kind].groundCover &&
+          intersectsBox(solid.tree, low),
+      )
+    )
+      return true;
+    if (this.inside({ x, y: floor + 0.045, z }, true)) return true;
+    // Keep hardscape's established footprint probes and surface approaches.
     return [
       [0, 0],
       [clearance, 0],
@@ -193,8 +230,16 @@ export class LandSurfaces {
       [0, clearance],
       [0, -clearance],
     ].some(([dx, dz]) => {
-      const surface = this.at(x + dx, z + dz);
-      return surface && surface.position.y > floor + 0.04;
+      const surface = this.at(
+        x + dx,
+        z + dz,
+        (object) => !!assets[object.kind].hardscape,
+      );
+      return (
+        surface &&
+        assets[surface.object.kind].hardscape &&
+        surface.position.y > floor + 0.04
+      );
     });
   }
 
@@ -202,6 +247,11 @@ export class LandSurfaces {
   routes(margin: number): HabitatNode[] {
     const nodes: HabitatNode[] = [];
     for (const solid of this.solids) {
+      const asset = assets[solid.object.kind];
+      // Low cover follows the ground or its supporting stone/wood route.
+      // Its decorative lumps support bodies without adding navigation cells.
+      if (asset.groundCover || (!asset.hardscape && !asset.supportsAnimals))
+        continue;
       // Only a solid touching this one can cover any of its skin, which
       // sits just outside its bounds.
       const near = solid.bounds.clone().expandByScalar(0.05);
@@ -235,7 +285,7 @@ export class LandSurfaces {
         Math.abs(z) > env.depth / 2 - margin ||
         y < groundHeight(x, z, env) - 0.015 ||
         this.remember("inside", node.position, node.position, () =>
-          this.inside(node.position),
+          this.inside(node.position, true),
         )
       )
         continue;
@@ -269,9 +319,24 @@ export class LandSurfaces {
     >();
     const stone = assets[solid.object.kind].hardscape === "stone";
     const sample = (point: THREE.Vector3, normal: THREE.Vector3) => {
-      const key = [point.x, point.y, point.z]
-        .map((value) => Math.round(value * 100000))
+      // Moss and caps contain many decorative faces. Nearby contacts share
+      // a node so their detail does not turn a small patch into thousands of routes.
+      const asset = assets[solid.object.kind];
+      const precision = asset.supportsAnimals ? 25 : 100000;
+      const cell = [point.x, point.y, point.z]
+        .map((value) => Math.round(value * precision))
         .join(":");
+      const components = [normal.x, normal.y, normal.z];
+      const axis = components.reduce(
+        (best, value, i) =>
+          Math.abs(value) > Math.abs(components[best]) ? i : best,
+        0,
+      );
+      // A thin cap's top and underside can share a cell, but must never
+      // average into an imaginary surface between them.
+      const key = assets[solid.object.kind].supportsAnimals
+        ? `${cell}:${axis}:${Math.sign(components[axis])}`
+        : cell;
       const existing = samples.get(key);
       if (existing) {
         existing.normal.add(normal);
@@ -281,12 +346,19 @@ export class LandSurfaces {
         id: `hardscape:${solid.object.id}:${key}`,
         position: { x: point.x, y: point.y, z: point.z },
         normal: { x: 0, y: 1, z: 0 },
-        surface: stone ? "stone" : "bark",
+        surface: stone
+          ? "stone"
+          : assets[solid.object.kind].hardscape === "wood"
+            ? "bark"
+            : "plant",
         wet: point.y <= waterLevel(point.x, point.z, env) + 0.065,
         submerged: waterLevel(point.x, point.z, env) - point.y > 0.025,
         shelter: solid.object.moss ? 0.5 : 0.2,
         perchHeight: point.y - groundHeight(point.x, point.z, env),
         supportId: solid.object.id,
+        plantId: assets[solid.object.kind].supportsAnimals
+          ? solid.object.id
+          : undefined,
         neighbors: [],
       };
       samples.set(key, {
@@ -326,16 +398,75 @@ export class LandSurfaces {
       const lifted = point.clone().addScaledVector(normal, 0.018);
       node.position = { x: lifted.x, y: lifted.y, z: lifted.z };
       node.normal = { x: normal.x, y: normal.y, z: normal.z };
+      if (assets[solid.object.kind].supportsAnimals)
+        node.supportWidth = this.supportWidth(solid, point, normal);
     }
     return [...samples.values()].map(({ node }) => node);
   }
 
+  /** Nearby contact in every direction lets the feet fit while the body
+   * can overhang a cap. Decorative edges remain usable for climbing. */
+  private supportWidth(
+    solid: Solid,
+    point: THREE.Vector3,
+    normal: THREE.Vector3,
+  ) {
+    const across = new THREE.Vector3()
+      .crossVectors(
+        normal,
+        Math.abs(normal.y) > 0.9
+          ? new THREE.Vector3(0, 0, 1)
+          : new THREE.Vector3(0, 1, 0),
+      )
+      .normalize();
+    const along = new THREE.Vector3().crossVectors(normal, across).normalize();
+    let radius = 0;
+    for (let r = 0.03; r <= 0.3; r += 0.03) {
+      for (let i = 0; i < 8; i++) {
+        const angle = (i * Math.PI) / 4;
+        const origin = point
+          .clone()
+          .addScaledVector(across, Math.cos(angle) * r)
+          .addScaledVector(along, Math.sin(angle) * r)
+          .addScaledVector(normal, 0.04);
+        this.ray.set(origin, normal.clone().negate());
+        let contact = false;
+        visitRayFaces(
+          solid.tree,
+          this.ray,
+          ({ triangle }) => {
+            if (
+              this.ray.intersectTriangle(
+                triangle.a,
+                triangle.b,
+                triangle.c,
+                true,
+                this.hit,
+              ) &&
+              this.hit.distanceTo(origin) <= 0.08
+            )
+              contact = true;
+          },
+          0.08,
+        );
+        if (!contact) return radius * 2;
+      }
+      radius = r;
+    }
+    return radius * 2;
+  }
+
   /** Signed crossings handle both overlapping stones and hollow wood. A
    * point within the skin tolerance can lie on a shared triangle edge. */
-  inside(point: Vec3) {
+  inside(point: Vec3, overCover = false, supportId?: string) {
     const origin = this.origin.set(point.x, point.y, point.z);
     this.ray.set(origin, this.direction);
     for (const solid of this.solids) {
+      if (
+        solid.object.id === supportId ||
+        (overCover && assets[solid.object.kind].groundCover)
+      )
+        continue;
       if (!solid.bounds.containsPoint(origin)) continue;
       const hits: { distance: number; side: number; order: number }[] = [];
       visitRayFaces(solid.tree, this.ray, (face) => {
@@ -375,11 +506,13 @@ export class LandSurfaces {
   /** A route between two dry points can't dip underwater, so land animals
    * never wade across a pond. Underwater routes only have to stay above the
    * ground. */
-  clearRoute(from: Vec3, to: Vec3) {
-    return this.remember("route", from, to, () => this.traceRoute(from, to));
+  clearRoute(from: Vec3, to: Vec3, supportId?: string) {
+    return this.remember(`route:${supportId ?? ""}`, from, to, () =>
+      this.traceRoute(from, to, supportId),
+    );
   }
 
-  private traceRoute(from: Vec3, to: Vec3) {
+  private traceRoute(from: Vec3, to: Vec3, supportId?: string) {
     const env = this.world.environment;
     const under = (point: Vec3) =>
       point.y < waterLevel(point.x, point.z, env) - 0.025;
@@ -396,7 +529,7 @@ export class LandSurfaces {
       const floor = underwater ? 0 : waterLevel(point.x, point.z, env) - 0.025;
       if (
         point.y < Math.max(floor, groundHeight(point.x, point.z, env) - 0.04) ||
-        this.inside(point)
+        this.inside(point, true, supportId)
       )
         return false;
     }

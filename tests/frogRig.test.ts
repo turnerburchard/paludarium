@@ -64,6 +64,23 @@ describe("frog rig", () => {
       );
   });
 
+  it("releases an unfinished step when its support moves beyond reach", () => {
+    const { model, holder, rig } = rigged();
+    rig.update(walking(), FRAME);
+    for (let frame = 0; frame < 15; frame++) {
+      holder.position.z -= 0.15 * FRAME;
+      rig.update(walking(), FRAME);
+    }
+    holder.position.y += 1;
+    rig.update(walking(), 0);
+    for (const name of FEET) {
+      const foot = world(model, name);
+      expect(Math.abs(model.worldToLocal(foot.clone()).y)).toBeLessThan(0.1);
+      const tip = name.replace("Foot", "LowLeg") + "_end";
+      expect(world(model, tip).distanceTo(foot)).toBeLessThan(0.01);
+    }
+  });
+
   it("shuffles its feet when turning on the spot", () => {
     const { model, holder, rig } = rigged();
     rig.update(walking(), FRAME);

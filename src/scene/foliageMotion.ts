@@ -1,4 +1,4 @@
-import type { Vec3 } from "../simulation/types";
+import type { HabitatNode, Vec3 } from "../simulation/types";
 
 export interface FoliageVisitor {
   position: Vec3;
@@ -16,6 +16,7 @@ export class FoliageMotion {
   constructor(
     private readonly seed: number,
     private readonly plantId: string,
+    private readonly flexibility = 1,
   ) {}
 
   update(
@@ -25,7 +26,7 @@ export class FoliageMotion {
     height: number,
     visitors: readonly FoliageVisitor[],
   ) {
-    if (dt <= 0) return this.tilt;
+    if (dt <= 0 || this.flexibility === 0) return this.tilt;
     this.time += dt;
     let pushX = 0,
       pushZ = 0;
@@ -36,7 +37,7 @@ export class FoliageMotion {
       if (visitor.perchedOn === this.plantId) {
         // Size stands in for weight; the offset from the stem supplies leverage.
         const weight =
-          (Math.min(1, visitor.radius / 0.2) * 0.08) / Math.max(height, 0.1);
+          (Math.min(1, visitor.radius / 0.2) * 0.08) / Math.max(height, 0.5);
         pushX -= dx * weight;
         pushZ -= dz * weight;
         continue;
@@ -63,9 +64,29 @@ export class FoliageMotion {
     const response = 1 - Math.exp(-(pushX || pushZ ? 10 : 3) * dt);
     this.bendX += (pushX - this.bendX) * response;
     this.bendZ += (pushZ - this.bendZ) * response;
-    this.tilt.x = this.bendX + Math.sin(this.time * 0.7 + this.seed) * 0.009;
+    this.tilt.x =
+      this.flexibility *
+      (this.bendX + Math.sin(this.time * 0.7 + this.seed) * 0.009);
     this.tilt.z =
-      this.bendZ + Math.sin(this.time * 0.53 + this.seed * 1.7) * 0.007;
+      this.flexibility *
+      (this.bendZ + Math.sin(this.time * 0.53 + this.seed * 1.7) * 0.007);
     return this.tilt;
   }
+}
+
+/** Entering or leaving a flexible surface gradually transfers the body's
+ * visual contact. A rigid pole stays still while its leaves can bend. */
+export function foliageContact(
+  from: HabitatNode,
+  to: HabitatNode | undefined,
+  plantId: string,
+  progress: number,
+  leavesOnly: boolean,
+) {
+  const supported = (node: HabitatNode) =>
+    node.plantId === plantId &&
+    (leavesOnly ? node.surface === "leaf" : node.surface !== "ground");
+  const start = supported(from) ? 1 : 0;
+  const end = to ? (supported(to) ? 1 : 0) : start;
+  return start + (end - start) * progress;
 }

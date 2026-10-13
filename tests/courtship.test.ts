@@ -41,6 +41,20 @@ function run(engine: Ecosystem, seconds: number) {
   for (let i = 0; i < seconds * 10; i++) engine.advance(0.1);
 }
 
+/** The lower id waits for its mate. UUIDs made this fixture alternate
+ * between two different routes despite the seeded simulation randomness. */
+function starterWorld(reverse = false) {
+  const world = makePreset("tropical");
+  const frogs = world.objects.filter((object) => object.kind === "tree-frog");
+  world.objects = world.objects.map((object) => {
+    const index = frogs.indexOf(object);
+    return index < 0
+      ? object
+      : { ...object, id: `frog:${reverse ? frogs.length - index - 1 : index}` };
+  });
+  return world;
+}
+
 describe("courtship", () => {
   it("requires ten real seconds together, counts once per step and restores progress", () => {
     const create = () =>
@@ -70,7 +84,7 @@ describe("courtship", () => {
   });
 
   it("retains an actual world's pair and progress through save/reload and habitat rebuilds", () => {
-    let world = advanceLife(makePreset("tropical"), 25);
+    let world = advanceLife(starterWorld(), 25);
     const engine = createWorldEcosystem(world, undefined, randomFromSeed(4));
     for (
       let i = 0;
@@ -139,22 +153,25 @@ describe("courtship", () => {
     expect(single.getAnimal("a")!.activity).not.toBe("courting");
   });
 
-  it("lets frogs and fish in a starter tank find their mates", () => {
-    const world = makePreset("tropical");
-    const ids = (kind: string) =>
-      world.objects.filter((o) => o.kind === kind).map((o) => o.id);
-    const frogs = ids("tree-frog");
-    const fish = ids("convict-cichlid").slice(0, 2);
-    const engine = createWorldEcosystem(world, undefined, randomFromSeed(4));
-    engine.court(new Set([...frogs, ...fish]));
-    const met: string[][] = [];
-    for (let i = 0; i < 60 && met.length < 2; i++) {
-      run(engine, 1);
-      met.push(...engine.takeMeetings().map((pair) => [...pair].sort()));
-    }
-    expect(met).toContainEqual([...frogs].sort());
-    expect(met).toContainEqual([...fish].sort());
-  });
+  it.each([false, true])(
+    "lets starter animals find mates in either frog order (%s)",
+    (reverse) => {
+      const world = starterWorld(reverse);
+      const ids = (kind: string) =>
+        world.objects.filter((o) => o.kind === kind).map((o) => o.id);
+      const frogs = ids("tree-frog");
+      const fish = ids("convict-cichlid").slice(0, 2);
+      const engine = createWorldEcosystem(world, undefined, randomFromSeed(4));
+      engine.court(new Set([...frogs, ...fish]));
+      const met: string[][] = [];
+      for (let i = 0; i < 60 && met.length < 2; i++) {
+        run(engine, 1);
+        met.push(...engine.takeMeetings().map((pair) => [...pair].sort()));
+      }
+      expect(met).toContainEqual([...frogs].sort());
+      expect(met).toContainEqual([...fish].sort());
+    },
+  );
 });
 
 describe("juveniles", () => {

@@ -21,6 +21,9 @@ export const cushionMoss: AssetDefinition = {
   description: "Pale, rounded cushions that huddle together between stones.",
   radius: 0.34,
   habitat: "land",
+  supportsAnimals: true,
+  groundCover: true,
+  flexibility: 0.02,
   shelter: true,
   soil: "damp",
   build: (random) => {
@@ -51,6 +54,9 @@ export const sheetMoss: AssetDefinition = {
   description: "A low, deep green carpet that spreads over soil and stone.",
   radius: 0.4,
   habitat: "land",
+  supportsAnimals: true,
+  groundCover: true,
+  flexibility: 0.02,
   shelter: true,
   soil: "damp",
   build: (random) => {
@@ -82,6 +88,9 @@ export const fernMoss: AssetDefinition = {
   description: "Feathery yellow-green sprigs that knit into a soft, lacy mat.",
   radius: 0.36,
   habitat: "land",
+  supportsAnimals: true,
+  groundCover: true,
+  flexibility: 0.02,
   shelter: true,
   soil: "damp",
   build: (random) => {
@@ -102,6 +111,7 @@ export const javaMoss: AssetDefinition = {
   description: "A dark, tangled clump that drifts and wisps on the pool floor.",
   radius: 0.3,
   habitat: "water",
+  flexibility: 0.04,
   build: (random) => {
     const root = new THREE.Group();
     const skin = mossMaterial();

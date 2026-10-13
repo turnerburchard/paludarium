@@ -384,6 +384,8 @@ export function plantPerches(object: HabitatObject): PlantPerch[] {
     ...route,
     stem: route.stem.map((point) => sized(point, size)),
     perch: sized(route.perch, size),
+    perchWidth:
+      route.perchWidth === undefined ? undefined : route.perchWidth * size,
   }));
 }
 

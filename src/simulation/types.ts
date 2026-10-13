@@ -16,6 +16,7 @@ export type Surface =
   | "leaf"
   | "bark"
   | "stone"
+  | "plant"
   | "water";
 export interface HabitatNode {
   id: string;
@@ -34,6 +35,8 @@ export interface HabitatNode {
    * there is plenty. */
   headroom?: number;
   width?: number;
+  /** Width available for the feet; the body may overhang a leaf or cap. */
+  supportWidth?: number;
   neighbors: string[];
   /** Dry surfaces across a short gap of water, for animals that hop. */
   leaps?: string[];
@@ -86,6 +89,8 @@ export interface AnimalState {
   id: string;
   speciesId: string;
   nodeId: string;
+  /** The current edge target, for continuous visual support contact. */
+  nextNodeId?: string;
   position: Vec3;
   normal: Vec3;
   direction: Vec3;

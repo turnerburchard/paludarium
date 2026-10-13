@@ -90,3 +90,14 @@ function meets(ray: THREE.Ray, box: THREE.Box3, far: number) {
     entry.distanceToSquared(ray.origin) <= far * far
   );
 }
+
+/** Tests only faces close to the query, including thin, open leaf sheets. */
+export function intersectsBox(tree: CollisionTree, box: THREE.Box3): boolean {
+  if (!tree.bounds.intersectsBox(box)) return false;
+  if (tree.children)
+    return tree.children.some((child) => intersectsBox(child, box));
+  return tree.faces!.some(
+    (face) =>
+      face.bounds.intersectsBox(box) && box.intersectsTriangle(face.triangle),
+  );
+}

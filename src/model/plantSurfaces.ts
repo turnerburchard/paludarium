@@ -10,6 +10,8 @@ export interface PlantPerch {
   stem: PlantPoint[];
   perch: PlantPoint;
   perchNormal: PlantPoint;
+  /** Usable width of the resting surface, not the stem used to reach it. */
+  perchWidth?: number;
   /** Routes over wood follow the top of the bark, with a surface normal for
    * each stem point. Plant stems have none and face outward. */
   barkNormals?: PlantPoint[];
@@ -315,7 +317,8 @@ export function philodendronPerches(random: () => number): PlantPerch[] {
       const sag = -leaf.droop * t * t * leaf.length;
       const slope = -2 * leaf.droop * t;
       return {
-        stem: [{ x: 0, y: 0, z: 0 }, ...vine.slice(0, leaf.node + 1)],
+        stem: [{ ...vine[0], y: 0 }, ...vine.slice(0, leaf.node + 1)],
+        perchWidth: leaf.width * 0.85,
         perch: {
           x:
             leaf.base.x +

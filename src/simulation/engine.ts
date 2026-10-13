@@ -264,6 +264,7 @@ export class Ecosystem {
     const previous = agent.previous ?? state;
     const rendered = (agent.rendered ??= structuredClone(state));
     Object.assign(rendered, state);
+    rendered.nextNodeId = agent.edge ? agent.path[0] : undefined;
     const t = this.remainder / STEP;
     rendered.position = interpolate(previous.position, state.position, t);
     rendered.normal = interpolate(previous.normal, state.normal, t);
@@ -503,13 +504,26 @@ export class Ecosystem {
     if (!this.solids || !body || agent.swimmer) return undefined;
     const { position, direction } = state;
     const airborne = state.motion.hop && state.motion.lift > 0;
-    // Leaves and stems aren't solid, so there the body is only kept clear
-    // of what is.
+    // Authored stems and leaves keep their contact point; firm living
+    // surfaces settle the body just like stone and wood.
+    const current = this.graph.node(state.nodeId);
     const target = agent.edge && this.graph.node(agent.path[0]);
-    const soft = !!(this.graph.node(state.nodeId).plantId ?? target?.plantId);
-    const start = state.grounded
+    const leaf = current.surface === "leaf" && !state.moving && current.plantId;
+    const caster = leaf ? this.solids.onPlant(leaf) : this.solids;
+    const soft = [current, target].some(
+      (node) => node && (node.surface === "stem" || node.surface === "leaf"),
+    );
+    const surface = state.grounded
       ? this.solids.ground(position.x, position.z)
       : { position, normal: state.normal };
+    const start =
+      !soft && surface.normal.y >= 0.7
+        ? this.solids.covered(
+            surface.position,
+            surface.normal,
+            current.supportId ?? current.plantId,
+          )
+        : surface;
     const last = agent.settled;
     const near =
       last &&
@@ -519,8 +533,8 @@ export class Ecosystem {
     const fitted = fitBody(
       { position: start.position, normal: start.normal, direction },
       body,
-      this.solids,
-      !airborne && !soft,
+      caster,
+      !airborne && (!soft || !!leaf),
     );
     const pose = near
       ? follow(
@@ -641,6 +655,7 @@ export class Ecosystem {
       };
     const navigation = agent.routes.navigation;
     const lengths = navigation.distances;
+    const costs = navigation.costs;
     // Frogs don't move to a spot another frog holds or is heading for.
     const held = new Set(
       [...this.agents.values()]
@@ -660,11 +675,12 @@ export class Ecosystem {
       (id) =>
         id === state.nodeId || !crowds(this.graph.node(id).position, bodies),
     );
+    const resting = roomy.filter((id) => this.graph.canRest(id, agent.profile));
     const nearest = (ids: string[]) => {
       let best: string | undefined;
       let distance = Infinity;
       for (const id of ids) {
-        const candidate = lengths.get(id)!;
+        const candidate = costs.get(id)!;
         if (candidate < distance) {
           best = id;
           distance = candidate;
@@ -707,7 +723,11 @@ export class Ecosystem {
       reason: string,
       duration = 18,
     ) => {
-      agent.path = this.travelPath(state.nodeId, navigation.pathTo(target));
+      agent.path = this.travelPath(
+        state.nodeId,
+        navigation.pathTo(target),
+        agent.profile,
+      );
       agent.restFor = duration;
       agent.idle = false;
       agent.glance = undefined;
@@ -770,14 +790,20 @@ export class Ecosystem {
       } else {
         // One waits where it is for the other to come as near as there is
         // room for.
+        const nearby = roomy.filter(
+          (id) =>
+            distance(this.graph.node(id).position, mate.state.position) <=
+            this.meetingDistance(agent, mate),
+        );
         const meeting =
           agent.state.id < mate.state.id
             ? state.nodeId
-            : [...roomy].sort(
+            : (nearest(nearby) ??
+              [...roomy].sort(
                 (a, b) =>
                   distance(this.graph.node(a).position, mate.state.position) -
                   distance(this.graph.node(b).position, mate.state.position),
-              )[0];
+              )[0]);
         const near =
           distance(state.position, mate.state.position) <=
           this.meetingDistance(agent, mate);
@@ -817,7 +843,7 @@ export class Ecosystem {
         return;
       }
       const restsOn = agent.profile.restsOn ?? ["leaf"];
-      const shelters = roomy
+      const shelters = (resting.length ? resting : [state.nodeId])
         .map((id) => ({
           id,
           score:
@@ -826,13 +852,15 @@ export class Ecosystem {
             // Juveniles rest beside a parent.
             (nearParent(id) ? 1.5 : 0) -
             // Slow walkers settle for nearer cover.
-            (lengths.get(id)! * 0.008) / agent.profile.speed +
+            (costs.get(id)! * 0.008) / agent.profile.speed +
             this.roll() * 0.25,
         }))
         .sort((a, b) => b.score - a.score);
+      const shelter = shelters[0].id;
+      const supported = this.graph.canRest(shelter, agent.profile);
       go(
-        shelters[0].id,
-        inactive ? "sleeping" : "resting",
+        shelter,
+        inactive && supported ? "sleeping" : "resting",
         "seeking-shelter",
         unmet ||
           (this.graph.node(shelters[0].id).surface === "leaf"
@@ -840,7 +868,7 @@ export class Ecosystem {
             : inactive
               ? "Resting during the quiet part of the day"
               : "Recovering energy"),
-        25,
+        supported ? 25 : 1,
       );
       return;
     }
@@ -884,7 +912,7 @@ export class Ecosystem {
     // Vary the reach of each outing and favor unfamiliar spots, with a mild
     // bias toward the current heading. Needs still take precedence over curiosity.
     const range = 0.7 + this.roll() * 2.1;
-    const candidates = roomy.filter(
+    const candidates = resting.filter(
       (id) => id !== state.nodeId && lengths.get(id)! <= range,
     );
     if (candidates.length && this.roll() > 0.2) {
@@ -931,7 +959,7 @@ export class Ecosystem {
       );
     } else
       go(
-        state.nodeId,
+        nearest(resting) ?? state.nodeId,
         "resting",
         "exploring",
         unmet || "Watching the habitat",
@@ -1143,7 +1171,11 @@ export class Ecosystem {
   }
   /** Small graph cells describe the surface, not separate steps. Combine
    * straight, gently sloping stretches without cutting across corners. */
-  private travelPath(start: string, path: readonly string[]) {
+  private travelPath(
+    start: string,
+    path: readonly string[],
+    species: SpeciesProfile,
+  ) {
     const result: string[] = [];
     let previous = this.graph.node(start);
     for (let i = 0; i < path.length; i++) {
@@ -1153,7 +1185,7 @@ export class Ecosystem {
         if (
           previous.surface !== target.surface ||
           target.surface !== next.surface ||
-          !["ground", "stone", "bark"].includes(target.surface) ||
+          !["ground", "stone", "bark", "plant"].includes(target.surface) ||
           Math.min(previous.normal.y, target.normal.y, next.normal.y) < 0.85 ||
           distance(previous.position, next.position) > 0.48
         )
@@ -1178,6 +1210,11 @@ export class Ecosystem {
           0.995
         )
           break;
+        const direct = this.graph.edgeCost(previous, next, species);
+        const around =
+          this.graph.edgeCost(previous, target, species) +
+          this.graph.edgeCost(target, next, species);
+        if (!Number.isFinite(direct) || direct > around + 0.001) break;
         target = next;
         i++;
       }
@@ -1222,11 +1259,12 @@ export class Ecosystem {
       (state.surface === "leaf" && target.surface === "leaf") ||
       !!this.graph.node(state.nodeId).leaps?.includes(target.id);
     const walks = (surface: AnimalState["surface"]) =>
-      ["ground", "stone", "bark"].includes(surface);
+      ["ground", "stone", "bark", "plant"].includes(surface);
     const hopping =
       (style === "hop" || style === "climb") &&
       (leap ||
-        (walks(state.surface) &&
+        (distance(state.position, target.position) >= 0.12 &&
+          walks(state.surface) &&
           walks(target.surface) &&
           Math.min(state.normal.y, target.normal.y) >= 0.7));
     // An animal waits rather than step into another's way. After a couple
@@ -1243,7 +1281,9 @@ export class Ecosystem {
         agent.path = [];
         state.moving = false;
         state.activity = "resting";
-        agent.reconsiderAt = this.elapsed + this.sit(state.surface);
+        agent.reconsiderAt = this.graph.canRest(state.nodeId, agent.profile)
+          ? this.elapsed + this.sit(state.surface)
+          : this.elapsed;
         return;
       }
       if (!errand || waited < 6) return;

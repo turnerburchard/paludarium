@@ -5,6 +5,7 @@ export const copyVector = (v: Vec3): Vec3 => ({ ...v });
 
 export interface HabitatRoutes {
   distances: ReadonlyMap<string, number>;
+  costs: ReadonlyMap<string, number>;
   firstSteps: ReadonlyMap<string, string>;
   pathTo(target: string): string[];
 }
@@ -12,7 +13,14 @@ export interface HabitatRoutes {
 /** Explicit connected surfaces prevent animals walking through ponds or across empty air. */
 export class HabitatGraph {
   readonly nodes: ReadonlyMap<string, HabitatNode>;
-  constructor(nodes: readonly HabitatNode[]) {
+  constructor(
+    nodes: readonly HabitatNode[],
+    private readonly travelCost?: (
+      from: HabitatNode,
+      to: HabitatNode,
+      species: SpeciesProfile,
+    ) => number,
+  ) {
     const map = new Map<string, HabitatNode>();
     for (const node of nodes) {
       if (map.has(node.id))
@@ -61,7 +69,9 @@ export class HabitatGraph {
     if ((node.room ?? Infinity) < (species.radius ?? 0)) return false;
     if (
       (node.headroom ?? Infinity) < (species.body?.height ?? 0) ||
-      (node.width ?? Infinity) < (species.body?.width ?? 0)
+      (node.width ?? Infinity) < (species.body?.width ?? 0) ||
+      (node.surface === "leaf" &&
+        (node.supportWidth ?? Infinity) < (species.body?.width ?? 0) * 0.5)
     )
       return false;
     if (node.submerged ? !species.water : species.water === "lives")
@@ -69,12 +79,18 @@ export class HabitatGraph {
     if (node.surface === "ground") return true;
     // Gently sloping bark is walkable by any frog; steeper bark needs a climber.
     const walkable =
-      (node.surface === "bark" || node.surface === "stone") &&
-      node.normal.y >= 0.7;
+      ["bark", "stone", "plant"].includes(node.surface) && node.normal.y >= 0.7;
     if (!walkable && !species.climbs) return false;
     return (
       node.perchHeight === undefined ||
       node.perchHeight <= (species.maxPerchHeight ?? Infinity)
+    );
+  }
+  canRest(id: string, species: SpeciesProfile) {
+    const node = this.node(id);
+    return (
+      node.surface !== "stem" &&
+      (node.supportWidth ?? Infinity) >= (species.body?.width ?? 0) * 0.5
     );
   }
   nearest(position: Vec3, species: SpeciesProfile) {
@@ -82,19 +98,30 @@ export class HabitatGraph {
       bestDistance = Infinity;
     for (const node of this.nodes.values()) {
       const d = distance(position, node.position);
-      if (this.allowed(node.id, species) && d < bestDistance) {
+      if (
+        this.canRest(node.id, species) &&
+        this.allowed(node.id, species) &&
+        d < bestDistance
+      ) {
         best = node;
         bestDistance = d;
       }
     }
     return best;
   }
-  /** Shortest physical routes, rather than the fewest grid cells. A fine
-   * stone mesh must not make a nearby ledge seem farther away than a wall. */
+  edgeCost(from: HabitatNode, to: HabitatNode, species: SpeciesProfile) {
+    return (
+      this.travelCost?.(from, to, species) ??
+      distance(from.position, to.position)
+    );
+  }
+  /** Prefer short, open routes. Physical distance is tracked separately
+   * from foliage cost so needs and travel time still use actual distance. */
   routes(start: string, species: SpeciesProfile): HabitatRoutes {
     const parents = new Map<string, string>();
     const firstSteps = new Map<string, string>();
     const distances = new Map<string, number>([[start, 0]]);
+    const costs = new Map<string, number>([[start, 0]]);
     const queue = [{ id: start, distance: 0 }];
     const enqueue = (entry: { id: string; distance: number }) => {
       let index = queue.length;
@@ -129,7 +156,7 @@ export class HabitatGraph {
     };
     while (queue.length) {
       const current = dequeue();
-      if (current.distance !== distances.get(current.id)) continue;
+      if (current.distance !== costs.get(current.id)) continue;
       const from = this.node(current.id);
       const steps =
         from.leaps &&
@@ -147,7 +174,8 @@ export class HabitatGraph {
           continue;
         if (
           !species.climbs &&
-          (from.surface === "stone" || to.surface === "stone") &&
+          (["stone", "plant"].includes(from.surface) ||
+            ["stone", "plant"].includes(to.surface)) &&
           Math.abs(from.position.y - to.position.y) >
             Math.hypot(
               from.position.x - to.position.x,
@@ -156,19 +184,24 @@ export class HabitatGraph {
               0.8
         )
           continue;
-        const length = current.distance + distance(from.position, to.position);
-        if (length >= (distances.get(next) ?? Infinity)) continue;
-        distances.set(next, length);
+        const cost = current.distance + this.edgeCost(from, to, species);
+        if (cost >= (costs.get(next) ?? Infinity)) continue;
+        costs.set(next, cost);
+        distances.set(
+          next,
+          distances.get(current.id)! + distance(from.position, to.position),
+        );
         parents.set(next, current.id);
         firstSteps.set(
           next,
           current.id === start ? next : firstSteps.get(current.id)!,
         );
-        enqueue({ id: next, distance: length });
+        enqueue({ id: next, distance: cost });
       }
     }
     return {
       distances,
+      costs,
       firstSteps,
       // Decisions need distances to all reachable surfaces but only one
       // actual route. Avoid allocating thousands of unused path arrays.

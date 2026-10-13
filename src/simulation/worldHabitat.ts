@@ -24,6 +24,7 @@ import { SwimSpace } from "./swimSpace";
 import { WIDEST_ROOM } from "./waterNodes";
 import { HabitatNodeGrid } from "./nodeGrid";
 import { LandSurfaces } from "./landSurfaces";
+import { PlantObstacles } from "./plantObstacles";
 import { Solids } from "./solids";
 import { Ecosystem } from "./engine";
 import { readyToBreed, youngAndParents } from "./lifeCycle";
@@ -449,14 +450,30 @@ export function buildHabitat(
         Math.abs(perch.z) > env.depth / 2 - 0.08
       )
         continue;
-      const [anchor, ...wider] = dryAnchors(
+      const contact = (position: Vec3, normal: Vec3) =>
+        assets[object.kind].buildStructure
+          ? surfaces.plantContact(position, normal, object.id)
+          : { position, normal };
+      const first = contact(
         transformPlantPoint(route.stem[0], object, baseY),
-        0.65,
+        outward(
+          transformPlantPoint(route.stem[1] ?? route.stem[0], object, baseY),
+          object,
+        ),
       );
+      if (assets[object.kind].buildStructure)
+        first.position.y = Math.max(
+          first.position.y,
+          groundHeight(first.position.x, first.position.z, env) + 0.02,
+        );
+      const [anchor, ...wider] = dryAnchors(first.position, 0.65);
       if (!anchor) continue;
       const stem = [
         anchor.position,
-        ...route.stem.map((point) => transformPlantPoint(point, object, baseY)),
+        first.position,
+        ...route.stem
+          .slice(1)
+          .map((point) => transformPlantPoint(point, object, baseY)),
       ];
       const barkNormals = route.barkNormals && [
         up,
@@ -467,7 +484,8 @@ export function buildHabitat(
       for (let segment = 0; segment < stem.length - 1; segment++) {
         const from = stem[segment],
           to = stem[segment + 1];
-        const steps = Math.max(1, Math.ceil(distance(from, to) / 0.18));
+        const spacing = assets[object.kind].buildStructure ? 0.04 : 0.18;
+        const steps = Math.max(1, Math.ceil(distance(from, to) / spacing));
         for (let step = 1; step <= steps; step++) {
           const t = step / steps;
           const position = {
@@ -475,12 +493,21 @@ export function buildHabitat(
             y: from.y + (to.y - from.y) * t,
             z: from.z + (to.z - from.z) * t,
           };
+          const normal = barkNormals
+            ? blend(barkNormals[segment], barkNormals[segment + 1], t)
+            : outward(to, object);
+          const approach = segment === 0 && step < steps;
+          if (approach && anchor.surface === "ground")
+            position.y = groundHeight(position.x, position.z, env);
+          const onSurface = approach
+            ? { position, normal: anchor.normal }
+            : barkNormals
+              ? { position, normal }
+              : contact(position, normal);
           const node: HabitatNode = {
             id: `plant:${object.id}:${routeIndex}:${segment}:${step}`,
-            position,
-            normal: barkNormals
-              ? blend(barkNormals[segment], barkNormals[segment + 1], t)
-              : outward(to, object),
+            position: onSurface.position,
+            normal: onSurface.normal,
             surface: barkNormals ? "bark" : "stem",
             wet: false,
             shelter: 0.3,
@@ -498,6 +525,10 @@ export function buildHabitat(
         id: `${barkNormals ? "bark" : "leaf"}:${object.id}:${routeIndex}`,
         position: perch,
         normal: turn(route.perchNormal),
+        supportWidth:
+          route.perchWidth === undefined
+            ? undefined
+            : route.perchWidth * object.scale,
         surface: barkNormals ? "bark" : "leaf",
         wet: false,
         shelter: barkNormals ? 0.5 : 1,
@@ -562,7 +593,10 @@ export function buildHabitat(
       }
   for (const node of nodes) measureSpace(node, solids);
   if (hasFish(world)) nodes.push(...new SwimSpace(world).routes());
-  return new HabitatGraph(nodes);
+  const plants = new PlantObstacles(world, surfaces);
+  return new HabitatGraph(nodes, (from, to, species) =>
+    plants.cost(from, to, species),
+  );
 }
 
 function scaled(body: Body, scale: number): Body {
@@ -583,7 +617,12 @@ function measureSpace(node: HabitatNode, solids: Solids) {
   start.x += node.normal.x * 0.005;
   start.y += node.normal.y * 0.005;
   start.z += node.normal.z * 0.005;
-  const over = solids.cast(start, node.normal, OPEN);
+  const over = solids.cast(
+    start,
+    node.normal,
+    OPEN,
+    node.surface !== "ground" || !!node.supportId,
+  );
   if (over) node.headroom = over.distance;
   if (!node.id.startsWith("den:")) return;
   // Just off the floor, in four directions across and their opposites.
