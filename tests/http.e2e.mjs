@@ -53,9 +53,10 @@ try {
     { world: empty, storageKey },
   );
   await page.goto(origin);
-  await waitForTank(page);
-  // Keep software WebGL idle while checking HTTP placement and persistence.
+  // Pause before shader compilation so loading finishes with an idle scene.
+  await page.getByRole("button", { name: "About Paludarium" }).waitFor();
   await page.locator("body").press("Space");
+  await waitForTank(page);
   assert.deepEqual(
     await page.evaluate(() => ({
       secure: isSecureContext,

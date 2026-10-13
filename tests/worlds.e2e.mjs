@@ -56,9 +56,10 @@ try {
       },
     );
     await page.goto(url);
-    await waitForTank(page);
-    // Phones have no Pause button, so use the Space shortcut.
+    await page.getByRole("button", { name: "About Paludarium" }).waitFor();
+    // Pause before the first draw rather than while software rendering is busy.
     await page.locator("body").press("Space");
+    await waitForTank(page);
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     assert.equal(await page.locator(".preset-options button").count(), 7);
     await page
@@ -126,9 +127,10 @@ try {
       return;
     }
     await page.reload();
-    await waitForTank(page);
-    // Phones have no Pause button, so use the Space shortcut.
+    await page.getByRole("button", { name: "About Paludarium" }).waitFor();
+    // Pause before the first draw rather than while software rendering is busy.
     await page.locator("body").press("Space");
+    await waitForTank(page);
     await page.getByRole("button", { name: "Build", exact: true }).click();
     assert.equal(
       await page

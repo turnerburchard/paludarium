@@ -60,8 +60,10 @@ try {
   );
   const page = await context.newPage();
   await page.goto(url);
-  await waitForTank(page);
   await page.getByRole("button", { name: "About Paludarium" }).waitFor();
+  // Pause before the first draw and the viewport changes.
+  await page.locator("body").press("Space");
+  await waitForTank(page);
   assert.deepEqual(await page.getByRole("heading").allTextContents(), [
     "paludarium",
   ]);
@@ -104,8 +106,6 @@ try {
     return [image.naturalWidth, image.naturalHeight];
   });
   assert.deepEqual(image, [1200, 630]);
-  // Phones have no Pause button, so use the Space shortcut.
-  await page.locator("body").press("Space");
   await page.getByRole("button", { name: "Build", exact: true }).click();
   await page.getByRole("button", { name: "Worlds", exact: true }).click();
   await page
@@ -262,8 +262,9 @@ try {
     { storageKey, original },
   );
   await page.goto(url + "/" + hash);
-  await waitForTank(page);
+  await page.getByRole("button", { name: "About Paludarium" }).waitFor();
   await page.locator("body").press("Space");
+  await waitForTank(page);
   // The link opens like a preset, and leaves the address once it has.
   await page.waitForFunction(
     (key) =>
