@@ -1,8 +1,9 @@
+import { finishWork } from "../work";
 import * as THREE from "three";
 import { assets, categoryOf } from "../assets";
 import { collisionShape, placeShape } from "../assets/collisionShape";
 import {
-  buildCollisionTree,
+  collisionTreeSteps,
   type CollisionTree,
 } from "../assets/collisionTree";
 import { objectBase } from "../model/stacking";
@@ -13,7 +14,7 @@ import type { HabitatNode, SpeciesProfile, Vec3 } from "./types";
 /** Actual foliage remains passable. The cost is bounded even where many
  * plants overlap, so an animal can always push through to food or water. */
 export class PlantObstacles {
-  private readonly foliage: CollisionTree[] = [];
+  private readonly foliage: CollisionTree[];
   private readonly cache = new Map<string, number>();
   private readonly inverse = new THREE.Matrix4();
   private readonly query = new THREE.Box3();
@@ -23,23 +24,15 @@ export class PlantObstacles {
   constructor(
     world: World,
     private readonly surfaces: LandSurfaces,
+    foliage = finishWork(foliageSteps(world)),
   ) {
-    for (const object of world.objects) {
-      const asset = assets[object.kind];
-      if (
-        categoryOf(asset) !== "Plants" ||
-        !asset.shelter ||
-        asset.supportsAnimals ||
-        asset.blocksMovement
-      )
-        continue;
-      const { faces } = placeShape(
-        collisionShape(object),
-        object,
-        objectBase(object, world.environment),
-      );
-      this.foliage.push(buildCollisionTree(faces));
-    }
+    this.foliage = foliage;
+  }
+  static *build(
+    world: World,
+    surfaces: LandSurfaces,
+  ): Generator<void, PlantObstacles> {
+    return new PlantObstacles(world, surfaces, yield* foliageSteps(world));
   }
 
   /** Only ground travel pushes through foliage. Authored climbing routes
@@ -159,4 +152,26 @@ export class PlantObstacles {
       return this.body.intersectsTriangle(this.triangle);
     });
   }
+}
+
+function* foliageSteps(world: World): Generator<void, CollisionTree[]> {
+  const foliage: CollisionTree[] = [];
+  for (const object of world.objects) {
+    yield;
+    const asset = assets[object.kind];
+    if (
+      categoryOf(asset) !== "Plants" ||
+      !asset.shelter ||
+      asset.supportsAnimals ||
+      asset.blocksMovement
+    )
+      continue;
+    const { faces } = placeShape(
+      collisionShape(object),
+      object,
+      objectBase(object, world.environment),
+    );
+    foliage.push(yield* collisionTreeSteps(faces));
+  }
+  return foliage;
 }

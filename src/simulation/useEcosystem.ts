@@ -9,7 +9,11 @@ import { isAnimal } from "../assets";
 import type { HabitatObject, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
 import { groundHeight, onlyAppearanceDiffers } from "../model/terrain";
-import { createWorldEcosystem } from "./worldHabitat";
+import {
+  createWorldEcosystem,
+  createWorldEcosystemSteps,
+} from "./worldHabitat";
+import { runInBatches } from "../work";
 import type { Ecosystem } from "./engine";
 import {
   advanceLife as evolveLife,
@@ -58,6 +62,9 @@ export function useEcosystem(
     latestValue(live.current!.engine.snapshot()),
   );
   const [remains, setRemains] = useState<Remains[]>([]);
+  const rebuilding = useRef(false);
+  const [buildError, setBuildError] = useState<unknown>(null);
+  if (buildError) throw buildError;
   const habitat = useMemo(() => habitatSupport(world), [world]);
   useEffect(() => {
     const previous = live.current!;
@@ -89,24 +96,33 @@ export function useEcosystem(
     // Read the bodies now: the updater runs after the engine below has
     // forgotten them, which would put them back where they were placed.
     const bodies = died.map(remainsOf);
-    if (bodies.length) setRemains((r) => [...r, ...bodies]);
-    else if (
-      !sharesAnimals &&
-      world.environment !== previous.world.environment &&
-      !world.objects.some((o) =>
-        previous.world.objects.some((p) => p.id === o.id),
-      )
-    )
-      setRemains([]);
-    else setRemains((r) => r.filter((body) => !living.has(body.object.id)));
-    live.current = {
-      world,
-      engine: createWorldEcosystem(world, sharesAnimals ? previous : undefined),
-      lifeRemainder: 0,
+    rebuilding.current = true;
+    const cancel = runInBatches(
+      createWorldEcosystemSteps(world, sharesAnimals ? previous : undefined),
+      (engine) => {
+        if (bodies.length) setRemains((r) => [...r, ...bodies]);
+        else if (
+          !sharesAnimals &&
+          world.environment !== previous.world.environment &&
+          !world.objects.some((o) =>
+            previous.world.objects.some((p) => p.id === o.id),
+          )
+        )
+          setRemains([]);
+        else setRemains((r) => r.filter((body) => !living.has(body.object.id)));
+        live.current = { world, engine, lifeRemainder: 0 };
+        rebuilding.current = false;
+        snapshotStore.set(engine.snapshot());
+      },
+      (error) => {
+        rebuilding.current = false;
+        setBuildError(error);
+      },
+    );
+    return () => {
+      cancel();
+      rebuilding.current = false;
     };
-    live.current.engine.court(readyToBreed(world));
-    live.current.engine.raise(youngAndParents(world));
-    snapshotStore.set(live.current.engine.snapshot());
   }, [world, holding, snapshotStore]);
   useEffect(() => {
     const timer = setInterval(() => {
@@ -153,7 +169,7 @@ export function useEcosystem(
   }
   function advanceLife(seconds: number, paused: boolean) {
     const current = live.current!;
-    if (paused) return;
+    if (paused || rebuilding.current) return;
     current.lifeRemainder += Math.min(seconds, 0.25);
     // Save courtship every second; ordinary life can use a slower tick.
     const interval = current.engine.courtships.length ? 1 : 5;
@@ -191,12 +207,13 @@ export function useEcosystem(
       );
       const bodies = died.map(remainsOf);
       if (bodies.length) setRemains((r) => [...r, ...bodies]);
-      current.engine = createWorldEcosystem(next, {
-        ...current,
-        world: placed,
-      });
+      // Keep the recorded live positions as the rebuild's base. React's
+      // committed world starts the cancellable build, as it does for edits.
+      current.world = placed;
+      onLifeChange(previous, next);
+      return;
     }
-    current.engine.court(readyToBreed(next));
+    current.engine.court(readyToBreed(next), [], () => false);
     current.engine.raise(youngAndParents(next));
     current.world = withAnimalCourtships(next, current.engine.courtships);
     onLifeChange(previous, current.world);
@@ -204,6 +221,7 @@ export function useEcosystem(
   return {
     live,
     snapshotStore,
+    rebuilding,
     canLive,
     advanceLife,
     remains,

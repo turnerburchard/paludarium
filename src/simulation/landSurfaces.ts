@@ -1,3 +1,4 @@
+import { finishWork } from "../work";
 import * as THREE from "three";
 import { assets } from "../assets";
 import {
@@ -6,7 +7,7 @@ import {
   type CollisionFace,
 } from "../assets/collisionShape";
 import {
-  buildCollisionTree,
+  collisionTreeSteps,
   intersectsBox,
   visitRayFaces,
   type CollisionTree,
@@ -40,7 +41,7 @@ function reaches(box: THREE.Box3, a: Vec3, b: Vec3) {
 /** Solid structure and firm walking surfaces. Overlapping objects expose
  * only their outer skin; soft leaves never obstruct land routes. */
 export class LandSurfaces {
-  readonly solids: Solid[] = [];
+  readonly solids: Solid[];
   private readonly ray = new THREE.Ray();
   private readonly hit = new THREE.Vector3();
   private readonly origin = new THREE.Vector3();
@@ -72,30 +73,9 @@ export class LandSurfaces {
   constructor(
     private readonly world: World,
     previous?: LandSurfaces,
+    solids = finishWork(solidSteps(world)),
   ) {
-    for (const object of world.objects) {
-      const asset = assets[object.kind];
-      if (
-        !asset.hardscape &&
-        !asset.blocksMovement &&
-        !asset.buildStructure &&
-        !asset.supportsAnimals
-      )
-        continue;
-      const shape = placeShape(
-        structuralShape(object),
-        object,
-        objectBase(object, world.environment),
-      );
-      const faces = shape.faces;
-      this.solids.push({
-        object,
-        bounds: shape.bounds,
-        faces,
-        tree: buildCollisionTree(faces),
-        faceOrder: new Map(faces.map((face, index) => [face, index])),
-      });
-    }
+    this.solids = solids;
     if (previous?.world.environment !== world.environment) return;
     const now = new Set(this.solids.map((solid) => solid.object));
     const before = new Set(previous.solids.map((solid) => solid.object));
@@ -108,6 +88,13 @@ export class LandSurfaces {
         ...this.solids.filter((solid) => !before.has(solid.object)),
       ].map((solid) => solid.bounds),
     };
+  }
+
+  static *build(
+    world: World,
+    previous?: LandSurfaces,
+  ): Generator<void, LandSurfaces> {
+    return new LandSurfaces(world, previous, yield* solidSteps(world));
   }
 
   /** A check between two points only depends on the ground, the water and
@@ -143,7 +130,13 @@ export class LandSurfaces {
       )
         continue;
       this.ray.set(new THREE.Vector3(x, solid.bounds.max.y + 1, z), this.down);
-      for (const { triangle, bounds } of solid.faces) {
+      const candidates: CollisionFace[] = [];
+      visitRayFaces(solid.tree, this.ray, (face) => candidates.push(face));
+      // Equal-height contacts keep the mesh's original tie breaks.
+      candidates.sort(
+        (a, b) => solid.faceOrder.get(a)! - solid.faceOrder.get(b)!,
+      );
+      for (const { triangle, bounds } of candidates) {
         if (
           x < bounds.min.x ||
           x > bounds.max.x ||
@@ -245,8 +238,12 @@ export class LandSurfaces {
 
   /** The skin of every solid that no other solid covers. */
   routes(margin: number): HabitatNode[] {
+    return finishWork(this.routeSteps(margin));
+  }
+  *routeSteps(margin: number): Generator<void, HabitatNode[]> {
     const nodes: HabitatNode[] = [];
     for (const solid of this.solids) {
+      yield;
       const asset = assets[solid.object.kind];
       // Low cover follows the ground or its supporting stone/wood route.
       // Its decorative lumps support bodies without adding navigation cells.
@@ -260,7 +257,7 @@ export class LandSurfaces {
         (this.earlier?.changed.some((bounds) => bounds.intersectsBox(near))
           ? undefined
           : this.earlier?.exposed.get(solid.object)) ??
-        this.expose(solid, margin);
+        (yield* this.expose(solid, margin));
       this.exposed.set(solid.object, exposed);
       // The habitat adds links and room to these, so it gets its own copies.
       for (const node of exposed)
@@ -270,15 +267,19 @@ export class LandSurfaces {
   }
 
   /** The part of a solid's skin that no other solid covers. */
-  private expose(solid: Solid, margin: number): HabitatNode[] {
+  private *expose(
+    solid: Solid,
+    margin: number,
+  ): Generator<void, HabitatNode[]> {
     const env = this.world.environment;
     const skin =
       this.skins.get(solid.object) ??
       this.earlier?.skins.get(solid.object) ??
-      this.sampleSkin(solid);
+      (yield* this.sampleSkin(solid));
     this.skins.set(solid.object, skin);
     const nodes: HabitatNode[] = [];
     for (const node of skin) {
+      yield;
       const { x, y, z } = node.position;
       if (
         Math.abs(x) > env.width / 2 - margin ||
@@ -296,7 +297,8 @@ export class LandSurfaces {
       node.neighbors = node.neighbors.filter((id) => exposed.has(id));
     // Exposed endpoints alone are insufficient: another stacked piece can
     // still intersect the face between them. Check each edge once.
-    for (const node of nodes)
+    for (const node of nodes) {
+      yield;
       node.neighbors = node.neighbors.filter((id) => {
         if (node.id > id) return true;
         const neighbor = exposed.get(id)!;
@@ -306,12 +308,13 @@ export class LandSurfaces {
         );
         return false;
       });
+    }
     return nodes;
   }
 
   /** Mesh vertices, edge samples and face centers share connections along
    * the actual skin, including steep sides that a top-down height map misses. */
-  private sampleSkin(solid: Solid): HabitatNode[] {
+  private *sampleSkin(solid: Solid): Generator<void, HabitatNode[]> {
     const env = this.world.environment;
     const samples = new Map<
       string,
@@ -373,6 +376,7 @@ export class LandSurfaces {
       if (!b.neighbors.includes(a.id)) b.neighbors.push(a.id);
     };
     for (const { triangle } of solid.faces) {
+      yield;
       const normal = triangle.getNormal(new THREE.Vector3());
       // Do not offer the flat underside as a walking surface. Sloping
       // sides below a stone's equator are useful approaches for climbers.
@@ -394,6 +398,7 @@ export class LandSurfaces {
       }
     }
     for (const { point, normal, node } of samples.values()) {
+      yield;
       normal.normalize();
       const lifted = point.clone().addScaledVector(normal, 0.018);
       node.position = { x: lifted.x, y: lifted.y, z: lifted.z };
@@ -535,4 +540,33 @@ export class LandSurfaces {
     }
     return true;
   }
+}
+
+function* solidSteps(world: World): Generator<void, Solid[]> {
+  const solids: Solid[] = [];
+  for (const object of world.objects) {
+    yield;
+    const asset = assets[object.kind];
+    if (
+      !asset.hardscape &&
+      !asset.blocksMovement &&
+      !asset.buildStructure &&
+      !asset.supportsAnimals
+    )
+      continue;
+    const shape = placeShape(
+      structuralShape(object),
+      object,
+      objectBase(object, world.environment),
+    );
+    const faces = shape.faces;
+    solids.push({
+      object,
+      bounds: shape.bounds,
+      faces,
+      tree: yield* collisionTreeSteps(faces),
+      faceOrder: new Map(faces.map((face, index) => [face, index])),
+    });
+  }
+  return solids;
 }

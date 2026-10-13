@@ -126,6 +126,28 @@ export interface SimulationOptions {
 /** Owns live needs and choices. No React, Three.js, wall-clock reads or offline catch-up. */
 export class Ecosystem {
   private readonly agents = new Map<string, Agent>();
+  private readonly planning = new Map<Agent | "courtship", Generator<void>>();
+  private readyToCourt: ReadonlySet<string> = new Set();
+  private hasPlanningTime: () => boolean = () => true;
+
+  /** All animals share a frame's budget. A waiting animal holds its position. */
+  private work() {
+    while (this.planning.size && this.hasPlanningTime()) this.planStep();
+  }
+  private planStep() {
+    const [owner, steps] = this.planning.entries().next().value!;
+    if (steps.next().done) this.planning.delete(owner);
+  }
+  *finishPlanning(): Generator<void> {
+    while (this.planning.size) {
+      this.planStep();
+      yield;
+    }
+  }
+  private plan(agent: Agent, steps: Generator<void>) {
+    if (!this.planning.has(agent)) this.planning.set(agent, steps);
+    this.work();
+  }
   private readonly food = new Map<string, FoodPatch>();
   private readonly discoveries: Discovery[];
   /** Courting pairs that have met, until taken. */
@@ -312,7 +334,20 @@ export class Ecosystem {
   /** Pairs up animals of a species that are ready to breed and can reach
    * each other. Each pair makes for the other, and once they have met face
    * to face `takeMeetings` reports them. */
-  court(ready: ReadonlySet<string>, saved: readonly Courtship[] = []) {
+  court(
+    ready: ReadonlySet<string>,
+    saved: readonly Courtship[] = [],
+    hasTime: () => boolean = () => true,
+  ) {
+    this.readyToCourt = ready;
+    if (!this.planning.has("courtship"))
+      this.planning.set("courtship", this.pair(saved));
+    const previous = this.hasPlanningTime;
+    this.hasPlanningTime = hasTime;
+    this.work();
+    this.hasPlanningTime = previous;
+  }
+  private *pair(saved: readonly Courtship[]): Generator<void> {
     for (const pair of saved) {
       const agent = this.agents.get(pair.id);
       const mate = this.agents.get(pair.mate);
@@ -325,13 +360,20 @@ export class Ecosystem {
         agent === mate ||
         agent.mate ||
         mate.mate ||
-        !ready.has(pair.id) ||
-        !ready.has(pair.mate) ||
+        !this.readyToCourt.has(pair.id) ||
+        !this.readyToCourt.has(pair.mate) ||
         !reciprocal ||
-        agent.profile.id !== mate.profile.id ||
-        !this.graph
-          .routes(agent.state.nodeId, agent.profile)
-          .distances.has(mate.state.nodeId)
+        agent.profile.id !== mate.profile.id
+      )
+        continue;
+      const navigation = yield* this.graph.searchRoutes(
+        agent.state.nodeId,
+        agent.profile,
+      );
+      if (
+        !navigation.distances.has(mate.state.nodeId) ||
+        !this.readyToCourt.has(agent.state.id) ||
+        !this.readyToCourt.has(mate.state.id)
       )
         continue;
       agent.mate = mate;
@@ -346,26 +388,40 @@ export class Ecosystem {
     for (const agent of this.agents.values())
       if (
         agent.mate &&
-        !(ready.has(agent.state.id) && ready.has(agent.mate.state.id))
+        !(
+          this.readyToCourt.has(agent.state.id) &&
+          this.readyToCourt.has(agent.mate.state.id)
+        )
       )
         this.part(agent);
     const single = [...this.agents.values()].filter(
       (agent) =>
         !agent.mate &&
-        ready.has(agent.state.id) &&
+        this.readyToCourt.has(agent.state.id) &&
         this.elapsed >= (agent.shyUntil ?? 0),
     );
     for (const agent of single) {
       if (agent.mate) continue;
-      const mate = single.find(
+      const candidates = single.filter(
         (other) =>
           other !== agent &&
           !other.mate &&
           other.profile.id === agent.profile.id &&
-          this.graph
-            .routes(agent.state.nodeId, agent.profile)
-            .distances.has(other.state.nodeId),
+          this.readyToCourt.has(other.state.id),
       );
+      if (!candidates.length || !this.readyToCourt.has(agent.state.id))
+        continue;
+      const navigation = yield* this.graph.searchRoutes(
+        agent.state.nodeId,
+        agent.profile,
+      );
+      const mate = candidates.find(
+        (other) =>
+          !other.mate &&
+          this.readyToCourt.has(other.state.id) &&
+          navigation.distances.has(other.state.nodeId),
+      );
+      if (!this.readyToCourt.has(agent.state.id)) continue;
       if (!mate) continue;
       agent.mate = mate;
       mate.mate = agent;
@@ -440,10 +496,17 @@ export class Ecosystem {
     for (const agent of this.agents.values()) agent.reconsiderAt = 0;
   }
   /** Long frames are discarded. A hidden tab never turns into hours of simulation. */
-  advance(realSeconds: number, paused = false, heldIds?: ReadonlySet<string>) {
+  advance(
+    realSeconds: number,
+    paused = false,
+    heldIds?: ReadonlySet<string>,
+    hasPlanningTime: () => boolean = () => true,
+  ) {
     if (!Number.isFinite(realSeconds) || realSeconds < 0)
       throw new Error("Frame delta must be finite and non-negative.");
     if (paused) return;
+    this.hasPlanningTime = hasPlanningTime;
+    this.work();
     this.remainder += Math.min(realSeconds, 0.25) * this.speed;
     while (this.remainder >= STEP - 1e-9) {
       this.remainder = Math.max(0, this.remainder - STEP);
@@ -576,6 +639,7 @@ export class Ecosystem {
     }
   }
   private update(agent: Agent) {
+    if (this.planning.has(agent)) return;
     if (agent.swimmer) {
       this.swim(agent, agent.swimmer);
       return;
@@ -609,7 +673,10 @@ export class Ecosystem {
       agent.reconsiderAt = Math.min(agent.reconsiderAt, this.elapsed);
     }
     // Decide at graph nodes, never teleport to a new path while halfway along an edge.
-    if (!state.moving && this.elapsed >= agent.reconsiderAt) this.decide(agent);
+    if (!state.moving && this.elapsed >= agent.reconsiderAt) {
+      this.plan(agent, this.decide(agent));
+      if (this.planning.has(agent)) return;
+    }
     if (state.moving) {
       this.move(agent);
       return;
@@ -645,13 +712,13 @@ export class Ecosystem {
       );
     }
   }
-  private decide(agent: Agent) {
+  private *decide(agent: Agent): Generator<void> {
     const state = agent.state,
       needs = state.needs;
     if (agent.routes?.start !== state.nodeId)
       agent.routes = {
         start: state.nodeId,
-        navigation: this.graph.routes(state.nodeId, agent.profile),
+        navigation: yield* this.graph.searchRoutes(state.nodeId, agent.profile),
       };
     const navigation = agent.routes.navigation;
     const lengths = navigation.distances;
@@ -662,7 +729,8 @@ export class Ecosystem {
         .filter((other) => other !== agent)
         .map((other) => other.path.at(-1) ?? other.state.nodeId),
     );
-    const reachable = [...lengths.keys()].filter(
+    const reachable = yield* selectNodes(
+      lengths.keys(),
       (id) => id === state.nodeId || !held.has(id),
     );
     // Nor close enough to crowd another where it will be: where it sits, or
@@ -671,11 +739,14 @@ export class Ecosystem {
       at: this.graph.node(other.path.at(-1) ?? other.state.nodeId).position,
       clearance,
     }));
-    const roomy = reachable.filter(
+    const roomy = yield* selectNodes(
+      reachable,
       (id) =>
         id === state.nodeId || !crowds(this.graph.node(id).position, bodies),
     );
-    const resting = roomy.filter((id) => this.graph.canRest(id, agent.profile));
+    const resting = yield* selectNodes(roomy, (id) =>
+      this.graph.canRest(id, agent.profile),
+    );
     const nearest = (ids: string[]) => {
       let best: string | undefined;
       let distance = Infinity;
@@ -696,13 +767,14 @@ export class Ecosystem {
       nearest(reachable.filter((id) => insects(id) >= 0.5)) ??
       nearest(reachable.filter((id) => insects(id) > 0.001));
     // Animals that visit the water soak in it rather than on the shore.
-    const shoreline = [...lengths.keys()].filter((id) =>
+    const shoreline = yield* selectNodes(lengths.keys(), (id) =>
       agent.profile.water === "visits"
-        ? this.graph.node(id).submerged
+        ? !!this.graph.node(id).submerged
         : this.graph.node(id).wet,
     );
     // A spot with room at the water, before squeezing in beside another.
-    const freeShore = shoreline.filter(
+    const freeShore = yield* selectNodes(
+      shoreline,
       (id) => id === state.nodeId || !held.has(id),
     );
     const water =
@@ -843,27 +915,28 @@ export class Ecosystem {
         return;
       }
       const restsOn = agent.profile.restsOn ?? ["leaf"];
-      const shelters = (resting.length ? resting : [state.nodeId])
-        .map((id) => ({
-          id,
-          score:
-            this.graph.node(id).shelter * 3 +
-            (restsOn.includes(this.graph.node(id).surface) ? 1 : 0) +
-            // Juveniles rest beside a parent.
-            (nearParent(id) ? 1.5 : 0) -
-            // Slow walkers settle for nearer cover.
-            (costs.get(id)! * 0.008) / agent.profile.speed +
-            this.roll() * 0.25,
-        }))
-        .sort((a, b) => b.score - a.score);
-      const shelter = shelters[0].id;
+      let shelter = state.nodeId;
+      let bestScore = -Infinity;
+      for (const id of resting.length ? resting : [state.nodeId]) {
+        yield;
+        const score =
+          this.graph.node(id).shelter * 3 +
+          (restsOn.includes(this.graph.node(id).surface) ? 1 : 0) +
+          (nearParent(id) ? 1.5 : 0) -
+          (costs.get(id)! * 0.008) / agent.profile.speed +
+          this.roll() * 0.25;
+        if (score > bestScore) {
+          shelter = id;
+          bestScore = score;
+        }
+      }
       const supported = this.graph.canRest(shelter, agent.profile);
       go(
         shelter,
         inactive && supported ? "sleeping" : "resting",
         "seeking-shelter",
         unmet ||
-          (this.graph.node(shelters[0].id).surface === "leaf"
+          (this.graph.node(shelter).surface === "leaf"
             ? "Taking shelter on a leaf perch"
             : inactive
               ? "Resting during the quiet part of the day"
@@ -1017,8 +1090,10 @@ export class Ecosystem {
       fish.blocked ||
       fish.roaming === agent.schooling ||
       this.elapsed >= agent.reconsiderAt
-    )
-      this.chooseWater(agent, fish, fish.blocked);
+    ) {
+      this.plan(agent, this.chooseWater(agent, fish, fish.blocked));
+      if (this.planning.has(agent)) return;
+    }
     fish.blocked = false;
     // Head for the next node, moving on once it is near or already passed,
     // so a route reads as one sweeping course rather than a series of legs.
@@ -1079,7 +1154,11 @@ export class Ecosystem {
   }
   /** A schooled fish follows where its nearest school mate is heading. A
    * fish on its own, or with no one to follow, sets out somewhere new. */
-  private chooseWater(agent: Agent, fish: Swimmer, blocked = false) {
+  private *chooseWater(
+    agent: Agent,
+    fish: Swimmer,
+    blocked = false,
+  ): Generator<void> {
     agent.schooling = !fish.roaming;
     agent.path = [];
     const start = this.graph.nearest(fish, agent.profile);
@@ -1088,7 +1167,7 @@ export class Ecosystem {
       return;
     }
     agent.state.nodeId = start.id;
-    const navigation = this.graph.routes(start.id, agent.profile);
+    const navigation = yield* this.graph.searchRoutes(start.id, agent.profile);
     const lengths = navigation.distances;
     // A courting fish swims to its mate, checking often where it has got to.
     const mate = agent.mate?.swimmer;
@@ -1478,4 +1557,17 @@ function alongSurface(v: Vec3, normal: Vec3): Vec3 | undefined {
   return length < 1e-6
     ? undefined
     : { x: x / length, y: y / length, z: z / length };
+}
+
+/** Selection can visit the whole habitat, so it shares the route search's budget. */
+function* selectNodes(
+  nodes: Iterable<string>,
+  keep: (id: string) => boolean,
+): Generator<void, string[]> {
+  const selected: string[] = [];
+  for (const id of nodes) {
+    yield;
+    if (keep(id)) selected.push(id);
+  }
+  return selected;
 }

@@ -1,3 +1,4 @@
+import { finishWork } from "../work";
 import type { World } from "../model/schema";
 import { depthAt, placementProblem, waterLevel } from "../model/water";
 import { groundHeight } from "../model/terrain";
@@ -17,6 +18,12 @@ export const WIDEST_ROOM = ROOMS[0];
 /** A lattice through the open water for fish to route along. Each column
  * follows the ground, so a level keeps the same share of the water's depth. */
 export function waterNodes(world: World, space: SwimSpace): HabitatNode[] {
+  return finishWork(waterNodeSteps(world, space));
+}
+export function* waterNodeSteps(
+  world: World,
+  space: SwimSpace,
+): Generator<void, HabitatNode[]> {
   const env = world.environment;
   const nx = Math.floor(env.width / SPACING),
     nz = Math.floor(env.depth / SPACING);
@@ -33,6 +40,7 @@ export function waterNodes(world: World, space: SwimSpace): HabitatNode[] {
   };
   for (let ix = 0; ix < nx; ix++)
     for (let iz = 0; iz < nz; iz++) {
+      yield;
       const x = -env.width / 2 + (ix + 0.5) * (env.width / nx);
       const z = -env.depth / 2 + (iz + 0.5) * (env.depth / nz);
       if (placementProblem("fish", x, z, env)) continue;
@@ -70,6 +78,7 @@ export function waterNodes(world: World, space: SwimSpace): HabitatNode[] {
       if (dx > 0 || (dx === 0 && dz > 0)) offsets.push([dx, dz, 0]);
     }
   for (const [key, node] of grid) {
+    yield;
     const [ix, iz, level] = key.split(":").map(Number);
     for (const [dx, dz, dl] of offsets) {
       const other = grid.get(`${ix + dx}:${iz + dz}:${level + dl}`);

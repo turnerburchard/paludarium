@@ -107,6 +107,7 @@ export class PlantedLegs {
   }
 }
 
+const modelInverse = new THREE.Matrix4();
 const tip = new THREE.Vector3();
 const joint = new THREE.Vector3();
 const goal = new THREE.Vector3();
@@ -122,12 +123,13 @@ const parentRotation = new THREE.Quaternion();
  * because species proportions scale the model unevenly and world-space
  * rotations would shear. */
 function reach(model: THREE.Object3D, leg: Leg, target: THREE.Vector3) {
-  model.worldToLocal(goal.copy(target));
+  modelInverse.copy(model.matrixWorld).invert();
+  goal.copy(target).applyMatrix4(modelInverse);
   for (let pass = 0; pass < 6; pass++) {
     for (let i = leg.chain.length - 1; i >= 0; i--) {
       const link = leg.chain[i];
-      model.worldToLocal(leg.tip.getWorldPosition(tip));
-      model.worldToLocal(link.getWorldPosition(joint));
+      tip.setFromMatrixPosition(leg.tip.matrixWorld).applyMatrix4(modelInverse);
+      joint.setFromMatrixPosition(link.matrixWorld).applyMatrix4(modelInverse);
       toTip.subVectors(tip, joint).normalize();
       toGoal.subVectors(goal, joint).normalize();
       turn.setFromUnitVectors(toTip, toGoal);

@@ -1,8 +1,9 @@
+import { finishWork } from "../work";
 import * as THREE from "three";
 import { assets, isAnimal } from "../assets";
 import { collisionShape, type CollisionFace } from "../assets/collisionShape";
 import {
-  buildCollisionTree,
+  collisionTreeSteps,
   type CollisionTree,
 } from "../assets/collisionTree";
 import type { Environment, HabitatObject, World } from "../model/schema";
@@ -11,7 +12,7 @@ import { highestWater, placementProblem, waterLevel } from "../model/water";
 import { groundHeight } from "../model/terrain";
 import { CURLED_BOW, CURLED_LENGTH, type Clearance } from "./fish";
 import type { HabitatNode, Vec3 } from "./types";
-import { waterNodes } from "./waterNodes";
+import { waterNodeSteps } from "./waterNodes";
 
 const CLEARANCE = 0.015;
 const SWIM_BOB = 0.025;
@@ -46,13 +47,14 @@ function placement(object: HabitatObject, env: Environment) {
   );
 }
 
-function buildScenery(
+function* buildScenery(
   placed: { object: HabitatObject; matrix: THREE.Matrix4 }[],
   surface: number,
-): Scenery {
+): Generator<void, Scenery> {
   const faces: CollisionFace[] = [];
   const solids: CollisionTree[] = [];
   for (const { object, matrix } of placed) {
+    yield;
     const transformed = collisionShape(object).faces.map(({ triangle }) => {
       const moved = triangle.clone();
       for (const point of [moved.a, moved.b, moved.c])
@@ -64,13 +66,38 @@ function buildScenery(
     });
     faces.push(...transformed.filter((face) => face.bounds.min.y < surface));
     if (assets[object.kind].hardscape)
-      solids.push(buildCollisionTree(transformed));
+      solids.push(yield* collisionTreeSteps(transformed));
   }
   return {
     objects: placed.map(({ object }) => object),
-    obstacles: buildCollisionTree(faces),
+    obstacles: yield* collisionTreeSteps(faces),
     solids,
   };
+}
+
+function* scenerySteps(world: World): Generator<void, Scenery> {
+  // Only what reaches into some water can get in a fish's way.
+  const env = world.environment;
+  const surface = highestWater(env);
+  const placed = world.objects
+    .filter((object) => !isAnimal(object.kind))
+    .map((object) => ({ object, matrix: placement(object, env) }))
+    .filter(
+      ({ object, matrix }) =>
+        collisionShape(object).bounds.clone().applyMatrix4(matrix).min.y <
+        surface,
+    );
+  const built = sceneries.get(env);
+  const scenery =
+    built &&
+    sameObjects(
+      built.objects,
+      placed.map(({ object }) => object),
+    )
+      ? built
+      : yield* buildScenery(placed, surface);
+  sceneries.set(env, scenery);
+  return scenery;
 }
 
 interface Crossing {
@@ -98,7 +125,11 @@ export class SwimSpace {
   private readonly hit = new THREE.Vector3();
   private readonly normal = new THREE.Vector3();
 
-  constructor(private readonly world: World) {
+  constructor(
+    private readonly world: World,
+    scenery = finishWork(scenerySteps(world)),
+  ) {
+    this.scenery = scenery;
     for (const object of world.objects) {
       const asset = assets[object.kind];
       if (!isAnimal(object.kind) || !asset.swims) continue;
@@ -115,34 +146,19 @@ export class SwimSpace {
       bounds.max.z += CLEARANCE;
       this.bodies.set(object.id, bounds);
     }
-    // Only what reaches into some water can get in a fish's way.
-    const env = world.environment;
-    const surface = highestWater(env);
-    const placed = world.objects
-      .filter((object) => !isAnimal(object.kind))
-      .map((object) => ({ object, matrix: placement(object, env) }))
-      .filter(
-        ({ object, matrix }) =>
-          collisionShape(object).bounds.clone().applyMatrix4(matrix).min.y <
-          surface,
-      );
-    const built = sceneries.get(env);
-    this.scenery =
-      built &&
-      sameObjects(
-        built.objects,
-        placed.map(({ object }) => object),
-      )
-        ? built
-        : buildScenery(placed, surface);
-    sceneries.set(env, this.scenery);
     this.obstacles = this.scenery.obstacles;
     this.solids = this.scenery.solids;
+  }
+  static *build(world: World): Generator<void, SwimSpace> {
+    return new SwimSpace(world, yield* scenerySteps(world));
   }
 
   /** Routes for fish through the open water, which only change with it. */
   routes() {
-    return (this.scenery.routes ??= waterNodes(this.world, this));
+    return finishWork(this.routeSteps());
+  }
+  *routeSteps(): Generator<void, HabitatNode[]> {
+    return (this.scenery.routes ??= yield* waterNodeSteps(this.world, this));
   }
 
   /** How much open water a fish needs around it: its height, and room to

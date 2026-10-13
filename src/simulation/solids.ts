@@ -36,8 +36,13 @@ export class Solids implements Caster {
   constructor(
     private readonly world: World,
     previous?: Solids,
+    surfaces = new LandSurfaces(world, previous?.surfaces),
   ) {
-    this.surfaces = new LandSurfaces(world, previous?.surfaces);
+    this.surfaces = surfaces;
+  }
+  static *build(world: World, previous?: Solids): Generator<void, Solids> {
+    const surfaces = yield* LandSurfaces.build(world, previous?.surfaces);
+    return new Solids(world, previous, surfaces);
   }
 
   /** The ground under a point, and which way it faces. */
