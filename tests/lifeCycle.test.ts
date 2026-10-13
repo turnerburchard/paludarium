@@ -9,6 +9,9 @@ import {
 } from "../src/model/schema";
 import { parseWorld } from "../src/editor/persistence";
 import { makePreset } from "../src/model/presets";
+import { baseGroundHeight, groundHeight } from "../src/model/terrain";
+import { newTerrain } from "../src/model/terrainData";
+import { waterMap } from "../src/model/water";
 import { historyReducer } from "../src/editor/history";
 import {
   animalLife,
@@ -197,6 +200,97 @@ describe("slow animal life cycles", () => {
     ).toEqual(["tree-frog"]);
     expect(readyToBreed(world).has("animal-0")).toBe(true);
   });
+  it.each(["duckweed", "dwarf-sagittaria", "anubias"] as const)(
+    "counts %s touching shallow water as aquatic food",
+    (kind) => {
+      const world = habitat(["fish"], 0);
+      const plant = object(kind, "plant");
+      world.objects.push(plant);
+      const ground = groundHeight(plant.x, plant.z, world.environment);
+      for (const depth of [0, 0.02, 0.1]) {
+        world.environment.water = ground + depth;
+        expect(habitatSupport(world).aquatic.plants).toBe(1);
+      }
+      world.environment.water = ground - 0.02;
+      const dry = habitatSupport(world);
+      expect(dry.aquatic.plants).toBe(0);
+      expect(dry.land.plants).toBe(kind === "anubias" ? 1 : 0);
+    },
+  );
+  it("counts aquatic plants in running water above the tank's waterline", () => {
+    const world = habitat(["fish"], 0);
+    const env = {
+      ...world.environment,
+      water: 0.2,
+      springs: [{ x: -0.4, z: 0, flow: 0.5 }],
+    };
+    world.environment = {
+      ...env,
+      terrain: newTerrain(
+        env,
+        (x, z) => 0.75 - 0.12 * x - baseGroundHeight(x, z, env),
+      ),
+    };
+    const point = waterMap(world.environment).streams[0][2];
+    expect(groundHeight(point.x, point.z, world.environment)).toBeGreaterThan(
+      env.water,
+    );
+    world.objects.push({
+      ...object("anubias", "stream-plant"),
+      x: point.x,
+      z: point.z,
+    });
+    expect(habitatSupport(world).aquatic.plants).toBe(1);
+  });
+  it.each(["aquatic food", "land food", "space"])(
+    "staggers deaths from insufficient %s so the survivors recover",
+    (shortage) => {
+      const kind = shortage === "aquatic food" ? "fish" : "tree-frog";
+      const population = shortage === "space" ? 18 : 4;
+      const capacity = shortage === "space" ? 15 : 2;
+      let world = habitat(
+        Array.from({ length: population }, () => kind),
+        shortage === "space" ? 20 : 2,
+      );
+      if (shortage === "space") {
+        world.environment.width = 5;
+        world.environment.depth = 3;
+      }
+      world.objects.slice(0, population).forEach((animal, i) => {
+        animal.seed = i * 100_000_000;
+      });
+      const deathTimes = new Set<number>();
+      for (let now = 5; now <= 1200; now += 5) {
+        world = advanceLife(world, 5, new Set(), now);
+        for (const entry of world.log ?? [])
+          if (entry.event === "died") deathTimes.add(entry.at);
+        if (now === 50) {
+          const reloaded = parseWorld(JSON.stringify(world));
+          expect(advanceLife(reloaded, 5)).toEqual(advanceLife(world, 5));
+          world = reloaded;
+        }
+        if (world.objects.filter((o) => isAnimal(o.kind)).length <= capacity)
+          break;
+      }
+      const survivors = world.objects.filter((o) => isAnimal(o.kind));
+      expect(survivors).toHaveLength(capacity);
+      expect(deathTimes.size).toBeGreaterThan(1);
+      for (const entry of world.log ?? [])
+        if (entry.event === "died")
+          expect(entry.cause).toBe(
+            shortage === "space" ? "crowded" : "starved",
+          );
+      const recovered = advanceLife(world, 5);
+      survivors.forEach((animal) => {
+        expect(
+          recovered.objects.find((o) => o.id === animal.id)!.life!.condition,
+        ).toBeGreaterThan(animal.life!.condition);
+      });
+      expect(
+        advanceLife(recovered, 600).objects.filter((o) => isAnimal(o.kind)),
+      ).toHaveLength(capacity);
+    },
+  );
   it("requires spare food in the parents' habitat for breeding", () => {
     const world = habitat(["fish", "fish"], 2);
     // Land plants provide spare total capacity, but cannot feed another fish.
@@ -326,6 +420,19 @@ describe("slow animal life cycles", () => {
     world = habitat(["tree-frog"], 0);
     for (let i = 0; i < 12; i++) world = advanceLife(world, 5);
     expect(world.objects).toHaveLength(0);
+  });
+  it("eventually starves every animal when there is no food", () => {
+    let world = habitat(["fish", "fish", "fish", "fish"], 0);
+    world.objects.forEach((animal, i) => {
+      animal.seed = i * 100_000_000;
+    });
+    for (let now = 5; now <= 80; now += 5)
+      world = advanceLife(world, 5, new Set(), now);
+    expect(world.objects).toHaveLength(0);
+    const deaths = world.log!.filter((entry) => entry.event === "died");
+    expect(deaths).toHaveLength(4);
+    expect(new Set(deaths.map((entry) => entry.at)).size).toBeGreaterThan(1);
+    expect(deaths.every((entry) => entry.cause === "starved")).toBe(true);
   });
   it("loses a stranded animal within minutes and keeps it from breeding", () => {
     let world = habitat(["tree-frog", "tree-frog"]);

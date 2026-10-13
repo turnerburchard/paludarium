@@ -7,8 +7,9 @@ import {
   newLifespan,
 } from "../model/life";
 import { plantCondition } from "../model/plants";
+import { randomFromSeed } from "../model/random";
 import { objectBase } from "../model/stacking";
-import { placementProblem, waterLevel } from "../model/water";
+import { placementProblem, streamSurface, waterLevel } from "../model/water";
 import {
   LOG_LENGTH,
   MAX_OBJECTS,
@@ -20,7 +21,7 @@ import {
 // Game-tuning values in active real seconds, not biological measurements.
 const PLANTS_PER_ANIMAL = 1;
 const SPACE_PER_ANIMAL = 1;
-// A bare tank starves its animals within a minute; a slight shortfall takes
+// A bare tank starves its animals in about a minute; a slight shortfall takes
 // proportionally longer.
 const SHORTAGE_TOLERANCE = 60;
 const RECOVERY_TIME = 10 * 60;
@@ -69,6 +70,7 @@ export function killAnimal(world: World, id: string, now = Date.now()): World {
 export function habitatSupport(world: World) {
   const land = { population: 0, plants: 0 };
   const aquatic = { population: 0, plants: 0 };
+  const streamAt = streamSurface(world.environment);
   for (const object of world.objects) {
     const asset = assets[object.kind];
     if (isAnimal(object.kind)) {
@@ -82,21 +84,25 @@ export function habitatSupport(world: World) {
     if (
       !planted ||
       plantCondition(object, world.environment)?.thriving === false ||
-      placementProblem(
-        object.kind,
-        object.x,
-        object.z,
-        world.environment,
-        object.lift ?? 0,
-      )
+      (asset.habitat === "land" &&
+        placementProblem(
+          object.kind,
+          object.x,
+          object.z,
+          world.environment,
+          object.lift ?? 0,
+        ))
     )
       continue;
-    // Amphibious plants feed the habitat they are actually planted in.
+    // Food needs water contact, not the swimming depth required for placement.
     const inWater =
-      asset.habitat === "water" ||
-      (asset.habitat === "either" &&
-        objectBase(object, world.environment) <
-          waterLevel(object.x, object.z, world.environment));
+      asset.habitat !== "land" &&
+      objectBase(object, world.environment) <=
+        Math.max(
+          waterLevel(object.x, object.z, world.environment),
+          streamAt(object.x, object.z) ?? -Infinity,
+        );
+    if (asset.habitat === "water" && !inWater) continue;
     (inWater ? aquatic : land).plants++;
   }
   const population = land.population + aquatic.population;
@@ -144,7 +150,12 @@ export function advanceLife(
     const homeless = stranded.has(object.id);
     let change = 1 / RECOVERY_TIME;
     if (homeless) change = -1 / STRANDED_TOLERANCE;
-    else if (support < 1) change = -(1 - support) / SHORTAGE_TOLERANCE;
+    else if (support < 1) {
+      // Stable individual tolerance lets early losses free food for survivors.
+      const tolerance =
+        SHORTAGE_TOLERANCE * (0.75 + randomFromSeed(object.seed)() * 0.5);
+      change = -(1 - support) / tolerance;
+    }
     const condition = Math.max(
       0,
       Math.min(1, previous.condition + seconds * change),
