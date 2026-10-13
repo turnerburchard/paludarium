@@ -732,11 +732,12 @@ export class Ecosystem {
     }
   }
   private update(agent: Agent) {
-    if (this.planning.has(agent) || this.waitingForHabitat(agent)) return;
+    if (this.waitingForHabitat(agent)) return;
     if (agent.swimmer) {
       this.swim(agent, agent.swimmer);
       return;
     }
+    if (this.planning.has(agent)) return;
     const state = agent.state,
       needs = state.needs;
     // Grazers feed as they go, on algae the simulation doesn't track.
@@ -1181,15 +1182,18 @@ export class Ecosystem {
     // A fish that had to turn out of a dead end tries somewhere else, rather
     // than nosing back into the same spot.
     if (
-      fish.blocked ||
-      fish.roaming === agent.schooling ||
-      this.elapsed >= agent.reconsiderAt
+      !this.planning.has(agent) &&
+      (fish.blocked ||
+        fish.roaming === agent.schooling ||
+        this.elapsed >= agent.reconsiderAt)
     ) {
-      this.plan(agent, this.chooseWater(agent, fish, fish.blocked));
-      if (this.planning.has(agent)) return;
+      const blocked = fish.blocked;
+      fish.blocked = false;
+      this.plan(agent, this.chooseWater(agent, fish, blocked));
     }
     if (this.waitingForHabitat(agent)) return;
-    fish.blocked = false;
+    // Route searches share a frame budget. Steering and collision avoidance
+    // carry on with the current route until its replacement is ready.
     // Head for the next node, moving on once it is near or already passed,
     // so a route reads as one sweeping course rather than a series of legs.
     while (agent.path.length) {
@@ -1255,9 +1259,9 @@ export class Ecosystem {
     blocked = false,
   ): Generator<void> {
     agent.schooling = !fish.roaming;
-    agent.path = [];
     const start = this.graph.nearest(fish, agent.profile);
     if (!start) {
+      agent.path = [];
       agent.reconsiderAt = this.elapsed + 30;
       return;
     }
@@ -1323,6 +1327,7 @@ export class Ecosystem {
       target = this.pick(candidates, weights);
     }
     if (!target) {
+      agent.path = [];
       agent.reconsiderAt = this.elapsed + 30;
       return;
     }

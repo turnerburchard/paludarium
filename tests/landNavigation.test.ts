@@ -60,6 +60,30 @@ function stackedWorld() {
 }
 
 describe("exposed hardscape routes", () => {
+  it("checks stone between a route's endpoints and honors its support exception", () => {
+    const world = emptyWorld();
+    world.environment.water = 0;
+    world.objects = [
+      object("stone", "rock", { x: 0, scale: 1.4, rotation: 0.7 }),
+      object("distant", "rock", { x: 2.5, z: 1.5 }),
+    ];
+    const surfaces = new LandSurfaces(world);
+    const bounds = surfaces.solids[0].bounds;
+    const y = (bounds.min.y + bounds.max.y) / 2;
+    const from = { x: bounds.min.x - 0.1, y, z: 0 };
+    const to = { x: bounds.max.x + 0.1, y, z: 0 };
+    expect(surfaces.inside(from)).toBe(false);
+    expect(surfaces.inside(to)).toBe(false);
+    expect(surfaces.clearRoute(from, to)).toBe(false);
+    expect(surfaces.clearRoute(from, to, "stone")).toBe(true);
+    expect(
+      surfaces.clearRoute(
+        { ...from, y: bounds.max.y + 0.1 },
+        { ...to, y: bounds.max.y + 0.1 },
+      ),
+    ).toBe(true);
+  });
+
   it("connects ground, stacked stone and a plant on top, with a route back down", () => {
     const world = stackedWorld();
     const graph = buildHabitat(world);

@@ -979,3 +979,81 @@ it("shares the planning budget and keeps an animal with a route moving", () => {
   run(engine, 5);
   expect(engine.getAnimal("waiting")!.position.x).toBeGreaterThan(0);
 });
+
+it.each([0, 2])(
+  "keeps fish swimming with %s planning slices available",
+  (slices) => {
+    const graph = new HabitatGraph(
+      Array.from({ length: 48 }, (_, i) =>
+        node(
+          `${i}`,
+          0,
+          [i - 1, i + 1].filter((n) => n >= 0 && n < 48).map(String),
+          {
+            position: { x: 0, y: 0, z: -i * 0.1 },
+            surface: "water",
+            swim: { depth: 0.5, bottom: false, room: 1, column: 1 },
+          },
+        ),
+      ),
+    );
+    const engine = new Ecosystem(
+      graph,
+      [
+        {
+          id: "fish",
+          nodeId: "0",
+          species: {
+            id: "fish",
+            nocturnal: false,
+            climbs: false,
+            speed: 0.22,
+            swims: { speed: 0.22, depth: [0, 1], room: 0.1, height: 0.1 },
+          },
+          fish: {
+            id: "fish",
+            species: "fish",
+            speed: 0.22,
+            x: 0,
+            y: 0,
+            z: 0,
+            heading: 0,
+          },
+        },
+      ],
+      {
+        elapsed: 0,
+        random: () => 0.5,
+        water: {
+          steady: (_id, _x, _z, y) => ({ y, bob: 0 }),
+          canSwim: (_id, x, _y, z) => Math.hypot(x, z) < 1,
+          reach: () => 0.1,
+        },
+      },
+    );
+    let remaining = slices;
+    for (let i = 0; i < 120; i++) {
+      const before = engine.getAnimal("fish")!.position;
+      engine.advance(1 / 60, false, undefined, () => remaining-- > 0);
+      const after = engine.getAnimal("fish")!.position;
+      expect(Math.hypot(after.x, after.z)).toBeLessThan(1);
+      expect(
+        Math.hypot(after.x - before.x, after.z - before.z),
+      ).toBeGreaterThan(0);
+    }
+    // With planning still blocked, the fish eventually reaches the shore.
+    for (let i = 0; i < 600; i++) {
+      engine.advance(1 / 60, false, undefined, () => false);
+      const { x, z } = engine.getAnimal("fish")!.position;
+      expect(Math.hypot(x, z)).toBeLessThan(1);
+    }
+    const before = engine.getAnimal("fish")!.position;
+    engine.advance(0.25, true);
+    engine.advance(0.25, false, new Set(["fish"]), () => false);
+    expect(engine.getAnimal("fish")!.position).toEqual(before);
+    // A queued search still finishes and swimming carries on afterwards.
+    expect(Array.from(engine.finishPlanning()).length).toBeGreaterThan(0);
+    engine.advance(0.1);
+    expect(engine.getAnimal("fish")!.position).not.toEqual(before);
+  },
+);
