@@ -25,8 +25,9 @@ export function EcosystemLife({
   const snapshot = useEcosystemSnapshot(ecosystem);
   useFrame((_, dt) => {
     const { engine } = ecosystem.live.current!;
-    const stopped = paused || document.hidden;
-    engine.advance(dt, stopped, held);
+    const stopped = paused || document.hidden || ecosystem.rebuilding.current;
+    const deadline = performance.now() + 3;
+    engine.advance(dt, stopped, held, () => performance.now() < deadline);
     ecosystem.advanceLife(dt, stopped);
     if (document.hidden) return;
     const live = ecosystem.live.current!;

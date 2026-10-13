@@ -1,3 +1,4 @@
+import { finishWork } from "../work";
 import type { HabitatNode, SpeciesProfile, Vec3 } from "./types";
 export const distance = (a: Vec3, b: Vec3) =>
   Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
@@ -10,43 +11,27 @@ export interface HabitatRoutes {
   pathTo(target: string): string[];
 }
 
+type TravelCost = (
+  from: HabitatNode,
+  to: HabitatNode,
+  species: SpeciesProfile,
+) => number;
+
 /** Explicit connected surfaces prevent animals walking through ponds or across empty air. */
 export class HabitatGraph {
   readonly nodes: ReadonlyMap<string, HabitatNode>;
   constructor(
     nodes: readonly HabitatNode[],
-    private readonly travelCost?: (
-      from: HabitatNode,
-      to: HabitatNode,
-      species: SpeciesProfile,
-    ) => number,
+    private readonly travelCost?: TravelCost,
+    prepared = finishWork(copyNodes(nodes)),
   ) {
-    const map = new Map<string, HabitatNode>();
-    for (const node of nodes) {
-      if (map.has(node.id))
-        throw new Error(`Duplicate habitat node: ${node.id}`);
-      if (
-        ![
-          ...Object.values(node.position),
-          ...Object.values(node.normal),
-          node.shelter,
-        ].every(Number.isFinite)
-      )
-        throw new Error("Habitat geometry must be finite.");
-      if (Math.hypot(node.normal.x, node.normal.y, node.normal.z) < 0.001)
-        throw new Error("A surface needs a normal.");
-      map.set(node.id, {
-        ...node,
-        position: { ...node.position },
-        normal: { ...node.normal },
-        neighbors: [...node.neighbors],
-        leaps: node.leaps && [...node.leaps],
-      });
-    }
-    for (const node of map.values())
-      for (const id of [...node.neighbors, ...(node.leaps ?? [])])
-        if (!map.has(id)) throw new Error(`Missing neighbor: ${id}`);
-    this.nodes = map;
+    this.nodes = prepared;
+  }
+  static *build(
+    nodes: readonly HabitatNode[],
+    travelCost?: TravelCost,
+  ): Generator<void, HabitatGraph> {
+    return new HabitatGraph(nodes, travelCost, yield* copyNodes(nodes));
   }
   node(id: string): HabitatNode {
     const node = this.nodes.get(id);
@@ -118,6 +103,12 @@ export class HabitatGraph {
   /** Prefer short, open routes. Physical distance is tracked separately
    * from foliage cost so needs and travel time still use actual distance. */
   routes(start: string, species: SpeciesProfile): HabitatRoutes {
+    return finishWork(this.searchRoutes(start, species));
+  }
+  *searchRoutes(
+    start: string,
+    species: SpeciesProfile,
+  ): Generator<void, HabitatRoutes> {
     const parents = new Map<string, string>();
     const firstSteps = new Map<string, string>();
     const distances = new Map<string, number>([[start, 0]]);
@@ -154,7 +145,9 @@ export class HabitatGraph {
       }
       return first;
     };
+    let visited = 0;
     while (queue.length) {
+      if (visited++ % 8 === 0) yield;
       const current = dequeue();
       if (current.distance !== costs.get(current.id)) continue;
       const from = this.node(current.id);
@@ -221,4 +214,37 @@ export class HabitatGraph {
       [...routes.distances.keys()].map((id) => [id, routes.pathTo(id)]),
     );
   }
+}
+
+function* copyNodes(
+  nodes: readonly HabitatNode[],
+): Generator<void, Map<string, HabitatNode>> {
+  const map = new Map<string, HabitatNode>();
+  for (const node of nodes) {
+    yield;
+    if (map.has(node.id)) throw new Error(`Duplicate habitat node: ${node.id}`);
+    if (
+      ![
+        ...Object.values(node.position),
+        ...Object.values(node.normal),
+        node.shelter,
+      ].every(Number.isFinite)
+    )
+      throw new Error("Habitat geometry must be finite.");
+    if (Math.hypot(node.normal.x, node.normal.y, node.normal.z) < 0.001)
+      throw new Error("A surface needs a normal.");
+    map.set(node.id, {
+      ...node,
+      position: { ...node.position },
+      normal: { ...node.normal },
+      neighbors: [...node.neighbors],
+      leaps: node.leaps && [...node.leaps],
+    });
+  }
+  for (const node of map.values()) {
+    yield;
+    for (const id of [...node.neighbors, ...(node.leaps ?? [])])
+      if (!map.has(id)) throw new Error(`Missing neighbor: ${id}`);
+  }
+  return map;
 }

@@ -1,3 +1,4 @@
+import { finishWork } from "../work";
 import * as THREE from "three";
 import type { CollisionFace } from "./collisionShape";
 
@@ -8,6 +9,11 @@ export interface CollisionTree {
 }
 
 export function buildCollisionTree(faces: CollisionFace[]): CollisionTree {
+  return finishWork(collisionTreeSteps(faces));
+}
+export function* collisionTreeSteps(
+  faces: CollisionFace[],
+): Generator<void, CollisionTree> {
   // Twice each face's center, for splitting along whichever axis is longest.
   const centers = faces.map(({ bounds }) => ({
     x: bounds.min.x + bounds.max.x,
@@ -15,7 +21,8 @@ export function buildCollisionTree(faces: CollisionFace[]): CollisionTree {
     z: bounds.min.z + bounds.max.z,
   }));
   const order = faces.map((_, index) => index);
-  const build = (start: number, end: number): CollisionTree => {
+  function* build(start: number, end: number): Generator<void, CollisionTree> {
+    yield;
     const bounds = new THREE.Box3();
     for (let i = start; i < end; i++) bounds.union(faces[order[i]].bounds);
     if (end - start <= 12)
@@ -30,9 +37,12 @@ export function buildCollisionTree(faces: CollisionFace[]): CollisionTree {
     // Only the halves matter, so partition around the median rather than
     // sorting every level.
     select(order, (index) => centers[index][axis], start, end - 1, middle);
-    return { bounds, children: [build(start, middle), build(middle, end)] };
-  };
-  return build(0, faces.length);
+    return {
+      bounds,
+      children: [yield* build(start, middle), yield* build(middle, end)],
+    };
+  }
+  return yield* build(0, faces.length);
 }
 
 /** Reorders `order[left..right]` so the `k`th smallest key is at `k`, with

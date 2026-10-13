@@ -1,3 +1,4 @@
+import { finishWork } from "../work";
 import {
   MAX_SCALE,
   assetKinds,
@@ -119,6 +120,12 @@ export function buildHabitat(
   world: World,
   solids = new Solids(world),
 ): HabitatGraph {
+  return finishWork(buildHabitatSteps(world, solids));
+}
+export function* buildHabitatSteps(
+  world: World,
+  solids: Solids,
+): Generator<void, HabitatGraph> {
   const env = world.environment,
     nodes: HabitatNode[] = [],
     grid = new Map<string, HabitatNode>();
@@ -139,6 +146,7 @@ export function buildHabitat(
     }));
   for (let ix = 0; ix <= nx; ix++)
     for (let iz = 0; iz <= nz; iz++) {
+      yield;
       const x = -env.width / 2 + margin + (ix * (env.width - 2 * margin)) / nx;
       const z = -env.depth / 2 + margin + (iz * (env.depth - 2 * margin)) / nz;
       const y = groundHeight(x, z, env);
@@ -177,6 +185,7 @@ export function buildHabitat(
     }
   for (let ix = 0; ix <= nx; ix++)
     for (let iz = 0; iz <= nz; iz++) {
+      yield;
       const node = grid.get(`${ix}:${iz}`);
       if (!node) continue;
       for (const [dx, dz] of [
@@ -216,6 +225,7 @@ export function buildHabitat(
   // Wall ladders start on dry boundary cells, with an explicit bridge to the glass.
   // No ladder crosses a pond; non-climbing species cannot enter these nodes.
   for (const ground of [...nodes]) {
+    yield;
     if (ground.submerged) continue;
     const [ix, iz] = ground.id.split(":").slice(1).map(Number);
     const sides: Array<{
@@ -299,7 +309,7 @@ export function buildHabitat(
   }
   const groundNodes = nodes.filter((node) => node.surface === "ground");
   const groundGrid = new HabitatNodeGrid(groundNodes, spacing);
-  const hardscapeNodes = surfaces.routes(margin);
+  const hardscapeNodes = yield* surfaces.routeSteps(margin);
   for (const node of hardscapeNodes)
     node.room = wallRoom(node.position.x, node.position.z, env);
   nodes.push(...hardscapeNodes);
@@ -334,6 +344,7 @@ export function buildHabitat(
     return true;
   };
   for (const node of hardscapeNodes) {
+    yield;
     const cell = [node.position.x, node.position.y, node.position.z].map((n) =>
       Math.floor(n / bucketSize),
     );
@@ -384,7 +395,8 @@ export function buildHabitat(
     (node) => !node.submerged && node.normal.y >= 0.85,
   );
   const landingGrid = new HabitatNodeGrid(landings, LEAP);
-  for (const node of landings)
+  for (const node of landings) {
+    yield;
     for (const other of landingGrid.near(
       node.position,
       LEAP,
@@ -400,6 +412,7 @@ export function buildHabitat(
         (node.leaps ??= []).push(other.id);
         (other.leaps ??= []).push(node.id);
       }
+  }
   const anchors = new HabitatNodeGrid(
     [...groundNodes, ...hardscapeNodes],
     0.65,
@@ -438,6 +451,7 @@ export function buildHabitat(
   };
   const up = { x: 0, y: 1, z: 0 };
   for (const object of world.objects) {
+    yield;
     const baseY = objectBase(object, env);
     if (baseY < waterLevel(object.x, object.z, env) + 0.025) continue;
     // Normals turn with the object but don't move or scale.
@@ -591,10 +605,16 @@ export function buildHabitat(
         perch.neighbors.push(other.id);
         other.neighbors.push(perch.id);
       }
-  for (const node of nodes) measureSpace(node, solids);
-  if (hasFish(world)) nodes.push(...new SwimSpace(world).routes());
-  const plants = new PlantObstacles(world, surfaces);
-  return new HabitatGraph(nodes, (from, to, species) =>
+  for (const node of nodes) {
+    yield;
+    measureSpace(node, solids);
+  }
+  if (hasFish(world)) {
+    const water = yield* SwimSpace.build(world);
+    nodes.push(...(yield* water.routeSteps()));
+  }
+  const plants = yield* PlantObstacles.build(world, surfaces);
+  return yield* HabitatGraph.build(nodes, (from, to, species) =>
     plants.cost(from, to, species),
   );
 }
@@ -664,16 +684,27 @@ export function createWorldEcosystem(
   previous?: { world: World; engine: Ecosystem },
   random?: () => number,
 ): Ecosystem {
+  return finishWork(createWorldEcosystemSteps(world, previous, random));
+}
+export function* createWorldEcosystemSteps(
+  world: World,
+  previous?: { world: World; engine: Ecosystem },
+  random?: () => number,
+): Generator<void, Ecosystem> {
   const reuse = previous && sameHabitat(previous.world, world);
   const solids =
     (reuse && previous.engine.solids) ||
-    new Solids(world, previous?.engine.solids);
-  const graph = reuse ? previous.engine.graph : buildHabitat(world, solids),
+    (yield* Solids.build(world, previous?.engine.solids));
+  const graph = reuse
+      ? previous.engine.graph
+      : yield* buildHabitatSteps(world, solids),
     snapshot = previous?.engine.snapshot();
   const animals: AnimalSeed[] = [];
-  const water = hasFish(world) ? new SwimSpace(world) : undefined;
+  const water = hasFish(world) ? yield* SwimSpace.build(world) : undefined;
   for (const object of world.objects) {
-    const fish = water && swimmingFish(world, object, water, graph, previous);
+    yield;
+    const fish =
+      water && (yield* swimmingFish(world, object, water, graph, previous));
     if (fish) animals.push(fish);
     const behavior = assets[object.kind].behavior;
     if (!behavior) continue;
@@ -737,6 +768,7 @@ export function createWorldEcosystem(
   // colony's insects move to the nearest new colony within the spacing
   // between colonies; anything else stays where it was as scattered food.
   for (const patch of snapshot?.food ?? []) {
+    yield;
     const position = previous!.engine.graph.node(patch.nodeId).position;
     const colony =
       patch.capacity > 0
@@ -762,20 +794,22 @@ export function createWorldEcosystem(
       world.objects.flatMap((object) =>
         object.courtship ? [{ id: object.id, ...object.courtship }] : [],
       ),
+    () => false,
   );
+  yield* engine.finishPlanning();
   engine.raise(youngAndParents(world));
   return engine;
 }
 /** Ordinary edits preserve live fish. A moved fish starts where it was
  * placed; a newly blocked fish finds nearby clear water. A fish with no open
  * water anywhere is stranded and left out. */
-function swimmingFish(
+function* swimmingFish(
   world: World,
   object: HabitatObject,
   water: SwimSpace,
   graph: HabitatGraph,
   previous?: { world: World; engine: Ecosystem },
-): AnimalSeed | undefined {
+): Generator<void, AnimalSeed | undefined> {
   const swims = assets[object.kind].swims;
   if (!swims) return undefined;
   const env = world.environment;
@@ -834,6 +868,7 @@ function swimmingFish(
   const reach = Math.hypot(env.width, env.depth);
   for (let radius = 0.08; !found && radius < reach; radius += 0.08)
     for (let i = 0; !found && i < 32; i++) {
+      yield;
       const angle = (i * Math.PI * 2) / 32;
       const x = fish.x + Math.cos(angle) * radius;
       const z = fish.z + Math.sin(angle) * radius;

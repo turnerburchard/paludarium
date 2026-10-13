@@ -469,11 +469,11 @@ describe("preset habitats", () => {
       const engine = createWorldEcosystem(makePreset(preset));
       for (const animal of engine.snapshot().animals) {
         if (assets[animal.speciesId as AssetKind].swims) continue;
-        const routes = engine.graph.paths(
+        const routes = engine.graph.routes(
           animal.nodeId,
           frogProfile(animal.speciesId as AssetKind),
         );
-        const shore = [...routes.keys()].filter(
+        const shore = [...routes.distances.keys()].filter(
           (id) => engine.graph.node(id).wet,
         );
         expect(shore, `${preset} ${animal.speciesId}`).not.toHaveLength(0);
@@ -953,4 +953,34 @@ describe("animals and water", () => {
     expect(living(1.4)).toEqual(["cardinal-tetra"]);
     expect(living(0)).toEqual(["tree-frog", "vampire-crab"]);
   });
+});
+
+it("shares the planning budget and keeps an animal with a route moving", () => {
+  let costChecks = 0;
+  const graph = new HabitatGraph(
+    [node("a", 0, ["b"]), node("b", 0.3, ["a", "c"]), node("c", 0.6, ["b"])],
+    () => {
+      costChecks++;
+      return 1;
+    },
+  );
+  const engine = new Ecosystem(graph, [seed("moving"), seed("waiting")], {
+    speed: 1,
+    elapsed: 0,
+    random: () => 0.5,
+    food: [{ nodeId: "c", amount: 5, capacity: 0 }],
+  });
+  engine.advance(0.1, false, new Set(["waiting"]));
+  const before = engine.getAnimal("moving")!.position.x;
+  costChecks = 0;
+  engine.advance(0.1, false, undefined, () => false);
+  expect(costChecks).toBe(0);
+  expect(engine.getAnimal("waiting")!.position.x).toBe(0);
+  expect(engine.getAnimal("moving")!.position.x).toBeGreaterThan(before);
+  let remaining = 2;
+  engine.advance(0.1, false, undefined, () => remaining-- > 0);
+  expect(costChecks).toBeGreaterThan(0);
+  expect(engine.getAnimal("waiting")!.position.x).toBe(0);
+  run(engine, 5);
+  expect(engine.getAnimal("waiting")!.position.x).toBeGreaterThan(0);
 });
