@@ -18,7 +18,6 @@ export function launchChromium() {
       "--use-gl=angle",
       "--use-angle=swiftshader",
       "--enable-unsafe-swiftshader",
-      "--disable-frame-rate-limit",
     ],
   });
 }

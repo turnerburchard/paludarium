@@ -1,14 +1,10 @@
 /** Routine CI checks the actual production bundle. Longer gesture regressions
  * remain in test:e2e:full rather than holding up every deployment. */
 import assert from "node:assert/strict";
-import {
-  launchChromium,
-  STEP_TIMEOUT,
-  storageKey,
-  waitForTank,
-} from "./browser.mjs";
+import { chromium } from "playwright";
 import { startServer } from "../scripts/server.mjs";
 
+const storageKey = "little-worlds:v4";
 const started = Date.now();
 const original = {
   version: 2,
@@ -29,12 +25,22 @@ const { url } = server;
 const browsers = [];
 try {
   const errors = [];
-  // Software rendering both viewports at once can starve UI interactions on CI.
+  // Each size gets its own browser, and so its own GPU process, so their
+  // shader compiles run side by side instead of one after the other.
   async function checkWorlds(viewport) {
-    const browser = await launchChromium();
+    const browser = await chromium.launch({
+      executablePath: process.env.CHROMIUM_PATH || undefined,
+      args: [
+        "--no-sandbox",
+        "--use-gl=angle",
+        "--use-angle=swiftshader",
+        "--enable-unsafe-swiftshader",
+      ],
+    });
     browsers.push(browser);
     const page = await browser.newPage({ viewport });
-    page.setDefaultTimeout(STEP_TIMEOUT);
+    // Software WebGL on CI can take half a minute to compile a new world's shaders.
+    page.setDefaultTimeout(90_000);
     page.on("pageerror", (error) => errors.push(error.message));
     await page.addInitScript(
       ({ storageKey, original }) => {
@@ -56,10 +62,8 @@ try {
       },
     );
     await page.goto(url);
-    await page.getByRole("button", { name: "About Paludarium" }).waitFor();
-    // Pause before the first draw rather than while software rendering is busy.
+    // Phones have no Pause button, so use the Space shortcut.
     await page.locator("body").press("Space");
-    await waitForTank(page);
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     assert.equal(await page.locator(".preset-options button").count(), 7);
     await page
@@ -96,14 +100,12 @@ try {
         document.querySelector('input[aria-label="World name"]').value ===
         "Untitled",
     );
-    await waitForTank(page);
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     await page.getByRole("button", { name: "My creek", exact: true }).click();
     // The world opens once the loading screen has painted.
     await page
       .getByRole("dialog", { name: "Worlds" })
       .waitFor({ state: "detached" });
-    await waitForTank(page);
     assert.equal(
       await page
         .getByRole("textbox", { name: "World name", includeHidden: true })
@@ -123,14 +125,12 @@ try {
         .waitFor();
       // The rest is the same save logic at either size, and software
       // rendering makes the large desktop canvas slow, so only the phone runs it.
-      await browser.close();
+      await page.close();
       return;
     }
     await page.reload();
-    await page.getByRole("button", { name: "About Paludarium" }).waitFor();
-    // Pause before the first draw rather than while software rendering is busy.
+    // Phones have no Pause button, so use the Space shortcut.
     await page.locator("body").press("Space");
-    await waitForTank(page);
     await page.getByRole("button", { name: "Build", exact: true }).click();
     assert.equal(
       await page
@@ -174,7 +174,6 @@ try {
       (key) => JSON.parse(localStorage.getItem(key)).worlds.length === 2,
       storageKey,
     );
-    await waitForTank(page);
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     // A failed write must keep the current world and all saved entries intact.
     const before = await page.evaluate(
@@ -257,13 +256,14 @@ try {
       name: "my-creek.json",
       activation: true,
     });
-    await browser.close();
+    await page.close();
   }
-  for (const viewport of [
-    { width: 1440, height: 960 },
-    { width: 390, height: 844 },
-  ])
-    await checkWorlds(viewport);
+  await Promise.all(
+    [
+      { width: 1440, height: 960 },
+      { width: 390, height: 844 },
+    ].map(checkWorlds),
+  );
   assert.deepEqual(errors, []);
   console.log(
     "PASS: desktop and phone rename, preset switching, reload, export/import, confirmed deletion, storage failure, file sharing, and minimal closed UI",
