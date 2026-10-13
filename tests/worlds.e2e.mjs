@@ -29,8 +29,7 @@ const { url } = server;
 const browsers = [];
 try {
   const errors = [];
-  // Each size gets its own browser, and so its own GPU process, so their
-  // shader compiles run side by side instead of one after the other.
+  // Software rendering both viewports at once can starve UI interactions on CI.
   async function checkWorlds(viewport) {
     const browser = await launchChromium();
     browsers.push(browser);
@@ -123,7 +122,7 @@ try {
         .waitFor();
       // The rest is the same save logic at either size, and software
       // rendering makes the large desktop canvas slow, so only the phone runs it.
-      await page.close();
+      await browser.close();
       return;
     }
     await page.reload();
@@ -256,14 +255,13 @@ try {
       name: "my-creek.json",
       activation: true,
     });
-    await page.close();
+    await browser.close();
   }
-  await Promise.all(
-    [
-      { width: 1440, height: 960 },
-      { width: 390, height: 844 },
-    ].map(checkWorlds),
-  );
+  for (const viewport of [
+    { width: 1440, height: 960 },
+    { width: 390, height: 844 },
+  ])
+    await checkWorlds(viewport);
   assert.deepEqual(errors, []);
   console.log(
     "PASS: desktop and phone rename, preset switching, reload, export/import, confirmed deletion, storage failure, file sharing, and minimal closed UI",
