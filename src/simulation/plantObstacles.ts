@@ -1,3 +1,4 @@
+import { distance } from "./navigation";
 import type { HabitatChanges } from "./habitatChanges";
 import { finishWork } from "../work";
 import * as THREE from "three";
@@ -56,23 +57,12 @@ export class PlantObstacles {
   /** Only ground travel pushes through foliage. Authored climbing routes
    * remain available, including stems smaller than an animal's body. */
   cost(from: HabitatNode, to: HabitatNode, species: SpeciesProfile) {
-    const length = Math.hypot(
-      to.position.x - from.position.x,
-      to.position.y - from.position.y,
-      to.position.z - from.position.z,
-    );
-    if (species.swims || from.leaps?.includes(to.id)) return length;
+    if (species.swims || from.leaps?.includes(to.id))
+      return distance(from.position, to.position);
     if (from.surface !== "ground" || to.surface !== "ground") {
       const key = `contact:${from.id}:${to.id}`;
-      const known =
-        this.cache.get(key) ??
-        (!this.changes?.crosses(from.position, to.position)
-          ? this.previousCosts?.get(key)
-          : undefined);
-      if (known !== undefined) {
-        this.cache.set(key, known);
-        return known;
-      }
+      const known = this.knownCost(key, from, to);
+      if (known !== undefined) return known;
       // Authored climbs can touch their own support, but never pass
       // through another solid. Ground travel does not get this exception.
       const supportId =
@@ -84,7 +74,7 @@ export class PlantObstacles {
         to.position,
         supportId,
       )
-        ? length
+        ? distance(from.position, to.position)
         : Infinity;
       this.cache.set(key, cost);
       return cost;
@@ -93,15 +83,9 @@ export class PlantObstacles {
     const bodyLength = species.body?.length ?? width;
     const height = species.body?.height ?? 0.1;
     const key = `${from.id}:${to.id}:${width}:${bodyLength}:${height}`;
-    const known =
-      this.cache.get(key) ??
-      (!this.changes?.crosses(from.position, to.position, width + bodyLength)
-        ? this.previousCosts?.get(key)
-        : undefined);
-    if (known !== undefined) {
-      this.cache.set(key, known);
-      return known;
-    }
+    const known = this.knownCost(key, from, to, width + bodyLength);
+    if (known !== undefined) return known;
+    const length = distance(from.position, to.position);
     // The swept box includes the entire segment, so even a thin stem between
     // graph nodes cannot disappear between clearance samples.
     this.box(from.position, to.position, width, bodyLength, height);
@@ -139,6 +123,24 @@ export class PlantObstacles {
     const cost = length * (1 + (0.5 * occupied) / (steps + 1));
     this.cache.set(key, cost);
     return cost;
+  }
+
+  private knownCost(
+    key: string,
+    from: HabitatNode,
+    to: HabitatNode,
+    padding = 0,
+  ) {
+    const known = this.cache.get(key);
+    if (known !== undefined) return known;
+    if (
+      !this.previousCosts ||
+      this.changes?.crosses(from.position, to.position, padding)
+    )
+      return undefined;
+    const previous = this.previousCosts.get(key);
+    if (previous !== undefined) this.cache.set(key, previous);
+    return previous;
   }
 
   private box(
