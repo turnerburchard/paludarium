@@ -5,6 +5,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { HabitatChanges } from "./habitatChanges";
 import { isAnimal } from "../assets";
 import type { HabitatObject, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
@@ -12,6 +13,7 @@ import { groundHeight, onlyAppearanceDiffers } from "../model/terrain";
 import {
   createWorldEcosystem,
   createWorldEcosystemSteps,
+  prepareHabitatEdit,
 } from "./worldHabitat";
 import { runInBatches } from "../work";
 import type { Ecosystem } from "./engine";
@@ -62,7 +64,7 @@ export function useEcosystem(
     latestValue(live.current!.engine.snapshot()),
   );
   const [remains, setRemains] = useState<Remains[]>([]);
-  const rebuilding = useRef(false);
+  const rebuilding = useRef<false | "local" | "full">(false);
   const [buildError, setBuildError] = useState<unknown>(null);
   if (buildError) throw buildError;
   const habitat = useMemo(() => habitatSupport(world), [world]);
@@ -75,6 +77,52 @@ export function useEcosystem(
     ) {
       previous.world = world;
       return;
+    }
+    const oldAnimals = previous.world.objects.filter((object) =>
+      isAnimal(object.kind),
+    );
+    const newAnimals = world.objects.filter((object) => isAnimal(object.kind));
+    const sameAnimals =
+      oldAnimals.length === newAnimals.length &&
+      oldAnimals.every((old, i) => {
+        const next = newAnimals[i];
+        return (
+          old.id === next.id &&
+          old.kind === next.kind &&
+          old.x === next.x &&
+          old.z === next.z &&
+          old.rotation === next.rotation &&
+          old.scale === next.scale &&
+          old.seed === next.seed &&
+          JSON.stringify(old.life) === JSON.stringify(next.life)
+        );
+      });
+    const changes =
+      sameAnimals && previous.world.environment !== world.environment
+        ? HabitatChanges.between(previous.world, world)
+        : undefined;
+    if (changes) {
+      rebuilding.current = "local";
+      previous.engine.holdHabitat(changes);
+      const cancel = runInBatches(
+        prepareHabitatEdit(world, previous, changes),
+        (publish) => {
+          publish();
+          previous.world = world;
+          rebuilding.current = false;
+          snapshotStore.set(previous.engine.snapshot());
+        },
+        (error) => {
+          previous.engine.holdHabitat();
+          rebuilding.current = false;
+          setBuildError(error);
+        },
+      );
+      return () => {
+        cancel();
+        previous.engine.holdHabitat();
+        rebuilding.current = false;
+      };
     }
     // Brand new preset/import IDs mean a fresh habitat. Normal edits retain live needs.
     const sharesAnimals = world.objects.some(
@@ -96,7 +144,7 @@ export function useEcosystem(
     // Read the bodies now: the updater runs after the engine below has
     // forgotten them, which would put them back where they were placed.
     const bodies = died.map(remainsOf);
-    rebuilding.current = true;
+    rebuilding.current = "full";
     const cancel = runInBatches(
       createWorldEcosystemSteps(world, sharesAnimals ? previous : undefined),
       (engine) => {

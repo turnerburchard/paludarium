@@ -1,3 +1,4 @@
+import type { HabitatChanges } from "./habitatChanges";
 import { finishWork } from "../work";
 import * as THREE from "three";
 import { assets, isAnimal } from "../assets";
@@ -24,7 +25,9 @@ interface Scenery {
   obstacles: CollisionTree;
   solids: CollisionTree[];
   /** Routes through the open water, made when first needed. */
-  routes?: HabitatNode[];
+  routes: WeakMap<Environment, HabitatNode[]>;
+  bases: number[];
+  surface: number;
 }
 
 // Kills, births, moved fish and edits above the water leave the scenery
@@ -72,10 +75,16 @@ function* buildScenery(
     objects: placed.map(({ object }) => object),
     obstacles: yield* collisionTreeSteps(faces),
     solids,
+    routes: new WeakMap(),
+    bases: placed.map(({ matrix }) => matrix.elements[13]),
+    surface,
   };
 }
 
-function* scenerySteps(world: World): Generator<void, Scenery> {
+function* scenerySteps(
+  world: World,
+  previous?: Scenery,
+): Generator<void, Scenery> {
   // Only what reaches into some water can get in a fish's way.
   const env = world.environment;
   const surface = highestWater(env);
@@ -87,9 +96,11 @@ function* scenerySteps(world: World): Generator<void, Scenery> {
         collisionShape(object).bounds.clone().applyMatrix4(matrix).min.y <
         surface,
     );
-  const built = sceneries.get(env);
+  const built = sceneries.get(env) ?? previous;
   const scenery =
     built &&
+    built.surface === surface &&
+    placed.every(({ matrix }, i) => matrix.elements[13] === built.bases[i]) &&
     sameObjects(
       built.objects,
       placed.map(({ object }) => object),
@@ -149,16 +160,27 @@ export class SwimSpace {
     this.obstacles = this.scenery.obstacles;
     this.solids = this.scenery.solids;
   }
-  static *build(world: World): Generator<void, SwimSpace> {
-    return new SwimSpace(world, yield* scenerySteps(world));
+  static *build(
+    world: World,
+    previous?: SwimSpace,
+  ): Generator<void, SwimSpace> {
+    return new SwimSpace(world, yield* scenerySteps(world, previous?.scenery));
   }
 
   /** Routes for fish through the open water, which only change with it. */
   routes() {
     return finishWork(this.routeSteps());
   }
-  *routeSteps(): Generator<void, HabitatNode[]> {
-    return (this.scenery.routes ??= yield* waterNodeSteps(this.world, this));
+  *routeSteps(
+    previous?: ReadonlyMap<string, HabitatNode>,
+    changes?: HabitatChanges,
+  ): Generator<void, HabitatNode[]> {
+    const env = this.world.environment;
+    const known = this.scenery.routes.get(env);
+    if (known) return known;
+    const nodes = yield* waterNodeSteps(this.world, this, previous, changes);
+    this.scenery.routes.set(env, nodes);
+    return nodes;
   }
 
   /** How much open water a fish needs around it: its height, and room to

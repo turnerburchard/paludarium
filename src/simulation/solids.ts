@@ -1,3 +1,4 @@
+import type { HabitatChanges } from "./habitatChanges";
 import * as THREE from "three";
 import { assets } from "../assets";
 import { collisionShape, placeShape } from "../assets/collisionShape";
@@ -40,8 +41,16 @@ export class Solids implements Caster {
   ) {
     this.surfaces = surfaces;
   }
-  static *build(world: World, previous?: Solids): Generator<void, Solids> {
-    const surfaces = yield* LandSurfaces.build(world, previous?.surfaces);
+  static *build(
+    world: World,
+    previous?: Solids,
+    changes?: HabitatChanges,
+  ): Generator<void, Solids> {
+    const surfaces = yield* LandSurfaces.build(
+      world,
+      previous?.surfaces,
+      changes,
+    );
     return new Solids(world, previous, surfaces);
   }
 
