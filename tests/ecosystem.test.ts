@@ -458,14 +458,9 @@ describe("insect colonies", () => {
 });
 
 describe("preset habitats", () => {
-  it("let every land animal reach the water", () => {
-    for (const preset of [
-      "tropical",
-      "mountain",
-      "grotto",
-      "desert",
-      "island",
-    ] as const) {
+  it.each(["tropical", "mountain", "grotto", "desert", "island"] as const)(
+    "let every land animal reach the water in %s",
+    (preset) => {
       const engine = createWorldEcosystem(makePreset(preset));
       for (const animal of engine.snapshot().animals) {
         if (assets[animal.speciesId as AssetKind].swims) continue;
@@ -478,8 +473,8 @@ describe("preset habitats", () => {
         );
         expect(shore, `${preset} ${animal.speciesId}`).not.toHaveLength(0);
       }
-    }
-  });
+    },
+  );
 
   it("let frogs cross the alpine creek", () => {
     const engine = createWorldEcosystem(makePreset("mountain"));
