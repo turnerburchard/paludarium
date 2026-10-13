@@ -54,7 +54,7 @@ jobs:
       - run: npx vite build
       # The runner image already has the system libraries Chromium needs, and
       # installing them again took longer than downloading the browser.
-      - run: npx playwright install chromium
+      - run: npx playwright install --only-shell chromium
       - run: node --import ./scripts/report-ci-errors.mjs tests/${{ matrix.test }}.e2e.mjs
 
   # The longer flows from `npm run test:e2e:full`, likewise one runner each,
@@ -84,7 +84,7 @@ jobs:
       - run: npx vite build
       # The runner image already has the system libraries Chromium needs, and
       # installing them again took longer than downloading the browser.
-      - run: npx playwright install chromium
+      - run: npx playwright install --only-shell chromium
       - run: node --import ./scripts/report-ci-errors.mjs tests/${{ matrix.test }}
 
   deploy:

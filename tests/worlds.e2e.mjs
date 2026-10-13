@@ -1,10 +1,14 @@
 /** Routine CI checks the actual production bundle. Longer gesture regressions
  * remain in test:e2e:full rather than holding up every deployment. */
 import assert from "node:assert/strict";
-import { chromium } from "playwright";
+import {
+  launchChromium,
+  STEP_TIMEOUT,
+  storageKey,
+  waitForTank,
+} from "./browser.mjs";
 import { startServer } from "../scripts/server.mjs";
 
-const storageKey = "little-worlds:v4";
 const started = Date.now();
 const original = {
   version: 2,
@@ -28,19 +32,10 @@ try {
   // Each size gets its own browser, and so its own GPU process, so their
   // shader compiles run side by side instead of one after the other.
   async function checkWorlds(viewport) {
-    const browser = await chromium.launch({
-      executablePath: process.env.CHROMIUM_PATH || undefined,
-      args: [
-        "--no-sandbox",
-        "--use-gl=angle",
-        "--use-angle=swiftshader",
-        "--enable-unsafe-swiftshader",
-      ],
-    });
+    const browser = await launchChromium();
     browsers.push(browser);
     const page = await browser.newPage({ viewport });
-    // Software WebGL on CI can take half a minute to compile a new world's shaders.
-    page.setDefaultTimeout(90_000);
+    page.setDefaultTimeout(STEP_TIMEOUT);
     page.on("pageerror", (error) => errors.push(error.message));
     await page.addInitScript(
       ({ storageKey, original }) => {
@@ -62,6 +57,7 @@ try {
       },
     );
     await page.goto(url);
+    await waitForTank(page);
     // Phones have no Pause button, so use the Space shortcut.
     await page.locator("body").press("Space");
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
@@ -100,12 +96,14 @@ try {
         document.querySelector('input[aria-label="World name"]').value ===
         "Untitled",
     );
+    await waitForTank(page);
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     await page.getByRole("button", { name: "My creek", exact: true }).click();
     // The world opens once the loading screen has painted.
     await page
       .getByRole("dialog", { name: "Worlds" })
       .waitFor({ state: "detached" });
+    await waitForTank(page);
     assert.equal(
       await page
         .getByRole("textbox", { name: "World name", includeHidden: true })
@@ -129,6 +127,7 @@ try {
       return;
     }
     await page.reload();
+    await waitForTank(page);
     // Phones have no Pause button, so use the Space shortcut.
     await page.locator("body").press("Space");
     await page.getByRole("button", { name: "Build", exact: true }).click();
@@ -174,6 +173,7 @@ try {
       (key) => JSON.parse(localStorage.getItem(key)).worlds.length === 2,
       storageKey,
     );
+    await waitForTank(page);
     await page.getByRole("button", { name: "Worlds", exact: true }).click();
     // A failed write must keep the current world and all saved entries intact.
     const before = await page.evaluate(

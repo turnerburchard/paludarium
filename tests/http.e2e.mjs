@@ -54,6 +54,8 @@ try {
   );
   await page.goto(origin);
   await waitForTank(page);
+  // Keep software WebGL idle while checking HTTP placement and persistence.
+  await page.locator("body").press("Space");
   assert.deepEqual(
     await page.evaluate(() => ({
       secure: isSecureContext,

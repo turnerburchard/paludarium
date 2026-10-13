@@ -1,10 +1,14 @@
 /** Routine CI checks the actual production bundle. Longer gesture regressions
  * remain in test:e2e:full rather than holding up every deployment. */
 import assert from "node:assert/strict";
-import { chromium } from "playwright";
+import {
+  launchChromium,
+  STEP_TIMEOUT,
+  storageKey,
+  waitForTank,
+} from "./browser.mjs";
 import { startServer } from "../scripts/server.mjs";
 
-const storageKey = "little-worlds:v4";
 const started = Date.now();
 const original = {
   version: 2,
@@ -24,22 +28,13 @@ const server = await startServer({ preview: true });
 const { url } = server;
 let browser;
 try {
-  browser = await chromium.launch({
-    executablePath: process.env.CHROMIUM_PATH || undefined,
-    args: [
-      "--no-sandbox",
-      "--use-gl=angle",
-      "--use-angle=swiftshader",
-      "--enable-unsafe-swiftshader",
-    ],
-  });
+  browser = await launchChromium();
   const errors = [];
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     hasTouch: true,
   });
-  // Software WebGL on CI can take half a minute to compile a new world's shaders.
-  context.setDefaultTimeout(90_000);
+  context.setDefaultTimeout(STEP_TIMEOUT);
   // No share server runs here, so sharing falls back to the full link.
   const toShareServer = (url) => url.endsWith("/api/worlds");
   context.on("page", (page) => {
@@ -65,6 +60,7 @@ try {
   );
   const page = await context.newPage();
   await page.goto(url);
+  await waitForTank(page);
   await page.getByRole("button", { name: "About Paludarium" }).waitFor();
   assert.deepEqual(await page.getByRole("heading").allTextContents(), [
     "paludarium",
@@ -125,6 +121,7 @@ try {
     );
     return world?.name === "Amazon river" && world.environment.water > 2;
   }, storageKey);
+  await waitForTank(page);
   const aquarium = await page.evaluate(
     (key) =>
       JSON.parse(localStorage.getItem(key), (key, value) =>
@@ -265,6 +262,8 @@ try {
     { storageKey, original },
   );
   await page.goto(url + "/" + hash);
+  await waitForTank(page);
+  await page.locator("body").press("Space");
   // The link opens like a preset, and leaves the address once it has.
   await page.waitForFunction(
     (key) =>
@@ -281,6 +280,7 @@ try {
   await page
     .getByRole("dialog", { name: "Worlds" })
     .waitFor({ state: "detached" });
+  await waitForTank(page);
   // Unedited, it goes the way of an unedited preset.
   await page.waitForFunction(
     (key) => JSON.parse(localStorage.getItem(key)).worlds.length === 1,
@@ -295,7 +295,7 @@ try {
     { ...original, environment: { ...original.environment, height: 2.9 } },
   );
   const unreadable = await browser.newPage();
-  unreadable.setDefaultTimeout(90_000);
+  unreadable.setDefaultTimeout(STEP_TIMEOUT);
   await unreadable.addInitScript((key) => {
     // Seed once, so a reload can't hide an overwrite.
     if (sessionStorage.getItem("seeded")) return;
@@ -303,6 +303,7 @@ try {
     localStorage.setItem(key, '{"version":1,"name":"Broken"');
   }, storageKey);
   await unreadable.goto(url);
+  await waitForTank(unreadable);
   // A save this version can't read opens the cloud forest, as a first visit does.
   await unreadable.waitForFunction(
     (key) => localStorage.getItem(key).includes('"name":"Cloud forest"'),
