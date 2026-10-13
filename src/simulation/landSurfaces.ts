@@ -478,9 +478,18 @@ export class LandSurfaces {
   /** Signed crossings handle both overlapping stones and hollow wood. A
    * point within the skin tolerance can lie on a shared triangle edge. */
   inside(point: Vec3, overCover = false, supportId?: string) {
+    return this.insideSolids(point, this.solids, overCover, supportId);
+  }
+
+  private insideSolids(
+    point: Vec3,
+    solids: readonly Solid[],
+    overCover: boolean,
+    supportId?: string,
+  ) {
     const origin = this.origin.set(point.x, point.y, point.z);
     this.ray.set(origin, this.direction);
-    for (const solid of this.solids) {
+    for (const solid of solids) {
       if (
         solid.object.id === supportId ||
         (overCover && assets[solid.object.kind].groundCover)
@@ -533,6 +542,14 @@ export class LandSurfaces {
 
   private traceRoute(from: Vec3, to: Vec3, supportId?: string) {
     const env = this.world.environment;
+    // Every sample lies within the segment's bounds. Distant solids cannot
+    // contain one, so select candidates once for the whole route.
+    const solids = this.solids.filter(
+      (solid) =>
+        solid.object.id !== supportId &&
+        !assets[solid.object.kind].groundCover &&
+        reaches(solid.bounds, from, to),
+    );
     const under = (point: Vec3) =>
       point.y < waterLevel(point.x, point.z, env) - 0.025;
     const underwater = under(from) || under(to);
@@ -548,7 +565,7 @@ export class LandSurfaces {
       const floor = underwater ? 0 : waterLevel(point.x, point.z, env) - 0.025;
       if (
         point.y < Math.max(floor, groundHeight(point.x, point.z, env) - 0.04) ||
-        this.inside(point, true, supportId)
+        this.insideSolids(point, solids, true, supportId)
       )
         return false;
     }

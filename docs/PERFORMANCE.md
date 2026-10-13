@@ -2,6 +2,37 @@
 
 The object limit is 500. Static plants and hardscape are batched by material within each object; animals retain separate parts for animation. Terrain pebbles use one instanced mesh. Water ripples and their surface normals run in the vertex shader, updating one time uniform instead of rewriting 1,189 vertices and rebuilding normals every frame. The renderer observes live animal state without allocating a copied snapshot per animal per frame.
 
+## Fish movement while planning
+
+On October 13, 2026, a local Node 24 comparison against `cf972a1` reproduced fish
+freezing while their route searches waited behind other animals. The engine
+shares a 3 ms planning budget across animals, but previously stopped a fish
+until its search finished. Fish now keep steering and avoiding collisions on
+their current route while a replacement is calculated. Land animals still wait
+for their routes, and habitat edits can still hold affected animals.
+
+Land route collision checks now select solids whose bounds overlap the route
+once, instead of scanning every solid at each 4 cm sample. The samples, triangle
+tests, support exceptions and route ordering are unchanged. Complete navigation
+records matched the baseline for both measured worlds.
+
+| Habitat                     | Objects / animals | Warm construction, before / after | Longest fish still period, before / after |
+| --------------------------- | ----------------- | --------------------------------- | ----------------------------------------- |
+| Limestone grotto            | 120 / 29          | 1,731 / 1,224 ms                  | 3.2 / 0.033 seconds                       |
+| Shared world `KcPkVbKDMLL4` | 181 / 61          | 3,737 / 3,126 ms                  | 6.07 / 0 seconds                          |
+
+Construction figures are medians of three samples after one warmup, each using
+a fresh copy of the same world. Movement samples ran 1,800 updates at a supplied
+1/60-second interval, with the production 3 ms planning budget and two rendered
+state reads per animal per update. Both revisions used the same world IDs and
+random seed 123. Still periods count consecutive updates without a position
+change and can include legitimate turns on the spot.
+
+These measurements exclude React, WebGL, asset rendering and browser scheduling.
+Frame-time percentiles changed little, and individual CPU spikes remained.
+This establishes continued fish movement under planning load and reduced
+construction work, not smooth rendering or a device frame-rate target.
+
 ## Phone observations
 
 On October 12, 2026, the owner tested two shared 250-object worlds in Firefox on an iPhone described as approximately a 16 Pro: one with dense planting and one with animated fish. Both felt mostly smooth during steady use. Adding a plant or killing an animal caused roughly one second of severe lag, then normal performance resumed. These are subjective observations, without recorded frame timings or a sustained thermal test.
