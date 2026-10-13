@@ -1,3 +1,4 @@
+import type { HabitatChanges } from "./habitatChanges";
 import { finishWork } from "../work";
 import type { World } from "../model/schema";
 import { depthAt, placementProblem, waterLevel } from "../model/water";
@@ -23,6 +24,8 @@ export function waterNodes(world: World, space: SwimSpace): HabitatNode[] {
 export function* waterNodeSteps(
   world: World,
   space: SwimSpace,
+  previous?: ReadonlyMap<string, HabitatNode>,
+  changes?: HabitatChanges,
 ): Generator<void, HabitatNode[]> {
   const env = world.environment;
   const nx = Math.floor(env.width / SPACING),
@@ -43,6 +46,14 @@ export function* waterNodeSteps(
       yield;
       const x = -env.width / 2 + (ix + 0.5) * (env.width / nx);
       const z = -env.depth / 2 + (iz + 0.5) * (env.depth / nz);
+      if (previous && changes && !changes.touches({ x, z }, ROOMS[0] * 2)) {
+        for (let level = 0; level < LEVELS; level++) {
+          const key = `${ix}:${iz}:${level}`;
+          const old = previous.get(`w:${key}`);
+          if (old) grid.set(key, { ...old, neighbors: [] });
+        }
+        continue;
+      }
       if (placementProblem("fish", x, z, env)) continue;
       const ground = groundHeight(x, z, env);
       const surface = waterLevel(x, z, env);
@@ -90,7 +101,14 @@ export function* waterNodeSteps(
         y: (a.y + b.y) / 2,
         z: (a.z + b.z) / 2,
       };
-      if (!fits(middle, ROOMS[ROOMS.length - 1])) continue;
+      const old = previous?.get(node.id);
+      const clear =
+        old &&
+        changes &&
+        !changes.crosses(node.position, other.position, ROOMS[0] * 2)
+          ? old.neighbors.includes(other.id)
+          : fits(middle, ROOMS[ROOMS.length - 1]);
+      if (!clear) continue;
       node.neighbors.push(other.id);
       other.neighbors.push(node.id);
     }

@@ -1,3 +1,4 @@
+import { type HabitatChanges, objectBounds } from "./habitatChanges";
 import { finishWork } from "../work";
 import * as THREE from "three";
 import { assets } from "../assets";
@@ -24,6 +25,7 @@ interface Solid {
   faces: CollisionFace[];
   tree: CollisionTree;
   faceOrder: Map<CollisionFace, number>;
+  base: number;
 }
 
 /** Whether a box reaches the box spanned by two points. */
@@ -69,14 +71,19 @@ export class LandSurfaces {
 
   /** Rebuilding the habitat after an edit repeats tens of thousands of these
    * checks, so with the surfaces from before the edit, only checks near what
-   * changed are made again. Terrain and water touch every check and skin. */
+   * changed are made again. Terrain edits supply their affected areas. */
   constructor(
     private readonly world: World,
     previous?: LandSurfaces,
     solids = finishWork(solidSteps(world)),
+    private readonly changes?: HabitatChanges,
   ) {
     this.solids = solids;
-    if (previous?.world.environment !== world.environment) return;
+    if (
+      !previous ||
+      (previous.world.environment !== world.environment && !changes)
+    )
+      return;
     const now = new Set(this.solids.map((solid) => solid.object));
     const before = new Set(previous.solids.map((solid) => solid.object));
     this.earlier = {
@@ -93,8 +100,14 @@ export class LandSurfaces {
   static *build(
     world: World,
     previous?: LandSurfaces,
+    changes?: HabitatChanges,
   ): Generator<void, LandSurfaces> {
-    return new LandSurfaces(world, previous, yield* solidSteps(world));
+    return new LandSurfaces(
+      world,
+      previous,
+      yield* solidSteps(world, previous),
+      changes,
+    );
   }
 
   /** A check between two points only depends on the ground, the water and
@@ -103,12 +116,10 @@ export class LandSurfaces {
     const key = `${kind}:${a.x},${a.y},${a.z},${b.x},${b.y},${b.z}`;
     const known = this.checks.get(key);
     if (known !== undefined) return known;
-    // Moving checks across, rather than copying them, leaves the old map
-    // holding only what the edit made stale.
     let result = this.earlier?.checks.get(key);
-    this.earlier?.checks.delete(key);
     if (
       result === undefined ||
+      this.changes?.crosses(a, b) ||
       this.earlier!.changed.some((bounds) => reaches(bounds, a, b))
     )
       result = check();
@@ -254,7 +265,8 @@ export class LandSurfaces {
       const near = solid.bounds.clone().expandByScalar(0.05);
       const exposed =
         this.exposed.get(solid.object) ??
-        (this.earlier?.changed.some((bounds) => bounds.intersectsBox(near))
+        (this.changes?.intersects(objectBounds(solid.object), 0.6) ||
+        this.earlier?.changed.some((bounds) => bounds.intersectsBox(near))
           ? undefined
           : this.earlier?.exposed.get(solid.object)) ??
         (yield* this.expose(solid, margin));
@@ -274,7 +286,9 @@ export class LandSurfaces {
     const env = this.world.environment;
     const skin =
       this.skins.get(solid.object) ??
-      this.earlier?.skins.get(solid.object) ??
+      (!this.changes?.intersects(objectBounds(solid.object), 0.6)
+        ? this.earlier?.skins.get(solid.object)
+        : undefined) ??
       (yield* this.sampleSkin(solid));
     this.skins.set(solid.object, skin);
     const nodes: HabitatNode[] = [];
@@ -542,7 +556,10 @@ export class LandSurfaces {
   }
 }
 
-function* solidSteps(world: World): Generator<void, Solid[]> {
+function* solidSteps(
+  world: World,
+  previous?: LandSurfaces,
+): Generator<void, Solid[]> {
   const solids: Solid[] = [];
   for (const object of world.objects) {
     yield;
@@ -554,6 +571,11 @@ function* solidSteps(world: World): Generator<void, Solid[]> {
       !asset.supportsAnimals
     )
       continue;
+    const known = previous?.solids.find((solid) => solid.object === object);
+    if (known && objectBase(object, world.environment) === known.base) {
+      solids.push(known);
+      continue;
+    }
     const shape = placeShape(
       structuralShape(object),
       object,
@@ -562,6 +584,7 @@ function* solidSteps(world: World): Generator<void, Solid[]> {
     const faces = shape.faces;
     solids.push({
       object,
+      base: objectBase(object, world.environment),
       bounds: shape.bounds,
       faces,
       tree: yield* collisionTreeSteps(faces),

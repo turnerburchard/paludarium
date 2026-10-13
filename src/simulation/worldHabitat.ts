@@ -1,3 +1,4 @@
+import { type HabitatChanges, objectBounds } from "./habitatChanges";
 import { finishWork } from "../work";
 import {
   MAX_SCALE,
@@ -34,6 +35,7 @@ import { juvenileScale } from "../model/life";
 import { HabitatGraph, distance } from "./navigation";
 import type {
   AnimalSeed,
+  AnimalState,
   HabitatNode,
   FoodPatch,
   SpeciesProfile,
@@ -122,10 +124,33 @@ export function buildHabitat(
 ): HabitatGraph {
   return finishWork(buildHabitatSteps(world, solids));
 }
+interface ObjectRoutes {
+  nodes: HabitatNode[];
+  links: [string, string][];
+}
+interface HabitatParts {
+  objects: Map<string, ObjectRoutes>;
+  landChecks: Map<string, boolean>;
+  connections: Map<string, [string, string][]>;
+  leaps: Map<string, string[]>;
+  plants: PlantObstacles;
+  water?: SwimSpace;
+}
+const habitatParts = new WeakMap<HabitatGraph, HabitatParts>();
+interface EarlierHabitat {
+  graph: HabitatGraph;
+  changes: HabitatChanges;
+}
 export function* buildHabitatSteps(
   world: World,
   solids: Solids,
+  earlier?: EarlierHabitat,
 ): Generator<void, HabitatGraph> {
+  const oldParts = earlier && habitatParts.get(earlier.graph);
+  const objects = new Map<string, ObjectRoutes>();
+  const landChecks = new Map<string, boolean>();
+  const connections = new Map<string, [string, string][]>();
+  const leaps = new Map<string, string[]>();
   const env = world.environment,
     nodes: HabitatNode[] = [],
     grid = new Map<string, HabitatNode>();
@@ -149,6 +174,16 @@ export function* buildHabitatSteps(
       yield;
       const x = -env.width / 2 + margin + (ix * (env.width - 2 * margin)) / nx;
       const z = -env.depth / 2 + margin + (iz * (env.depth - 2 * margin)) / nz;
+      const old = earlier?.graph.nodes.get(`g:${ix}:${iz}`);
+      if (
+        old &&
+        !earlier!.changes.touches({ x, z }, LARGEST_FOOTPRINT + spacing / 2)
+      ) {
+        const node = { ...old, neighbors: [], leaps: undefined };
+        grid.set(`${ix}:${iz}`, node);
+        nodes.push(node);
+        continue;
+      }
       const y = groundHeight(x, z, env);
       if (surfaces.blocksGround(x, z, CLEARANCE)) continue;
       const shelter = shelters.reduce(
@@ -313,10 +348,13 @@ export function* buildHabitatSteps(
   for (const node of hardscapeNodes)
     node.room = wallRoom(node.position.x, node.position.z, env);
   nodes.push(...hardscapeNodes);
+  const nodesById = new Map(nodes.map((node) => [node.id, node]));
+  let connecting: [string, string][] = [];
   const connect = (a: HabitatNode, b: HabitatNode) => {
     if (!surfaces.clearRoute(a.position, b.position)) return false;
     a.neighbors.push(b.id);
     b.neighbors.push(a.id);
+    connecting.push([a.id, b.id]);
     return true;
   };
   // Nearby mesh surfaces can meet across a stack, while isolated or floating
@@ -331,6 +369,19 @@ export function* buildHabitatSteps(
   /** Stepping off stone onto dry ground keeps to dry ground or the stone
    * itself, rather than striding over a pond in the air. */
   const overLand = (from: Vec3, to: Vec3) => {
+    const key = `${from.x},${from.y},${from.z}:${to.x},${to.y},${to.z}`;
+    const cached = earlier?.changes.crosses(from, to)
+      ? undefined
+      : oldParts?.landChecks.get(key);
+    if (typeof cached === "boolean") {
+      landChecks.set(key, cached);
+      return cached;
+    }
+    const result = checkLand(from, to);
+    landChecks.set(key, result);
+    return result;
+  };
+  const checkLand = (from: Vec3, to: Vec3) => {
     const steps = Math.ceil(distance(from, to) / 0.08);
     for (let i = 1; i < steps; i++) {
       const x = from.x + ((to.x - from.x) * i) / steps;
@@ -348,6 +399,26 @@ export function* buildHabitatSteps(
     const cell = [node.position.x, node.position.y, node.position.z].map((n) =>
       Math.floor(n / bucketSize),
     );
+    const known = oldParts?.connections.get(node.id);
+    if (
+      known &&
+      !earlier!.changes.touches(
+        node.position,
+        reach(LARGEST_FOOTPRINT) + Math.max(LARGEST_FOOTPRINT, OPEN),
+      )
+    ) {
+      for (const [from, to] of known) {
+        nodesById.get(from)!.neighbors.push(to);
+        nodesById.get(to)!.neighbors.push(from);
+      }
+      connections.set(node.id, known);
+      const key = bucketKey(cell[0], cell[1], cell[2]);
+      const bucket = buckets.get(key);
+      if (bucket) bucket.push(node);
+      else buckets.set(key, [node]);
+      continue;
+    }
+    connecting = [];
     for (let dx = -1; dx <= 1; dx++)
       for (let dy = -1; dy <= 1; dy++)
         for (let dz = -1; dz <= 1; dz++)
@@ -388,6 +459,7 @@ export function* buildHabitatSteps(
       if (connect(node, ground) || !beside)
         band = Math.max(band, roomBand(ground.room!));
     }
+    connections.set(node.id, connecting);
   }
   // Frogs cross a narrow channel by leaping between dry ground and the flat
   // tops of stone and wood on either side, rather than wading.
@@ -397,6 +469,16 @@ export function* buildHabitatSteps(
   const landingGrid = new HabitatNodeGrid(landings, LEAP);
   for (const node of landings) {
     yield;
+    const known = oldParts?.leaps.get(node.id);
+    if (known && !earlier!.changes.touches(node.position, LEAP + OPEN)) {
+      for (const id of known) {
+        (node.leaps ??= []).push(id);
+        (nodesById.get(id)!.leaps ??= []).push(node.id);
+      }
+      leaps.set(node.id, known);
+      continue;
+    }
+    const targets: string[] = [];
     for (const other of landingGrid.near(
       node.position,
       LEAP,
@@ -409,9 +491,11 @@ export function* buildHabitatSteps(
         !overLand(node.position, other.position) &&
         surfaces.clearRoute(node.position, other.position)
       ) {
+        targets.push(other.id);
         (node.leaps ??= []).push(other.id);
         (other.leaps ??= []).push(node.id);
       }
+    leaps.set(node.id, targets);
   }
   const anchors = new HabitatNodeGrid(
     [...groundNodes, ...hardscapeNodes],
@@ -445,15 +529,17 @@ export function* buildHabitatSteps(
         found.push(node);
     return found;
   };
-  const link = (a: HabitatNode, b: HabitatNode) => {
-    a.neighbors.push(b.id);
-    b.neighbors.push(a.id);
-  };
-  const up = { x: 0, y: 1, z: 0 };
-  for (const object of world.objects) {
-    yield;
+  function* objectRoutes(object: HabitatObject): Generator<void, ObjectRoutes> {
+    const nodes: HabitatNode[] = [];
+    const links: [string, string][] = [];
+    const link = (a: HabitatNode, b: HabitatNode) => {
+      links.push([a.id, b.id]);
+      b.neighbors.push(a.id);
+    };
+    const up = { x: 0, y: 1, z: 0 };
     const baseY = objectBase(object, env);
-    if (baseY < waterLevel(object.x, object.z, env) + 0.025) continue;
+    if (baseY < waterLevel(object.x, object.z, env) + 0.025)
+      return { nodes, links };
     // Normals turn with the object but don't move or scale.
     const turn = (v: Vec3) =>
       transformPlantPoint(v, { ...object, x: 0, z: 0, scale: 1 });
@@ -529,7 +615,8 @@ export function* buildHabitatSteps(
             plantId: object.id,
             neighbors: [previous.id],
           };
-          previous.neighbors.push(node.id);
+          if (previous === anchor) links.push([previous.id, node.id]);
+          else previous.neighbors.push(node.id);
           if (previous === anchor) for (const other of wider) link(other, node);
           nodes.push(node);
           previous = node;
@@ -586,12 +673,37 @@ export function* buildHabitatSteps(
           shelter,
           neighbors: [previous.id],
         };
-        previous.neighbors.push(node.id);
+        if (previous === anchor) links.push([previous.id, node.id]);
+        else previous.neighbors.push(node.id);
         if (previous === anchor) for (const other of wider) link(other, node);
         nodes.push(node);
         previous = node;
       }
     }
+    return { nodes, links };
+  }
+  const anchorsById = new Map(nodes.map((node) => [node.id, node]));
+  for (const object of world.objects) {
+    yield;
+    if (isAnimal(object.kind)) continue;
+    const known = oldParts?.objects.get(object.id);
+    const part =
+      known &&
+      !earlier!.changes.intersects(
+        objectBounds(object),
+        LARGEST_FOOTPRINT + spacing / 25,
+      )
+        ? known
+        : yield* objectRoutes(object);
+    objects.set(object.id, part);
+    for (const node of part.nodes)
+      nodes.push({
+        ...node,
+        neighbors: [...node.neighbors],
+        leaps: node.leaps && [...node.leaps],
+      });
+    for (const [from, to] of part.links)
+      anchorsById.get(from)!.neighbors.push(to);
   }
   const perches = nodes.filter((node) => node.surface === "leaf");
   const perchGrid = new HabitatNodeGrid(perches, 0.65);
@@ -607,16 +719,45 @@ export function* buildHabitatSteps(
       }
   for (const node of nodes) {
     yield;
-    measureSpace(node, solids);
+    const old = earlier?.graph.nodes.get(node.id);
+    if (
+      old &&
+      distance(old.position, node.position) < 1e-9 &&
+      !earlier!.changes.touches(node.position, OPEN)
+    ) {
+      node.headroom = old.headroom;
+      node.width = old.width;
+    } else {
+      delete node.headroom;
+      delete node.width;
+      measureSpace(node, solids);
+    }
   }
-  if (hasFish(world)) {
-    const water = yield* SwimSpace.build(world);
-    nodes.push(...(yield* water.routeSteps()));
-  }
-  const plants = yield* PlantObstacles.build(world, surfaces);
-  return yield* HabitatGraph.build(nodes, (from, to, species) =>
+  const water = hasFish(world)
+    ? yield* SwimSpace.build(world, oldParts?.water)
+    : undefined;
+  if (water)
+    nodes.push(
+      ...(yield* water.routeSteps(earlier?.graph.nodes, earlier?.changes)),
+    );
+  const plants = yield* PlantObstacles.build(
+    world,
+    surfaces,
+    oldParts?.plants,
+    earlier?.changes,
+  );
+  const graph = yield* HabitatGraph.build(nodes, (from, to, species) =>
     plants.cost(from, to, species),
   );
+  habitatParts.set(graph, {
+    objects,
+    landChecks,
+    connections,
+    leaps,
+    plants,
+    water,
+  });
+  return graph;
 }
 
 function scaled(body: Body, scale: number): Body {
@@ -706,87 +847,29 @@ export function* createWorldEcosystemSteps(
     const fish =
       water && (yield* swimmingFish(world, object, water, graph, previous));
     if (fish) animals.push(fish);
-    const behavior = assets[object.kind].behavior;
-    if (!behavior) continue;
-    const species: SpeciesProfile = {
-      id: object.kind,
-      ...behavior,
-      radius: assetRadius(object.kind) * object.scale,
-      body: scaled(
-        animalBody(object.kind, object.seed),
-        object.scale * juvenileScale(object),
+    const animal = landAnimalSeed(
+      world,
+      object,
+      graph,
+      previous,
+      snapshot?.animals.find(
+        (a) => a.id === object.id && a.speciesId === object.kind,
       ),
-    };
-    const oldObject = previous?.world.objects.find((o) => o.id === object.id);
-    const oldState = snapshot?.animals.find(
-      (a) => a.id === object.id && a.speciesId === object.kind,
     );
-    const moved =
-      !oldObject || oldObject.x !== object.x || oldObject.z !== object.z;
-    const position =
-      !moved && oldState
-        ? oldState.position
-        : {
-            x: object.x,
-            y: groundHeight(object.x, object.z, world.environment),
-            z: object.z,
-          };
-    const node = graph.nearest(position, species);
-    // An animal that visits the water still needs dry land to live on.
-    const land =
-      behavior.water !== "visits" ||
-      graph.nearest(position, { ...species, water: undefined });
-    if (node && land)
-      animals.push({
-        id: object.id,
-        species,
-        nodeId: node.id,
-        needs: oldState?.needs,
-        direction:
-          oldObject?.rotation === object.rotation && oldState
-            ? oldState.direction
-            : {
-                x: -Math.sin(object.rotation),
-                y: 0,
-                z: -Math.cos(object.rotation),
-              },
-      });
+    if (animal) animals.push(animal);
   }
-  const colonies = insectColonies(
+  const food = yield* relocateFood(
     graph,
-    snapshot?.food
-      .filter((patch) => patch.capacity > 0)
-      .map((patch) => previous!.engine.graph.node(patch.nodeId).position),
+    previous?.engine.graph,
+    snapshot?.food,
   );
-  const food = new Map(
-    colonies.map((colony) => [
-      colony.nodeId,
-      { ...colony, amount: snapshot ? 0 : colony.capacity },
-    ]),
-  );
-  // Insects survive edits. Edits can shift where colonies sit, so an old
-  // colony's insects move to the nearest new colony within the spacing
-  // between colonies; anything else stays where it was as scattered food.
-  for (const patch of snapshot?.food ?? []) {
-    yield;
-    const position = previous!.engine.graph.node(patch.nodeId).position;
-    const colony =
-      patch.capacity > 0
-        ? nearestWithin(colonies, graph, position, COLONY_SPACING)
-        : undefined;
-    const nodeId = colony?.nodeId ?? graph.nearest(position, groundWalker)?.id;
-    if (!nodeId) continue;
-    const target = food.get(nodeId) ?? { nodeId, amount: 0, capacity: 0 };
-    target.amount += patch.amount;
-    food.set(nodeId, target);
-  }
   const engine = new Ecosystem(graph, animals, {
     random,
     water,
     solids,
     elapsed: snapshot?.elapsed,
     discoveries: snapshot?.discoveries,
-    food: [...food.values()],
+    food,
   });
   engine.court(
     readyToBreed(world),
@@ -800,6 +883,150 @@ export function* createWorldEcosystemSteps(
   engine.raise(youngAndParents(world));
   return engine;
 }
+function landAnimalSeed(
+  world: World,
+  object: HabitatObject,
+  graph: HabitatGraph,
+  previous?: { world: World; engine: Ecosystem },
+  oldState?: AnimalState,
+): AnimalSeed | undefined {
+  const behavior = assets[object.kind].behavior;
+  if (!behavior) return undefined;
+  const species: SpeciesProfile = {
+    id: object.kind,
+    ...behavior,
+    radius: assetRadius(object.kind) * object.scale,
+    body: scaled(
+      animalBody(object.kind, object.seed),
+      object.scale * juvenileScale(object),
+    ),
+  };
+  const oldObject = previous?.world.objects.find((o) => o.id === object.id);
+  const moved =
+    !oldObject || oldObject.x !== object.x || oldObject.z !== object.z;
+  const position =
+    !moved && oldState
+      ? oldState.position
+      : {
+          x: object.x,
+          y: groundHeight(object.x, object.z, world.environment),
+          z: object.z,
+        };
+  const node = graph.nearest(position, species);
+  // An animal that visits the water still needs dry land to live on.
+  const land =
+    behavior.water !== "visits" ||
+    graph.nearest(position, { ...species, water: undefined });
+  if (node && land)
+    return {
+      id: object.id,
+      species,
+      nodeId: node.id,
+      needs: oldState?.needs,
+      direction:
+        oldObject?.rotation === object.rotation && oldState
+          ? oldState.direction
+          : {
+              x: -Math.sin(object.rotation),
+              y: 0,
+              z: -Math.cos(object.rotation),
+            },
+    };
+  return undefined;
+}
+
+function* relocateFood(
+  graph: HabitatGraph,
+  previousGraph?: HabitatGraph,
+  previousFood?: readonly FoodPatch[],
+): Generator<void, FoodPatch[]> {
+  const colonies = insectColonies(
+    graph,
+    previousFood
+      ?.filter((patch) => patch.capacity > 0)
+      .map((patch) => previousGraph!.node(patch.nodeId).position),
+  );
+  const food = new Map(
+    colonies.map((colony) => [
+      colony.nodeId,
+      { ...colony, amount: previousFood ? 0 : colony.capacity },
+    ]),
+  );
+  // Insects survive edits. Edits can shift where colonies sit, so an old
+  // colony's insects move to the nearest new colony within the spacing
+  // between colonies; anything else stays where it was as scattered food.
+  for (const patch of previousFood ?? []) {
+    yield;
+    const position = previousGraph!.node(patch.nodeId).position;
+    const colony =
+      patch.capacity > 0
+        ? nearestWithin(colonies, graph, position, COLONY_SPACING)
+        : undefined;
+    const nodeId = colony?.nodeId ?? graph.nearest(position, groundWalker)?.id;
+    if (!nodeId) continue;
+    const target = food.get(nodeId) ?? { nodeId, amount: 0, capacity: 0 };
+    target.amount += patch.amount;
+    food.set(nodeId, target);
+  }
+  return [...food.values()];
+}
+
+/** Prepare a terrain edit without changing the running graph. Only animals
+ * whose movement intersects the edit need a new starting state. */
+export function* prepareHabitatEdit(
+  world: World,
+  previous: { world: World; engine: Ecosystem },
+  changes: HabitatChanges,
+): Generator<void, () => void> {
+  const solids = yield* Solids.build(world, previous.engine.solids, changes);
+  const graph = yield* buildHabitatSteps(world, solids, {
+    graph: previous.engine.graph,
+    changes,
+  });
+  const water = habitatParts.get(graph)!.water;
+  const affected = new Set<string>();
+  const prepared = new Set<string>();
+  const animals: AnimalSeed[] = [];
+  // Other animals can approach the edit while these seeds are prepared.
+  // Once held, they cannot move again until publication.
+  while (true) {
+    for (const id of previous.engine.affectedByHabitat(changes))
+      affected.add(id);
+    const waiting = world.objects.filter(
+      (object) =>
+        isAnimal(object.kind) &&
+        !prepared.has(object.id) &&
+        (affected.has(object.id) || !previous.engine.getAnimal(object.id)),
+    );
+    if (!waiting.length) break;
+    for (const object of waiting) {
+      prepared.add(object.id);
+      yield;
+      const fish =
+        water && (yield* swimmingFish(world, object, water, graph, previous));
+      const land = landAnimalSeed(
+        world,
+        object,
+        graph,
+        previous,
+        previous.engine.getAnimal(object.id),
+      );
+      if (fish) animals.push(fish);
+      if (land) animals.push(land);
+    }
+  }
+  return () => {
+    const engine = previous.engine;
+    const food = finishWork(
+      relocateFood(graph, engine.graph, engine.snapshot().food),
+    );
+    engine.replaceHabitat(graph, solids, water, affected, animals, food);
+    engine.holdHabitat();
+    engine.court(readyToBreed(world), [], () => false);
+    engine.raise(youngAndParents(world));
+  };
+}
+
 /** Ordinary edits preserve live fish. A moved fish starts where it was
  * placed; a newly blocked fish finds nearby clear water. A fish with no open
  * water anywhere is stranded and left out. */

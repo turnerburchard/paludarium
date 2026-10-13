@@ -1,3 +1,4 @@
+import type { HabitatChanges } from "./habitatChanges";
 import { discoveryFor, type Discovery } from "./discoveries";
 import { Steering, newSwimmer, type SwimWater, type Swimmer } from "./fish";
 import { fitBody, follow, type BodyPose } from "./bodyPose";
@@ -133,6 +134,7 @@ export class Ecosystem {
   /** All animals share a frame's budget. A waiting animal holds its position. */
   private work() {
     for (const [owner, steps] of this.planning) {
+      if (owner !== "courtship" && this.waitingForHabitat(owner)) continue;
       while (this.hasPlanningTime()) {
         if (steps.next().done) {
           this.planning.delete(owner);
@@ -159,16 +161,27 @@ export class Ecosystem {
   private remainder = 0;
   private elapsed: number;
   private readonly random: () => number;
-  private readonly steering?: Steering;
-  readonly solids?: Solids;
+  private steering?: Steering;
+  private water?: SwimWater;
+  private habitatEdit?: HabitatChanges;
+  private readonly habitatHeld = new Set<string>();
+  private habitatSolids?: Solids;
+  private habitatGraph: HabitatGraph;
+  get solids() {
+    return this.habitatSolids;
+  }
+  get graph() {
+    return this.habitatGraph;
+  }
   /** Every fish, for schooling. */
   private readonly fish: Swimmer[] = [];
   readonly speed: number;
   constructor(
-    readonly graph: HabitatGraph,
+    graph: HabitatGraph,
     animals: readonly AnimalSeed[],
     options: SimulationOptions = {},
   ) {
+    this.habitatGraph = graph;
     this.discoveries = (options.discoveries ?? [])
       .filter((note) =>
         animals.some(
@@ -179,7 +192,8 @@ export class Ecosystem {
       .map((note) => ({ ...note }));
     this.random = options.random ?? Math.random;
     this.speed = options.speed ?? NORMAL_SPEED;
-    this.solids = options.solids;
+    this.habitatSolids = options.solids;
+    this.water = options.water;
     if (options.water)
       this.steering = new Steering(options.water, () => this.roll());
     this.elapsed = options.elapsed ?? DAY_LENGTH * 0.42;
@@ -258,6 +272,81 @@ export class Ecosystem {
         throw new Error("Food amounts must be finite and non-negative.");
       this.food.set(patch.nodeId, { ...patch });
     }
+  }
+  holdHabitat(changes?: HabitatChanges) {
+    this.habitatEdit = changes;
+    this.habitatHeld.clear();
+  }
+  affectedByHabitat(changes: HabitatChanges): ReadonlySet<string> {
+    return new Set(
+      [...this.agents.values()]
+        .filter((agent) =>
+          this.habitatEdit === changes
+            ? this.waitingForHabitat(agent)
+            : this.touchesHabitat(agent, changes),
+        )
+        .map((agent) => agent.state.id),
+    );
+  }
+  private waitingForHabitat(agent: Agent) {
+    if (!this.habitatEdit) return false;
+    if (this.habitatHeld.has(agent.state.id)) return true;
+    if (!this.touchesHabitat(agent, this.habitatEdit)) return false;
+    this.habitatHeld.add(agent.state.id);
+    return true;
+  }
+  private touchesHabitat(agent: Agent, changes: HabitatChanges) {
+    const padding = Math.max(
+      agent.profile.radius ?? 0,
+      agent.profile.body?.length ?? 0,
+      agent.profile.body?.width ?? 0,
+      agent.profile.swims ? this.water!.reach(agent.state.id) : 0,
+    );
+    let from = agent.state.position;
+    if (
+      changes.touches(from, padding) ||
+      changes.touches(this.graph.node(agent.state.nodeId).position, padding)
+    )
+      return true;
+    for (const id of agent.path) {
+      const to = this.graph.node(id).position;
+      if (changes.crosses(from, to, padding)) return true;
+      from = to;
+    }
+    return false;
+  }
+  replaceHabitat(
+    graph: HabitatGraph,
+    solids: Solids,
+    water: SwimWater | undefined,
+    affected: ReadonlySet<string>,
+    animals: readonly AnimalSeed[],
+    food: readonly FoodPatch[],
+  ) {
+    const replacement = new Ecosystem(graph, animals, {
+      solids,
+      water,
+      random: this.random,
+      elapsed: this.elapsed,
+      speed: this.speed,
+    });
+    for (const agent of this.agents.values()) {
+      agent.routes = undefined;
+      if (!affected.has(agent.state.id)) continue;
+      this.part(agent);
+      this.agents.delete(agent.state.id);
+    }
+    for (const [id, agent] of replacement.agents) this.agents.set(id, agent);
+    this.habitatGraph = graph;
+    this.habitatSolids = solids;
+    this.water = water;
+    this.steering = water && new Steering(water, () => this.roll());
+    this.fish.length = 0;
+    for (const agent of this.agents.values())
+      if (agent.swimmer) this.fish.push(agent.swimmer);
+    this.food.clear();
+    for (const patch of food) this.food.set(patch.nodeId, { ...patch });
+    this.planning.clear();
   }
   private roll() {
     const n = this.random();
@@ -643,7 +732,7 @@ export class Ecosystem {
     }
   }
   private update(agent: Agent) {
-    if (this.planning.has(agent)) return;
+    if (this.planning.has(agent) || this.waitingForHabitat(agent)) return;
     if (agent.swimmer) {
       this.swim(agent, agent.swimmer);
       return;
@@ -682,6 +771,7 @@ export class Ecosystem {
       if (this.planning.has(agent)) return;
     }
     if (state.moving) {
+      if (this.waitingForHabitat(agent)) return;
       this.move(agent);
       return;
     }
@@ -1098,6 +1188,7 @@ export class Ecosystem {
       this.plan(agent, this.chooseWater(agent, fish, fish.blocked));
       if (this.planning.has(agent)) return;
     }
+    if (this.waitingForHabitat(agent)) return;
     fish.blocked = false;
     // Head for the next node, moving on once it is near or already passed,
     // so a route reads as one sweeping course rather than a series of legs.

@@ -1,3 +1,4 @@
+import type { HabitatChanges } from "./habitatChanges";
 import { finishWork } from "../work";
 import * as THREE from "three";
 import { assets, categoryOf } from "../assets";
@@ -7,15 +8,21 @@ import {
   type CollisionTree,
 } from "../assets/collisionTree";
 import { objectBase } from "../model/stacking";
-import type { World } from "../model/schema";
+import type { HabitatObject, World } from "../model/schema";
 import type { LandSurfaces } from "./landSurfaces";
 import type { HabitatNode, SpeciesProfile, Vec3 } from "./types";
 
+interface Foliage {
+  object: HabitatObject;
+  base: number;
+  tree: CollisionTree;
+}
 /** Actual foliage remains passable. The cost is bounded even where many
  * plants overlap, so an animal can always push through to food or water. */
 export class PlantObstacles {
-  private readonly foliage: CollisionTree[];
+  private readonly foliage: Foliage[];
   private readonly cache = new Map<string, number>();
+  private readonly previousCosts?: ReadonlyMap<string, number>;
   private readonly inverse = new THREE.Matrix4();
   private readonly query = new THREE.Box3();
   private readonly body = new THREE.Box3();
@@ -25,14 +32,25 @@ export class PlantObstacles {
     world: World,
     private readonly surfaces: LandSurfaces,
     foliage = finishWork(foliageSteps(world)),
+    previous?: PlantObstacles,
+    private readonly changes?: HabitatChanges,
   ) {
     this.foliage = foliage;
+    this.previousCosts = previous?.cache;
   }
   static *build(
     world: World,
     surfaces: LandSurfaces,
+    previous?: PlantObstacles,
+    changes?: HabitatChanges,
   ): Generator<void, PlantObstacles> {
-    return new PlantObstacles(world, surfaces, yield* foliageSteps(world));
+    return new PlantObstacles(
+      world,
+      surfaces,
+      yield* foliageSteps(world, previous?.foliage),
+      previous,
+      changes,
+    );
   }
 
   /** Only ground travel pushes through foliage. Authored climbing routes
@@ -46,8 +64,15 @@ export class PlantObstacles {
     if (species.swims || from.leaps?.includes(to.id)) return length;
     if (from.surface !== "ground" || to.surface !== "ground") {
       const key = `contact:${from.id}:${to.id}`;
-      const known = this.cache.get(key);
-      if (known !== undefined) return known;
+      const known =
+        this.cache.get(key) ??
+        (!this.changes?.crosses(from.position, to.position)
+          ? this.previousCosts?.get(key)
+          : undefined);
+      if (known !== undefined) {
+        this.cache.set(key, known);
+        return known;
+      }
       // Authored climbs can touch their own support, but never pass
       // through another solid. Ground travel does not get this exception.
       const supportId =
@@ -68,8 +93,15 @@ export class PlantObstacles {
     const bodyLength = species.body?.length ?? width;
     const height = species.body?.height ?? 0.1;
     const key = `${from.id}:${to.id}:${width}:${bodyLength}:${height}`;
-    const known = this.cache.get(key);
-    if (known !== undefined) return known;
+    const known =
+      this.cache.get(key) ??
+      (!this.changes?.crosses(from.position, to.position, width + bodyLength)
+        ? this.previousCosts?.get(key)
+        : undefined);
+    if (known !== undefined) {
+      this.cache.set(key, known);
+      return known;
+    }
     // The swept box includes the entire segment, so even a thin stem between
     // graph nodes cannot disappear between clearance samples.
     this.box(from.position, to.position, width, bodyLength, height);
@@ -102,7 +134,7 @@ export class PlantObstacles {
         from.position,
         to.position,
       );
-      if (this.foliage.some((tree) => this.intersects(tree))) occupied++;
+      if (this.foliage.some(({ tree }) => this.intersects(tree))) occupied++;
     }
     const cost = length * (1 + (0.5 * occupied) / (steps + 1));
     this.cache.set(key, cost);
@@ -154,8 +186,11 @@ export class PlantObstacles {
   }
 }
 
-function* foliageSteps(world: World): Generator<void, CollisionTree[]> {
-  const foliage: CollisionTree[] = [];
+function* foliageSteps(
+  world: World,
+  previous: readonly Foliage[] = [],
+): Generator<void, Foliage[]> {
+  const foliage: Foliage[] = [];
   for (const object of world.objects) {
     yield;
     const asset = assets[object.kind];
@@ -166,12 +201,20 @@ function* foliageSteps(world: World): Generator<void, CollisionTree[]> {
       asset.blocksMovement
     )
       continue;
+    const base = objectBase(object, world.environment);
+    const known = previous.find(
+      (piece) => piece.object === object && piece.base === base,
+    );
+    if (known) {
+      foliage.push(known);
+      continue;
+    }
     const { faces } = placeShape(
       collisionShape(object),
       object,
       objectBase(object, world.environment),
     );
-    foliage.push(yield* collisionTreeSteps(faces));
+    foliage.push({ object, base, tree: yield* collisionTreeSteps(faces) });
   }
   return foliage;
 }
