@@ -132,16 +132,20 @@ export class Ecosystem {
 
   /** All animals share a frame's budget. A waiting animal holds its position. */
   private work() {
-    while (this.planning.size && this.hasPlanningTime()) this.planStep();
-  }
-  private planStep() {
-    const [owner, steps] = this.planning.entries().next().value!;
-    if (steps.next().done) this.planning.delete(owner);
+    for (const [owner, steps] of this.planning) {
+      while (this.hasPlanningTime()) {
+        if (steps.next().done) {
+          this.planning.delete(owner);
+          break;
+        }
+      }
+      if (this.planning.has(owner)) return;
+    }
   }
   *finishPlanning(): Generator<void> {
-    while (this.planning.size) {
-      this.planStep();
-      yield;
+    for (const [owner, steps] of this.planning) {
+      yield* steps;
+      this.planning.delete(owner);
     }
   }
   private plan(agent: Agent, steps: Generator<void>) {
@@ -1565,8 +1569,9 @@ function* selectNodes(
   keep: (id: string) => boolean,
 ): Generator<void, string[]> {
   const selected: string[] = [];
+  let visited = 0;
   for (const id of nodes) {
-    yield;
+    if (visited++ % 32 === 0) yield;
     if (keep(id)) selected.push(id);
   }
   return selected;

@@ -469,11 +469,11 @@ describe("preset habitats", () => {
       const engine = createWorldEcosystem(makePreset(preset));
       for (const animal of engine.snapshot().animals) {
         if (assets[animal.speciesId as AssetKind].swims) continue;
-        const routes = engine.graph.paths(
+        const routes = engine.graph.routes(
           animal.nodeId,
           frogProfile(animal.speciesId as AssetKind),
         );
-        const shore = [...routes.keys()].filter(
+        const shore = [...routes.distances.keys()].filter(
           (id) => engine.graph.node(id).wet,
         );
         expect(shore, `${preset} ${animal.speciesId}`).not.toHaveLength(0);
@@ -979,7 +979,8 @@ it("shares the planning budget and keeps an animal with a route moving", () => {
   expect(engine.getAnimal("moving")!.position.x).toBeGreaterThan(before);
   let remaining = 2;
   engine.advance(0.1, false, undefined, () => remaining-- > 0);
-  expect(costChecks).toBeLessThanOrEqual(2);
+  expect(costChecks).toBeGreaterThan(0);
+  expect(engine.getAnimal("waiting")!.position.x).toBe(0);
   run(engine, 5);
   expect(engine.getAnimal("waiting")!.position.x).toBeGreaterThan(0);
 });

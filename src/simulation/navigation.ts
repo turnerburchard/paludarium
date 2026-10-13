@@ -145,8 +145,9 @@ export class HabitatGraph {
       }
       return first;
     };
+    let visited = 0;
     while (queue.length) {
-      yield;
+      if (visited++ % 8 === 0) yield;
       const current = dequeue();
       if (current.distance !== costs.get(current.id)) continue;
       const from = this.node(current.id);

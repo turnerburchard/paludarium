@@ -59,7 +59,7 @@ it("resumes weighted searches without changing routes or tie breaks", () => {
     batches++;
     result = search.next();
   }
-  expect(batches).toBeGreaterThan(20);
+  expect(batches).toBeGreaterThan(1);
   expect(result.value.distances).toEqual(expected.distances);
   expect(result.value.costs).toEqual(expected.costs);
   expect(result.value.firstSteps).toEqual(expected.firstSteps);
