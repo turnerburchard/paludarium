@@ -912,11 +912,11 @@ function* landAnimalSeed(
           y: groundHeight(object.x, object.z, world.environment),
           z: object.z,
         };
-  const node = yield* graph.nearestSteps(position, species);
+  const node = graph.nearest(position, species);
   // An animal that visits the water still needs dry land to live on.
   const land =
     behavior.water !== "visits" ||
-    (yield* graph.nearestSteps(position, { ...species, water: undefined }));
+    graph.nearest(position, { ...species, water: undefined });
   if (node && land)
     return {
       id: object.id,

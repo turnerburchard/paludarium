@@ -10,9 +10,9 @@ visual models finish before the scene mounts. The canvas stays mounted across
 world switches so its renderer can reuse compiled shaders. Normal edits retain
 the live engine and its existing rebuild path.
 
-Geometry batching, collision-face extraction and transforms, water-scenery
-selection, and nearest-surface searches now yield within their loops. The budget
-is checked between yields, so it is not a hard upper bound: raw asset builders,
+Geometry batching, collision-face extraction and transforms, and water-scenery
+selection now yield within their loops. The budget is checked between yields,
+so it is not a hard upper bound: raw asset builders,
 geometry merging, scene mounting and first-frame shader work can still stall.
 Cancellation closes the generator and disposes unfinished models. Mounted
 inhabitants take ownership of completed models and dispose them on replacement
@@ -30,6 +30,14 @@ event-loop gaps from React startup until the loading screen was hidden.
 These are single development-build samples, not a loading-time target. Batching
 improved responsiveness while increasing total loading time. The remaining
 scene-mount and first-render stalls were still visible.
+
+Nearest-surface queries remain synchronous because swimming uses them during
+simulation. They check distance before eligibility, skipping eligibility checks
+for nodes that cannot improve the current nearest result.
+
+In five local Node samples of 1,000 queries covering fish, walkers and climbers,
+median query time fell from 1,049 ms on main to 637 ms. All 1,000 queries chose
+the same nodes. These isolated query timings do not measure complete frames.
 
 A separate Node comparison used identical world copies and random seed 123 for
 Cloud forest, Alpine creek, Limestone grotto and Aquarium. Complete navigation
