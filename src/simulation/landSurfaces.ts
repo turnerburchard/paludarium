@@ -3,8 +3,8 @@ import { finishWork } from "../work";
 import * as THREE from "three";
 import { assets } from "../assets";
 import {
-  structuralShape,
-  placeShape,
+  structuralShapeSteps,
+  placeShapeSteps,
   type CollisionFace,
 } from "../assets/collisionShape";
 import {
@@ -593,8 +593,8 @@ function* solidSteps(
       solids.push(known);
       continue;
     }
-    const shape = placeShape(
-      structuralShape(object),
+    const shape = yield* placeShapeSteps(
+      yield* structuralShapeSteps(object),
       object,
       objectBase(object, world.environment),
     );

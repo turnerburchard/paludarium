@@ -2,7 +2,9 @@ import { hideSplash, showSplash } from "./ui/splash";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { assets, isAnimal } from "./assets";
-import { useEditor } from "./editor/useEditor";
+import { useEditor, type Editor } from "./editor/useEditor";
+import { useWorldPreparation } from "./scene/useWorldPreparation";
+import type { PreparedWorld } from "./scene/prepareWorld";
 import { WorldScene } from "./scene/WorldScene";
 import { useEcosystem } from "./simulation/useEcosystem";
 import { BottomHud } from "./ui/BottomHud";
@@ -34,12 +36,42 @@ export default function App({
 }) {
   const [view, setView] = useState(true);
   const editor = useEditor(view, sharedWorld);
+  const ready = useWorldPreparation(editor.library.activeId, editor.savedWorld);
+  if (!ready) return null;
+  return (
+    <EditorApp
+      editor={editor}
+      view={view}
+      setView={setView}
+      prepared={ready.prepared}
+      opening={ready.id !== editor.library.activeId}
+      shareError={shareError}
+    />
+  );
+}
+
+function EditorApp({
+  editor,
+  view,
+  setView,
+  prepared,
+  opening,
+  shareError,
+}: {
+  editor: Editor;
+  view: boolean;
+  setView: (view: boolean) => void;
+  prepared: PreparedWorld;
+  opening: boolean;
+  shareError: boolean;
+}) {
   const { world, selected, tool } = editor;
   // Life follows committed edits, not intermediate brush or slider previews.
   const ecosystem = useEcosystem(
-    editor.savedWorld,
+    prepared,
+    opening ? prepared.world : editor.savedWorld,
     editor.updateLife,
-    tool.type === "terrain",
+    opening || tool.type === "terrain",
   );
   const [panel, setPanel] = useState<Panel>("objects");
   // On phones the sidebar is a sheet, closed until a dock button opens it.
@@ -208,6 +240,8 @@ export default function App({
             resetCamera={resetCamera}
             view={view}
             ecosystem={ecosystem}
+            prepared={prepared}
+            opening={opening}
             watchingId={watchingId}
             onActivateObject={activateObject}
             onCameraStart={learnCamera}

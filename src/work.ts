@@ -11,14 +11,17 @@ export function runInBatches<T>(
   complete: (value: T) => void,
   failed: (error: unknown) => void,
 ) {
+  function* publish() {
+    complete(yield* steps);
+  }
+  const work = publish();
   let timer: ReturnType<typeof setTimeout>;
   function batch() {
     const deadline = performance.now() + 4;
     try {
       do {
-        const next = steps.next();
+        const next = work.next();
         if (next.done) {
-          complete(next.value);
           return;
         }
       } while (performance.now() < deadline);
@@ -30,5 +33,6 @@ export function runInBatches<T>(
   timer = setTimeout(batch, 0);
   return () => {
     clearTimeout(timer);
+    work.return();
   };
 }

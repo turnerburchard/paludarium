@@ -10,11 +10,7 @@ import { isAnimal } from "../assets";
 import type { HabitatObject, World } from "../model/schema";
 import { objectBase } from "../model/stacking";
 import { groundHeight, onlyAppearanceDiffers } from "../model/terrain";
-import {
-  createWorldEcosystem,
-  createWorldEcosystemSteps,
-  prepareHabitatEdit,
-} from "./worldHabitat";
+import { createWorldEcosystemSteps, prepareHabitatEdit } from "./worldHabitat";
 import { runInBatches } from "../work";
 import type { Ecosystem } from "./engine";
 import {
@@ -42,6 +38,7 @@ export interface Remains {
  * second. Only the components that show them re-render, through
  * useEcosystemSnapshot, so the rest of the app and scene don't. */
 export function useEcosystem(
+  initial: { world: World; engine: Ecosystem },
   world: World,
   onLifeChange: (base: World, next: World) => void,
   /** Life is paused while sculpting, so the habitat rebuild, which takes a
@@ -54,12 +51,15 @@ export function useEcosystem(
     engine: Ecosystem;
     lifeRemainder: number;
   } | null>(null);
-  if (!live.current)
+  const opened = useRef(initial);
+  if (!live.current || opened.current !== initial) {
+    opened.current = initial;
     live.current = {
-      world,
-      engine: createWorldEcosystem(world),
+      world: initial.world,
+      engine: initial.engine,
       lifeRemainder: 0,
     };
+  }
   const [snapshotStore] = useState(() =>
     latestValue(live.current!.engine.snapshot()),
   );
@@ -68,6 +68,10 @@ export function useEcosystem(
   const [buildError, setBuildError] = useState<unknown>(null);
   if (buildError) throw buildError;
   const habitat = useMemo(() => habitatSupport(world), [world]);
+  useEffect(() => {
+    setRemains([]);
+    snapshotStore.set(initial.engine.snapshot());
+  }, [initial, snapshotStore]);
   useEffect(() => {
     const previous = live.current!;
     if (holding || previous.world === world) return;

@@ -2,6 +2,67 @@
 
 The object limit is 500. Static plants and hardscape are batched by material within each object; animals retain separate parts for animation. Terrain pebbles use one instanced mesh. Water ripples and their surface normals run in the vertex shader, updating one time uniform instead of rewriting 1,189 vertices and rebuilding normals every frame. The renderer observes live animal state without allocating a copied snapshot per animal per frame.
 
+## Batched world preparation
+
+On October 14, 2026, opening a world was moved behind the existing loading screen
+into the same 4 ms batch scheduler used for edits. Ecosystem construction and
+visual models finish before the scene mounts. The canvas stays mounted across
+world switches so its renderer can reuse compiled shaders. Normal edits retain
+the live engine and its existing rebuild path.
+
+Geometry batching, collision-face extraction and transforms, and water-scenery
+selection now yield within their loops. The budget is checked between yields,
+so it is not a hard upper bound: raw asset builders,
+geometry merging, scene mounting and first-frame shader work can still stall.
+Cancellation closes the generator and disposes unfinished models. Mounted
+inhabitants take ownership of completed models and dispose them on replacement
+or removal.
+
+A local Chrome fixture compared main at `81b76e6` with this change on an Apple M4
+Pro, using the 120-object grotto plus 130 seeded plants. A 10 ms timer measured
+event-loop gaps from React startup until the loading screen was hidden.
+
+| Measurement                   |     Main | Batched preparation |
+| ----------------------------- | -------: | ------------------: |
+| Longest timer gap             | 1,629 ms |              361 ms |
+| Time until loading screen hid | 2,476 ms |            4,424 ms |
+
+These are single development-build samples, not a loading-time target. Batching
+improved responsiveness while increasing total loading time. The remaining
+scene-mount and first-render stalls were still visible.
+
+Nearest-surface queries remain synchronous because swimming uses them during
+simulation. They check distance before eligibility, skipping eligibility checks
+for nodes that cannot improve the current nearest result.
+
+In five local Node samples of 1,000 queries covering fish, walkers and climbers,
+median query time fell from 1,049 ms on main to 637 ms. All 1,000 queries chose
+the same nodes. These isolated query timings do not measure complete frames.
+
+A separate Node comparison used identical world copies and random seed 123 for
+Cloud forest, Alpine creek, Limestone grotto and Aquarium. Complete navigation
+records and initial ecosystem snapshots matched main for all four presets.
+
+The same hardware fixture then paused simulation and camera motion, kept the
+render loop running, and sampled each rendering configuration for four seconds
+after a one-second warmup. WebGL timer queries measured GPU time. Renderer
+counters included shadow draws by disabling their automatic mid-frame reset.
+The viewport was 2560 by 1231 CSS pixels.
+
+| 250-object configuration      | Median GPU time | Draws per frame |
+| ----------------------------- | --------------: | --------------: |
+| DPR 1.7, shadows on           |         5.88 ms |             844 |
+| DPR 1.0, shadows on           |         6.17 ms |             844 |
+| DPR 1.7, shadows off          |         4.95 ms |             459 |
+| DPR 1.0, shadows off          |         4.36 ms |             459 |
+| DPR 1.7, shadows on, repeated |         6.18 ms |             844 |
+
+All five samples ran near the display's 75 FPS limit. Reducing resolution alone
+did not help this fixture. Repeated static-asset instancing is the next experiment
+to reduce submission cost without lowering image quality. It has not been
+implemented or measured here. These desktop results do not establish performance
+on a phone or at the current 500-object cap, and rendering quality is unchanged.
+
 ## Fish movement while planning
 
 On October 13, 2026, a local Node 24 comparison against `cf972a1` reproduced fish

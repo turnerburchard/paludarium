@@ -84,9 +84,9 @@ export class HabitatGraph {
     for (const node of this.nodes.values()) {
       const d = distance(position, node.position);
       if (
+        d < bestDistance &&
         this.canRest(node.id, species) &&
-        this.allowed(node.id, species) &&
-        d < bestDistance
+        this.allowed(node.id, species)
       ) {
         best = node;
         bestDistance = d;

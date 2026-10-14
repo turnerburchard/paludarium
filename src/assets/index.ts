@@ -7,7 +7,8 @@ import {
   type Biome,
   type Category,
 } from "./types";
-import { batchStaticAsset } from "./batch";
+import { batchStaticAssetSteps } from "./batch";
+import { finishWork } from "../work";
 import type { MossSpecies } from "../model/moss";
 import type { Prebuilt } from "../model/prebuilts";
 import type { Den, PlantPerch, PlantPoint } from "../model/plantSurfaces";
@@ -350,10 +351,17 @@ const bodies = new Map<
 >();
 /** An animal's size at scale 1, nose to tail, side to side and feet to back. */
 export function animalBody(kind: AssetKind, seed: number) {
+  return finishWork(animalBodySteps(kind, seed));
+}
+
+export function* animalBodySteps(
+  kind: AssetKind,
+  seed: number,
+): Generator<void, { length: number; width: number; height: number }> {
   const key = `${kind}:${seed}`;
   let body = bodies.get(key);
   if (!body) {
-    const model = buildAsset(kind, seed);
+    const model = yield* buildAssetSteps(kind, seed);
     const size = new THREE.Box3()
       .setFromObject(model, true)
       .getSize(new THREE.Vector3());
@@ -403,16 +411,35 @@ export function buildAsset(
   seed = 1,
   moss?: MossSpecies,
 ): THREE.Group {
+  return finishWork(buildAssetSteps(kind, seed, moss));
+}
+
+export function* buildAssetSteps(
+  kind: AssetKind,
+  seed = 1,
+  moss?: MossSpecies,
+): Generator<void, THREE.Group> {
   const asset = assets[kind];
-  const model = asset.build(randomFromSeed(seed));
-  model.scale.multiplyScalar(asset.size ?? 1);
-  // Skinned meshes refresh their bind inverse only here, so bounds measured
-  // before the first render would otherwise count the size twice.
-  model.updateMatrixWorld(true);
-  if (isAnimal(kind)) return model;
-  const batched = batchStaticAsset(model);
-  if (moss) growMoss(batched, moss, randomFromSeed(seed + 1));
-  return batched;
+  let model = asset.build(randomFromSeed(seed));
+  let completed = false;
+  try {
+    yield;
+    model.scale.multiplyScalar(asset.size ?? 1);
+    // Skinned meshes refresh their bind inverse only here, so bounds measured
+    // before the first render would otherwise count the size twice.
+    model.updateMatrixWorld(true);
+    if (!isAnimal(kind)) {
+      model = yield* batchStaticAssetSteps(model);
+      if (moss) {
+        yield;
+        growMoss(model, moss, randomFromSeed(seed + 1));
+      }
+    }
+    completed = true;
+    return model;
+  } finally {
+    if (!completed) disposeAsset(model);
+  }
 }
 
 export function disposeAsset(root: THREE.Object3D) {
