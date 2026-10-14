@@ -34,6 +34,7 @@ import {
 
 interface Props {
   object: HabitatObject;
+  preparedModels?: Map<string, THREE.Group>;
   environment: Environment;
   paused: boolean;
   selected?: boolean;
@@ -46,6 +47,7 @@ interface Props {
 }
 export function Inhabitant({
   object,
+  preparedModels,
   environment,
   paused,
   selected = false,
@@ -60,8 +62,10 @@ export function Inhabitant({
     foliage = useRef<THREE.Group>(null),
     clock = useRef(0);
   const model = useMemo(
-    () => buildAsset(object.kind, object.seed, object.moss),
-    [object.kind, object.seed, object.moss],
+    () =>
+      preparedModels?.get(object.id) ??
+      buildAsset(object.kind, object.seed, object.moss),
+    [preparedModels, object.id, object.kind, object.seed, object.moss],
   );
   const rig = useMemo(
     () => createRig(object.kind, model),
@@ -94,7 +98,12 @@ export function Inhabitant({
     () => (assets[object.kind].swims ? new FishCurl(model) : undefined),
     [object.kind, model],
   );
-  useEffect(() => () => disposeAsset(model), [model]);
+  useEffect(() => {
+    // Once mounted, this inhabitant owns disposal, including moves and deletions.
+    if (preparedModels?.get(object.id) === model)
+      preparedModels.delete(object.id);
+    return () => disposeAsset(model);
+  }, [model, preparedModels, object.id]);
   useEffect(() => {
     const group =
       movingLeaves instanceof THREE.Group ? movingLeaves : foliage.current;

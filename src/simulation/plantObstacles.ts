@@ -3,7 +3,7 @@ import type { HabitatChanges } from "./habitatChanges";
 import { finishWork } from "../work";
 import * as THREE from "three";
 import { assets, categoryOf } from "../assets";
-import { collisionShape, placeShape } from "../assets/collisionShape";
+import { collisionShapeSteps, placeShapeSteps } from "../assets/collisionShape";
 import {
   collisionTreeSteps,
   type CollisionTree,
@@ -211,8 +211,8 @@ function* foliageSteps(
       foliage.push(known);
       continue;
     }
-    const { faces } = placeShape(
-      collisionShape(object),
+    const { faces } = yield* placeShapeSteps(
+      yield* collisionShapeSteps(object),
       object,
       objectBase(object, world.environment),
     );

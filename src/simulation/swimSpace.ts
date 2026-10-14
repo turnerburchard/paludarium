@@ -2,7 +2,12 @@ import type { HabitatChanges } from "./habitatChanges";
 import { finishWork } from "../work";
 import * as THREE from "three";
 import { assets, isAnimal } from "../assets";
-import { collisionShape, type CollisionFace } from "../assets/collisionShape";
+import {
+  collisionShape,
+  collisionShapeSteps,
+  placeShapeSteps,
+  type CollisionFace,
+} from "../assets/collisionShape";
 import {
   collisionTreeSteps,
   type CollisionTree,
@@ -58,15 +63,11 @@ function* buildScenery(
   const solids: CollisionTree[] = [];
   for (const { object, matrix } of placed) {
     yield;
-    const transformed = collisionShape(object).faces.map(({ triangle }) => {
-      const moved = triangle.clone();
-      for (const point of [moved.a, moved.b, moved.c])
-        point.applyMatrix4(matrix);
-      return {
-        triangle: moved,
-        bounds: new THREE.Box3().setFromPoints([moved.a, moved.b, moved.c]),
-      };
-    });
+    const { faces: transformed } = yield* placeShapeSteps(
+      yield* collisionShapeSteps(object),
+      object,
+      matrix.elements[13],
+    );
     faces.push(...transformed.filter((face) => face.bounds.min.y < surface));
     if (assets[object.kind].hardscape)
       solids.push(yield* collisionTreeSteps(transformed));
@@ -88,14 +89,15 @@ function* scenerySteps(
   // Only what reaches into some water can get in a fish's way.
   const env = world.environment;
   const surface = highestWater(env);
-  const placed = world.objects
-    .filter((object) => !isAnimal(object.kind))
-    .map((object) => ({ object, matrix: placement(object, env) }))
-    .filter(
-      ({ object, matrix }) =>
-        collisionShape(object).bounds.clone().applyMatrix4(matrix).min.y <
-        surface,
-    );
+  const placed: { object: HabitatObject; matrix: THREE.Matrix4 }[] = [];
+  for (const object of world.objects) {
+    yield;
+    if (isAnimal(object.kind)) continue;
+    const matrix = placement(object, env);
+    const shape = yield* collisionShapeSteps(object);
+    if (shape.bounds.clone().applyMatrix4(matrix).min.y < surface)
+      placed.push({ object, matrix });
+  }
   const built = sceneries.get(env) ?? previous;
   const scenery =
     built &&
@@ -164,7 +166,13 @@ export class SwimSpace {
     world: World,
     previous?: SwimSpace,
   ): Generator<void, SwimSpace> {
-    return new SwimSpace(world, yield* scenerySteps(world, previous?.scenery));
+    const scenery = yield* scenerySteps(world, previous?.scenery);
+    // The constructor reads these cached bounds without building every fish at once.
+    for (const object of world.objects) {
+      yield;
+      if (assets[object.kind].swims) yield* collisionShapeSteps(object);
+    }
+    return new SwimSpace(world, scenery);
   }
 
   /** Routes for fish through the open water, which only change with it. */

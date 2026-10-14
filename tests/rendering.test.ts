@@ -1,8 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
 import { batchStaticAsset } from "../src/assets/batch";
-import { buildAsset, disposeAsset, assets } from "../src/assets";
+import {
+  buildAsset,
+  buildAssetSteps,
+  disposeAsset,
+  assets,
+} from "../src/assets";
 import { randomFromSeed } from "../src/model/random";
+
+afterEach(() => vi.restoreAllMocks());
 
 function stats(root: THREE.Group) {
   let meshes = 0,
@@ -32,6 +39,32 @@ function stats(root: THREE.Group) {
 }
 
 describe("static rendering batches", () => {
+  it("releases the source model when cancelled during foliage batching", () => {
+    const build = vi.spyOn(assets.philodendron, "build");
+    function* opening() {
+      yield* buildAssetSteps("philodendron", 173);
+    }
+    const steps = opening();
+    steps.next();
+    const root: THREE.Group = build.mock.results[0].value;
+    const resources = new Set<THREE.BufferGeometry | THREE.Material>();
+    root.traverse((part) => {
+      if (!(part instanceof THREE.Mesh)) return;
+      resources.add(part.geometry);
+      const materials = Array.isArray(part.material)
+        ? part.material
+        : [part.material];
+      materials.forEach((material) => resources.add(material));
+    });
+    const releases = [...resources].map((resource) => {
+      const released = vi.fn();
+      resource.addEventListener("dispose", released);
+      return released;
+    });
+    for (let i = 0; i < 10; i++) expect(steps.next().done).toBe(false);
+    steps.return();
+    for (const released of releases) expect(released).toHaveBeenCalled();
+  });
   it.each([assets["leaf-litter"].build, assets.strawberry.build])(
     "retains transformed geometry while reducing draws",
     (builder) => {

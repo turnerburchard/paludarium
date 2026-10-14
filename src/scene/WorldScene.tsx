@@ -1,7 +1,8 @@
 import { useBuildCamera } from "./useBuildCamera";
 import type { EcosystemController } from "../simulation/useEcosystem";
 import { EcosystemLife } from "./EcosystemLife";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import type { PreparedWorld } from "./prepareWorld";
 import {
   Canvas,
   useFrame,
@@ -41,6 +42,8 @@ interface SceneProps {
   resetCamera: number;
   view: boolean;
   ecosystem: EcosystemController;
+  prepared: PreparedWorld;
+  opening: boolean;
   /** An animal the camera follows. It keeps living while watched. */
   watchingId: string | null;
   onActivateObject: (id: string) => void;
@@ -52,12 +55,17 @@ function Scene({
   resetCamera,
   view,
   ecosystem,
+  prepared,
   watchingId,
   onActivateObject,
   onCameraStart,
 }: SceneProps) {
   const { world, tool } = editor,
     env = world.environment;
+  const preparedObjects = useMemo(
+    () => new Map(prepared.world.objects.map((object) => [object.id, object])),
+    [prepared],
+  );
   const keyColor = new THREE.Color("#c6ddff").lerp(
     new THREE.Color("#ffcc8b"),
     env.warmth,
@@ -305,23 +313,34 @@ function Scene({
         </mesh>
         {world.objects
           .filter((o) => tool.type !== "move" || o.id !== tool.id)
-          .map((object) => (
-            <Inhabitant
-              key={object.id}
-              object={object}
-              ecosystem={ecosystem}
-              foliageVisitors={foliageVisitors}
-              foliagePlants={foliagePlants}
-              environment={env}
-              paused={editor.paused}
-              selected={!view && editor.selectedId === object.id}
-              onSelect={(e) => {
-                if (e.delta > 6 || placing || tool.type === "terrain") return;
-                e.stopPropagation();
-                onActivateObject(object.id);
-              }}
-            />
-          ))}
+          .map((object) => {
+            const original = preparedObjects.get(object.id);
+            const preparedModels =
+              original &&
+              original.kind === object.kind &&
+              original.seed === object.seed &&
+              original.moss === object.moss
+                ? prepared.models
+                : undefined;
+            return (
+              <Inhabitant
+                key={object.id}
+                object={object}
+                preparedModels={preparedModels}
+                ecosystem={ecosystem}
+                foliageVisitors={foliageVisitors}
+                foliagePlants={foliagePlants}
+                environment={env}
+                paused={editor.paused}
+                selected={!view && editor.selectedId === object.id}
+                onSelect={(e) => {
+                  if (e.delta > 6 || placing || tool.type === "terrain") return;
+                  e.stopPropagation();
+                  onActivateObject(object.id);
+                }}
+              />
+            );
+          })}
         {ecosystem.remains.map((body) => (
           <Remains
             key={body.object.id}
@@ -497,10 +516,10 @@ export function WorldScene(props: SceneProps) {
       }}
     >
       <Suspense fallback={null}>
-        <Scene {...props} />
+        {!props.opening && <Scene {...props} />}
         {/* Opening another world shows the loading screen again and resets
             the camera, so a fresh watcher waits for that world to draw. */}
-        <HideSplashWhenDrawn key={props.resetCamera} />
+        {!props.opening && <HideSplashWhenDrawn key={props.resetCamera} />}
       </Suspense>
     </Canvas>
   );

@@ -79,9 +79,17 @@ export class HabitatGraph {
     );
   }
   nearest(position: Vec3, species: SpeciesProfile) {
+    return finishWork(this.nearestSteps(position, species));
+  }
+  *nearestSteps(
+    position: Vec3,
+    species: SpeciesProfile,
+  ): Generator<void, HabitatNode | undefined> {
     let best: HabitatNode | undefined,
       bestDistance = Infinity;
+    let visited = 0;
     for (const node of this.nodes.values()) {
+      if (visited++ % 128 === 0) yield;
       const d = distance(position, node.position);
       if (
         this.canRest(node.id, species) &&

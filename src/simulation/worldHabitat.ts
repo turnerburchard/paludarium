@@ -8,7 +8,7 @@ import {
   type World,
 } from "../model/schema";
 import {
-  animalBody,
+  animalBodySteps,
   assetRadius,
   assets,
   isAnimal,
@@ -847,7 +847,7 @@ export function* createWorldEcosystemSteps(
     const fish =
       water && (yield* swimmingFish(world, object, water, graph, previous));
     if (fish) animals.push(fish);
-    const animal = landAnimalSeed(
+    const animal = yield* landAnimalSeed(
       world,
       object,
       graph,
@@ -883,13 +883,13 @@ export function* createWorldEcosystemSteps(
   engine.raise(youngAndParents(world));
   return engine;
 }
-function landAnimalSeed(
+function* landAnimalSeed(
   world: World,
   object: HabitatObject,
   graph: HabitatGraph,
   previous?: { world: World; engine: Ecosystem },
   oldState?: AnimalState,
-): AnimalSeed | undefined {
+): Generator<void, AnimalSeed | undefined> {
   const behavior = assets[object.kind].behavior;
   if (!behavior) return undefined;
   const species: SpeciesProfile = {
@@ -897,7 +897,7 @@ function landAnimalSeed(
     ...behavior,
     radius: assetRadius(object.kind) * object.scale,
     body: scaled(
-      animalBody(object.kind, object.seed),
+      yield* animalBodySteps(object.kind, object.seed),
       object.scale * juvenileScale(object),
     ),
   };
@@ -912,11 +912,11 @@ function landAnimalSeed(
           y: groundHeight(object.x, object.z, world.environment),
           z: object.z,
         };
-  const node = graph.nearest(position, species);
+  const node = yield* graph.nearestSteps(position, species);
   // An animal that visits the water still needs dry land to live on.
   const land =
     behavior.water !== "visits" ||
-    graph.nearest(position, { ...species, water: undefined });
+    (yield* graph.nearestSteps(position, { ...species, water: undefined }));
   if (node && land)
     return {
       id: object.id,
@@ -1004,7 +1004,7 @@ export function* prepareHabitatEdit(
       yield;
       const fish =
         water && (yield* swimmingFish(world, object, water, graph, previous));
-      const land = landAnimalSeed(
+      const land = yield* landAnimalSeed(
         world,
         object,
         graph,

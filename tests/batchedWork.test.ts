@@ -41,3 +41,24 @@ it("reports failures without publishing a partial result", async () => {
   await vi.waitFor(() => expect(failed).toHaveBeenCalledWith(error));
   expect(complete).not.toHaveBeenCalled();
 });
+
+it("closes cancelled work so it can release unfinished models", async () => {
+  let clock = 0;
+  vi.spyOn(performance, "now").mockImplementation(() => clock);
+  const release = vi.fn();
+  function* steps() {
+    try {
+      clock += 4;
+      yield;
+      return "finished";
+    } finally {
+      release();
+    }
+  }
+  const complete = vi.fn();
+  const cancel = runInBatches(steps(), complete, vi.fn());
+  await new Promise((resolve) => setTimeout(resolve, 1));
+  cancel();
+  expect(release).toHaveBeenCalledOnce();
+  expect(complete).not.toHaveBeenCalled();
+});
