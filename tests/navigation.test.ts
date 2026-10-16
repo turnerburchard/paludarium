@@ -47,12 +47,14 @@ it("resumes weighted searches without changing routes or tie breaks", () => {
       .filter((n) => n >= 0 && n < 30)
       .map(String),
   }));
-  const graph = new HabitatGraph(nodes, (from, to) =>
-    to.id === "6" ? Infinity : 1 + (Number(from.id) % 3),
-  );
+  // Each run gets its own graph, since a graph keeps its recent searches.
+  const graph = () =>
+    new HabitatGraph(nodes, (from, to) =>
+      to.id === "6" ? Infinity : 1 + (Number(from.id) % 3),
+    );
   const species = { id: "walker", nocturnal: false, climbs: false, speed: 1 };
-  const expected = graph.routes("0", species);
-  const search = graph.searchRoutes("0", species);
+  const expected = graph().routes("0", species);
+  const search = graph().searchRoutes("0", species);
   let result = search.next();
   let batches = 0;
   while (!result.done) {

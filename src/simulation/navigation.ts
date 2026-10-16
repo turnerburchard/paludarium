@@ -3,6 +3,7 @@ import type { HabitatNode, SpeciesProfile, Vec3 } from "./types";
 export const distance = (a: Vec3, b: Vec3) =>
   Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 export const copyVector = (v: Vec3): Vec3 => ({ ...v });
+const RECENT_ROUTES = 8;
 
 export interface HabitatRoutes {
   distances: ReadonlyMap<string, number>;
@@ -20,6 +21,14 @@ type TravelCost = (
 /** Explicit connected surfaces prevent animals walking through ponds or across empty air. */
 export class HabitatGraph {
   readonly nodes: ReadonlyMap<string, HabitatNode>;
+  private readonly edgeCosts = new WeakMap<
+    SpeciesProfile,
+    Map<HabitatNode, Map<HabitatNode, number>>
+  >();
+  private readonly recentRoutes = new WeakMap<
+    SpeciesProfile,
+    Map<string, HabitatRoutes>
+  >();
   constructor(
     nodes: readonly HabitatNode[],
     private readonly travelCost?: TravelCost,
@@ -94,18 +103,43 @@ export class HabitatGraph {
     }
     return best;
   }
+  /** Every route search prices the whole graph, so each edge is priced
+   * once per species and remembered for the life of the graph. */
   edgeCost(from: HabitatNode, to: HabitatNode, species: SpeciesProfile) {
-    return (
-      this.travelCost?.(from, to, species) ??
-      distance(from.position, to.position)
-    );
+    let costs = this.edgeCosts.get(species);
+    if (!costs) this.edgeCosts.set(species, (costs = new Map()));
+    let fromCosts = costs.get(from);
+    if (!fromCosts) costs.set(from, (fromCosts = new Map()));
+    let cost = fromCosts.get(to);
+    if (cost === undefined) {
+      cost =
+        this.travelCost?.(from, to, species) ??
+        distance(from.position, to.position);
+      fromCosts.set(to, cost);
+    }
+    return cost;
   }
   /** Prefer short, open routes. Physical distance is tracked separately
    * from foliage cost so needs and travel time still use actual distance. */
   routes(start: string, species: SpeciesProfile): HabitatRoutes {
     return finishWork(this.searchRoutes(start, species));
   }
+  /** Animals keep returning to the same few spots, and a search from one
+   * never changes while the graph lives, so recent ones are kept. */
   *searchRoutes(
+    start: string,
+    species: SpeciesProfile,
+  ): Generator<void, HabitatRoutes> {
+    let recent = this.recentRoutes.get(species);
+    if (!recent) this.recentRoutes.set(species, (recent = new Map()));
+    let routes = recent.get(start);
+    if (routes) recent.delete(start);
+    else routes = yield* this.search(start, species);
+    recent.set(start, routes);
+    if (recent.size > RECENT_ROUTES) recent.delete(recent.keys().next().value!);
+    return routes;
+  }
+  private *search(
     start: string,
     species: SpeciesProfile,
   ): Generator<void, HabitatRoutes> {
