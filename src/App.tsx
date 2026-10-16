@@ -77,7 +77,7 @@ function EditorApp({
   // On phones the sidebar is a sheet, closed until a dock button opens it.
   const [sheetOpen, setSheetOpen] = useState(false);
   const [hasBuilt, setHasBuilt] = useState(false);
-  // View can drop the interface to leave just the tank.
+  // View can drop the interface and stop the orbit to leave just the tank.
   const [uiHidden, setUiHidden] = useState(false);
   const [resetCamera, setResetCamera] = useState(0);
   const [dialog, setDialog] = useState<
@@ -239,6 +239,7 @@ function EditorApp({
             editor={editor}
             resetCamera={resetCamera}
             view={view}
+            spin={view && !uiHidden}
             ecosystem={ecosystem}
             prepared={prepared}
             opening={opening}

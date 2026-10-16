@@ -41,6 +41,8 @@ interface SceneProps {
   editor: Editor;
   resetCamera: number;
   view: boolean;
+  /** View's slow orbit, which stops while the interface is hidden. */
+  spin: boolean;
   ecosystem: EcosystemController;
   prepared: PreparedWorld;
   opening: boolean;
@@ -54,6 +56,7 @@ function Scene({
   editor,
   resetCamera,
   view,
+  spin,
   ecosystem,
   prepared,
   watchingId,
@@ -451,7 +454,7 @@ function Scene({
         enableRotate={tool.type !== "terrain"}
         enableDamping
         dampingFactor={0.09}
-        autoRotate={view && !editor.paused && !followCamera.active}
+        autoRotate={spin && !editor.paused && !followCamera.active}
         autoRotateSpeed={0.35}
         onStart={startCamera}
         onChange={() => {

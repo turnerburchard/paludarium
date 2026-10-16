@@ -45,8 +45,8 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
           <dd>
             <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> move the view ·{" "}
             <kbd>Q</kbd> <kbd>E</kbd> turn · <kbd>Delete</kbd> remove ·{" "}
-            <kbd>Space</kbd> pause · <kbd>H</kbd> hide controls in View ·{" "}
-            <kbd>Ctrl</kbd> <kbd>Z</kbd> undo
+            <kbd>Space</kbd> pause · <kbd>H</kbd> hide controls and stop the
+            orbit in View · <kbd>Ctrl</kbd> <kbd>Z</kbd> undo
           </dd>
         </div>
       </dl>
